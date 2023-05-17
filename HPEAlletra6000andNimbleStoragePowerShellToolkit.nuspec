@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>HPEAlletra6000andNimbleStoragePowerShellToolkit</id>
+    <version>3.4.1</version>
+    <authors>Hewlett Packard Enterprise Co.</authors>
+    <owners>HPE Storage, A Hewlett Packard Enterprise Company</owners>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <licenseUrl>http://www.hpe.com/software/SWLicensing</licenseUrl>
+    <description>Windows PowerShell Scripting Toolkit for HPE Alletra 6000 and Nimble Arrays</description>
+    <releaseNotes>HPE Alletra 6000 and Nimble Storage PowerShell Toolkit 3.4.1
+
+README
+==================================================
+
+
+Table of Contents
+=================
+
+* New Features in the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit 3.4.1
+* Installing the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit
+* Getting help with the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit
+* Tips and Tricks 
+* Resolved Issues
+* Known Issues
+
+
+New Features in the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit 3.4.1
+=================================================================================
+
+The following features were added in the 3.4.1 version of the toolkit:
+
+* You can download the toolkit from Microsoft PowerShell Gallery. The 
+  toolkit is available under the module name:
+   
+      "HPEAlletra6000andNimbleStoragePowerShellToolkit", version 3.4.1 
+
+* Support for new Nimble OS 6.0 and Alletra 6000 Storage OS 6.0 . 
+
+
+
+Installing the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit
+======================================================================
+
+To install the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit:
+
+1. Right-click on the downloaded ZIP file. If the file has the blocked
+   property set, you must choose Unblock to download the file.
+
+2. Unzip the file into the following location:
+
+   C:\Windows\System32\WindowsPowerShell\v1.0\Modules\
+	
+3. Verify that HPEAlletra6000andNimbleStoragePowerShellToolkit.psd1 exists in the following location:
+
+   C:\Windows\System32\WindowsPowerShell\v1.0\Modules\HPEAlletra6000andNimbleStoragePowerShellToolkit\HPEAlletra6000andNimbleStoragePowerShellToolkit.psd1
+	
+
+
+Using the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit
+=================================================================
+
+To use the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit:
+
+1. From a PowerShell prompt, import the HPE Nimble Storage PowerShell module
+   by running the following command:
+
+   PS:&gt; Import-Module HPEAlletra6000andNimbleStoragePowerShellToolkit
+
+2. Connect to an existing Group using one of the following commands:
+
+   PS:&gt; Connect-NSGroup -group 192.168.1.50 -credential Username -ImportServerCertificate
+		-or-	
+   PS:&gt; Connect-NSGroup -group 192.168.1.50 -credential Username -IgnoreServerCertificate
+	
+   A pop-up box appears that prompts you for your password.
+	
+   If you choose to use the -ImportServerCertificate option, it only needs 
+   to done the first time you connect to the array. The import process requires
+   that you have an Administrative PowerShell Window. 
+
+
+Getting help with the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit
+=============================================================================
+
+You can get help information about either a single command or multiple commands:
+
+* To get a complete list of PowerShell commands, run the following command:
+
+	PS:&gt; get-command -module HPENimblePowerShellToolkit
+	
+* To get detailed help about a single command, run Get-Help with the name of the 
+  command, as shown in the following examples:
+
+	PS:&gt; get-help new-NSVolume
+	PS:&gt; get-help new-NSVolume -full
+	PS:&gt; get-help new-NSVolume -examples
+
+	
+Tips and Tricks
+=============== 
+
+The HPE Alletra 6000 and Nimble Storage PowerShell Toolkit and the HPE Alletra 6000 and Nimble Storage API use a 
+common ID number to uniquely identify an object, such as a volume or an initiator 
+group. Many commands, such as Set-NSVolume, expect you to identify the object 
+to be acted on. This number can be hard to transcribe manually. 
+
+Instead, you might find it useful to embed a "get-ns" type command in your 
+"set-ns" type command. For example, if you wanted to modify a volume named 
+"MyTestVolume", you could use the following set of commands:
+
+	$MyID = $(get-nsvolume -name "MyTestVolume").id
+	set-nsvolume -id $MyID -description "This is My Test Volume"
+
+Alternately, if you wanted to issue this same command from a single line, you 
+could use the following:
+                                                                               
+	set-nsvolume -id $(get-nsvolume -name "MyTestVolume").id -description "My Test Volume"
+
+
+Resolved Issues in HPE Alletra 6000 and Nimble Storage PowerShell Toolkit 3.4.1
+================================================================================
+
+
+
+
+Known Issues in HPE Alletra 6000 and Nimble Storage PowerShell Toolkit 3.4.1
+=============================================================================
+
+PST-80: New-NS* commands appear to accept ID as a valid parameter
+	Description: The help for the command shows ID as a valid parameter. 
+        But, because you are creating a new object, the API assigns a new ID to 
+        the object. As a result, the ID cannot be passed in as a parameter.
+	
+PST-79: Remove-NSSnapshot only accepts the ID parameter
+	Description: The help for the command shows several parameters, such as 
+        name, but the command only accepts ID as the valid parameter. The 
+        documentation should state that the ID is the only valid parameter to use 
+        to remove a snapshot.
+
+PST-78: Failed to create a Protection template
+	Description: The failure message stating that the Protection template 
+        failed to be created is reported incorrectly. This message appears when 
+        the Protection template was actually created. The last part of the error 
+        message states: "The request was accepted and is being processed in the 
+        background."
+
+PST-77: Get-NSVolume doesnt report back usage
+	Description: In the Get-NSVolume cmdlet, there is no option to get 
+        usage.
+	Note: There is a field for total_usage_bytes, but that is not the same 
+              as usage.
+
+PST-70: Powershell toolkit issues when working with Linux or on a Mac
+	Description: Neither the IgnoreCertificate nor the ImportCertificate 
+        options work in Linux or on a Mac. 
+	Workaround: To connect using these platforms, you must download the 
+        certificate and install it separately.
+
+PST-48: Cmdlet help shows invalid parameters 
+	Description: New-NS&lt;Object&gt; and Set-NS&lt;Object&gt; cmdlets do not accept 
+        all of the object attributes as valid operation parameters. In a few 
+        instances, the cmdlet help shows these attributes as valid parameters. 
+	For example, start_online is not accepted by the Set-NSSnapshotCollection 
+        cmdlet as a valid attribute, but the cmdlet help lists it as valid.
+
+PST-101: Three Commands missing Synopsis
+	Description: The Synopsis is missing in the help for the following three 
+        commands: Move-NSGroup, Show-NSShelf, and Stop-NSGroupSoftwareDownload
+
+PST-102: Command help syntax incorrectly shows that each parameter is a parameter set
+	Description: The multiple options are shown on different lines, which 
+        incorrectly indicates that they are parameter sets. They are actually all
+        part of the same parameter set.
+	
+PST-57/58: Get-NSSoftwareVersion returns valid information, but also throws an exception
+	Description: Get-NSSoftwareVersion fails with following exception: URL 
+        pattern in the request does not support HTTP method GET. The error can be 
+        ignored and the objects returned by the execution can be processed as usual, 
+        either by storing the object in a variable or sending it to the pipeline.
+	For example you could have: "$versions = Get-NSSoftwareVersion" 
+        or "Get-NSSoftwareVersion | select version,status" 
+
+PST-111: PowerShell Core performance issue occurs when the return objects are huge
+	 Description: In the case of very large return objects, such as Get-NSEvents 
+         where the number of returned objects are in the thousands, the PowerShell 
+         Core can take significantly longer to complete a task than regular 
+	 PowerShell. When retrieving 26,000 objects, the regular PowerShell 
+         completed the task in 5 minutes. The PowerShell Core completed the same 
+         task in 55 minutes.</releaseNotes>
+    <copyright>© Copyright 2021 Hewlett Packard Enterprise Development LP</copyright>
+    <tags>Hewlett Packard Enterprise HPEAlletra6000andNimbleStoragePowerShellToolkit HPE PowerShellGetFormatVersion_2.0 PSModule PSIncludes_Function PSFunction_Test-NS2PasswordFormat PSFunction_Test-Ns2Type PSFunction_Test-NS2ID PSFunction_Connect-NSGroup PSFunction_Disconnect-NSGroup PSFunction_New-NSAccessControlRecord PSFunction_Get-NSAccessControlRecord PSFunction_Remove-NSAccessControlRecord PSFunction_New-NSChapUser PSFunction_Get-NSChapUser PSFunction_Set-NSChapUser PSFunction_Remove-NSChapUser PSFunction_New-NSPool PSFunction_Get-NSPool PSFunction_Set-NSPool PSFunction_Remove-NSPool PSFunction_Merge-NSPool PSFunction_Invoke-NSPoolDeDupe PSFunction_New-NSProtectionTemplate PSFunction_Get-NSProtectionTemplate PSFunction_Set-NSProtectionTemplate PSFunction_Remove-NSProtectionTemplate PSFunction_New-NSVolume PSFunction_Get-NSVolume PSFunction_Set-NSVolume PSFunction_Remove-NSVolume PSFunction_Restore-NSVolume PSFunction_Move-NSVolume PSFunction_Move-NSVolumeBulk PSFunction_Stop-NSVolumeMove PSFunction_Set-NSVolumeBulkDeDupe PSFunction_Set-NSVolumeBulkOnline PSFunction_Get-NSSpaceDomain PSFunction_Get-NSGroup PSFunction_Set-NSGroup PSFunction_Reset-NSGroup PSFunction_Stop-NSGroup PSFunction_Test-NSGroupAlert PSFunction_Test-NSGroupSoftwareUpdate PSFunction_Start-NSGroupSoftwareUpdate PSFunction_Start-NSGroupSoftwareDownload PSFunction_Stop-NSGroupSoftwareDownload PSFunction_Resume-NSGroupSoftwareUpdate PSFunction_Get-NSGroupDiscoveredList PSFunction_Test-NSGroupMerge PSFunction_Merge-NSGroup PSFunction_Get-NSGroupgetEULA PSFunction_Test-NSGroupMigrate PSFunction_Move-NSGroup PSFunction_Get-NSGroupTimeZoneList PSFunction_New-NSReplicationPartner PSFunction_Get-NSReplicationPartner PSFunction_Set-NSReplicationPartner PSFunction_Remove-NSReplicationPartner PSFunction_Suspend-NSReplicationPartner PSFunction_Resume-NSReplicationPartner PSFunction_Test-NSReplicationPartner PSFunction_New-NSTrustedOauthIssuer PSFunction_Get-NSTrustedOauthIssuer PSFunction_New-NSMasterKey PSFunction_Get-NSMasterKey PSFunction_Set-NSMasterKey PSFunction_Remove-NSMasterKey PSFunction_Clear-NSMasterKeyInactive PSFunction_Get-NSEvent PSFunction_New-NSApplicationServer PSFunction_Get-NSApplicationServer PSFunction_Set-NSApplicationServer PSFunction_Remove-NSApplicationServer PSFunction_Get-NSFibreChannelPort PSFunction_New-NSLdapDomain PSFunction_Get-NSLdapDomain PSFunction_Set-NSLdapDomain PSFunction_Remove-NSLdapDomain PSFunction_Test-NSLdapDomainUser PSFunction_Test-NSLdapDomainGroup PSFunction_Test-NSLdapDomain PSFunction_Get-NSVersion PSFunction_New-NSInitiator PSFunction_Get-NSInitiator PSFunction_Remove-NSInitiator PSFunction_New-NSSubscriber PSFunction_Get-NSSubscriber PSFunction_Set-NSSubscriber PSFunction_Remove-NSSubscriber PSFunction_New-NSPerformancePolicy PSFunction_Get-NSPerformancePolicy PSFunction_Set-NSPerformancePolicy PSFunction_Remove-NSPerformancePolicy PSFunction_New-NSKeyManager PSFunction_Get-NSKeyManager PSFunction_Set-NSKeyManager PSFunction_Remove-NSKeyManager PSFunction_Move-NSKeyManager PSFunction_Get-NSUserPolicy PSFunction_Set-NSUserPolicy PSFunction_New-NSSnapshotCollection PSFunction_Get-NSSnapshotCollection PSFunction_Set-NSSnapshotCollection PSFunction_Remove-NSSnapshotCollection PSFunction_Get-NSShelf PSFunction_Set-NSShelf PSFunction_Show-NSShelf PSFunction_Remove-NSShelf PSFunction_Get-NSProtocolEndpoint PSFunction_Get-NSFibreChannelInterface PSFunction_Set-NSFibreChannelInterface PSFunction_Get-NSFibreChannelSession PSFunction_New-NSVolumeCollection PSFunction_Get-NSVolumeCollection PSFunction_Set-NSVolumeCollection PSFunction_Remove-NSVolumeCollection PSFunction_Invoke-NSVolumeCollectionPromote PSFunction_Invoke-NSVolumeCollectionDemote PSFunction_Start-NSVolumeCollectionHandover PSFunction_Stop-NSVolumeCollectionHandover PSFunction_Test-NSVolumeCollection PSFunction_New-NSToken PSFunction_Get-NSToken PSFunction_Remove-NSToken PSFunction_Get-NSTokenUserDetails PSFunction_New-NSUserGroup PSFunction_Get-NSUserGroup PSFunction_Set-NSUserGroup PSFunction_Remove-NSUserGroup PSFunction_New-NSWitness PSFunction_Get-NSWitness PSFunction_Remove-NSWitness PSFunction_Test-NSWitness PSFunction_New-NSSubscription PSFunction_Get-NSSubscription PSFunction_Set-NSSubscription PSFunction_Remove-NSSubscription PSFunction_Get-NSFibreChannelInitiatorAlias PSFunction_New-NSInitiatorGroup PSFunction_Get-NSInitiatorGroup PSFunction_Set-NSInitiatorGroup PSFunction_Remove-NSInitiatorGroup PSFunction_Resolve-NSInitiatorGroupMerge PSFunction_Test-NSInitiatorGroupLunAvailability PSFunction_New-NSSnapshot PSFunction_Get-NSSnapshot PSFunction_Set-NSSnapshot PSFunction_Remove-NSSnapshot PSFunction_New-NSSnapshotBulk PSFunction_New-NSActiveDirectoryMembership PSFunction_Get-NSActiveDirectoryMembership PSFunction_Set-NSActiveDirectoryMembership PSFunction_Remove-NSActiveDirectoryMembership PSFunction_Test-NSActiveDirectoryMembership PSFunction_Test-NSActiveDirectoryMembershipUser PSFunction_Test-NSActiveDirectoryMembershipGroup PSFunction_Get-NSSubnet PSFunction_New-NSFolder PSFunction_Get-NSFolder PSFunction_Set-NSFolder PSFunction_Remove-NSFolder PSFunction_Invoke-NSFolderDeDupe PSFunction_New-NSNetworkConfig PSFunction_Get-NSNetworkConfig PSFunction_Set-NSNetworkConfig PSFunction_Remove-NSNetworkConfig PSFunction_Initialize-NSNetworkConfig PSFunction_Test-NSNetworkConfig PSFunction_Get-NSController PSFunction_Stop-NSController PSFunction_Reset-NSController PSFunction_New-NSProtectionSchedule PSFunction_Get-NSProtectionSchedule PSFunction_Set-NSProtectionSchedule PSFunction_Remove-NSProtectionSchedule PSFunction_Get-NSApplicationCategory PSFunction_Get-NSAuditLog PSFunction_Get-NSJob PSFunction_Get-NSDisk PSFunction_Set-NSDisk PSFunction_Get-NSNetworkInterface PSFunction_Get-NSSoftwareVersion PSFunction_Get-NSFibreChannelConfig PSFunction_Update-NSFibreChannelConfig PSFunction_New-NSUser PSFunction_Get-NSUser PSFunction_Set-NSUser PSFunction_Remove-NSUser PSFunction_Unlock-NSUser PSFunction_New-NSArray PSFunction_Get-NSArray PSFunction_Set-NSArray PSFunction_Remove-NSArray PSFunction_Invoke-NSArray PSFunction_Stop-NSArray PSFunction_Reset-NSArray PSFunction_Get-NSAlarm PSFunction_Set-NSAlarm PSFunction_Remove-NSAlarm PSFunction_Clear-NSAlarm PSFunction_Undo-NSAlarm PSCommand_Test-NS2PasswordFormat PSCommand_Test-Ns2Type PSCommand_Test-NS2ID PSCommand_Connect-NSGroup PSCommand_Disconnect-NSGroup PSCommand_New-NSAccessControlRecord PSCommand_Get-NSAccessControlRecord PSCommand_Remove-NSAccessControlRecord PSCommand_New-NSChapUser PSCommand_Get-NSChapUser PSCommand_Set-NSChapUser PSCommand_Remove-NSChapUser PSCommand_New-NSPool PSCommand_Get-NSPool PSCommand_Set-NSPool PSCommand_Remove-NSPool PSCommand_Merge-NSPool PSCommand_Invoke-NSPoolDeDupe PSCommand_New-NSProtectionTemplate PSCommand_Get-NSProtectionTemplate PSCommand_Set-NSProtectionTemplate PSCommand_Remove-NSProtectionTemplate PSCommand_New-NSVolume PSCommand_Get-NSVolume PSCommand_Set-NSVolume PSCommand_Remove-NSVolume PSCommand_Restore-NSVolume PSCommand_Move-NSVolume PSCommand_Move-NSVolumeBulk PSCommand_Stop-NSVolumeMove PSCommand_Set-NSVolumeBulkDeDupe PSCommand_Set-NSVolumeBulkOnline PSCommand_Get-NSSpaceDomain PSCommand_Get-NSGroup PSCommand_Set-NSGroup PSCommand_Reset-NSGroup PSCommand_Stop-NSGroup PSCommand_Test-NSGroupAlert PSCommand_Test-NSGroupSoftwareUpdate PSCommand_Start-NSGroupSoftwareUpdate PSCommand_Start-NSGroupSoftwareDownload PSCommand_Stop-NSGroupSoftwareDownload PSCommand_Resume-NSGroupSoftwareUpdate PSCommand_Get-NSGroupDiscoveredList PSCommand_Test-NSGroupMerge PSCommand_Merge-NSGroup PSCommand_Get-NSGroupgetEULA PSCommand_Test-NSGroupMigrate PSCommand_Move-NSGroup PSCommand_Get-NSGroupTimeZoneList PSCommand_New-NSReplicationPartner PSCommand_Get-NSReplicationPartner PSCommand_Set-NSReplicationPartner PSCommand_Remove-NSReplicationPartner PSCommand_Suspend-NSReplicationPartner PSCommand_Resume-NSReplicationPartner PSCommand_Test-NSReplicationPartner PSCommand_New-NSTrustedOauthIssuer PSCommand_Get-NSTrustedOauthIssuer PSCommand_New-NSMasterKey PSCommand_Get-NSMasterKey PSCommand_Set-NSMasterKey PSCommand_Remove-NSMasterKey PSCommand_Clear-NSMasterKeyInactive PSCommand_Get-NSEvent PSCommand_New-NSApplicationServer PSCommand_Get-NSApplicationServer PSCommand_Set-NSApplicationServer PSCommand_Remove-NSApplicationServer PSCommand_Get-NSFibreChannelPort PSCommand_New-NSLdapDomain PSCommand_Get-NSLdapDomain PSCommand_Set-NSLdapDomain PSCommand_Remove-NSLdapDomain PSCommand_Test-NSLdapDomainUser PSCommand_Test-NSLdapDomainGroup PSCommand_Test-NSLdapDomain PSCommand_Get-NSVersion PSCommand_New-NSInitiator PSCommand_Get-NSInitiator PSCommand_Remove-NSInitiator PSCommand_New-NSSubscriber PSCommand_Get-NSSubscriber PSCommand_Set-NSSubscriber PSCommand_Remove-NSSubscriber PSCommand_New-NSPerformancePolicy PSCommand_Get-NSPerformancePolicy PSCommand_Set-NSPerformancePolicy PSCommand_Remove-NSPerformancePolicy PSCommand_New-NSKeyManager PSCommand_Get-NSKeyManager PSCommand_Set-NSKeyManager PSCommand_Remove-NSKeyManager PSCommand_Move-NSKeyManager PSCommand_Get-NSUserPolicy PSCommand_Set-NSUserPolicy PSCommand_New-NSSnapshotCollection PSCommand_Get-NSSnapshotCollection PSCommand_Set-NSSnapshotCollection PSCommand_Remove-NSSnapshotCollection PSCommand_Get-NSShelf PSCommand_Set-NSShelf PSCommand_Show-NSShelf PSCommand_Remove-NSShelf PSCommand_Get-NSProtocolEndpoint PSCommand_Get-NSFibreChannelInterface PSCommand_Set-NSFibreChannelInterface PSCommand_Get-NSFibreChannelSession PSCommand_New-NSVolumeCollection PSCommand_Get-NSVolumeCollection PSCommand_Set-NSVolumeCollection PSCommand_Remove-NSVolumeCollection PSCommand_Invoke-NSVolumeCollectionPromote PSCommand_Invoke-NSVolumeCollectionDemote PSCommand_Start-NSVolumeCollectionHandover PSCommand_Stop-NSVolumeCollectionHandover PSCommand_Test-NSVolumeCollection PSCommand_New-NSToken PSCommand_Get-NSToken PSCommand_Remove-NSToken PSCommand_Get-NSTokenUserDetails PSCommand_New-NSUserGroup PSCommand_Get-NSUserGroup PSCommand_Set-NSUserGroup PSCommand_Remove-NSUserGroup PSCommand_New-NSWitness PSCommand_Get-NSWitness PSCommand_Remove-NSWitness PSCommand_Test-NSWitness PSCommand_New-NSSubscription PSCommand_Get-NSSubscription PSCommand_Set-NSSubscription PSCommand_Remove-NSSubscription PSCommand_Get-NSFibreChannelInitiatorAlias PSCommand_New-NSInitiatorGroup PSCommand_Get-NSInitiatorGroup PSCommand_Set-NSInitiatorGroup PSCommand_Remove-NSInitiatorGroup PSCommand_Resolve-NSInitiatorGroupMerge PSCommand_Test-NSInitiatorGroupLunAvailability PSCommand_New-NSSnapshot PSCommand_Get-NSSnapshot PSCommand_Set-NSSnapshot PSCommand_Remove-NSSnapshot PSCommand_New-NSSnapshotBulk PSCommand_New-NSActiveDirectoryMembership PSCommand_Get-NSActiveDirectoryMembership PSCommand_Set-NSActiveDirectoryMembership PSCommand_Remove-NSActiveDirectoryMembership PSCommand_Test-NSActiveDirectoryMembership PSCommand_Test-NSActiveDirectoryMembershipUser PSCommand_Test-NSActiveDirectoryMembershipGroup PSCommand_Get-NSSubnet PSCommand_New-NSFolder PSCommand_Get-NSFolder PSCommand_Set-NSFolder PSCommand_Remove-NSFolder PSCommand_Invoke-NSFolderDeDupe PSCommand_New-NSNetworkConfig PSCommand_Get-NSNetworkConfig PSCommand_Set-NSNetworkConfig PSCommand_Remove-NSNetworkConfig PSCommand_Initialize-NSNetworkConfig PSCommand_Test-NSNetworkConfig PSCommand_Get-NSController PSCommand_Stop-NSController PSCommand_Reset-NSController PSCommand_New-NSProtectionSchedule PSCommand_Get-NSProtectionSchedule PSCommand_Set-NSProtectionSchedule PSCommand_Remove-NSProtectionSchedule PSCommand_Get-NSApplicationCategory PSCommand_Get-NSAuditLog PSCommand_Get-NSJob PSCommand_Get-NSDisk PSCommand_Set-NSDisk PSCommand_Get-NSNetworkInterface PSCommand_Get-NSSoftwareVersion PSCommand_Get-NSFibreChannelConfig PSCommand_Update-NSFibreChannelConfig PSCommand_New-NSUser PSCommand_Get-NSUser PSCommand_Set-NSUser PSCommand_Remove-NSUser PSCommand_Unlock-NSUser PSCommand_New-NSArray PSCommand_Get-NSArray PSCommand_Set-NSArray PSCommand_Remove-NSArray PSCommand_Invoke-NSArray PSCommand_Stop-NSArray PSCommand_Reset-NSArray PSCommand_Get-NSAlarm PSCommand_Set-NSAlarm PSCommand_Remove-NSAlarm PSCommand_Clear-NSAlarm PSCommand_Undo-NSAlarm</tags>
+  </metadata>
+</package>
