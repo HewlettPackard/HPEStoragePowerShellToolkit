@@ -6,6 +6,7 @@
 . $PSScriptRoot\scripts\Volume.ps1
 . $PSScriptRoot\scripts\SpaceDomain.ps1
 . $PSScriptRoot\scripts\Group.ps1
+. $PSScriptRoot\scripts\Host.ps1
 . $PSScriptRoot\scripts\ReplicationPartner.ps1
 . $PSScriptRoot\scripts\TrustedOauthIssuer.ps1
 . $PSScriptRoot\scripts\MasterKey.ps1
@@ -92,5 +93,5 @@ Export-ModuleMember -Function   Test-NS2PasswordFormat,     Test-Ns2Type,      T
     New-NSUser,                 Get-NSUser,                 Set-NSUser,                 Remove-NSUser,   
     Unlock-NSUser,                              
     Get-NSArray,                Set-NSArray,                New-NSArray,                Remove-NSArray,             Invoke-NSArrayFailover,     Stop-NSArray,      Reset-NSArray,   
-    Get-NSAlarm,                Set-NSAlarm,                                            Remove-NSAlarm,             Clear-NSAlarm,              Undo-NSAlarm
-
+    Get-NSAlarm,                Set-NSAlarm,                                            Remove-NSAlarm,             Clear-NSAlarm,              Undo-NSAlarm,
+    Get-NSHostHyperVStorage,    Get-NSHostVolume
