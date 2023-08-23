@@ -2,7 +2,8 @@
 #
 # © Copyright 2023 Hewlett Packard Enterprise Development LP.
 
-function New-NSUser {
+function New-NSUser 
+{
 <#
 .SYNOPSIS
   Create a user.
@@ -80,7 +81,8 @@ process {
     }
 }
 
-function Get-NSUser {
+function Get-NSUser 
+{
 <#
 .SYNOPSIS
   List one or more users.
@@ -169,7 +171,8 @@ process{
   }
 }
 
-function Set-NSUser {
+function Set-NSUser 
+{
 <#
 .SYNOPSIS
   Modify information about a user.

@@ -70,25 +70,25 @@ param(
     [Parameter(ParameterSetName='iscsi', Mandatory = $True)]
     [string] $iqn,
 
-    [Parameter(ParameterSetName='iscsi', Mandatory = $True)]
-    [Parameter(ParameterSetName='fc',    Mandatory = $True)]
+    [Parameter(ParameterSetName='iscsi')]
+    [Parameter(ParameterSetName='fc')]
     [string] $ip_address,
 
     [Parameter(ParameterSetName='fc',    Mandatory = $True)]
     [string] $alias,
 
-    [Parameter(ParameterSetName='iscsi', Mandatory = $True)]
+    [Parameter(ParameterSetName='iscsi')]
     [string] $chapuser_id,
 
     [Parameter(ParameterSetName='fc',    Mandatory = $True)]
     [string] $wwpn,
 
-    [Parameter(ParameterSetName='iscsi', Mandatory = $True)]
-    [Parameter(ParameterSetName='fc',    Mandatory = $True)]
+    [Parameter(ParameterSetName='iscsi')]
+    [Parameter(ParameterSetName='fc')]
     [Nullable[bool]] $vp_override,
 
-    [Parameter(ParameterSetName='iscsi', Mandatory = $True)]
-    [Parameter(ParameterSetName='fc',    Mandatory = $True)]
+    [Parameter(ParameterSetName='iscsi')]
+    [Parameter(ParameterSetName='fc')]
     [bool]  $override_existing_alias
   )
 process {

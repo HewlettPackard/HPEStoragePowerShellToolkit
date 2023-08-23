@@ -36,6 +36,7 @@ function New-NSInitiatorGroup {
   This command create a new initiator group.
 #>
 [CmdletBinding()]
+<# 
 param(  [Parameter(ParameterSetName='iscsi', Mandatory = $True)]
         [Parameter(ParameterSetName='fc', Mandatory = $True)]
         [string] $name,
@@ -64,6 +65,25 @@ param(  [Parameter(ParameterSetName='iscsi', Mandatory = $True)]
 
         [Parameter(ParameterSetName='iscsi')]
         [Parameter(ParameterSetName='fc')]
+        [string] $app_uuid
+)#>
+param(  [Parameter(Mandatory = $True)]
+        [string] $name,
+
+        [string] $description,
+
+        [Parameter(Mandatory = $True)]
+        [ValidateSet( 'iscsi', 'fc')]
+        [string] $access_protocol,
+
+        [string] $host_type,
+
+        [Object[]] $target_subnets,
+
+        [Object[]] $iscsi_initiators,
+
+        [Object[]] $fc_initiators,
+
         [string] $app_uuid
   )
 process {
@@ -202,6 +222,7 @@ function Set-NSInitiatorGroup {
 [CmdletBinding()]
 param(
     [Parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True, Mandatory = $True)]
+    [ValidatePattern('([0-9a-f]{42})')]
     [string]$id,
 
     [string] $name,
@@ -285,8 +306,10 @@ function Resolve-NSInitiatorGroupMerge {
   ID of the volume. A 42 digit hexadecimal number. Example: '2a0df0fe6f7dc7bb16000000000000000000004817'.
 #>
 [CmdletBinding()]
-param ( [Parameter(ValueFromPipelineByPropertyName=$True, Mandatory = $True)] [ValidatePattern('([0-9a-f]{42})')] [string]  $id,
-        [Parameter(ValueFromPipelineByPropertyName=$True)]                    [ValidatePattern('([0-9a-f]{42})')] [string]  $vol_id
+param ( [Parameter(ValueFromPipelineByPropertyName=$True, Mandatory = $True)] 
+        [ValidatePattern('([0-9a-f]{42})')] [string]  $id,
+        [Parameter(ValueFromPipelineByPropertyName=$True)]
+        [ValidatePattern('([0-9a-f]{42})')] [string]  $vol_id
   )
 process{
     $Params = @{

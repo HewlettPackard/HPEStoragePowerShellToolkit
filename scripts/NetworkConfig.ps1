@@ -83,7 +83,7 @@ function Get-NSNetworkConfig {
 [CmdletBinding(DefaultParameterSetName='id')]
 param(
     [Parameter(ParameterSetName='id')]
-    [ValidatePattern('([0-9a-f]{2})([0-9a-f]{16})([0-9a-f]{16})([0-9a-f]{8})')]
+    [ValidatePattern('([0-9a-f]{42})')]
     [string] $id,
 
     [Parameter(ParameterSetName='nonId')]

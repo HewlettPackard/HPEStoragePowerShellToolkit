@@ -1,13 +1,72 @@
 function Get-NSHostVolume
-{ 
+{
+<# 
+.SYNOPSIS
+    Will return a list of Volumes on the Windows Host, and details of those volumes
+.DESCRIPTION
+    Will return a list of Volumes on the Windows Host, and details of those volumes. This will return all host volumes; both SAN 
+    based and DAS based. Each Volume is represented by either a Drive Letter or a Mount Point; and Windows Partition that has no 
+    access (via no Drive Letter or Mount Point is ignored.)
+    This command will return the Mount Point or Drive Letter; as well as the Serial Number, if the Volume is Clustered and how, 
+    and if the Volume is a Nimble Storage or Alletra9K volume will return the Nimble Volume Name as well as the Nimble Volume ID 
+    of the backing Nimble Volume.
+    This command is also compatible with Windows Failover Clustering and can be used to interogate Cluster Nodes or Standalon
+    servers equally. 
+.NOTES
+    This command only works on Windows Server, as Linux machines use an alternate logical disk manager.
+.EXAMPLE
+    PS:> Get-NSHostVolume | format-table WinDiskNumber, PartitionDriveLetter, NimbleVolumeName, WinDiskIsClustered, WinDiskFriendlyName
+
+    WinDiskNumber PartitionDriveLetter       NimbleVolumeName           WinDiskIsClustered WinDiskFriendlyName
+    ------------- --------------------       ----------------           ------------------ -------------------
+                4 G:\                        ZClusStandAloneSharedDisk2               True Nimble Server
+                3 O:\                        ZClusClusterDiskNotShared                True Nimble Server
+                5 C:\ClusterStorage\Volume1\ ZClusVM1OnlyCSVOnly1                     True Nimble Server
+                6 C:\ClusterStorage\Volume2\ ZClusVM23CSVOnly1                        True Nimble Server
+                0 C:\                                                                False HP LOGICAL VOLUME
+                1 D:\                                                                False HP LOGICAL VOLUME
+                2 E:\                                                                False HP LOGICAL VOLUME
+                2 F:\                                                                False HP LOGICAL VOLUME
+.EXAMPLE
+    PS:> Get-NSHostVolume | where {$_.WinDiskNumber -eq 5}
+
+    ClusterDiskName          : ZClusVM1OnlyCSVOnly
+    ClusterDiskOwnerNode     : Zeus
+    ClusterResourceId        : e0038a5f-e4bf-49d5-b955-162a4c833a6e
+    ClusterResourceState     : Online
+    ClusterResourceType      : Cluster Shared Volume
+    DiskGuid                 : d978a1e4-d0a5-a8ac-f916-bfeded4ee00c
+    WinDiskNumber            : 5
+    WinDiskSerialNumber      : 974d41e0824d9bc56c9ce900efcbab72
+    WinDiskPath              : \\?\Disk{d978a1e4-d0a5-a8ac-f916-bfeded4ee00c}
+    WinDiskFriendlyName      : Nimble Server
+    WinDiskIsClustered       : True
+    WinDiskIsHighlyAvailable : True
+    WinDiskSize              : 1099511627776
+    WinDiskPartitionStyle    : GPT
+    WinDiskProvisioningType  : Thin
+    PartitionDriveLetter     : C:\ClusterStorage\Volume1\
+    VolumeFileSystem         : CSVFS
+    VolumeFileSystemLabel    : ZVM1CSV1
+    VolumeSize               : 1099492749312
+    VolumeSizeRemaining      : 987256393728
+    VolumeAllocationUnit     : 4096
+    NimbleVolumeName         : ZClusVM1OnlyCSVOnly1
+    NimbleVolumeId           : 062afce87958572396000000000000000000000087
+    NimbleVolumeDeDupe       : True
+    NimbleVolumeThin         : True
+#>
 [cmdletbinding()]  
 param ()
 begin 
 {   $ReturnObjColl = @()
+
 }
 Process
 {   # Process Cluster Physical Disks.
-    $MyClusterDisks = Get-ClusterResource | where-object { $_.ResourceType -eq 'Physical Disk'}
+    if ( (Get-WindowsFeature Failover-Clustering).installed )  
+        {    $MyClusterDisks = Get-ClusterResource | where-object { $_.ResourceType -eq 'Physical Disk'}
+        }
     foreach ( $ClusDisk in $MyClusterDisks )
     {   $RegLocation = "HKLM:\Cluster\Resources\"+($ClusDisk.Id)+"\Parameters"
         write-verbose "Location to look for details = $RegLocation"
@@ -79,8 +138,10 @@ Process
     }
 
     # Now to Obtain the CSVs and Create their Objects
-    $MyCSVs = Get-ClusterSharedVolume
-    $CSVSharedRoot = (Get-Cluster).SharedVolumesRoot
+    if ( (Get-WindowsFeature Failover-Clustering).installed )  
+        {   $MyCSVs = Get-ClusterSharedVolume
+            $CSVSharedRoot = (Get-Cluster).SharedVolumesRoot 
+        }
     foreach ( $CSV in $MyCSVs )
     {   clear-variable FoundWinDisk         -ErrorAction SilentlyContinue
         clear-variable FoundUnTrimmedGuid   -ErrorAction SilentlyContinue
@@ -214,7 +275,6 @@ Process
                                     DiskGuid                =   $FoundWinDisk.Guid;  
                                     WinDiskNumber           =   $FoundWinDisk.DiskNumber;
                                     WinDiskSerialNumber     =   $FoundWinDisk.SerialNumber;
-                                    WinDiskPath             =   $FoundWinDisk.Path;
                                     WinDiskFriendlyName     =   $FoundWinDisk.FriendlyName;
                                     WinDiskIsClustered      =   $FoundWinDisk.IsClustered;
                                     WinDiskIsHighlyAvailable=   $FoundWinDisk.IsHighlyAvailable; 
@@ -252,11 +312,17 @@ end
 
 function Get-NSHostHyperVStorage
 {
+<#
+.SYNOPSIS
+
+.DESCRIPTION
+
+.EXAMPLE
+#>
 [cmdletbinding()]  
 param ()
 begin
-{   $ReturnObjColl = @()
-    # Lets make sure that a NimbleStorage Connection exists so that we can obtain more drive information.
+{   # Lets make sure that a NimbleStorage Connection exists so that we can obtain more drive information.
     # First we must make sure that the failovercluster Powershell commands exist and are loaded.
     if ( Get-module hyper-v )
         {   # The module is found and loaded
@@ -267,7 +333,7 @@ begin
                 {   # It was successfully loaded
                 }
             else{   write-warning "The Hyper-V Module could not be loaded. exiting"
-                    exit                
+                    return              
             }
         }   
 }
@@ -380,3 +446,108 @@ end
 }
 }
 
+
+function Get-NSHostInitiator
+{
+begin
+{    $ReturnObjColl = @()
+}
+process
+{   # First lets get a list of local HBAs or iSCSI initiators
+    $iSCSIPort = ( Get-InitiatorPort | where-object {$_.ConnectionType -like 'iSCSI' } ).NodeAddress
+    $FCPorts = @()
+    $wwpns = ( get-initiatorport | where-object { $_.ConnectionType -like 'Fibre Channel'} ).portaddress 
+    foreach ( $wwpn in $wwpns )
+        {   $FCPorts += $wwpn -replace '(..)(?=.)','$1:' 
+        }
+    $ArrayInitiators = Get-NSInitiator
+    # Lets look for this initiator iSCSI
+    if ( (Get-NSGroup).iscsi_enabled )
+            {   # This section only gets executed if the array is an iSCSI based array
+                foreach( $IQN in $ArrayInitiators.IQN )
+                    {   if ( $IQN -like $iSCSIPort )
+                            {   $ReturnObjColl += (Get-NSInitiator | where-object { $_.IQN -like $iSCSIPort } )                
+                            }
+                    }
+            }
+        else 
+            {   # This section only gets executed if the array is a FC based array
+                foreach ( $WWPN in $ArrayInitiators.wwpn )
+                    {   write-host "These are the WWPNs: $WWPN"
+                        foreach ($MyWwpn in $FCPorts)
+                            {   if ( $WWPN -like $MyWwpn )
+                                {   write-host "This WWPN has been found $WWPN vs $MyWwpn"
+                                    $ReturnObjColl += ( Get-NSInitiator | where-object { $_.wwpn -like $MyWwpn} )
+                                }
+                            }
+                    }
+            }
+    $ReturnObjColl = ($ReturnObjColl | select-object -unique)
+    if ( -not $ReturnObjColl )
+            {   write-warning "This IQN is not registered with the Storage Array."
+            }
+    if ( $ReturnObjColl.count -gt 1 )
+        {   write-warning "This Initiator appears in multiple Initiator Groups."
+        }
+}
+end
+{   return $ReturnObjColl
+}
+}
+
+Function New-NSHostInitiatorGroup 
+{   
+
+begin
+{
+}
+process
+{   # First lets make sure that the Initiator group doesnt already exist
+    if ( (Get-NSHostInitiator).count -eq 0 )
+        {   # This Initiator is not present one the array, so I can build a new one.
+            $iSCSIPort = ( Get-InitiatorPort | where-object {$_.ConnectionType -like 'iSCSI' } ).NodeAddress
+            $FCPorts = @()
+            $wwpns = ( get-initiatorport | where-object { $_.ConnectionType -like 'Fibre Channel'} ).portaddress 
+            foreach ( $wwpn in $wwpns )
+                {   $FCPorts += $wwpn -replace '(..)(?=.)','$1:' 
+                }
+            $ArrayInitiators = Get-NSInitiator
+            # Lets look for this initiator iSCSI
+            if ( (Get-NSInitiatorGroup).Name -contains (hostname) )
+                    {   write-warning "An InitiatorGroup already exists with the prescribed Name if : $(hostname)"
+                        return
+                    }
+            [string]$MyIGName = (hostname)
+            [string]$MyIGLabel = (hostname) + '-iqn' 
+            [string]$MyIGLabel = (hostname) + '-wwpn'                                                
+            if ( (Get-NSGroup).iscsi_enabled )
+                    {   # This section only gets executed if the array is an iSCSI based array
+                        # First lets make sure that an Label Doesnt exist with this hostname and the suffix IQN
+                        if ( (Get-NSInitiator).Label -contains (hostname + '-iqn') )
+                                {   write-warning "An Initiator Label already exists with the prescribed IQN Label of : $(hostname)-iqn')"
+                                    return
+                                }
+                            else
+                                {   $MyIG = (New-NSInitiatorGroup -name $MyIGName  -access_protocol iscsi )
+                                    New-NSInitiator -label $MyIGLabel -initiator_group_id ($MyIG.id) -access_protocol iscsi -iqn $iSCSIPort
+                                    return $MyIG    
+                                }
+                    }
+                else 
+                    {   # This section only gets executed if the array is a FC based array
+                        foreach ( $WWPN in $ArrayInitiators.wwpn )
+                            {   write-host "These are the WWPNs: $WWPN"
+                                foreach ($MyWwpn in $FCPorts)
+                                    {   if ( $WWPN -like $MyWwpn )
+                                        {   write-host "This WWPN has been found $WWPN vs $MyWwpn"
+                                            $ReturnObjColl += ( Get-NSInitiator | where-object { $_.wwpn -like $MyWwpn} )
+                                        }
+                                    }
+                            }
+                    }
+        }
+}
+end 
+{
+}
+}

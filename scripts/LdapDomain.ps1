@@ -38,26 +38,16 @@ function New-NSLdapDomain {
 [CmdletBinding()]
 param(  [Parameter(Mandatory = $True)]
         [string] $domain_name,
-
         [string] $domain_description,
-
         [Parameter(Mandatory = $True)]
         [Object[]] $server_uri_list,
-
         [string] $bind_user,
-
         [string] $bind_password,
-
         [string] $base_dn,
-
         [string] $user_search_filter,
-
         [Object[]] $user_search_base_list,
-
         [string] $group_search_filter,
-
         [Object[]] $group_search_base_list,
-
         [Parameter(Mandatory = $True)]
         [ValidateSet( 'OpenLDAP', 'AD')]
         [string] $schema_type
@@ -121,45 +111,20 @@ function Get-NSLdapDomain {
 [CmdletBinding(DefaultParameterSetName='id')]
 param(
     [Parameter(ParameterSetName='id')]
-    [ValidatePattern('([0-9a-f]{2})([0-9a-f]{16})([0-9a-f]{16})([0-9a-f]{8})')]
-    [string] $id,
-
+    [ValidatePattern('([0-9a-f]{42})')]   [string] $id,
+    [Parameter(ParameterSetName='nonId')] [string]$domain_name,
+    [Parameter(ParameterSetName='nonId')] [string]$domain_description,
+    [Parameter(ParameterSetName='nonId')] [bool]$domain_enabled,
+    [Parameter(ParameterSetName='nonId')] [Object[]]$server_uri_list,
+    [Parameter(ParameterSetName='nonId')] [string]$bind_user,
+    [Parameter(ParameterSetName='nonId')] [string]$bind_password,
+    [Parameter(ParameterSetName='nonId')] [string]$base_dn,
+    [Parameter(ParameterSetName='nonId')] [string]$user_search_filter,
+    [Parameter(ParameterSetName='nonId')] [Object[]]$user_search_base_list,
+    [Parameter(ParameterSetName='nonId')] [string]$group_search_filter,
+    [Parameter(ParameterSetName='nonId')] [Object[]]$group_search_base_list,
     [Parameter(ParameterSetName='nonId')]
-    [string]$domain_name,
-
-    [Parameter(ParameterSetName='nonId')]
-    [string]$domain_description,
-
-    [Parameter(ParameterSetName='nonId')]
-    [bool]$domain_enabled,
-
-    [Parameter(ParameterSetName='nonId')]
-    [Object[]]$server_uri_list,
-
-    [Parameter(ParameterSetName='nonId')]
-    [string]$bind_user,
-
-    [Parameter(ParameterSetName='nonId')]
-    [string]$bind_password,
-
-    [Parameter(ParameterSetName='nonId')]
-    [string]$base_dn,
-
-    [Parameter(ParameterSetName='nonId')]
-    [string]$user_search_filter,
-
-    [Parameter(ParameterSetName='nonId')]
-    [Object[]]$user_search_base_list,
-
-    [Parameter(ParameterSetName='nonId')]
-    [string]$group_search_filter,
-
-    [Parameter(ParameterSetName='nonId')]
-    [Object[]]$group_search_base_list,
-
-    [Parameter(ParameterSetName='nonId')]
-    [ValidateSet( 'OpenLDAP', 'AD')]
-    [string]$schema_type
+    [ValidateSet( 'OpenLDAP', 'AD')]      [string]$schema_type
   )
 process
   {
@@ -235,23 +200,14 @@ function Set-NSLdapDomain {
 param(
     [Parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True, Mandatory = $True)]
     [string]$id,
-
     [string] $domain_description,
-
     [bool] $domain_enabled,
-
     [string] $bind_user,
-
     [string] $bind_password,
-
     [string] $base_dn,
-
     [string] $user_search_filter,
-
     [Object[]] $user_search_base_list,
-
     [string] $group_search_filter,
-
     [Object[]] $group_search_base_list
   )
 process {
