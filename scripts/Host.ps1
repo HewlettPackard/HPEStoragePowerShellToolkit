@@ -60,6 +60,7 @@ function Get-NSHostVolume
 param ()
 begin 
 {   $ReturnObjColl = @()
+
 }
 Process
 {   # Process Cluster Physical Disks.
@@ -313,9 +314,14 @@ function Get-NSHostHyperVStorage
 {
 <#
 .SYNOPSIS
-
+    This commnad will gather the list of VMs and return the Backing Volume Information.
 .DESCRIPTION
-
+    This commnad will gather the list of VMs and return the Backing Volume Information. The list of VMs is 
+    gathered from both the Local installation of Hyper-V as well as the List of Clustered VMs if Windows 
+    Failover Clustering is installed. Each VM may have multiple locations for the various aspects of that VM
+    which include the VM Paths, the VMConfigFiles, The VMSnapshot/Checkpoints, and the VM attached VHDs.
+    These Locations are presented as both the PartitionDriveLetters, the Serial Numbers, and the collections
+    of the backing Volumes, incuding a collection of the Nimble Volume IDs that represent these volumes.  
 .EXAMPLE
 #>
 [cmdletbinding()]  
@@ -351,7 +357,6 @@ process
                                         $VM.SmartPagingFileLocation,  $VM.SnapshotFileLocation,
                                         $VM.Path     
                                     )
-            foreach ( $VHDPaths )
             $VariousConfigFiles = $VariousConfigFiles | select-object -unique
             $MyDisks = @()
             $WDSNs = @()
@@ -404,7 +409,7 @@ process
                         }    
                 }
             ### Lets find out if the VM is a Clustered VM
-            $VMIsClustered = [boolean](Get-ClusterResource | where-object {$_.ResourceType -like 'Virtual Machine' } | where-object { $_.OwnerGroup -like $VM.Name })
+            $VMIsClustered = [boolean](Get-ClusterResource | where {$_.ResourceType -like 'Virtual Machine' } | where { $_.OwnerGroup -like $VM.Name })
             ### Lets make sure that ALL of the VMs disks are Cluster Disks
             $AllDisksAreClustered = $True
             foreach( $Serials in $WDSNs )
@@ -454,7 +459,8 @@ begin
 }
 process
 {   # First lets get a list of local HBAs or iSCSI initiators
-    $iSCSIPort = ( Get-InitiatorPort | where-object {$_.ConnectionType -like 'iSCSI' } ).NodeAddress
+    $iSCSIPort =    ( Get-InitiatorPort | where-object {$_.ConnectionType -like 'iSCSI' } ).NodeAddress + `
+                    ( Get-InitiatorPort | where-object {$_.ConnectionType -like '2' }).NodeAddress
     $FCPorts = @()
     $wwpns = ( get-initiatorport | where-object { $_.ConnectionType -like 'Fibre Channel'} ).portaddress 
     foreach ( $wwpn in $wwpns )
