@@ -60,7 +60,6 @@ function Get-NSHostVolume
 param ()
 begin 
 {   $ReturnObjColl = @()
-
 }
 Process
 {   # Process Cluster Physical Disks.
@@ -352,6 +351,7 @@ process
                                         $VM.SmartPagingFileLocation,  $VM.SnapshotFileLocation,
                                         $VM.Path     
                                     )
+            foreach ( $VHDPaths )
             $VariousConfigFiles = $VariousConfigFiles | select-object -unique
             $MyDisks = @()
             $WDSNs = @()
@@ -404,7 +404,7 @@ process
                         }    
                 }
             ### Lets find out if the VM is a Clustered VM
-            $VMIsClustered = [boolean](Get-ClusterResource | where {$_.ResourceType -like 'Virtual Machine' } | where { $_.OwnerGroup -like $VM.Name })
+            $VMIsClustered = [boolean](Get-ClusterResource | where-object {$_.ResourceType -like 'Virtual Machine' } | where-object { $_.OwnerGroup -like $VM.Name })
             ### Lets make sure that ALL of the VMs disks are Cluster Disks
             $AllDisksAreClustered = $True
             foreach( $Serials in $WDSNs )
