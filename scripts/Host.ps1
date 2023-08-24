@@ -60,7 +60,6 @@ function Get-NSHostVolume
 param ()
 begin 
 {   $ReturnObjColl = @()
-
 }
 Process
 {   # Process Cluster Physical Disks.
@@ -136,7 +135,6 @@ Process
                 $ReturnObjColl += ( $FoundClusterDiskObject | convertto-json | convertfrom-json )        
             }
     }
-
     # Now to Obtain the CSVs and Create their Objects
     if ( (Get-WindowsFeature Failover-Clustering).installed )  
         {   $MyCSVs = Get-ClusterSharedVolume
@@ -157,7 +155,7 @@ Process
             {   $TestGuid = ($MyDisk).Path
                 # Need to trim the start and end to expose just the Guid
                 $UnTrimmedGuid = $TestGuid
-                $TestGuid = ( $TestGuid.trimstart('\\?\Disk{') ).trimend('}')
+                $TestGuid = ( $TestGuid.trimstart('\\?\Disk') ).trimend('}')
                 # write-host "Test Guid is $TestGuid"
                 if ( $TestGuid -eq $DiskGuid)
                     {   $FoundWinDisk = $MyDisk
@@ -166,7 +164,6 @@ Process
                         $FoundUnTrimmedGUID = $UnTrimmedGuid
                     }
             }
-
         if ( $FoundWinDisk )
             {   #$FoundWinDisk | Out-string
                 # This will return as valid only if a drive letter is assigned
@@ -177,7 +174,6 @@ Process
                 # Write-host "The Access Paths are below"
                 #$MyPartitionAccessPaths | out-string
                 # Extract the access paths to get to each drive. if they exist
-
                 foreach ( $APath in $MyPartitionAccessPaths )
                     {   #  write-host "Testing $APath against $CSVSharedRoot"
                         if ( $APath.length -ge $CSVSharedRoot.length )
@@ -200,12 +196,10 @@ Process
                 # $CSV 
                 $AllVol = ( Get-Volume | where-object { $_.FileSystem -like 'CSVFS' } )
                 $FoundVol = $AllVol | where { $_.UniqueId -like $RawVolId }
-
                 # write-host "The Volume info is as follows"
                 # $FoundVol | out-string
                 # Lets find the Nimble Volume that matches this Windows Volume
                 $NimVol = ( Get-NSVolume | where-object {$_.serial_number -like $FoundWinDisk.SerialNumber })
-
                 $FoundClusterDiskObject = [ordered]@{
                                     ClusterDiskName     =   $CSV.Name;
                                     ClusterDiskOwnerNode=   $CSV.OwnerNode;
@@ -240,7 +234,6 @@ Process
         #write-host "End of looop"
         #write-host
     }
- 
     # Now lets look for Disks that are not Clustered
     foreach ( $WinVol in (Get-Partition | where-object {$_.DriveLetter} ) )
         {   $DiskNum = $WinVol.DiskNumber
@@ -511,7 +504,8 @@ process
 {   # First lets make sure that the Initiator group doesnt already exist
     if ( (Get-NSHostInitiator).count -eq 0 )
         {   # This Initiator is not present one the array, so I can build a new one.
-            $iSCSIPort = ( Get-InitiatorPort | where-object {$_.ConnectionType -like 'iSCSI' } ).NodeAddress
+            $iSCSIPort =    ( Get-InitiatorPort | where-object {$_.ConnectionType -like 'iSCSI' } ).NodeAddress + `
+                            ( Get-InitiatorPort | where-object {$_.ConnectionType -like '2' } ).NodeAddress
             $FCPorts = @()
             $wwpns = ( get-initiatorport | where-object { $_.ConnectionType -like 'Fibre Channel'} ).portaddress 
             foreach ( $wwpn in $wwpns )
