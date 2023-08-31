@@ -144,11 +144,9 @@ Process
     {   clear-variable FoundWinDisk         -ErrorAction SilentlyContinue
         clear-variable FoundUnTrimmedGuid   -ErrorAction SilentlyContinue
         $RegLocation = "HKLM:\Cluster\Resources\"+($CSV.Id)+"\Parameters"
-        #write-host "Location to look for details = $RegLocation"
         $DiskGuid = get-ItemPropertyValue -Path $RegLocation -name DiskGuid
         # Need to trim the starting { and ending } from the string
         $DiskGuid = ($DiskGuid.trimstart('{')).trimend('}')
-        # Write-host "DiskGuid is $DiskGuid"
         # Now we need to find the WinDisk number that matches the given Guid
         # Clear the variable first so if we dont find one we can test later
         foreach ( $MyDisk in Get-Disk)
@@ -156,48 +154,31 @@ Process
                 # Need to trim the start and end to expose just the Guid
                 $UnTrimmedGuid = $TestGuid
                 $TestGuid = ( $TestGuid.trimstart('\\?\Disk') ).trimend('}')
-                # write-host "Test Guid is $TestGuid"
                 if ( $TestGuid -eq $DiskGuid)
                     {   $FoundWinDisk = $MyDisk
-                        $WindiskNum = $FoundWinDisk.number
-                        # write-host "Found the correct Disk $WindiskNum"                         
+                        # $WindiskNum = $FoundWinDisk.number
                         $FoundUnTrimmedGUID = $UnTrimmedGuid
                     }
             }
         if ( $FoundWinDisk )
-            {   #$FoundWinDisk | Out-string
-                # This will return as valid only if a drive letter is assigned
+            {   # This will return as valid only if a drive letter is assigned
                 $MyDiskGUID = $FoundWinDisk.Path
-                # write-verbose "My Path is $MyDiskGuid"
                 $FoundPartition = Get-Partition -DiskId $MyDiskGUID
                 $MyPartitionAccessPaths = (Get-Partition -DiskId $FoundUnTrimmedGuid).AccessPaths  
-                # Write-host "The Access Paths are below"
-                #$MyPartitionAccessPaths | out-string
                 # Extract the access paths to get to each drive. if they exist
                 foreach ( $APath in $MyPartitionAccessPaths )
-                    {   #  write-host "Testing $APath against $CSVSharedRoot"
-                        if ( $APath.length -ge $CSVSharedRoot.length )
-                        {   # write-host "Length is equal or greater" 
-                            $ShortAPath = $APath.substring(0,$CSVSharedRoot.length)
-                            # write-host "Testing $ShortAPath against $CSVSharedRoot"
+                    {   if ( $APath.length -ge $CSVSharedRoot.length )
+                        {   $ShortAPath = $APath.substring(0,$CSVSharedRoot.length)
                             if ( $ShortAPath -like $CSVSharedRoot )
                                 {   $FoundPath = $APath
-                                    # write-host "The Path for this volume is $FoundPath"                                
                                 } 
                             else 
                                 {   $RawVolId = $APath
-                                    # Write-host "The raw VolId is $APath"
                                 }
                         }
                     }
-                # write-host "RawVolId = $RawVolId"
-                # Obtain the drive letter from the Path variable:
-                # write-host "The CSV Name is $($CSV.name)"
-                # $CSV 
                 $AllVol = ( Get-Volume | where-object { $_.FileSystem -like 'CSVFS' } )
-                $FoundVol = $AllVol | where { $_.UniqueId -like $RawVolId }
-                # write-host "The Volume info is as follows"
-                # $FoundVol | out-string
+                $FoundVol = $AllVol | where-object { $_.UniqueId -like $RawVolId }
                 # Lets find the Nimble Volume that matches this Windows Volume
                 $NimVol = ( Get-NSVolume | where-object {$_.serial_number -like $FoundWinDisk.SerialNumber })
                 $FoundClusterDiskObject = [ordered]@{
@@ -228,11 +209,7 @@ Process
                                     NimbleVolumeThin    =   $NimVol.thinly_provisioned
                         }  
                 $ReturnObjColl += ( $FoundClusterDiskObject | convertto-json | convertfrom-json )
-                        
             }
-        #write-host
-        #write-host "End of looop"
-        #write-host
     }
     # Now lets look for Disks that are not Clustered
     foreach ( $WinVol in (Get-Partition | where-object {$_.DriveLetter} ) )
@@ -250,12 +227,10 @@ Process
             if ( -not $AlreadyExists )
                 {   # This drive must be a non-clustered drive. Lets find its disk \\?\Volume{f99872de-15ce-4a58-8362-d12fd31e0ed1}\        
                     $FoundWinDisk = Get-Disk -Number $DiskNum
-                    # write-host "The Volume info is as follows"
                     # Lets find the Nimble Volume that matches this Windows Volume
                     $NimVol = ( Get-NSVolume | where-object {$_.serial_number -like $FoundWinDisk.SerialNumber })
                     $MyPartitionAccessPaths = $WinVol.AccessPaths  
                     Write-verbose "The Access Paths are below"
-    #                $MyPartitionAccessPaths | out-string
                     # Extract the access paths to get to each drive. if they exist
                     foreach ( $APath in $MyPartitionAccessPaths )
                         {   if ( $APath -like '*:\' )
@@ -296,10 +271,19 @@ Process
                         }
                 }
         }
-
 }
 end
-{    return $ReturnObjColl
+{   # Repackage the object and Add the type
+    $FinalObject = @()
+    foreach ( $Item in $ReturnObjColl)
+        {   $TypedItem = $Item
+            $DataSetType = "NimbleStorage.HostVolume"
+            $TypedItem.PSTypeNames.Insert(0,$DataSetType)
+            $DataSetType = $DataSetType + ".TypeName"
+            $TypedItem.PSObject.TypeNames.Insert(0,$DataSetType) 
+            $FinalObject += $TypedItem
+        }
+    return $FinalObject
 }
 }
 
@@ -402,7 +386,7 @@ process
                         }    
                 }
             ### Lets find out if the VM is a Clustered VM
-            $VMIsClustered = [boolean](Get-ClusterResource | where {$_.ResourceType -like 'Virtual Machine' } | where { $_.OwnerGroup -like $VM.Name })
+            $VMIsClustered = [boolean](Get-ClusterResource | where-object {$_.ResourceType -like 'Virtual Machine' } | where-object { $_.OwnerGroup -like $VM.Name })
             ### Lets make sure that ALL of the VMs disks are Cluster Disks
             $AllDisksAreClustered = $True
             foreach( $Serials in $WDSNs )
@@ -440,7 +424,17 @@ process
         }
 }
 end
-{   return ( $MyListofVMs | convertto-json -depth 5 | convertfrom-json )
+{   $FinalObject = @()
+    foreach ( $Item in $MyListOfVMs)
+        {   $TypedItem = $Item
+            $DataSetType = "NimbleStorage.HostHyperVStorage"
+            $TypedItem.PSTypeNames.Insert(0,$DataSetType)
+            $DataSetType = $DataSetType + ".TypeName"
+            $TypedItem.PSObject.TypeNames.Insert(0,$DataSetType) 
+            $FinalObject += $TypedItem
+        }
+    return $FinalObject
+    #    return ( $MyListofVMs | convertto-json -depth 5 | convertfrom-json )
 }
 }
 
