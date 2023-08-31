@@ -273,7 +273,8 @@ Process
         }
 }
 end
-{   # Repackage the object and Add the type
+{   $ReturnObjColl = ( $ReturnObColl | convertto-json -depth 5 | convertfrom-json )
+    # Repackage the object and Add the type
     $FinalObject = @()
     foreach ( $Item in $ReturnObjColl)
         {   $TypedItem = $Item
