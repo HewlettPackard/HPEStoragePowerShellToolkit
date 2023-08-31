@@ -273,8 +273,7 @@ Process
         }
 }
 end
-{   $ReturnObjColl = ( $ReturnObColl | convertto-json -depth 5 | convertfrom-json )
-    # Repackage the object and Add the type
+{   # Repackage the object and Add the type
     $FinalObject = @()
     foreach ( $Item in $ReturnObjColl)
         {   $TypedItem = $Item
@@ -426,6 +425,7 @@ process
 }
 end
 {   $FinalObject = @()
+    $MyListOfVMs = ( $MyListofVMs | convertto-json -depth 5 | convertfrom-json )
     foreach ( $Item in $MyListOfVMs)
         {   $TypedItem = $Item
             $DataSetType = "NimbleStorage.HostHyperVStorage"
@@ -434,7 +434,7 @@ end
             $TypedItem.PSObject.TypeNames.Insert(0,$DataSetType) 
             $FinalObject += $TypedItem
         }
-    return $FinalObject
+    return $FinalObject 
     #    return ( $MyListofVMs | convertto-json -depth 5 | convertfrom-json )
 }
 }
