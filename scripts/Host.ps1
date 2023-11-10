@@ -153,7 +153,7 @@ Process
             {   $TestGuid = ($MyDisk).Path
                 # Need to trim the start and end to expose just the Guid
                 $UnTrimmedGuid = $TestGuid
-                $TestGuid = ( $TestGuid.trimstart('\\?\Disk') ).trimend('}')
+                $TestGuid = ( ( $TestGuid.trimstart('\\?\Disk') ).trimend('}').trimstart('{') )
                 if ( $TestGuid -eq $DiskGuid)
                     {   $FoundWinDisk = $MyDisk
                         # $WindiskNum = $FoundWinDisk.number
@@ -300,6 +300,23 @@ function Get-NSHostHyperVStorage
     These Locations are presented as both the PartitionDriveLetters, the Serial Numbers, and the collections
     of the backing Volumes, incuding a collection of the Nimble Volume IDs that represent these volumes.  
 .EXAMPLE
+Name            VMPath                            AllDisksAre NimbleVolumeNames
+                                                  NimbleBased
+----            ------                            ----------- -----------------
+Oracle12c       D:\Oracle12c                      False
+PiAlert         C:\ClusterStorage\Volume1         True        {ZClusVM1OnlyCSVOnly1, …
+SCOM2022        C:\ClusterStorage\Volume2         True        {ZClusVM23CSVOnly1, ZCl…
+SCVMM2022       C:\ClusterStorage\Volume2         True        {ZClusVM23CSVOnly1}
+W2016CNode1     C:\ClusterStorage\Volume1\Cluste… True        {ZClusVM1OnlyCSVOnly1}
+W2016CNode2     C:\ClusterStorage\Volume2\W2016C… True        {ZClusVM23CSVOnly1, ZCl…
+W2022CNode1Core D:\W2022CNode1Core                False
+W2022CNode2     C:\ClusterStorage\Volume1\Cluste… True        {ZClusVM1OnlyCSVOnly1}
+W2022CNode2Core D:\W2022CNode2Core                False
+W22DPM19        D:\                               False
+W22SQL19        D:\W22SQL19                       False
+ZoneMinderUbun… D:\ZoneMinderUbuntu1804           False
+
+PS C:\Users\chris\Desktop\PowerShell\HPEStoragePowerShellToolkit>
 #>
 [cmdletbinding()]  
 param ()
@@ -325,20 +342,27 @@ process
     foreach ( $VM in Get-vm )
         {   $MyVHDx = @()
             $MyFilePaths = @()
-            foreach ( $VHDx in (Get-VMHardDiskDrive -VMName $VM.name) )
-                {   $MyVHDx += $VHDx.Path  
-                    $TempVHDx = $VHDx.Path
-                    $MyFilePaths += $TempVHDx.Substring(0,$TempVHDx.LastIndexOf('\')+1)
-                } 
             $VariousConfigFiles= @(     $VM.CheckpointFileLocation,   $VM.ConfigurationLocation,
                                         $VM.SmartPagingFileLocation,  $VM.SnapshotFileLocation,
                                         $VM.Path     
                                     )
+            foreach ( $VHDx in (Get-VMHardDiskDrive -VMName $VM.name) )
+                {   $MyVHDx += $VHDx.Path  
+                    $TempVHDx = $VHDx.Path
+                    $CleanName = $TempVHDx.Substring(0,$TempVHDx.LastIndexOf('\'))
+                    if ( $CleanName.endswith(':') )
+                        { $CleanName += '\' 
+                        }
+                    $MyFilePaths += $CleanName
+                    $VariousConfigFiles += $CleanName
+                } 
             $VariousConfigFiles = $VariousConfigFiles | select-object -unique
             $MyDisks = @()
             $WDSNs = @()
             $NimbleVolumeNames = @()
             $NimbleVolumeIds = @()
+            write-verbose "Contents of VariousConfigFiles"
+            # $VariousConfigFiles | out-string
             foreach ( $CFileType in $VariousConfigFiles )
                 {   if ( -not $CFileType.EndsWith('\') )
                         {   $CFileType = $CFileType + '\'
@@ -507,9 +531,9 @@ process
                 {   $FCPorts += $wwpn -replace '(..)(?=.)','$1:' 
                 }
             $ArrayInitiators = Get-NSInitiator
-            # Lets look for this initiator iSCSI
+            # Lets look for this initiator
             if ( (Get-NSInitiatorGroup).Name -contains (hostname) )
-                    {   write-warning "An InitiatorGroup already exists with the prescribed Name if : $(hostname)"
+                    {   write-warning "An InitiatorGroup already exists with the prescribed Name of : $(hostname)"
                         return
                     }
             [string]$MyIGName = (hostname)

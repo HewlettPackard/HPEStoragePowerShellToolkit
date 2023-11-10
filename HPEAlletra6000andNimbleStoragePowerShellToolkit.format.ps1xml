@@ -8,16 +8,16 @@
             <TableControl>
                 <TableHeaders>
                      <TableColumnHeader>
-                        <Width>7</Width>
+                        <Width>15</Width>
                     </TableColumnHeader>
                     <TableColumnHeader>
-                        <Width>14</Width>
+                        <Width>33</Width>
                     </TableColumnHeader>
                     <TableColumnHeader>
-                        <Width>19</Width>
+                        <Width>11</Width>
                     </TableColumnHeader>
                     <TableColumnHeader>
-                        <Width>24</Width>
+                        <Width>36</Width>
                     </TableColumnHeader>
                 </TableHeaders>
                 <TableRowEntries>
@@ -50,7 +50,7 @@
                         <Width>7</Width>
                     </TableColumnHeader>
                     <TableColumnHeader>
-                        <Width>14</Width>
+                        <Width>28</Width>
                     </TableColumnHeader>
                     <TableColumnHeader>
                         <Width>19</Width>

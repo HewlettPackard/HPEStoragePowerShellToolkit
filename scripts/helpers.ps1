@@ -40,47 +40,23 @@ function Connect-NSGroup {
 
 #>
 [cmdletbinding(DefaultParameterSetName='IgnoreServerCertificate')]
-param(  [Parameter(Mandatory,position=0)]
-        [string]    $Group,
-
-        [Parameter(Mandatory,position=1)]
-                    $Credential=$null,
-
-        [Parameter(ParameterSetName='ImportServerCertificate')]
-        [switch]    $ImportServerCertificate
+param(  [Parameter(Mandatory)]                                  [string]    $Group,
+        [Parameter(Mandatory)]                                              $Credential=$null,
+        [Parameter(ParameterSetName='ImportServerCertificate')] [switch]    $ImportServerCertificate,
+        [Parameter(ParameterSetName='IgnoreServerCertificate')] [switch]    $IgnoreServerCertificate
     )
-DynamicParam {
-        if ($PSEdition -ne 'Core'){ 
-
-                $IgnoreServerCertificateAttribute = New-Object System.Management.Automation.ParameterAttribute
-                $IgnoreServerCertificateAttribute.Mandatory = $false
-                #$IgnoreServerCertificateAttribute.Position = 3
-                $IgnoreServerCertificateAttribute.ParameterSetName = 'IgnoreServerCertificate'
-                $attributeCollection = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
-                $attributeCollection.Add($IgnoreServerCertificateAttribute)  
-                $IgnoreServerCertificateParam = New-Object System.Management.Automation.RuntimeDefinedParameter('IgnoreServerCertificate', [Switch],$attributeCollection)
-                $paramDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-                $paramDictionary.Add('IgnoreServerCertificate', $IgnoreServerCertificateParam)
-                return $paramDictionary
-                }
-            }
 Process{
-        if ($Credential -is [String]) {
-            $Credential = Get-Credential $Credential
-         }
-         $global:Group=$Group
-         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        if ($Credential -is [String]) {     $Credential = Get-Credential $Credential }
+        $global:Group=$Group
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         if ($PSBoundParameters.IgnoreServerCertificate) { $Global:NimbleStorageIgnoreServerCertificate = $true; IgnoreServerCertificate}
-
-        else 
-            {
-                 $Global:NimbleStorageIgnoreServerCertificate = $false
-                 $Global:GlobalImportServerCertificate = $ImportServerCertificate
-                 ValidateServerCertificate $group
-            }
-
+        else    {   $Global:NimbleStorageIgnoreServerCertificate = $false
+                    $Global:GlobalImportServerCertificate = $ImportServerCertificate
+                    ValidateServerCertificate $group
+                }
         Import-LocalizedData -BaseDirectory (Split-Path $PSScriptRoot -parent) -FileName "HPEAlletra6000andNimbleStoragePowerShellToolkit.psd1" -BindingVariable "ModuleData"
         $PSTKVersion = $ModuleData.moduleversion
+        
         $Global:NimbleAppName = "HPEAlletra6000andNimbleStoragePowerShellToolkitV" + $PSTKVersion
         $Global:NimbleStoragePort = 5392
         $Global:BaseUri = "https://$($global:Group):$($NimbleStoragePort)"
@@ -91,6 +67,7 @@ Process{
         catch{
             Write-error "Failed to connect with array $group `n`n $_.Exception.Message" -ErrorAction Stop
         }
+        # These Global Variables are set on a successful connection and used for all further commands as defaults.
         $Global:RestVersion = (Invoke-RestMethod -Uri "$BaseUri/versions").data.name
         $Global:NimbleStorageSession_token = $NimbleStorageTokenData.data.session_token
         $Global:NimbleStorageArray = $group
