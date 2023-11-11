@@ -63,7 +63,7 @@ begin
 }
 Process
 {   # Process Cluster Physical Disks.
-    if ( (Get-WindowsFeature Failover-Clustering).installed )  
+    if ( (Get-WindowsFeature Failover-Clustering).installed -and (get-cluster -erroraction silentlycontinue -warningaction silentlycontinue) )
         {    $MyClusterDisks = Get-ClusterResource | where-object { $_.ResourceType -eq 'Physical Disk'}
         }
     foreach ( $ClusDisk in $MyClusterDisks )
@@ -136,7 +136,7 @@ Process
             }
     }
     # Now to Obtain the CSVs and Create their Objects
-    if ( (Get-WindowsFeature Failover-Clustering).installed )  
+    if ( (Get-WindowsFeature Failover-Clustering).installed -and (get-cluster -erroraction silentlycontinue -warningaction silentlycontinue))  
         {   $MyCSVs = Get-ClusterSharedVolume
             $CSVSharedRoot = (Get-Cluster).SharedVolumesRoot 
         }
