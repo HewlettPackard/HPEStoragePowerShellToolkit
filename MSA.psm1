@@ -1,22 +1,22 @@
-. $PSScriptRoot\scripts\helpers.ps1
-. $PSScriptRoot\scripts\disk.ps1
-. $PSScriptRoot\scripts\disk-group.ps1
-. $PSScriptRoot\scripts\volume.ps1
-. $PSScriptRoot\scripts\initiator.ps1
-. $PSScriptRoot\scripts\map.ps1
-. $PSScriptRoot\scripts\license.ps1     # license, firmware
-. $PSScriptRoot\scripts\system.ps1      # Contains System, Task, Session,  inquiry
-. $PSScriptRoot\scripts\alert.ps1       # Contains Alert, Event, Protocols, Audit
-. $PSScriptRoot\scripts\cache.ps1
-. $PSScriptRoot\scripts\certificate.ps1 # Contains Certificate, Cipher
-. $PSScriptRoot\scripts\chap.ps1
-. $PSScriptRoot\scripts\pool.ps1
-. $PSScriptRoot\scripts\port.ps1
-. $PSScriptRoot\scripts\controller.ps1 
-. $PSScriptRoot\scripts\network.ps1     # DNS, EMAIL, Session, IPv6
-. $PSScriptRoot\scripts\host.ps1 
-. $PSScriptRoot\scripts\hardware.ps1    # Contains  Enclosure, Fan, Power-Supply, Fru
-. $PSScriptRoot\scripts\iscsi.ps1 
+. $PSScriptRoot\MSAscripts\helpers.ps1
+. $PSScriptRoot\MSAscripts\disk.ps1
+. $PSScriptRoot\MSAscripts\disk-group.ps1
+. $PSScriptRoot\MSAscripts\volume.ps1
+. $PSScriptRoot\MSAscripts\initiator.ps1
+. $PSScriptRoot\MSAscripts\map.ps1
+. $PSScriptRoot\MSAscripts\license.ps1     # license, firmware
+. $PSScriptRoot\MSAscripts\system.ps1      # Contains System, Task, Session,  inquiry
+. $PSScriptRoot\MSAscripts\alert.ps1       # Contains Alert, Event, Protocols, Audit
+. $PSScriptRoot\MSAscripts\cache.ps1
+. $PSScriptRoot\MSAscripts\certificate.ps1 # Contains Certificate, Cipher
+. $PSScriptRoot\MSAscripts\chap.ps1
+. $PSScriptRoot\MSAscripts\pool.ps1
+. $PSScriptRoot\MSAscripts\port.ps1
+. $PSScriptRoot\MSAscripts\controller.ps1 
+. $PSScriptRoot\MSAscripts\network.ps1     # DNS, EMAIL, Session, IPv6
+. $PSScriptRoot\MSAscripts\host.ps1 
+. $PSScriptRoot\MSAscripts\hardware.ps1    # Contains  Enclosure, Fan, Power-Supply, Fru
+. $PSScriptRoot\MSAscripts\iscsi.ps1 
 
 
 
