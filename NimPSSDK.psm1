@@ -94,5 +94,5 @@ Export-ModuleMember -Function   Test-NS2PasswordFormat,     Test-Ns2Type,      T
     Unlock-NSUser,                              
     Get-NSArray,                Set-NSArray,                New-NSArray,                Remove-NSArray,             Invoke-NSArrayFailover,     Stop-NSArray,      Reset-NSArray,   
     Get-NSAlarm,                Set-NSAlarm,                                            Remove-NSAlarm,             Clear-NSAlarm,              Undo-NSAlarm,
-    Get-NSHostHyperVStorage,    Get-NSHostVolume,           Get-NSHostInitiator,        New-NSHostInitiatorGroup
-    
+    Get-NSHostHyperVStorage,    Get-NSHostVolume,           Get-NSHostInitiator,        New-NSHostInitiatorGroup,
+    Invoke-NSHostVMFailoverSetPreMigration
