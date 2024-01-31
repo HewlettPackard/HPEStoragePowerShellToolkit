@@ -18,3 +18,4 @@ types and the proper commands will be accessable.
 2). Once you have successfully connected to a specific device type such as NimbleStorage; the toolkit will use parameter sets so allow a single Command
 to create volumes, or alter hosts initiator groups, etc. 
 
+Note that this toolkit is still under development. This readme file will be updated to reflect when this toolkit is ready to be used.
