@@ -8,7 +8,7 @@ Since these toolkits contain no conflicting file names, they can both co-exist i
 
 By default when you load this HPE Storage Toolkit, you wil only obtain a single Connection Command since the toolkits for 
 each seperate toolkit can be confusing and use similar terms. The single command to run will be;
-<code> Connect-HPEStorage -IPorFQDN 1.2.3.4 -credential (get-credentialobject) -arraytype {Nimble/Alletra6K/3Par/Primera/Alletra9K/MSA}</code?
+<code> Connect-HPEStorage -IPorFQDN 1.2.3.4 -credential (get-credentialobject) -arraytype {Nimble/Alletra6K/3Par/Primera/Alletra9K/MSA}</code>
 Once you use this command, the correct individual toolkit will be loaded. i.e. If your arraytype is 3PAR, the master command will load all of the commands that exclusivly work on 3PAR type devices.
 Alternately You can load this individual toolkiits manually using any of the following commands
 <code>Import-Module .\HPEStoragePowerShellToolkit</code>
