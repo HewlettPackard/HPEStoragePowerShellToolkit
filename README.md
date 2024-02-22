@@ -11,9 +11,9 @@ each seperate toolkit can be confusing and use similar terms. The single command
 <code> Connect-HPEStorage -IPorFQDN 1.2.3.4 -credential (get-credentialobject) -arraytype {Nimble/Alletra6K/3Par/Primera/Alletra9K/MSA}</code>
 Once you use this command, the correct individual toolkit will be loaded. i.e. If your arraytype is 3PAR, the master command will load all of the commands that exclusivly work on 3PAR type devices.
 Alternately You can load this individual toolkiits manually using any of the following commands
-<code>Import-Module .\HPEStoragePowerShellToolkit</code>
-<code>Import-Module .\HPEAlletra6000andNimbleStoragePSTK</code>
-<code>Import-Module .\HPEMSA</code>
+* <code>Import-Module .\HPEStoragePowerShellToolkit</code>
+* <code>Import-Module .\HPEAlletra6000andNimbleStoragePSTK</code>
+* <code>Import-Module .\HPEMSA</code>
 
 Each of these toolkit is being upgraded to remove duplicate or depreciated commands, fix bugs, and streamline operations. These new versions are called out below;
 For the changes to the HPEStorage PowerShell Toolkit that supports 3Par/Primera/Alletra9K please refer to the changes files called Changes.A9.md
