@@ -8,41 +8,24 @@
         PowerShellVersion = '5.0'
         FormatsToProcess = 'Formatters/HPEA6NS.format.ps1xml'
         GUID = 'ebdcec82-0636-499c-a1a8-0ed13b843e2d'
-	
-        # Author of this module
         Author = 'Hewlett Packard Enterprise Co.'
-	
-	# Description of the functionality provided by this module
 	Description = 'Windows PowerShell Scripting Toolkit for HPE Alletra 6000 and Nimble Arrays'
-	
-	# List of all files packaged with this module
 	FileList = @()
-
-	# Script files (.ps1) that are run in the caller's environment prior to importing this module.
 	ScriptsToProcess = @()
-	
-	# Functions to export from this module
 	FunctionsToExport = '*'
-
-	# Cmdlets to export from this module
 	CmdletsToExport = '*'
-
-        # Variables to export from this module
 	VariablesToExport = '*'
-	
-	# Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
 	PrivateData = @{
+                PSData = @{
 
-        PSData = @{
+                        # Tags applied to this module. These help with module discovery in online galleries.
+                        Tags = @('Hewlett','Packard','Enterprise','HPEAlletra6000andNimbleStoragePowerShellToolkit','HPE')
 
-                # Tags applied to this module. These help with module discovery in online galleries.
-                Tags = @('Hewlett','Packard','Enterprise','HPEAlletra6000andNimbleStoragePowerShellToolkit','HPE')
+                        # A URL to the main website for this project.
+                        ProjectUri = 'https://github.com/HewlettPackard/HPEStoragePowerShellToolkit/'
 
-                # A URL to the main website for this project.
-                ProjectUri = 'https://github.com/HewlettPackard/HPEStoragePowerShellToolkit/'
-
-                # Readme of this module
-                ReleaseNotes = '
+                        # Readme of this module
+                        ReleaseNotes = '
 HPE Alletra 6000 and Nimble Storage PowerShell Toolkit 3.5.0
 README
 ==================================================

@@ -1,7 +1,5 @@
 ﻿####################################################################################
 ## 	© 2024 Hewlett Packard Enterprise Development LP
-##
-##	File Name:		Connection.psm1
 ##	Description: 	Common Module functions.
 ##		
 ##	Pre-requisites: Needs HPE 3PAR cli.exe for New-CLIConnection
@@ -32,7 +30,7 @@
 
 # Generic connection object 
 
-#Connection Type
+# _Connection Type Defined
 add-type @" 
 public struct _Connection{
 public string SessionId;
@@ -190,7 +188,7 @@ if (!$global:VSVersion) {
 if (!$global:ConfigDir) {
 	$global:ConfigDir = $null 
 }
-$Info = "INFO:"
+ = "INFO:"
 $Debug = "DEBUG:"
 
 Function Invoke-A9CLICommand 
@@ -929,7 +927,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	$WsapiConnection = $global:WsapiConn
 	)
 Begin 
 {	# Test if connection exist
-    Test-WSAPIConnection -WsapiConnection $WsapiConnection
+    Test-WSAPIConnection
 }
 Process 
 {	if ($pscmdlet.ShouldProcess($h.name,"Disconnect from array")) 
@@ -964,7 +962,7 @@ Param(
 	[Parameter(ValueFromPipeline=$true)]	$WsapiConnection = $global:WsapiConnection 
 	)
 Begin 
-{	Test-WSAPIConnection -WsapiConnection $WsapiConnection
+{	Test-WSAPIConnection
 }
 Process 
 {	$Result = $null	
