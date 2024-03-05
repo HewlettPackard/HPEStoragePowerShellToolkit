@@ -505,10 +505,10 @@ Process
 {	$body = @{}	
 	$body["action"] = 4
 	if($Online)					{	$body["online"] = $true	}	
-		if($Priority)	
-		{	if($Priority -eq "HIGH")	{	$body["priority"] = 1	}
-			elseif($Priority -eq "MED")	{	$body["priority"] = 2	}
-			else						{	$body["priority"] = 3	}
+	if($Priority)	
+		{	if		($Priority -eq "HIGH")	{	$body["priority"] = 1	}
+			elseif	($Priority -eq "MED")	{	$body["priority"] = 2	}
+			elseif	($Priority -eq "LOW")	{	$body["priority"] = 3	}
 		}
 	if($AllowRemoteCopyParent)	{	$body["allowRemoteCopyParent"] = $true	}
     $Result = $null	
@@ -573,14 +573,14 @@ Process
 {	$body = @{}	
 	$ParameterBody = @{}
 	$body["action"] = "createSnapshot"
-    If ($SnpVVName) 				{	$ParameterBody["name"] = "$($SnpVVName)"    }    
-	If ($ID) 						{	$ParameterBody["id"] = $ID	}	
-    If ($Comment) 					{	$ParameterBody["comment"] = "$($Comment)"    }
-	If ($ReadOnly) 					{	$ParameterBody["readOnly"] = $true }
-	If ($ExpirationHours) 			{	$ParameterBody["expirationHours"] = $ExpirationHours }
-	If ($RetentionHours) 			{	$ParameterBody["retentionHours"] = "$($RetentionHours)"	}
-	If ($AddToSet) 					{	$ParameterBody["addToSet"] = "$($AddToSet)" }
-	if($ParameterBody.Count -gt 0)	{	$body["parameters"] = $ParameterBody 	}
+    If ($SnpVVName) 				{	$ParameterBody["name"] 				= "$($SnpVVName)"	}    
+	If ($ID) 						{	$ParameterBody["id"] 				= $ID				}	
+    If ($Comment) 					{	$ParameterBody["comment"] 			= "$($Comment)"    	}
+	If ($ReadOnly) 					{	$ParameterBody["readOnly"] 			= $true 			}
+	If ($ExpirationHours) 			{	$ParameterBody["expirationHours"] 	= $ExpirationHours 	}
+	If ($RetentionHours) 			{	$ParameterBody["retentionHours"] 	= "$($RetentionHours)"}
+	If ($AddToSet) 					{	$ParameterBody["addToSet"] 			= "$($AddToSet)" 	}
+	if($ParameterBody.Count -gt 0)	{	$body["parameters"] = $ParameterBody 					}
     $Result = $null	
 	$uri = '/volumesets/'+$VolumeSetName
     $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body 
@@ -630,11 +630,10 @@ Process
     $body["action"] = "createPhysicalCopy"
     If ($DestVolume) 	{	$ParameterBody["destVolume"] = "$($DestVolume)" 	}    
 	If ($SaveSnapshot) 	{	$ParameterBody["saveSnapshot"] = $SaveSnapshot		}
-	if($Priority)	
-		{	if($Priority -eq "HIGH")	{	$body["priority"] = 1	}
-			elseif($Priority -eq "MED")	{	$body["priority"] = 2	}
-			else						{	$body["priority"] = 3	}
-		}
+	if ($Priority)		{	if		($Priority -eq "HIGH")	{	$body["priority"] = 1	}
+							elseif	($Priority -eq "MED")	{	$body["priority"] = 2	}
+							elseif	($Priority -eq "LOW")	{	$body["priority"] = 3	}
+						}
 	if($ParameterBody.Count -gt 0)
 		{	$body["parameters"] = $ParameterBody 
 		}
@@ -681,9 +680,9 @@ Process
 {	$body = @{}	
 	$body["action"] = 3
 	if($Priority)	
-		{	if($Priority -eq "HIGH")	{	$body["priority"] = 1	}
-			elseif($Priority -eq "MED")	{	$body["priority"] = 2	}
-			else						{	$body["priority"] = 3	}
+		{	if		($Priority -eq "HIGH")	{	$body["priority"] = 1	}
+			elseif	($Priority -eq "MED")	{	$body["priority"] = 2	}
+			elseif	($Priority -eq "LOW")	{	$body["priority"] = 3	}
 		}
     $Result = $null	
 	$uri = "/volumesets/" + $VolumeSetName
@@ -727,9 +726,9 @@ Process
 {	$body = @{}	
 	$body["action"] = 4
 	if($Priority)	
-		{	if($Priority -eq "HIGH")	{	$body["priority"] = 1	}
-			elseif($Priority -eq "MED")	{	$body["priority"] = 2	}
-			else						{	$body["priority"] = 3	}
+		{	if		($Priority -eq "HIGH")	{	$body["priority"] = 1	}
+			elseif	($Priority -eq "MED")	{	$body["priority"] = 2	}
+			if		($Priority -eq "LOW")	{	$body["priority"] = 3	}
 		}
     $Result = $null	
 	$uri = "/volumesets/" + $VolumeSetName

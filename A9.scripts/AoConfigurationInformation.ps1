@@ -25,21 +25,12 @@ Begin
 Process 
 {	$Result = $null
 	$dataPS = $null
-	if($AOconfigName)
-		{	$uri = '/aoconfigurations/'+$AOconfigName
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = $Result.content | ConvertFrom-Json
-				}
-		}	
-	else
-		{	$Result = Invoke-WSAPI -uri '/aoconfigurations' -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}	
-		}
+	$uri = '/aoconfigurations'
+	if($AOconfigName)	{	$uri = $uri+'/'+$AOconfigName	}	
+	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
-		{	if($dataPS.Count -eq 0)
+		{	$dataPS = $Result.content | ConvertFrom-Json
+			if($dataPS.Count -eq 0)
 				{	write-verbose "No data Found." 
 					return 
 				}

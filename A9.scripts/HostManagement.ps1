@@ -45,68 +45,48 @@ Function New-Host_WSAPI
   .DESCRIPTION    
   	Creates a new host.
     Any user with Super or Edit role, or any role granted host_create permission, can perform this operation. Requires access to all domains.    
-	
-  .EXAMPLE
+.EXAMPLE
 	New-Host_WSAPI -HostName MyHost
     Creates a new host.
-	
-  .EXAMPLE
+.EXAMPLE
 	New-Host_WSAPI -HostName MyHost -Domain MyDoamin	
 	Create the host MyHost in the specified domain MyDoamin.
-	
-  .EXAMPLE
+.EXAMPLE
 	New-Host_WSAPI -HostName MyHost -Domain MyDoamin -FCWWN XYZ
 	Create the host MyHost in the specified domain MyDoamin with WWN XYZ
-	
-  .EXAMPLE
+.EXAMPLE
 	New-Host_WSAPI -HostName MyHost -Domain MyDoamin -FCWWN XYZ -Persona GENERIC_ALUA
-	
-  .EXAMPLE	
+.EXAMPLE	
 	New-Host_WSAPI -HostName MyHost -Domain MyDoamin -Persona GENERIC
-	
-  .EXAMPLE	
+.EXAMPLE	
 	New-Host_WSAPI -HostName MyHost -Location 1
-		
-  .EXAMPLE
+	.EXAMPLE
 	New-Host_WSAPI -HostName MyHost -IPAddr 1.0.1.0
-		
-  .EXAMPLE	
+	.EXAMPLE	
 	New-Host_WSAPI -HostName $hostName -Port 1:0:1
-	
-  .PARAMETER HostName
+.PARAMETER HostName
 	Specifies the host name. Required for creating a host.
-	
-  .PARAMETER Domain
+.PARAMETER Domain
 	Create the host in the specified domain, or in the default domain, if unspecified.
-	
-  .PARAMETER FCWWN
+.PARAMETER FCWWN
 	Set WWNs for the host.
-	
-  .PARAMETER ForceTearDown
+.PARAMETER ForceTearDown
 	If set to true, forces tear down of low-priority VLUN exports.
-	
-  .PARAMETER ISCSINames
+.PARAMETER ISCSINames
 	Set one or more iSCSI names for the host.
-	
-  .PARAMETER Location
+.PARAMETER Location
 	The host’s location.
-	
-  .PARAMETER IPAddr
+.PARAMETER IPAddr
 	The host’s IP address.
-	
-  .PARAMETER OS
+.PARAMETER OS
 	The operating system running on the host.
-	
-  .PARAMETER Model
+.PARAMETER Model
 	The host’s model.
-	
-  .PARAMETER Contact
+.PARAMETER Contact
 	The host’s owner and contact.
-	
-  .PARAMETER Comment
+.PARAMETER Comment
 	Any additional information for the host.
-	
-  .PARAMETER Persona
+.PARAMETER Persona
 	Uses the default persona "GENERIC_ALUA" unless you specify the host persona.
 	1	GENERIC
 	2	GENERIC_ALUA
@@ -120,8 +100,7 @@ Function New-Host_WSAPI
 	10	HPUX
 	11	WindowsServer
 	12	AIX_ALUA
-	
-  .PARAMETER Port
+.PARAMETER Port
 	Specifies the desired relationship between the array ports and the host for target-driven zoning. Use this option when the Smart SAN license is installed only.
 
   .PARAMETER WsapiConnection 
@@ -375,36 +354,29 @@ Function Add-RemoveHostWWN_WSAPI
   .DESCRIPTION    
   	Add a host WWN from target-driven zoning.
     Any user with Super or Edit role, or any role granted host_create permission, can perform this operation. Requires access to all domains.    
-	
-  .EXAMPLE
+.EXAMPLE
 	Add-RemoveHostWWN_WSAPI -HostName MyHost -FCWWNs "$wwn" -AddWwnToHost
-	
-  .EXAMPLE	
+.EXAMPLE	
 	Add-RemoveHostWWN_WSAPI -HostName MyHost -FCWWNs "$wwn" -RemoveWwnFromHost
-	
-  .PARAMETER HostName
+.PARAMETER HostName
 	Host Name.
 
   .PARAMETER FCWWNs
 	WWNs of the host.
-	
-  .PARAMETER Port
+.PARAMETER Port
 	Specifies the ports for target-driven zoning.
 	Use this option when the Smart SAN license is installed only.
 	This field is NOT supported for the following actions:ADD_WWN_TO_HOST REMOVE_WWN_FROM_H OST,
 	It is a required field for the following actions:ADD_WWN_TO_TZONE REMOVE_WWN_FROM_T ZONE.
-	
-  .PARAMETER AddWwnToHost
+.PARAMETER AddWwnToHost
 	its a action to be performed.
 	Recommended method for adding WWN to host. Operates the same as using a PUT method with the pathOperation specified as ADD.
 
   .PARAMETER RemoveWwnFromHost
 	Recommended method for removing WWN from host. Operates the same as using the PUT method with the pathOperation specified as REMOVE.
-	
-  .PARAMETER AddWwnToTZone   
+.PARAMETER AddWwnToTZone   
 	Adds WWN to target driven zone. Creates the target driven zone if it does not exist, and adds the WWN to the host if it does not exist.
-	
-  .PARAMETER RemoveWwnFromTZone
+.PARAMETER RemoveWwnFromTZone
 	Removes WWN from the targetzone. Removes the target driven zone unless it is the last WWN. Does not remove the last WWN from the host.
 
   .PARAMETER WsapiConnection 
@@ -553,17 +525,14 @@ Function Update-Host_WSAPI
 	
   .DESCRIPTION	    
     Update Host.
-	
-  .EXAMPLE	
+.EXAMPLE	
 	Update-Host_WSAPI -HostName MyHost
 
   .EXAMPLE	
 	Update-Host_WSAPI -HostName MyHost -ChapName TestHostAS	
-	
-  .EXAMPLE	
+.EXAMPLE	
 	Update-Host_WSAPI -HostName MyHost -ChapOperationMode 1 
-	
-  .PARAMETER HostName
+.PARAMETER HostName
 	Neme of the Host to Update.
 
   .PARAMETER ChapName
@@ -571,22 +540,18 @@ Function Update-Host_WSAPI
 
   .PARAMETER ChapOperationMode
 	Initiator or target.
-	
-  .PARAMETER ChapRemoveTargetOnly
+.PARAMETER ChapRemoveTargetOnly
 	If true, then remove target chap only.
-	
-  .PARAMETER ChapSecret
+.PARAMETER ChapSecret
 	The chap secret for the host or the target
-	
-  .PARAMETER ChapSecretHex
+.PARAMETER ChapSecretHex
 	If true, then chapSecret is treated as Hex.
 
   .PARAMETER ChapOperation
 	Add or remove.
 	1) INITIATOR : Set the initiator CHAP authentication information on the host.
 	2) TARGET : Set the target CHAP authentication information on the host.
-	
-  .PARAMETER Descriptors
+.PARAMETER Descriptors
 	The description of the host.
 
   .PARAMETER FCWWN
@@ -606,8 +571,7 @@ Function Update-Host_WSAPI
 	If removing, removes the WWN or iSCSI names from the existing host.
 	1) ADD : Add host chap or path.
 	2) REMOVE : Remove host chap or path.
-	
-  .PARAMETER Persona
+.PARAMETER Persona
 	The ID of the persona to modify the host’s persona to.
 	1	GENERIC
 	2	GENERIC_ALUA
@@ -621,8 +585,7 @@ Function Update-Host_WSAPI
 	10	HPUX
 	11	WindowsServer
 	12	AIX_ALUA
-	
-  .PARAMETER WsapiConnection 
+.PARAMETER WsapiConnection 
     WSAPI Connection object created with Connection command  
 
   .Notes
@@ -889,8 +852,7 @@ Function Remove-Host_WSAPI
         
   .EXAMPLE    
 	Remove-Host_WSAPI -HostName MyHost
-	
-  .PARAMETER HostName 
+.PARAMETER HostName 
 	Specify the name of Host to be removed.
 
   .PARAMETER WsapiConnection 
@@ -974,12 +936,10 @@ Function Get-Host_WSAPI
   .EXAMPLE
 	Get-Host_WSAPI
 	Display a list of host.
-	
-  .EXAMPLE
+.EXAMPLE
 	Get-Host_WSAPI -HostName MyHost
 	Get the information of given host.
-	
-  .PARAMETER HostName
+.PARAMETER HostName
 	Specify name of the Host.
  
   .PARAMETER WsapiConnection 
@@ -1075,30 +1035,23 @@ Function Get-HostWithFilter_WSAPI
   
   .DESCRIPTION
 	Get Single or list of Hotes information with WWN filtering. specify the FCPaths WWN or the iSCSIPaths name.
-	
-  .EXAMPLE
+.EXAMPLE
 	Get-HostWithFilter_WSAPI -WWN 123 
 	Get a host detail with single wwn name
-	
-  .EXAMPLE
+.EXAMPLE
 	Get-HostWithFilter_WSAPI -WWN "123,ABC,000" 
 	Get a host detail with multiple wwn name
-	
-  .EXAMPLE
+.EXAMPLE
 	Get-HostWithFilter_WSAPI -ISCSI 123 
 	Get a host detail with single ISCSI name
-	
-  .EXAMPLE
+.EXAMPLE
 	Get-HostWithFilter_WSAPI -ISCSI "123,ABC,000" 
 	Get a host detail with multiple ISCSI name
-	
-  .EXAMPLE	
+.EXAMPLE	
 	Get-HostWithFilter_WSAPI -WWN "xxx,xxx,xxx" -ISCSI "xxx,xxx,xxx" 
-	
-  .PARAMETER WWN
+.PARAMETER WWN
 	Specify WWN of the Host.
-	
-  .PARAMETER ISCSI
+.PARAMETER ISCSI
 	Specify ISCSI of the Host.
 
   .PARAMETER WsapiConnection 
@@ -1254,30 +1207,23 @@ Function Get-HostPersona_WSAPI
   .EXAMPLE
 	Get-HostPersona_WSAPI
 	Display a list of host persona.
-	
-  .EXAMPLE
+.EXAMPLE
 	Get-HostPersona_WSAPI -Id 10
 	Display a host persona of given id.
-	
-  .EXAMPLE
+.EXAMPLE
 	Get-HostPersona_WSAPI -WsapiAssignedId 100
 	Display a host persona of given Wsapi Assigned Id.
-	
-  .EXAMPLE
+.EXAMPLE
 	Get-HostPersona_WSAPI -Id 10
 	Get the information of given host persona.
-	
-  .EXAMPLE	
+.EXAMPLE	
 	Get-HostPersona_WSAPI -WsapiAssignedId "1,2,3"
 	Multiple Host.
-	
-  .PARAMETER Id
+.PARAMETER Id
 	Specify host persona id you want to query.
-	
-  .PARAMETER WsapiAssignedId
+.PARAMETER WsapiAssignedId
 	To filter by wsapi Assigned Id.
-	
-  .PARAMETER WsapiConnection 
+.PARAMETER WsapiConnection 
     WSAPI Connection object created with Connection command
 	
   .Notes
