@@ -34,7 +34,7 @@ Process
 	If ($Enable) 	{	$body["flashCachePolicy"] = 1	}
 	If ($Disable)	{	$body["flashCachePolicy"] = 2	}
     $Result = $null	
-    $Result = Invoke-WSAPI -uri '/system' -type 'PUT' -body $body -WsapiConnection $WsapiConnection
+    $Result = Invoke-WSAPI -uri '/system' -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return $Result		
@@ -92,7 +92,7 @@ Process
 	If($NoCheckSCMSize) 		{	$FlashCacheBody["noCheckSCMSize"] = $NoCheckSCMSize }
 	if($FlashCacheBody.Count -gt 0){$body["flashCache"] = $FlashCacheBody }
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/' -type 'POST' -body $body -WsapiConnection $WsapiConnection
+    $Result = Invoke-WSAPI -uri '/' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -121,7 +121,7 @@ Begin
 {	Test-WSAPIConnection
 }
 Process 
-{	$Result = Invoke-WSAPI -uri '/flashcache' -type 'DELETE' -WsapiConnection $WsapiConnection
+{	$Result = Invoke-WSAPI -uri '/flashcache' -type 'DELETE' 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green

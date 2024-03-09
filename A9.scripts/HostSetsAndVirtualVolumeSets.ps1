@@ -38,7 +38,7 @@ Function New-A9HostSet
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$HostSetName,	  
-		[Parameter(Position=1, ValueFromPipeline=$true)]		[String]	$Comment,	
+		[Parameter(ValueFromPipeline=$true)]		[String]	$Comment,	
 		[Parameter(ValueFromPipeline=$true)]					[String]	$Domain, 
 		[Parameter(ValueFromPipeline=$true)]					[String[]]	$SetMembers
 )
@@ -273,7 +273,7 @@ Process
 	$Query="?query=""  """
 	if($HostSetName)
 		{	$uri = '/hostsets/'+$HostSetName
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' -WsapiConnection $WsapiConnection
+			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
 			If($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 					write-host "Cmdlet executed successfully" -foreground green
@@ -365,7 +365,7 @@ Function New-A9VvSet
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]		[String]	$VVSetName,	  
-		[Parameter(Position=1, ValueFromPipeline=$true)]			[String]	$Comment,	
+		[Parameter(ValueFromPipeline=$true)]			[String]	$Comment,	
 		[Parameter(ValueFromPipeline=$true)]						[String]	$Domain, 
 		[Parameter(ValueFromPipeline=$true)]						[String[]]	$SetMembers
 )
@@ -379,7 +379,7 @@ Process
 	If ($Domain)    {	$body["domain"] = "$($Domain)"	 	}
 	If ($SetMembers){	$body["setmembers"] = $SetMembers   }
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/volumesets' -type 'POST' -body $body -WsapiConnection $WsapiConnection
+    $Result = Invoke-WSAPI -uri '/volumesets' -type 'POST' -body $body 
 	$status = $Result.StatusCode	
 	if($status -eq 201)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -614,7 +614,7 @@ Process
 	$Query="?query=""  """
 	if($VVSetName)
 	{	$uri = '/volumesets/'+$VVSetName
-		$Result = Invoke-WSAPI -uri $uri -type 'GET' -WsapiConnection $WsapiConnection		 
+		$Result = Invoke-WSAPI -uri $uri -type 'GET'		 
 		If($Result.StatusCode -eq 200)
 		{	$dataPS = $Result.content | ConvertFrom-Json
 			write-host "Cmdlet executed successfully" -foreground green
@@ -690,7 +690,7 @@ Function Set-A9VvSetFlashCachePolicy
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VvSet,
-		[Parameter(Position=1, ValueFromPipeline=$true)]		[Switch]	$Enable,
+		[Parameter(ValueFromPipeline=$true)]		[Switch]	$Enable,
 		[Parameter(ValueFromPipeline=$true)]					[Switch]	$Disable
 	)
 Begin 
@@ -710,7 +710,7 @@ Process
 						}		
     $Result = $null
 	$uri = '/volumesets/'+$VvSet
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body -WsapiConnection $WsapiConnection
+    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green

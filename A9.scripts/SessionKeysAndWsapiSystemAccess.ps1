@@ -151,7 +151,7 @@ Process
 	$uri = '/credentials/'+$key
 	$data = $null
 	Write-Verbose "Request: Request to close wsapi connection (Invoke-WSAPI)." 
-	$data = Invoke-WSAPI -uri $uri -type 'DELETE' -WsapiConnection $WsapiConnection
+	$data = Invoke-WSAPI -uri $uri -type 'DELETE' 
 	$global:WsapiConnection = $null
 	return $data
 	If ($global:3parkey) 			

@@ -12,9 +12,9 @@ Function Get-A9AOConfiguration
 .PARAMETER AOconfigName
 	AO configuration name.
 .EXAMPLE
-	Get-AOConfiguration_WSAPI
+	Get-A9AOConfiguration
 .EXAMPLE
-	Get-AOConfiguration_WSAPI -AOconfigName XYZ
+	Get-A9AOConfiguration -AOconfigName XYZ
 #>
 [CmdletBinding()]
 Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$AOconfigName

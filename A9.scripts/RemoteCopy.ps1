@@ -38,7 +38,7 @@ Function New-A9RCopyGroup
 [CmdletBinding()]
 Param(
 	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$RcgName,
-	[Parameter(Position=1, ValueFromPipeline=$true)]		[String]	$Domain,
+	[Parameter(ValueFromPipeline=$true)]		[String]	$Domain,
 	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetName,
 	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
 	[ValidateSet('SYNC','PERIODIC','ASYNC')]				[String]	$Mode,
@@ -67,7 +67,7 @@ Process
 	if($TargetsBody.Count -gt 0){	$TargetsObj += $TargetsBody 	}
 	if($TargetsObj.Count -gt 0)	{	$body["targets"] = $TargetsObj 	}
     $Result = $null	
-    $Result = Invoke-WSAPI -uri '/remotecopygroups' -type 'POST' -body $body -WsapiConnection $WsapiConnection
+    $Result = Invoke-WSAPI -uri '/remotecopygroups' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -187,7 +187,7 @@ Process
 	If ($TargetName) 	{	$body["targetName"] = "$($TargetName)"    }		
     $Result = $null	
 	$uri = "/remotecopygroups/" + $GroupName
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body -WsapiConnection $WsapiConnection
+    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
 		return $Result				
@@ -234,7 +234,7 @@ Function Sync-A9RCopyGroup
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,	  
-		[Parameter(Position=1, ValueFromPipeline=$true)]		[switch]	$NoResyncSnapshot,
+		[Parameter(ValueFromPipeline=$true)]		[switch]	$NoResyncSnapshot,
 		[Parameter(ValueFromPipeline=$true)]					[String]	$TargetName,
 		[Parameter(ValueFromPipeline=$true)]					[switch]	$FullSync
 )
@@ -249,7 +249,7 @@ Process
 	If ($FullSync) 			{	$body["fullSync"] = $true    }	
 	$Result = $null	
 	$uri = "/remotecopygroups/" + $GroupName
-	$Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body -WsapiConnection $WsapiConnection
+	$Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
 		return $Result		
@@ -284,7 +284,7 @@ Function Remove-A9RCopyGroup
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,		
-		[Parameter(Position=1, ValueFromPipeline=$true)]		[boolean]	$KeepSnap	
+		[Parameter(ValueFromPipeline=$true)]		[boolean]	$KeepSnap	
 	)
 Begin 
 {	Test-WSAPIConnection
@@ -366,7 +366,7 @@ Function Update-A9RCopyGroup
 [CmdletBinding()]
 Param(
 	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-	[Parameter(Position=1, ValueFromPipeline=$true)]	[String]	$LocalUserCPG,
+	[Parameter(ValueFromPipeline=$true)]	[String]	$LocalUserCPG,
 	[Parameter(ValueFromPipeline=$true)]	[String]	$LocalSnapCPG,	  
 	[Parameter(ValueFromPipeline=$true)]	[String]	$TargetName,
 	[Parameter(ValueFromPipeline=$true)]	[String]	$RemoteUserCPG,
@@ -435,7 +435,7 @@ Process
 	if($TargetsBody.Count -gt 0)	{	$body["targets"] = $TargetsBody 	}	    
     $Result = $null
 	$uri = '/remotecopygroups/'+ $GroupName
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body -WsapiConnection $WsapiConnection
+    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return Get-A9System				
@@ -488,7 +488,7 @@ Function Update-A9RCopyGroupTarget
 [CmdletBinding()]
 Param(
 	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$GroupName,
-	[Parameter(Position=1, Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetName,
+	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetName,
 	[Parameter(ValueFromPipeline=$true)]								[int]		$SnapFrequency,
 	[Parameter(ValueFromPipeline=$true)]								[Boolean]	$RmSnapFrequency,
 	[Parameter(ValueFromPipeline=$true)]								[int]		$SyncPeriod,
@@ -520,7 +520,7 @@ Process
 	if($PoliciesBody.Count -gt 0)	{	$body["policies"] = $PoliciesBody	}
     $Result = $null
 	$uri = '/remotecopygroups/'+ $GroupName+'/targets/'+$TargetName
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body -WsapiConnection $WsapiConnection	
+    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 	
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return Get-A9System		
@@ -570,7 +570,7 @@ Function Restore-A9RCopyGroup
 [CmdletBinding()]
 Param(
 	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-	[Parameter(Position=1, ValueFromPipeline=$true)]		[String]	$TargetName,
+	[Parameter(ValueFromPipeline=$true)]		[String]	$TargetName,
 	[Parameter(ValueFromPipeline=$true)]					[Switch]	$SkipStart,
 	[Parameter(ValueFromPipeline=$true)]					[Switch]	$SkipSync,
 	[Parameter(ValueFromPipeline=$true)]					[Switch]	$DiscardNewData,
@@ -637,7 +637,7 @@ Function Add-A9VvToRCopyGroup
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$GroupName,
-		[Parameter(Position=1, Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeName,
+		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeName,
 		[Parameter(ValueFromPipeline=$true)]								[String]	$SnapshotName,
 		[Parameter(ValueFromPipeline=$true)]								[boolean]	$VolumeAutoCreation,
 		[Parameter(ValueFromPipeline=$true)]								[boolean]	$SkipInitialSync,
@@ -670,7 +670,7 @@ Process
 	if($TargetsBody.Count -gt 0)	{	$body["targets"] = $TargetsBody 	}
     $Result = $null
 	$uri = "/remotecopygroups/"+$GroupName+"/volumes"
-    $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body -WsapiConnection $WsapiConnection
+    $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -837,7 +837,7 @@ Process
     $Result = $null
 	$uri = '/remotecopytargets/'+ $TargetName
 	Write-DebugLog "Request: Request to Update-RCopyTarget_WSAPI (Invoke-WSAPI)." $Debug
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body -WsapiConnection $WsapiConnection
+    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
 	}
@@ -985,7 +985,7 @@ Function New-A9SnapRcGroupVv
 [CmdletBinding()]
 Param(
 		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-		[Parameter(Position=1, ValueFromPipeline=$true)]		[String]	$VolumeName,
+		[Parameter(ValueFromPipeline=$true)]		[String]	$VolumeName,
 		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NewVvNmae,
 		[Parameter(ValueFromPipeline=$true)]					[String]	$Comment,
 		[Parameter(ValueFromPipeline=$true)]					[int]		$ExpirationHous,
@@ -1051,7 +1051,7 @@ Process
 	{	Write-Error "Failure:  While Executing Get-A9RCopyInfo." 
 		return $Result.StatusDescription
 	}
-  }	
+}	
 }
 
 Function Get-A9RCopyTarget 

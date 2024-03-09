@@ -299,7 +299,7 @@ Process
 	if($VvPolicies.Count -gt 0)	{	$body["policies"] 				= $VvPolicies 			}
 	$Result = $null
 	$uri = '/volumes/'+$VVName 
-	$Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body -WsapiConnection $WsapiConnection
+	$Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			if($NewName)	{	return Get-Vv_WSAPI -VVName $NewName	}
@@ -342,7 +342,7 @@ Process
 	$dataPS = $null			
 	if($VVName)
 	{	$uri = '/volumespacedistribution/'+$VVName
-		$Result = Invoke-WSAPI -uri $uri -type 'GET' -WsapiConnection $WsapiConnection	
+		$Result = Invoke-WSAPI -uri $uri -type 'GET' 
 		if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 		}
@@ -394,7 +394,7 @@ Process
 	If ($SizeMiB)	{	$body["sizeMiB"] = $SizeMiB }
     $Result = $null	
 	$uri = '/volumes/'+$VVName 
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body -WsapiConnection $WsapiConnection
+    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
 		return Get-Vv_WSAPI -VVName $VVName		
@@ -473,81 +473,31 @@ Process
 					}
 			}
 	If ($SnapCPG) {	$body["snapCPG"] = "$($SnapCPG)" }
-	else
-	{
-		If ($TuneOperation -eq "SNP_CPG") 
-		{
-			return "Stop Executing Compress-Vv_WSAPI, SnapCPG is Required with TuneOperation 1"
+	else{	If ($TuneOperation -eq "SNP_CPG") 
+				{	return "Stop Executing Compress-Vv_WSAPI, SnapCPG is Required with TuneOperation 1"
+				}
 		}
-	}
 	If ($ConversionOperation) 
-	{	
-		if($ConversionOperation -eq "TPVV")
-		{
-			$body["conversionOperation"] = 1			
+		{	if($ConversionOperation -eq "TPVV")		{	$body["conversionOperation"] = 1	}
+			elseif($ConversionOperation -eq "FPVV")	{	$body["conversionOperation"] = 2	}
+			elseif($ConversionOperation -eq "TDVV")	{	$body["conversionOperation"] = 3	}
+			elseif($ConversionOperation -eq "CONVERT_TO_DECO")	{	$body["conversionOperation"] = 4	}
+			else	{	Return "FAILURE : -ConversionOperation :- $ConversionOperation is an Incorrect used TPVV,FPVV,TDVV or CONVERT_TO_DECO only. "	}          
 		}
-		elseif($ConversionOperation -eq "FPVV")
-		{
-			$body["conversionOperation"] = 2			
-		}
-		elseif($ConversionOperation -eq "TDVV")
-		{
-			$body["conversionOperation"] = 3			
-		}
-		elseif($ConversionOperation -eq "CONVERT_TO_DECO")
-		{
-			$body["conversionOperation"] = 4			
-		}
-		else
-		{ 
-			Write-DebugLog "Stop: Exiting  Compress-Vv_WSAPI   since -ConversionOperation $ConversionOperation in incorrect "
-			Return "FAILURE : -ConversionOperation :- $ConversionOperation is an Incorrect used TPVV,FPVV,TDVV or CONVERT_TO_DECO only. "
-		}          
-    }
-	If ($KeepVV) 
-	{
-		$body["keepVV"] = "$($KeepVV)"
-    }
-	If ($Compression) 
-	{
-		$body["compression"] = $false
-    } 
-	
-	#$json = $body | ConvertTo-Json  -Compress -Depth 10
-	#write-host " Body = $json"
-	
-    #init the response var
+	If ($KeepVV) 		{	$body["keepVV"] = "$($KeepVV)"    }
+	If ($Compression) 	{	$body["compression"] = $false    } 
     $Result = $null	
 	$uri = '/volumes/'+$VVName 
-	
-    #Request
-	Write-DebugLog "Request: Request to Compress-Vv_WSAPI : $VVName (Invoke-WSAPI)." $Debug
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body -WsapiConnection $WsapiConnection
-	
+    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
-	{
-		write-host ""
-		write-host "Cmdlet executed successfully" -foreground green
-		write-host ""
-		Write-DebugLog "SUCCESS: Volumes:$VVName successfully Tune" $Info
-				
-		# Results		
-		Get-Vv_WSAPI -VVName $VVName		
-		Write-DebugLog "End: Compress-Vv_WSAPI" $Debug
-	}
+		{	write-host "Cmdlet executed successfully" -foreground green
+			Get-Vv_WSAPI -VVName $VVName		
+		}
 	else
-	{
-		write-host ""
-		Write-Error "Failure:  While Tuning Volumes: $VVName " 
-		write-host ""
-		Write-DebugLog "FAILURE : While Tuning Volumes: $VVName " $Info
-		
-		return $Result.StatusDescription
-	}
-  }
-
-  End {  }
-
+		{	Write-Error "Failure:  While Tuning Volumes: $VVName " 
+			return $Result.StatusDescription
+		}
+}
 }
 
 Function Get-A9Vv 
@@ -624,7 +574,7 @@ Process
 	$Query="?query=""  """	
 	if($VVName)
 		{	$uri = '/volumes/'+$VVName
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' -WsapiConnection $WsapiConnection
+			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
 			If($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 				}		
@@ -679,12 +629,8 @@ Process
 				{ 	write-error "FAILURE : -ProvisioningType :- $ProvisioningType is an Incorrect Provisioning Type [FULL | TPVV | SNP | PEER | UNKNOWN | TDVV | DDS]  can be used only . " 
 					Return 
 				}			
-			if($WWN -Or $UserCPG -Or $SnapCPG -Or $CopyOf)
-				{	$Query = $Query.Insert($Query.Length-3," OR provisioningType EQ $PEnum")
-				}
-			else
-				{	$Query = $Query.Insert($Query.Length-3," provisioningType EQ $PEnum")
-				}
+			if($WWN -Or $UserCPG -Or $SnapCPG -Or $CopyOf)	{	$Query = $Query.Insert($Query.Length-3," OR provisioningType EQ $PEnum")	}
+			else											{	$Query = $Query.Insert($Query.Length-3," provisioningType EQ $PEnum")	}
 		}
 	$uri = '/volumes'
 	if($WWN -Or $UserCPG -Or $SnapCPG -Or $CopyOf -Or $ProvisioningType)	{	$uri = $uri+'/'+$Query }

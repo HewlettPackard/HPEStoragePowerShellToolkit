@@ -54,7 +54,7 @@ Process
 					return 
 				}
 			$uri = '/ports/'+$NSP
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' -WsapiConnection $WsapiConnection
+			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 					write-host "Cmdlet executed successfully" -foreground green
@@ -93,7 +93,7 @@ Process
 						}
 				}
 			$uri = '/ports/'+$Query
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' -WsapiConnection $WsapiConnection
+			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
 			If($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 				}
@@ -107,7 +107,7 @@ Process
 				}
 		}
 	else
-		{	$Result = Invoke-WSAPI -uri '/ports' -type 'GET' -WsapiConnection $WsapiConnection
+		{	$Result = Invoke-WSAPI -uri '/ports' -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members	
 					write-host "Cmdlet executed successfully" -foreground green
@@ -236,7 +236,7 @@ Process
 								}				
 						}
 					$uri = '/portdevices'+$Query
-					$Result = Invoke-WSAPI -uri $uri -type 'GET' -WsapiConnection $WsapiConnection
+					$Result = Invoke-WSAPI -uri $uri -type 'GET' 
 					If($Result.StatusCode -eq 200)
 						{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 						}
@@ -251,7 +251,7 @@ Process
 				}
 			else
 				{	$uri = '/portdevices/all/'+$NSP
-					$Result = Invoke-WSAPI -uri $uri -type 'GET' -WsapiConnection $WsapiConnection
+					$Result = Invoke-WSAPI -uri $uri -type 'GET' 
 					If($Result.StatusCode -eq 200)
 						{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 						}	
@@ -297,7 +297,7 @@ Process
 	$dataPS = $null
 	$uri = '/portdevices/targetdrivenzones/'
 	if($NSP)	{	$uri = $uri+'/'+$NSP}	
-	$Result = Invoke-WSAPI -uri  -type 'GET' -WsapiConnection $WsapiConnection	
+	$Result = Invoke-WSAPI -uri  -type 'GET' 	
 	If($Result.StatusCode -eq 200)
 	{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 		if($dataPS.Count -gt 0)
@@ -507,7 +507,7 @@ Process
 	$body["vlanTag"] = $VlanTag   
     $Result = $null
 	$uri = "/ports/"+$NSP+"/iSCSIVlans/"
-	$Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body -WsapiConnection $WsapiConnection
+	$Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body 
 	$status = $Result.StatusCode	
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
