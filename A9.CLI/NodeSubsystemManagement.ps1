@@ -2,23 +2,7 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Test-CLIObject 
-{
-Param( 	[string]$ObjectType, 
-		[string]$ObjectName ,
-		[string]$ObjectMsg = $ObjectType
-	)
-process
-{	$IsObjectExisted = $True
-	$ObjCmd = $ObjectType -replace ' ', '' 
-	$Cmds = "show$ObjCmd $ObjectName"	
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmds
-	if ($Result -like "no $ObjectMsg listed")	{	$IsObjectExisted = $false	}
-	return $IsObjectExisted
-}	
-} 
-
-Function Find-Node
+Function Find-A9Node_CLI
 {
 <#
 .SYNOPSIS
@@ -63,12 +47,12 @@ process
 	if($Drive)	{	$Cmd += " -drive " 		}
 	if($Bat)	{	$Cmd += " -bat " 		}
 	if($NodeID) {	$Cmd += " $NodeID " 	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Find-System
+Function Find-A9System_CLI
 {
 <#
 .SYNOPSIS
@@ -100,12 +84,12 @@ process
 	if($T) 			{	$Cmd += " -t $T " }
 	if($NodeList) 	{	$Cmd += " -nodes $NodeList " }
 	if($NoCage)		{	$Cmd += " -nocage " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Get-System
+Function Get-A9System_CLI
 {
 <#
 .SYNOPSIS
@@ -117,6 +101,7 @@ Function Get-System
 	Command displays the Storage system information.such as system name, model, serial number, and system capacity information.
 .EXAMPLE
     Get-System -SystemCapacity
+
 	Lists Storage system space information in MB(1024^2 bytes)
 .EXAMPLE	
 	Get-System -DevType FC
@@ -129,17 +114,14 @@ Function Get-System
 .PARAMETER SystemCapacity
 	Displays the system capacity information in MiB.
 .PARAMETER vvSpace
-	Displays the system capacity information in MiB with an emphasis on
-	VVs.
+	Displays the system capacity information in MiB with an emphasis on VVs.
 .PARAMETER Domainspace
 	Displays the system capacity information broken down by domain in MiB.
 .PARAMETER Descriptor
 	Displays the system descriptor properties.
 .PARAMETER DevType FC|NL|SSD
-	Displays the system capacity information where the disks must have a
-	device type string matching the specified device type; either Fast
-	Class (FC), Nearline (NL), Solid State Drive (SSD). This option can
-	only be issued with -space or -vvspace.
+	Displays the system capacity information where the disks must have a device type string matching the specified device type; either Fast
+	Class (FC), Nearline (NL), Solid State Drive (SSD). This option can only be issued with -space or -vvspace.
 #>
 [CmdletBinding()]
 param(	
@@ -164,7 +146,7 @@ process
     if ($Descriptor) 		{	$sysinfocmd += " -desc "	}
     if ($DevType) 			{    $sysinfocmd += " -devtype $DevType"}
     write-verbose "Get system information " 
-    $Result3 = Invoke-CLICommand -Connection $SANConnection -cmds  $sysinfocmd	
+    $Result3 = Invoke-CLICommand -cmds  $sysinfocmd	
     if ($Fan -or $DomainSpace -or $sysinfocmd -eq "showsys ") 
 		{	$incre = "True"
 			$FirstCnt = 1
@@ -233,7 +215,7 @@ process
 }
 }
 
-Function Ping-RCIPPorts
+Function Ping-A9RCIPPorts_CLI
 {
 <#
 .SYNOPSIS
@@ -288,12 +270,12 @@ process
 	else		{	return "IP_address required "}
 	if($NSP)	{	$Cmds +=" $NSP "	}
 	else		{	return "NSP required Ex: 1:1:1 "}
-	$result = Invoke-CLICommand -Connection $SANConnection  -cmds $Cmds	
+	$result = Invoke-CLICommand  -cmds $Cmds	
 	return $result	
 }
 }
 
-Function Set-Battery
+Function Set-A9Battery_CLI
 {
 <#
 .SYNOPSIS
@@ -343,12 +325,12 @@ process
 	if($Node_ID)		{	$Cmd += " $Node_ID "	}
 	if($Powersupply_ID)	{	$Cmd += " $Powersupply_ID "}
 	if($Battery_ID)		{	$Cmd += " $Battery_ID "}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
 
-Function Set-FCPorts
+Function Set-A9FCPorts_CLI
 {
 <#
 .SYNOPSIS
@@ -385,7 +367,7 @@ process
 		{	if ( $p -match $Port_Pattern)
 				{	Write-Verbose  "Set port $p offline " 
 					$Cmds = "controlport offline -f $p"
-					Invoke-CLICommand -Connection $SANConnection  -cmds $Cmds
+					Invoke-CLICommand -cmds $Cmds
 					$PortConfig = "point"
 					$PortMsg    = "Fabric ( Point mode)"
 					if ($DirectConnect)
@@ -394,10 +376,10 @@ process
 						}
 					Write-Verbose  "Configuring port $p as $PortMsg " 
 					$Cmds= "controlport config host -ct $PortConfig -f $p"
-					Invoke-CLICommand -Connection $SANConnection  -cmds $Cmds
+					Invoke-CLICommand -cmds $Cmds
 					Write-Verbose  "Resetting port $p " 
 					$Cmds="controlport rst -f $p"
-					Invoke-CLICommand -Connection $SANConnection  -cmds $Cmds	
+					Invoke-CLICommand -cmds $Cmds	
 					Write-Verbose  "FC port $P is configured" 
 					return 
 				}
@@ -408,7 +390,7 @@ process
 }
 } 
 
-Function Set-HostPorts
+Function Set-A9HostPorts_CLI
 {
 <#
 .SYNOPSIS
@@ -481,14 +463,14 @@ process
 			else			{	return "NetMask required with RCIPConfiguration Option"	}
 			if($NSP)		{	$Cmds=" $NSP "		}
 			else			{	return "NSP required with RCIPConfiguration Option"		}
-			$result = Invoke-CLICommand -Connection $SANConnection  -cmds $Cmds
+			$result = Invoke-CLICommand -cmds $Cmds
 			return $result
 		}
 	if ($RCFCConfiguration)
 		{	$Cmds="controlport rcfc init -f "	
 			if($NSP)	{	$Cmds=" $NSP "	}
 			else		{	return "NSP required with RCFCConfiguration Option"	}
-			$result = Invoke-CLICommand -Connection $SANConnection  -cmds $Cmds
+			$result = Invoke-CLICommand -cmds $Cmds
 			return $result
 		}
 	if ($FCConfigFile)
@@ -499,13 +481,13 @@ process
 						{	$Port = $p.Controller 
 							Write-Verbose  "Set port $Port offline " 
 							$Cmds = "controlport offline -f $Port"
-							Invoke-CLICommand -Connection $SANConnection  -cmds $Cmds
+							Invoke-CLICommand -cmds $Cmds
 							Write-Verbose  "Configuring port $Port as host " 
 							$Cmds= "controlport config host -ct point -f $Port"
-							Invoke-CLICommand -Connection $SANConnection  -cmds $Cmds
+							Invoke-CLICommand -cmds $Cmds
 							Write-Verbose  "Resetting port $Port " 
 							$Cmds="controlport rst -f $Port"
-							Invoke-CLICommand -Connection $SANConnection  -cmds $Cmds
+							Invoke-CLICommand -cmds $Cmds
 						}
 				}	
 			else
@@ -529,15 +511,15 @@ process
 							if ($bDHCP)
 								{	Write-Verbose  "Enabling DHCP on port $Port " 
 									$Cmds = "controliscsiport dhcp on -f $Port"
-									Invoke-CLICommand -Connection $SANConnection  -cmds $Cmds			
+									Invoke-CLICommand -cmds $Cmds			
 								}
 							else
 								{	Write-Verbose  "Setting IP address and subnet on port $Port " 
 									$Cmds = "controliscsiport addr $IPAddr $IPSubnet -f $Port"
-									Invoke-CLICommand -Connection $SANConnection  -cmds $Cmds
+									Invoke-CLICommand -cmds $Cmds
 									Write-Verbose  "Setting gateway on port $Port " 
 									$Cmds = "controliscsiport gw $IPgw -f $Port"
-									Invoke-CLICommand -Connection $SANConnection  -cmds $Cmds
+									Invoke-CLICommand -cmds $Cmds
 								}				
 						}
 				}	
@@ -547,7 +529,8 @@ process
 		}			
 } 
 }
-Function Set-NodeProperties
+
+Function Set-A9NodeProperties_CLI
 {
 <#
 .SYNOPSIS
@@ -574,12 +557,12 @@ process
 	if($PS_ID)		{	$Cmd += " $PS_ID "	}	
 	if($S) 			{	$Cmd += " -s $S " 	} 
 	if($Node_ID) 	{	$Cmd += " $Node_ID "}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Set-NodesDate
+Function Set-A9NodesDate_CLI
 {
 <#
 .SYNOPSIS
@@ -611,12 +594,12 @@ process
 		{	$Cmd += " -tzlist "
 			if($TzGroup) 	{	$Cmd += " $TzGroup " }
 		}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
 
-Function Set-SysMgr
+Function Set-A9SysMgr_CLI
 {
 <#
 .SYNOPSIS
@@ -664,12 +647,12 @@ process
 	if($Force_iderecovery) 	{	$Cmd += " force_iderecovery " 	} 
 	if($Force_idewipe) 		{	$Cmd += " force_idewipe " 		}
 	if($Export_vluns) 		{	$Cmd += " export_vluns " 		}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Show-Battery
+Function Show-A9Battery_CLI
 {
 <#
 .SYNOPSIS
@@ -713,7 +696,7 @@ process
 	$Cmd = " showbattery "
 	if($Listcols)
 		{	$Cmd += " -listcols "
-			$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+			$Result = Invoke-CLICommand -cmds  $Cmd
 			return $Result
 		}
 	if($Showcols)	{	$Cmd += " -showcols $Showcols "}
@@ -724,7 +707,7 @@ process
 	if($Svc)		{	$Cmd += " -svc "	}
 	if($Node_ID)	{	$Cmd += " $Node_ID "}
 	$Cmd
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($D)	{	Return  $Result		}
 			else	{	$tempFile = [IO.Path]::GetTempFileName()
@@ -750,7 +733,7 @@ process
 }
 }
 
-Function Show-EEProm
+Function Show-A9EEProm_CLI
 {
 <#
 .SYNOPSIS
@@ -781,12 +764,12 @@ process
 	$Cmd = " showeeprom "
 	if($Dead)	{	$Cmd += " -dead "}
 	if($Node_ID)	{	$Cmd += " $Node_ID "}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Get-SystemInformation
+Function Get-A9SystemInformation_CLI
 {
 <#
 .SYNOPSIS
@@ -826,7 +809,7 @@ process
 			if($a -eq $l)
 				{	$sysinfocmd+=" -$option "
 					if($Option -eq "date")
-						{	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  "showdate"
+						{	$Result = Invoke-CLICommand -cmds  "showdate"
 							write-verbose "Get system date information " 
 							write-verbose "Get system fan information cmd -> showdate " 
 							$tempFile = [IO.Path]::GetTempFileName()
@@ -847,7 +830,7 @@ process
 							return
 						}	
 					else
-						{	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $sysinfocmd
+						{	$Result = Invoke-CLICommand -cmds  $sysinfocmd
 							return $Result
 						}
 				}
@@ -856,13 +839,13 @@ process
 				}
 		}
 	else
-		{	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $sysinfocmd
+		{	$Result = Invoke-CLICommand -cmds  $sysinfocmd
 			return $Result 
 		}		
 }
 }
 
-Function Show-FCOEStatistics
+Function Show-A9FCOEStatistics_CLI
 {
 <#
 .SYNOPSIS
@@ -900,8 +883,7 @@ param(	[Parameter()]		[String]	$D,
 		[Parameter()]		[switch]	$Counts,
 		[Parameter()]		[switch]	$Fullcounts,
 		[Parameter()]		[switch]	$Prev,
-		[Parameter()]		[switch]	$Begin,
-		[Parameter(ValueFromPipeline=$true)]		$SANConnection = $global:SANConnection
+		[Parameter()]		[switch]	$Begin
 )
 Process
 {	if ( -not $(Test-A9CLI) ) 	{	return }
@@ -915,13 +897,13 @@ Process
 	if($Fullcounts)	{	$Cmd += " -fullcounts " }
 	if($Prev)		{	$Cmd += " -prev " }
 	if($Begin)		{	$Cmd += " -begin " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Write-Verbose  "Executing function : Show-FCOEStatistics command -->"  
 	Return $Result
 }
 }
 
-Function Show-Firmwaredb
+Function Show-A9Firmwaredb_CLI
 {
 <#
 .SYNOPSIS
@@ -954,12 +936,12 @@ Process
 	if($VendorName)	{	$Cmd += " -n $VendorName "}
 	if($L)			{	$Cmd += " -l "	}
 	if($All)		{	$Cmd += " -all " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Show-TOCGen
+Function Show-A9TOCGen_CLI
 {
 <#
 .SYNOPSIS
@@ -972,12 +954,12 @@ param()
 process
 {	if ( -not $(Test-A9CLI) ) 	{	return }
 	$Cmd = " showtocgen "
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Show-iSCSISessionStatistics
+Function Show-A9iSCSISessionStatistics_CLI
 {
 <#
 .SYNOPSIS  
@@ -1035,7 +1017,7 @@ process
 	if($PortList)	{	$cmd+=" -ports $PortList "	}	
 	if($Previous)	{	$cmd+=" -prev "	}
 	if($Begin)		{	$cmd+=" -begin "	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+	$Result = Invoke-CLICommand -cmds  $cmd
 	if($Result -match "Total" -and $Result.Count -gt 5)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count - 3 
@@ -1103,7 +1085,7 @@ process
 }
 }
 
-Function Show-iSCSIStatistics
+Function Show-A9iSCSIStatistics_CLI
 {
 <#
 .SYNOPSIS  
@@ -1178,7 +1160,7 @@ process
 	if($Fullcounts)	{	$cmd+=" -fullcounts "	}
 	if($Prev)		{	$cmd+=" -prev "	}
 	if($Begin)		{	$cmd+=" -begin "	}	
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+	$Result = Invoke-CLICommand -cmds  $cmd
 	write-verbose "  Executing  Show-iSCSIStatistics command that displays information iSNS table for iSCSI ports in the system  " 	
 	if($Result -match "Total" -or $Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -1224,7 +1206,7 @@ process
 } 
 }
 
-Function Show-NetworkDetail
+Function Show-A9NetworkDetail_CLI
 {
 <#
 .SYNOPSIS
@@ -1244,12 +1226,12 @@ process
 {	if ( -not $(Test-A9CLI) ) 	{	return }
 	$Cmd = " shownet "
 	if($D)	{	$Cmd += " -d "}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Show-NodeEnvironmentStatus
+Function Show-A9NodeEnvironmentStatus_CLI
 {
 <#
 .SYNOPSIS
@@ -1272,12 +1254,12 @@ process
 {	if ( -not $(Test-A9CLI) ) 	{	return }
 	$Cmd = " shownodeenv "
 	if($Node_ID)	{	$Cmd += " -n $Node_ID "} 
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Show-iSCSISession
+Function Show-A9iSCSISession_CLI
 {
 <#
 .SYNOPSIS
@@ -1309,7 +1291,7 @@ process
 	if ($Detailed)	{	$cmd+=" -d "	}
 	if ($ConnectionState)	{	$cmd+=" -state "	}
 	if ($NSP)	{	$cmd+=" $NSP "	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+	$Result = Invoke-CLICommand -cmds  $cmd
 	if($Result -match "total")
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -2 		
@@ -1331,7 +1313,7 @@ process
 }
 }
 
-Function Show-NodeProperties
+Function Show-A9NodeProperties_CLI
 {
 <#
 .SYNOPSIS
@@ -1429,7 +1411,7 @@ process
 	$Cmd = " shownode "
 	if($Listcols)
 		{	$Cmd += " -listcols "
-			$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+			$Result = Invoke-CLICommand -cmds  $Cmd
 			return $Result
 		}
 	if($Showcols)	{	$Cmd += " -showcols $Showcols " }
@@ -1447,7 +1429,7 @@ process
 	if($Uptime)		{	$Cmd += " -uptime " }
 	if($Svc) 		{	$Cmd += " -svc " }
 	if($Node_ID)	{	$Cmd += " $Node_ID " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($I -Or $D -Or $VerboseD)	{	Return  $Result	}
 			else{	$tempFile = [IO.Path]::GetTempFileName()
@@ -1493,7 +1475,7 @@ process
 } 
 }
 
-Function Show-Portdev
+Function Show-A9Portdev_CLI
 {
 <#
 .SYNOPSIS
@@ -1606,12 +1588,12 @@ process
 	if($PFC)		{	$Cmd += " -pfc " }
 	if($PG)			{	$Cmd += " -pg " }
 	if($NSP)		{ 	$Cmd += " $NSP " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
 
-Function Show-PortISNS
+Function Show-A9PortISNS_CLI
 {
 <#
 .SYNOPSIS   
@@ -1632,7 +1614,7 @@ process
 {	if ( -not $(Test-A9CLI) ) 	{	return }
 	$cmd= "showportisns "	
 	if ($NSP)	{	$cmd+=" $NSP "	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+	$Result = Invoke-CLICommand -cmds  $cmd
 	write-verbose "  Executing  Show-PortISNS command that displays information iSNS table for iSCSI ports in the system  " 
 	if($Result -match "N:S:P")
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -1652,7 +1634,7 @@ process
 }	
 } 
 
-Function Show-SysMgr
+Function Show-A9SysMgrCLI
 {
 <#
 .SYNOPSIS
@@ -1673,12 +1655,12 @@ process
 	$Cmd = " showsysmgr "
 	if($D)	{	$Cmd += " -d "	}
 	if($L)	{	$Cmd += " -l "}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Show-SystemResourcesSummary
+Function Show-A9SystemResourcesSummary_CLI
 {
 <#
 .SYNOPSIS
@@ -1691,12 +1673,12 @@ param()
 process
 {	if ( -not $(Test-A9CLI) ) 	{	return }
 	$Cmd = " showtoc "
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 } 
 
-Function Start-NodeRescue
+Function Start-A9NodeRescue_CLI
 {
 <#
 .SYNOPSIS
@@ -1715,12 +1697,12 @@ process
 {	if ( -not $(Test-A9CLI) ) 	{	return }
 	$Cmd = " startnoderescue "
 	if($Node)	{	$Cmd += " -node $Node " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Get-HostPorts
+Function Get-A9HostPorts_CLI
 {
 <#
 .SYNOPSIS
@@ -1837,7 +1819,7 @@ process
 					else		{	return " -d can only be used with -sfp"}
 				}
 	if($NSP)	{	$Cmds+=" $NSP"	}
-	$Result=Invoke-CLICommand -Connection $SANConnection  -cmds $Cmds 	
+	$Result=Invoke-CLICommand  -cmds $Cmds 	
 	$LastItem = $Result.Count -2  
 	if($SFP -and $D){	return $Result	}
 	if($Result -match "N:S:P")
@@ -1863,7 +1845,7 @@ process
 }
 }
 
-Function Get-Node
+Function Get-A9Node_CLI
 {
 <#
 .SYNOPSIS
@@ -1971,7 +1953,7 @@ process
 	$Cmd = " shownode "
 	if($Listcols)
 		{	$Cmd += " -listcols "
-			$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+			$Result = Invoke-CLICommand -cmds  $Cmd
 			return $Result
 		}
 	if($Showcols){	$Cmd += " -showcols $Showcols " }
@@ -1990,7 +1972,7 @@ process
 	if($Uptime)	{	$Cmd += " -uptime " }
 	if($Svc) 	{	$Cmd += " -svc " 	}
 	if($NodeID)	{ 	$Cmd += " $NodeID " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -1  
@@ -2023,7 +2005,7 @@ process
 }
 }
 
-Function Get-Target
+Function Get-A9Target_CLI
 {
 <#
 .SYNOPSIS
@@ -2087,12 +2069,12 @@ process
 	if($Node_WWN){	$Cmd += " $Node_WWN " }
 	if($LUN_WWN){	$Cmd += " $LUN_WWN " }
 	write-host "$Cmd"
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
 
-Function Show-A9PortARP
+Function Show-A9PortARP_CLI
 {
 <#
 .SYNOPSIS   
@@ -2113,7 +2095,7 @@ Process
 {	if ( -not $(Test-A9CLI) ) 	{	return }
 	$cmd= "showportarp "	
 	if ($NSP)	{	$cmd+=" $NSP "	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+	$Result = Invoke-CLICommand -cmds  $cmd
 	if($Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count 		
@@ -2133,7 +2115,7 @@ Process
 } 
 }
 
-Function Show-A9UnrecognizedTargetsInfo
+Function Show-A9UnrecognizedTargetsInfo_CLI
 {
 <#
 .SYNOPSIS
@@ -2199,12 +2181,12 @@ Process
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "}
 	if($Node_WWN)	{	$Cmd += " $Node_WWN "}
 	if($LUN_WWN)	{	$Cmd += " $LUN_WWN "}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Test-A9Port
+Function Test-A9Por_CLI
 {
 <#
 .SYNOPSIS
@@ -2264,7 +2246,7 @@ Process
     if ($PortNSP) 		{    $cmd += "$PortNSP"		   }
     elseif (($Node) -and ($Slot) -and ($Port)) {    $cmd += "$($Node):$($Slot):$($Port)"    }
     else 				{           Return "Node, slot and plot details are required" }
-    $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+    $Result = Invoke-CLICommand -cmds  $cmd
     return 	$Result	
 }
 }

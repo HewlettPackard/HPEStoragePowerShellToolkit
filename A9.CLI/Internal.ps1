@@ -1,384 +1,200 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
-## 	Permission is hereby granted, free of charge, to any person obtaining a
-## 	copy of this software and associated documentation files (the "Software"),
-## 	to deal in the Software without restriction, including without limitation
-## 	the rights to use, copy, modify, merge, publish, distribute, sublicense,
-## 	and/or sell copies of the Software, and to permit persons to whom the
-## 	Software is furnished to do so, subject to the following conditions:
-##
-## 	The above copyright notice and this permission notice shall be included
-## 	in all copies or substantial portions of the Software.
-##
-## 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-## 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-## 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
-## 	THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-## 	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-## 	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-## 	OTHER DEALINGS IN THE SOFTWARE.
-##
-##	File Name:		Internal.psm1
-##	Description: 	Internal cmdlets
-##		
-##	Created:		January 2020
-##	Last Modified:	May 2021
-##	History:		v3.0 - Created
-##                  v3.1 - Modified to add HPE Alletra 9000
-#####################################################################################
-
-
-$Debug = "DEBUG:"
 $global:VSLibraries = Split-Path $MyInvocation.MyCommand.Path
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 #### FUNCTION Close-Connection
-##Function Close-Connection
+Function Close-A9Connection
 {
 <#
-  .SYNOPSIS   
-   Session Management Command to close the connection
-   
-  .DESCRIPTION
-   Session Management Command to close the connection
-   
-  .EXAMPLE
+.SYNOPSIS   
+	Session Management Command to close the connection
+.DESCRIPTION
+	Session Management Command to close the connection
+.EXAMPLE
 	Close-Connection
-		
-  .Notes
-    NAME: Close-Connection  
-    LASTEDIT: January 2020
-    KEYWORDS: Close-Connection 
-   
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
- #>
- [CmdletBinding()]
-	param(
-				
-		[Parameter(ValueFromPipeline=$true)]
-        $SANConnection = $global:SANConnection       
-	)
-	
-	Write-DebugLog "Start : in Close-Connection function " "INFO:"
-	
-	if (($global:WsapiConnection) -or ($global:ConnectionType -eq "WSAPI")){
-		return "A WSAPI Session is enabled. Use Close-WSAPIConnection cmdlet to close and exit from the current WSAPI session"
-	}
-	
-	if (!$SANConnection){
-		return "No active CLI/PoshSSH session/connection exists"
-	}	
-	
+#>
+[CmdletBinding()]
+param()
+Process	
+{	if (($global:WsapiConnection) -or ($global:ConnectionType -eq "WSAPI"))
+		{	return "A WSAPI Session is enabled. Use Close-WSAPIConnection cmdlet to close and exit from the current WSAPI session"
+		}
+	if (!$SANConnection)	{	return "No active CLI/PoshSSH session/connection exists"	}		
 	$SANCOB = $SANConnection		
 	$clittype = $SANCOB.CliType
-	$SecnId =""
-	
-	if($clittype -eq "SshClient")
-	{
-		$SecnId = $SANCOB.SessionId
-	}
-	
+	$SecnId =""	
+	if($clittype -eq "SshClient")	{	$SecnId = $SANCOB.SessionId	}
 	$global:SANConnection = $null
-	#write-host "$global:SANConnection"
 	$SANConnection = $global:SANConnection
-	
-	#write-host "$SANConnection"
 	if(!$SANConnection)
-	{		
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		#write-host "$Validate1"
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			#write-host "$Validate2"
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or Connection object username, password, IPAaddress are null/empty. Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting GGet-UserConnection since SAN connection object values are null/empty" $Debug
-				if($clittype -eq "SshClient")
-				{
-					$res = Remove-SSHSession -Index $SecnId 
+		{	$Validate1 = Test-CLIConnection $SANConnection
+			if($Validate1 -eq "Failed")
+				{	$Validate2 = Test-CLIConnection $global:SANConnection
+					if($Validate2 -eq "Failed")
+						{	Write-Verbose "Connection object is null/empty or Connection object username, password, IPAaddress are null/empty. Create a valid connection object using New-CLIConnection or New-PoshSshConnection"
+							if ($clittype -eq "SshClient")			{	$res = Remove-SSHSession -Index $SecnId 	}
+							if ($global:SANConnection -eq $null)	{	$global:ConnectionType = $null				}
+							return "Success : Exiting SAN connection session End`n"
+						}
 				}
-				
-				write-host ""				
-				# Set to the default prompt as current path
-				if ($global:SANConnection -eq $null)
-				{
-					$global:ConnectionType = $null
-					Function global:prompt {(Get-Location).Path + ">"}
-				}
-				return "Success : Exiting SAN connection session End`n"
-			}
-		}
-	}	
-} # End Function Close-Connection
+		}	
+}
+}
 
-########################################
-##### FUNCTION Get-CmdList   ###########
-########################################
-Function Get-CmdList{
+Function Get-A9CmdList
+{
 <#
-  .SYNOPSIS
+.SYNOPSIS
     Get list of  all HPE Alletra 9000, Primera and 3PAR PowerShell cmdlets
-  
-  .DESCRIPTION
+.DESCRIPTION
     Note : This cmdlet (Get-CmdList) is deprecated and will be removed in a 
 	subsequent release of PowerShell Toolkit. Consider using the cmdlet (Get-CmdList) instead.
-  
     Get list of  all HPE Alletra 9000, Primera and 3PAR PowerShell cmdlets 
-        
-  .EXAMPLE
+.EXAMPLE
     Get-CmdList	
+
 	List all available HPE Alletra 9000, Primera and 3PAR PowerShell cmdlets.
 .EXAMPLE
     Get-CmdList -WSAPI
+
 	List all available HPE Alletra 9000, Primera and 3PAR PowerShell WSAPI cmdlets only.
 .EXAMPLE
     Get-CmdList -CLI
-	List all available HPE Alletra 9000, Primera and 3PAR PowerShell CLI cmdlets only.
-	
-  .Notes
-    NAME:  Get-CmdList
-    CREATED: 05/14/2015
-    LASTEDIT: 05/26/2020
-    KEYWORDS: Get-CmdList
-   
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
 
- #>
- [CmdletBinding()]
-	param(
-		[Parameter()]
-		[Switch]
-		$CLI, 
-		
-		[Parameter()]
-		[Switch]
-		$WSAPI
+	List all available HPE Alletra 9000, Primera and 3PAR PowerShell CLI cmdlets only.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[Switch]	$CLI, 	
+		[Parameter()]	[Switch]	$WSAPI
 	)
- 
-    $Array = @()
-    
-    #$psToolKitModule = (Get-Module PowerShellToolkitForHPEPrimeraAnd3PAR);
-	$psToolKitModule = (Get-Module HPEStoragePowerShellToolkit);
+Process
+{   $Array = @()
+    $psToolKitModule = (Get-Module HPEStoragePowerShellToolkit);
     $nestedModules = $psToolKitModule.NestedModules;
     $noOfNestedModules = $nestedModules.Count;
-    
     $totalCmdlets = 0;
     $totalCLICmdlets = 0;
     $totalWSAPICmdlets = 0;
     $totalDeprecatedCmdlets = 0;
-
-    # If chosen to select all WSAPI cmdlets
     if($WSAPI)
-    {
-        foreach ($nestedModule in $nestedModules[0..$noOfNestedModules])
-        {        
-            $ExpCmdlets = $nestedModule.ExportedCommands;
-
-            if ($nestedModule.Path.Contains("\WSAPI\"))
-            {    
-                foreach ($h in $ExpCmdlets.GetEnumerator()) 
-                {            
-                    $Result1 = "" | Select CmdletName, CmdletType, ModuleVersion, SubModule, Module, Remarks
-                    $Result1.CmdletName = $($h.Key);            
-                    $Result1.ModuleVersion = $psToolKitModule.Version;
-                    $Result1.CmdletType = "WSAPI";
-                    $Result1.SubModule = $nestedModule.Name;
-                    $Result1.Module = $psToolKitModule.Name;
-                    
-                    If ($nestedModule.Name -eq "HPE3PARPSToolkit-WSAPI")
-                    {
-                        $Result1.Remarks = "Deprecated";
-                        $totalDeprecatedCmdlets += 1;
-                    }
-                    $totalCmdlets += 1;
-                    $totalWSAPICmdlets += 1;
-                
-                    $Array += $Result1
-                }
-            }
-        }
-    }
-    # If chosen to select all CLI cmdlets
+		{	foreach ($nestedModule in $nestedModules[0..$noOfNestedModules])
+				{	$ExpCmdlets = $nestedModule.ExportedCommands;
+					if ($nestedModule.Path.Contains("\WSAPI\"))
+						{	foreach ($h in $ExpCmdlets.GetEnumerator()) 
+								{	$Result1 = "" | Select-object CmdletName, CmdletType, ModuleVersion, SubModule, Module, Remarks
+									$Result1.CmdletName = $($h.Key);            
+									$Result1.ModuleVersion = $psToolKitModule.Version;
+									$Result1.CmdletType = "WSAPI";
+									$Result1.SubModule = $nestedModule.Name;
+									$Result1.Module = $psToolKitModule.Name;
+									If ($nestedModule.Name -eq "HPE3PARPSToolkit-WSAPI")
+										{	$Result1.Remarks = "Deprecated";
+											$totalDeprecatedCmdlets += 1;
+										}
+									$totalCmdlets += 1;
+									$totalWSAPICmdlets += 1;
+									$Array += $Result1
+								}
+						}
+				}
+		}
     elseif($CLI)
-    {
-        foreach ($nestedModule in $nestedModules[0..$noOfNestedModules])
-        {        
-            $ExpCmdlets = $nestedModule.ExportedCommands;    
-                
-            if ($nestedModule.Path.Contains("\CLI\"))
-            {    
-                foreach ($h in $ExpCmdlets.GetEnumerator()) 
-                {            
-                    $Result1 = "" | Select CmdletName, CmdletType, ModuleVersion, SubModule, Module, Remarks
-                    $Result1.CmdletName = $($h.Key);            
-                    $Result1.ModuleVersion = $psToolKitModule.Version;
-                    $Result1.CmdletType = "CLI";
-                    $Result1.SubModule = $nestedModule.Name;
-                    $Result1.Module = $psToolKitModule.Name;
-                    
-                    If ($nestedModule.Name -eq "HPE3PARPSToolkit-CLI")
-                    {
-                        $Result1.Remarks = "Deprecated";
-                        $totalDeprecatedCmdlets += 1;
-                    }
-
-                    $totalCmdlets += 1;
-                    $totalCLICmdlets += 1;
-                
-                    $Array += $Result1
-                }
-            }
-        }
-    }
-    # If chosen to select all cmdlets
+		{	foreach ($nestedModule in $nestedModules[0..$noOfNestedModules])
+				{	$ExpCmdlets = $nestedModule.ExportedCommands;    
+					if ($nestedModule.Path.Contains("\CLI\"))
+						{	foreach ($h in $ExpCmdlets.GetEnumerator()) 
+								{	$Result1 = "" | Select-Object CmdletName, CmdletType, ModuleVersion, SubModule, Module, Remarks
+									$Result1.CmdletName = $($h.Key);            
+									$Result1.ModuleVersion = $psToolKitModule.Version;
+									$Result1.CmdletType = "CLI";
+									$Result1.SubModule = $nestedModule.Name;
+									$Result1.Module = $psToolKitModule.Name;
+									If ($nestedModule.Name -eq "HPE3PARPSToolkit-CLI")
+										{	$Result1.Remarks = "Deprecated";
+											$totalDeprecatedCmdlets += 1;
+										}
+									$totalCmdlets += 1;
+									$totalCLICmdlets += 1;
+									$Array += $Result1
+								}
+						}
+				}
+		}
     else
-    {    
-        foreach ($nestedModule in $nestedModules[0..$noOfNestedModules])
-        {        
-            if ($nestedModule.Path.Contains("\CLI\") -or $nestedModule.Path.Contains("\WSAPI\"))        
-            {
-                $ExpCmdlets = $nestedModule.ExportedCommands;    
-                
-                foreach ($h in $ExpCmdlets.GetEnumerator()) 
-                {            
-                    $Result1 = "" | Select CmdletName, CmdletType, ModuleVersion, SubModule, Module, Remarks
-                    $Result1.CmdletName = $($h.Key);            
-                    $Result1.ModuleVersion = $psToolKitModule.Version;                
-                    $Result1.SubModule = $nestedModule.Name;
-                    $Result1.Module = $psToolKitModule.Name;                
-                    $Result1.CmdletType = if ($nestedModule.Path.Contains("\CLI\")) {"CLI"} else {"WSAPI"}
-
-                    If ($nestedModule.Name -eq "HPE3PARPSToolkit-WSAPI" -or $nestedModule.Name -eq "HPE3PARPSToolkit-CLI")
-                    {
-                        $Result1.Remarks = "Deprecated";
-                        $totalDeprecatedCmdlets += 1;
-                    }
-
-                    $totalCmdlets += 1;                            
-                    $Array += $Result1
-                }            
-            }        
-        }
-    }
-
+		{	foreach ($nestedModule in $nestedModules[0..$noOfNestedModules])
+				{	if ($nestedModule.Path.Contains("\CLI\") -or $nestedModule.Path.Contains("\WSAPI\"))        
+						{	$ExpCmdlets = $nestedModule.ExportedCommands;    
+							foreach ($h in $ExpCmdlets.GetEnumerator()) 
+								{   $Result1 = "" | Select-object CmdletName, CmdletType, ModuleVersion, SubModule, Module, Remarks
+									$Result1.CmdletName = $($h.Key);            
+									$Result1.ModuleVersion = $psToolKitModule.Version;                
+									$Result1.SubModule = $nestedModule.Name;
+									$Result1.Module = $psToolKitModule.Name;                
+									$Result1.CmdletType = if ($nestedModule.Path.Contains("\CLI\")) {"CLI"} else {"WSAPI"}
+									If ($nestedModule.Name -eq "HPE3PARPSToolkit-WSAPI" -or $nestedModule.Name -eq "HPE3PARPSToolkit-CLI")
+										{	$Result1.Remarks = "Deprecated";
+											$totalDeprecatedCmdlets += 1;
+										}
+									$totalCmdlets += 1;                            
+									$Array += $Result1
+								}            
+						}        
+				}
+		}
     $Array | Format-Table
     $Array = $null;
     Write-Host "$totalCmdlets Cmdlets listed. ($totalDeprecatedCmdlets are deprecated)";
+}
+}
 
- }# Ended Get-CmdList
- 
- #########################################################################
-################### FUNCTION Get-FcPorts ################################
-#########################################################################
-Function Get-FcPorts
+Function Get-A9FcPorts_CLI
 {
 <#
-   .SYNOPSIS
+.SYNOPSIS
 	Query to get FC ports
-
-   .DESCRIPTION
+.DESCRIPTION
 	Get information for FC Ports
- 
-   .PARAMETER SANConnection
-	Connection String to the array
-  	
-   .EXAMPLE
-	Get-FcPorts 
-			
-  .Notes
-    NAME:  Get-FcPorts
-    LASTEDIT: January 2020
-    KEYWORDS: Get-FcPorts
-   
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
- #Requires HPE 3PAR cli.exe
- #>
- 
+#>
+
 [CmdletBinding()]
-	Param(	
-			[Parameter()]
-			[_SANConnection]
-			$SANConnection=$Global:SANConnection
-		)
-	$plinkresult = Test-PARCli -SANConnection $SANConnection 
-	if($plinkresult -match "FAILURE :")
-	{
-		write-debuglog "$plinkresult" "ERR:" 
-		return $plinkresult
-	}
-			
-	Write-Host "--------------------------------------`n"
+Param()
+Begin
+{	Test-A9CLIConnection
+}	
+Process
+{	Write-Host "--------------------------------------`n"
 	Write-host "Controller,WWN"	
-
-	$ListofPorts = Get-HostPorts -SANConnection $SANConnection| where { ( $_.Type -eq "host" ) -and ($_.Protocol -eq "FC")}
-
+	$ListofPorts = Get-HostPorts -SANConnection $SANConnection| where-object { ( $_.Type -eq "host" ) -and ($_.Protocol -eq "FC")}
 	$Port_Pattern = "(\d):(\d):(\d)"							# Pattern matches value of port: 1:2:3
 	$WWN_Pattern = "([0-9a-f][0-9a-f])" * 8						# Pattern matches value of WWN
-
 	foreach ($Port in $ListofPorts)
-	{
-		$NSP  = $Port.Device
-		#$SW = $NSP.Split(':')[-1]	
-		
-		$NSP = $NSP -replace $Port_Pattern , 'N$1:S$2:P$3'
-		
-		$WWN = $Port.Port_WWN
-		$WWN = $WWN -replace $WWN_Pattern , '$1:$2:$3:$4:$5:$6:$7:$8'
+		{	$NSP  = $Port.Device
+			$NSP = $NSP -replace $Port_Pattern , 'N$1:S$2:P$3'
+			$WWN = $Port.Port_WWN
+			$WWN = $WWN -replace $WWN_Pattern , '$1:$2:$3:$4:$5:$6:$7:$8'
+			Write-Host "$NSP,$WWN"
+		}
+} 
+}
 
-		Write-Host "$NSP,$WWN"
-		Write-host ""
-	}
-} # END FUNCTION Get-FcPorts
-
-###########################################################################
-####################### FUNCTION Get-FcPortsToCsv #########################
-###########################################################################
-
-Function Get-FcPortsToCsv
+Function Get-A9FcPortsToCsv_CLI
 {
 <#
-  	.SYNOPSIS
-		Query to get FC ports
+.SYNOPSIS
+	Query to get FC ports
+.DESCRIPTION
+	Get information for FC Ports
+.PARAMETER ResultFile
+	CSV file created that contains all Ports definitions
+.PARAMETER Demo
+	Switch to list the commands to be executed 
+.EXAMPLE
+    Get-FcPortsToCsv -ResultFile C:\3PAR-FC.CSV
 
-	.DESCRIPTION
-		Get information for FC Ports
- 
-	.PARAMETER ResultFile
-		CSV file created that contains all Ports definitions
-		
-	.PARAMETER Demo
-		Switch to list the commands to be executed 
-  	
-	.EXAMPLE
-    	Get-FcPortsToCsv -ResultFile C:\3PAR-FC.CSV
-			creates C:\3PAR-FC.CSV and stores all FCPorts information
-			
-  .Notes
-    NAME:  Get-FcPortsToCsv
-    LASTEDIT: January 2020
-    KEYWORDS: Get-FcPortsToCsv
-   
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
- #Requires HPE 3PAR cli.exe
- #>
- 
+	creates C:\3PAR-FC.CSV and stores all FCPorts information
+#>
 [CmdletBinding()]
 	Param(	
 			[Parameter()]
@@ -388,135 +204,79 @@ Function Get-FcPortsToCsv
 			[Parameter()]
 			[String]$ResultFile
 		)
-
-	$plinkresult = Test-PARCli -SANConnection $SANConnection 
-	if($plinkresult -match "FAILURE :")
-	{
-		write-debuglog "$plinkresult" "ERR:" 
-		return $plinkresult
-	}
-	if(!($ResultFile)){
-		return "FAILURE : Please specify csv file path `n example: -ResultFIle C:\portsfile.csv"
-	}	
+Begin
+{	Test-A9CLIConnection
+}
+Process
+{	if(!($ResultFile))	{	return "FAILURE : Please specify csv file path `n example: -ResultFIle C:\portsfile.csv"	}	
 	Set-Content -Path $ResultFile -Value "Controller,WWN,SWNumber"
-
 	$ListofPorts = Get-HostPorts -SANConnection $SANConnection| where { ( $_.Type -eq "host" ) -and ($_.Protocol -eq "FC")}
-	if (!($ListofPorts)){
-		return "FAILURE : No ports to display"
-	}
-
+	if (!($ListofPorts))	{	return "FAILURE : No ports to display"	}
 	$Port_Pattern = "(\d):(\d):(\d)"							# Pattern matches value of port: 1:2:3
 	$WWN_Pattern = "([0-9a-f][0-9a-f])" * 8						# Pattern matches value of WWN
-
 	foreach ($Port in $ListofPorts)
-	{
-		$NSP  = $Port.Device
-		$SW = $NSP.Split(':')[-1]
-		if ( [Bool]($SW % 2) )			# Check whether the number is odd
-		{
-			$SwitchNumber = 1
+		{	$NSP  = $Port.Device
+			$SW = $NSP.Split(':')[-1]
+			# Check whether the number is odd
+			if ( [Bool]($SW % 2) )	{	$SwitchNumber = 1	}
+			else					{	$SwitchNumber = 2	}
+			$NSP = $NSP -replace $Port_Pattern , 'N$1:S$2:P$3'
+			$WWN = $Port.Port_WWN
+			$WWN = $WWN -replace $WWN_Pattern , '$1:$2:$3:$4:$5:$6:$7:$8'
+			Add-Content -Path $ResultFile -Value "$NSP,$WWN,$SwitchNumber"
 		}
-		else
-		{
-			$SwitchNumber = 2
-		}
-		
-		
-		$NSP = $NSP -replace $Port_Pattern , 'N$1:S$2:P$3'
-		
-		$WWN = $Port.Port_WWN
-		$WWN = $WWN -replace $WWN_Pattern , '$1:$2:$3:$4:$5:$6:$7:$8'
-
-		Add-Content -Path $ResultFile -Value "$NSP,$WWN,$SwitchNumber"
-	}
-	Write-DebugLog "FC ports are stored in $ResultFile" $Info
+	Write-Verbose "FC ports are stored in $ResultFile" 
 	return "Success: FC ports information stored in $ResultFile"
-} # END FUNCTION Get-FcPortsToCsv
+}
+}
 
-##################################################################
-############# FUNCTION Get-ConnectedSession ######################
-##################################################################
-function Get-ConnectedSession 
+function Get-A9ConnectedSession 
 {
 <#
-  .SYNOPSIS
+.SYNOPSIS
     Command Get-ConnectedSession display connected session detail
-	
-  .DESCRIPTION
+.DESCRIPTION
 	Command Get-ConnectedSession display connected session detail 
-        
-  .EXAMPLE
+.EXAMPLE
     Get-ConnectedSession
-	
-  .Notes
-    NAME:  Get-ConnectedSession    
-    LASTEDIT: January 2020
-    KEYWORDS: Get-ConnectedSession 
-   
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
- #>
+#>
+Begin
+{	Test-A9Connection
+}
+Process
+{	return $global:SANConnection		 
+}
+}
 
-    Begin{}
-    Process
-    {       
-		return $global:SANConnection		 
-    }
-    End{}
-} # END FUNCTION Get-ConnectedSession
-
-########################## FUNCTION New-CLIConnection
-########################Function New-CLIConnection
+Function New-CLIConnection
 {
 <#
-  .SYNOPSIS
+.SYNOPSIS
     Builds a SAN Connection object using HPE 3PAR CLI.
-  
-  .DESCRIPTION
+.DESCRIPTION
 	Creates a SAN Connection object with the specified parameters. 
     No connection is made by this cmdlet call, it merely builds the connection object. 
-        
-  .EXAMPLE
+.EXAMPLE
     New-CLIConnection  -ArrayNameOrIPAddress 10.1.1.1 -CLIDir "C:\cli.exe" -epwdFile "C:\HPE3parepwdlogin.txt"
 	Creates a SAN Connection object with the specified Array Name or Array IP Address
 .PARAMETER ArrayNameOrIPAddress 
     Specify Array Name or Array IP Address
-    .PARAMETER CLIDir 
+.PARAMETER CLIDir 
     Specify the absolute path of HPE 3PAR cli.exe. Default is "C:\Program Files (x86)\Hewlett Packard Enterprise\HPE 3PAR CLI\bin"
-  .PARAMETER epwdFile 
+.PARAMETER epwdFile 
     Specify the encrypted password file location , example “c:\HPE3parstoreserv244.txt” To create encrypted password file use “Set-Password” cmdlet           
-	
-  .Notes
-    NAME:  New-CLIConnection    
-    LASTEDIT: January 2020
-    KEYWORDS: New-CLIConnection
-   
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
- #Requires HPE 3PAR cli.exe 
- #>
+#>
 [CmdletBinding()]
-	param(
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-		[String]
-        $ArrayNameOrIPAddress=$null,
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-        #$CLIDir="C:\Program Files (x86)\Hewlett Packard Enterprise\HPE 3PAR CLI\bin",
-		$CLIDir="C:\Program Files (x86)\Hewlett Packard Enterprise\HPE 3PAR CLI\bin",
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-		[String]
-        $epwdFile="C:\HPE3parepwdlogin.txt"       
+param(	[Parameter(Mandatory=$true)]		[String]    $ArrayNameOrIPAddress=$null,
+		[Parameter()]						[String]	$CLIDir="C:\Program Files (x86)\Hewlett Packard Enterprise\HPE 3PAR CLI\bin",
+		[Parameter(Mandatory=$true)]		[String]    $epwdFile="C:\HPE3parepwdlogin.txt"       
 	) 
-		#Write-DebugLog "start: Entering function New-CLIConnection. Validating IP Address format." $Debug
+Process	
+{	#Write-DebugLog "start: Entering function New-CLIConnection. Validating IP Address format." $Debug
 		## Check IP Address Format
 		#if(-not (Test-IPFormat $ArrayNameOrIPAddress))		
 		#{
-		#	Write-DebugLog "Stop: Invalid IP Address $ArrayNameOrIPAddress" "ERR:"
+		#	Write-DebugLog "Stop: Invalid IP Address $ArrayNameOrIPAddress"
 		#	return "Failure : Invalid IP Address $ArrayNameOrIPAddress"
 		#}				
 		#Write-DebugLog "Running: Completed validating IP address format." $Debug	
@@ -549,24 +309,18 @@ function Get-ConnectedSession
 		Write-DebugLog "Running: Authenticating credentials - Invoke-CLI for user $SANUserName and SANIP= $ArrayNameOrIPAddress" $Debug
 		$test = $env:Path		
 		$test1 = $test.split(";")		
-		if ($test1 -eq $CLIDir)
-		{
-			Write-DebugLog "Running: Environment variable path for $CLIDir already exists" "INFO:"			
-		}
-		else
-		{
-			Write-DebugLog "Running: Environment variable path for $CLIDir does not exists, so added $CLIDir to environment" "INFO:"
-			$env:Path += ";$CLIDir"
-		}
+		if ($test1 -eq $CLIDir)	{	Write-DebugLog "Running: Environment variable path for $CLIDir already exists"	}
+		else	{	Write-DebugLog "Running: Environment variable path for $CLIDir does not exists, so added $CLIDir to environment"
+					$env:Path += ";$CLIDir"
+				}
 		if (-not (Test-Path -Path $CLIDir )) 
-		{		
-			Write-DebugLog "Stop: Path for HPE 3PAR cli was not found. Make sure you have installed HPE 3PAR CLI." "ERR:"			
+		{	Write-DebugLog "Stop: Path for HPE 3PAR cli was not found. Make sure you have installed HPE 3PAR CLI."			
 			return "Failure : Path for HPE 3PAR cli was not found. Make sure you have cli.exe file under $CLIDir"
 		}
 		$clifile = $CLIDir + "\cli.exe"		
 		if( -not (Test-Path $clifile))
 		{
-			Write-DebugLog "Stop: Path for HPE 3PAR cli was not found.Please enter only directory path with out cli.exe & Make sure you have installed HPE 3PAR CLI." "ERR:"			
+			Write-DebugLog "Stop: Path for HPE 3PAR cli was not found.Please enter only directory path with out cli.exe & Make sure you have installed HPE 3PAR CLI."			
 			return "Failure : Path for HPE 3PAR cli was not found,Make sure you have cli.exe file under $CLIDir"
 		}
 		#write-host "Set HPE 3PAR CLI path if not"
@@ -577,10 +331,10 @@ function Get-ConnectedSession
 			{
 				write-host "Encrypted password file does not exist , creating encrypted password file"				
 				Set-Password -CLIDir $CLIDir -ArrayNameOrIPAddress $ArrayNameOrIPAddress -epwdFile $epwdFile
-				Write-DebugLog "Running: Path for encrypted password file  was not found. Now created new epwd file." "INFO:"
+				Write-DebugLog "Running: Path for encrypted password file  was not found. Now created new epwd file."
 			}
 			#write-host "pwd file : $epwdFile"
-			Write-DebugLog "Running: Path for encrypted password file  was already exists." "INFO:"
+			Write-DebugLog "Running: Path for encrypted password file  was already exists."
 			$global:epwdFile = $epwdFile	
 			$Result9 = Invoke-CLI -DeviceIPAddress $ArrayNameOrIPAddress -CLIDir $CLIDir -epwdFile $epwdFile -cmd "showversion" 
 			Write-DebugLog "Running: Executed Invoke-CLI. Check on PS console if there are any errors reported" $Debug
@@ -670,22 +424,19 @@ function Get-ConnectedSession
 			}
 		}
 		return $SANC
-} # End Function New-CLIConnection
+}
+}
 
-################################################################################
-######################### FUNCTION New-PoshSshConnection #######################
-################################################################################
 Function New-PoshSshConnection
 {
 <#
-  .SYNOPSIS
+.SYNOPSIS
     Builds a SAN Connection object using Posh SSH connection
-  
-  .DESCRIPTION
+.DESCRIPTION
 	Creates a SAN Connection object with the specified parameters. 
     No connection is made by this cmdlet call, it merely builds the connection object. 
         
-  .EXAMPLE
+.EXAMPLE
     New-PoshSshConnection -SANUserName Administrator -SANPassword mypassword -ArrayNameOrIPAddress 10.1.1.1 
 	Creates a SAN Connection object with the specified Array Name or Array IP Address
 .EXAMPLE
@@ -695,58 +446,29 @@ Function New-PoshSshConnection
     Specify the SAN Administrator user name.
 .PARAMETER Password 
     Specify the SAN Administrator password 
-	
-   .PARAMETER ArrayNameOrIPAddress 
+.PARAMETER ArrayNameOrIPAddress 
     Specify Array Name or Array IP Address
-              
-  .Notes
-    NAME:  New-PoshSshConnection    
-    LASTEDIT: January 2020
-    KEYWORDS: New-PoshSshConnection
-   
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
- #>
+#>
 [CmdletBinding()]
-	param(
-		
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true, HelpMessage="Enter Array Name or IP Address")]
-		[String]
-        $ArrayNameOrIPAddress=$null,
-		
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-		[String]
-		$SANUserName=$null,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$SANPassword=$null,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-		$AcceptKey
-		)
-		
-		$Session
-		
-		# Check if our module loaded properly
-		if (Get-Module -ListAvailable -Name Posh-SSH) 
+param(	[Parameter(Mandatory=$true, HelpMessage="Enter Array Name or IP Address")]
+										[String]    $ArrayNameOrIPAddress,
+		[Parameter(Mandatory=$true)]	[String]	$SANUserName,
+		[Parameter()]					[String]	$SANPassword=$null,		
+		[Parameter()]					[switch]	$AcceptKey
+	)
+Process
+{	$Session
+	# Check if our module loaded properly
+	if (Get-Module -ListAvailable -Name Posh-SSH) 
 		{ <# do nothing #> }
-		else 
-		{ 
-			try
-			{
-				# install the module automatically
+	else 
+		{	try
+			{	# install the module automatically
 				[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 				iex (New-Object Net.WebClient).DownloadString("https://gist.github.com/darkoperator/6152630/raw/c67de4f7cd780ba367cccbc2593f38d18ce6df89/instposhsshdev")
 			}
 			catch
-			{
-				#$msg = "Error occurred while installing POSH SSH Module. `nPlease check the internet connection.`nOr Install POSH SSH Module using given Link. `nhttp://www.powershellmagazine.com/2014/07/03/posh-ssh-open-source-ssh-powershell-module/  `n "
-				$msg = "Error occurred while installing POSH SSH Module. `nPlease check if internet is enabled. If internet is enabled and you are getting this error,`n Execute Save-Module -Name Posh-SSH -Path <path Ex D:\xxx> `n Then Install-Module -Name Posh-SSH `n If you are getting error like Save-Module is incorrect then `n Check you Power shell Version and Update to 5.1 for this particular Process  `n Or visit https://www.powershellgallery.com/packages/Posh-SSH/2.0.2 `n"
-				 
+			{	$msg = "Error occurred while installing POSH SSH Module. `nPlease check if internet is enabled. If internet is enabled and you are getting this error,`n Execute Save-Module -Name Posh-SSH -Path <path Ex D:\xxx> `n Then Install-Module -Name Posh-SSH `n If you are getting error like Save-Module is incorrect then `n Check you Power shell Version and Update to 5.1 for this particular Process  `n Or visit https://www.powershellgallery.com/packages/Posh-SSH/2.0.2 `n"
 				return "`n Failure : $msg"
 			}			
 		}	
@@ -756,7 +478,7 @@ Function New-PoshSshConnection
 		## Check IP Address Format
 		#if(-not (Test-IPFormat $ArrayNameOrIPAddress))		
 		#{
-		#	Write-DebugLog "Stop: Invalid IP Address $ArrayNameOrIPAddress" "ERR:"
+		#	Write-DebugLog "Stop: Invalid IP Address $ArrayNameOrIPAddress"
 		#	return "Failure : Invalid IP Address $ArrayNameOrIPAddress"
 		#}
 		
@@ -790,366 +512,239 @@ Function New-PoshSshConnection
 		
 		# Authenticate		
 		try
-		{
-			if(!($SANPassword))
-			{				
-				$securePasswordStr = Read-Host "SANPassword" -AsSecureString				
-				$mycreds = New-Object System.Management.Automation.PSCredential ($SANUserName, $securePasswordStr)
+			{	if(!($SANPassword))
+					{	$securePasswordStr = Read-Host "SANPassword" -AsSecureString				
+						$mycreds = New-Object System.Management.Automation.PSCredential ($SANUserName, $securePasswordStr)
+					}
+				else{	$tempstring  = convertto-securestring $SANPassword -asplaintext -force				
+						$mycreds = New-Object System.Management.Automation.PSCredential ($SANUserName, $tempstring)									
+					}
+				try	{	if($AcceptKey) 
+							{ 	#$Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential (Get-Credential $SANUserName) -AcceptKey                      
+								$Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential $mycreds -AcceptKey
+							}
+						else{	#$Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential (Get-Credential $SANUserName)                          
+								$Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential $mycreds
+							}
+					}
+				catch 
+					{	$msg = "In function New-PoshSshConnection. "
+						$msg+= $_.Exception.ToString()	
+						# Write-Exception function is used for exception logging so that it creates a separate exception log file.
+						Write-Exception $msg -error		
+						return "Failure : $msg"
+					}
+				Write-Verbose "Running: Executed . Check on PS console if there are any errors reported"
+				if (!$Session)	{	return "New-PoshSshConnection command failed to connect the array."	}
 			}
-			else
-			{				
-				$tempstring  = convertto-securestring $SANPassword -asplaintext -force				
-				$mycreds = New-Object System.Management.Automation.PSCredential ($SANUserName, $tempstring)									
-			}
-			try
-			{
-				if($AcceptKey) 
-				{
-				   #$Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential (Get-Credential $SANUserName) -AcceptKey                      
-				   $Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential $mycreds -AcceptKey
-			    }
-			    else 
-				{
-				   #$Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential (Get-Credential $SANUserName)                          
-				    $Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential $mycreds
-			    }
-			}
-			catch 
-			{	
-				$msg = "In function New-PoshSshConnection. "
+		catch 
+			{	$msg = "In function New-PoshSshConnection. "
 				$msg+= $_.Exception.ToString()	
 				# Write-Exception function is used for exception logging so that it creates a separate exception log file.
 				Write-Exception $msg -error		
 				return "Failure : $msg"
 			}
-			Write-DebugLog "Running: Executed . Check on PS console if there are any errors reported" $Debug
-			if (!$Session)
-			{
-				return "New-PoshSshConnection command failed to connect the array."
-			}
-		}
-		catch 
-		{	
-			$msg = "In function New-PoshSshConnection. "
-			$msg+= $_.Exception.ToString()	
-			# Write-Exception function is used for exception logging so that it creates a separate exception log file.
-			Write-Exception $msg -error		
-			return "Failure : $msg"
-		}					
-		
 		$global:SANObjArr += @()
 		$global:SANObjArr1 += @()
-		#write-host "objarray",$global:SANObjArr
-		#write-host "objarray1",$global:SANObjArr1
 		if($global:SANConnection)
-		{			
-			#write-host "In IF loop"
-			$SANC = New-Object "_SANConnection"
-			$SANC.SessionId = $Session.SessionId		
-			$SANC.IPAddress = $ArrayNameOrIPAddress			
-			$SANC.UserName = $SANUserName
-			$SANC.epwdFile = "Secure String"			
-			$SANC.CLIType = "SshClient"
-			$SANC.CLIDir = "Null"			
-			
-			$global:SANConnection = $SANC
-			
-			$SystemDetails = Get-System
-			$SANC.Name = $SystemDetails.Name
-			$SANC.SystemVersion = Get-Version -S -B
-			$SANC.Model = $SystemDetails.Model
-			$SANC.Serial = $SystemDetails.Serial
-			$SANC.TotalCapacityMiB = $SystemDetails.TotalCap
-			$SANC.AllocatedCapacityMiB = $SystemDetails.AllocCap
-			$SANC.FreeCapacityMiB = $SystemDetails.FreeCap
-			
-			$global:ArrayName = $SANC.Name
-			$global:ConnectionType = "CLI"
-			
-			###making multiple object support
-			$SANC1 = New-Object "_TempSANConn"
-			$SANC1.IPAddress = $ArrayNameOrIPAddress			
-			$SANC1.UserName = $SANUserName
-			$SANC1.epwdFile = "Secure String"		
-			$SANC1.SessionId = $Session.SessionId			
-			$SANC1.CLIType = "SshClient"
-			$SANC1.CLIDir = "Null"
-			
-			$global:SANObjArr += @($SANC)
-			$global:SANObjArr1 += @($SANC1)			
-		}
-		else
-		{
-			$global:SANObjArr = @()
-			$global:SANObjArr1 = @()
-			#write-host "In Else loop"
-						
-			$SANC = New-Object "_SANConnection"
-			$SANC.IPAddress = $ArrayNameOrIPAddress			
-			$SANC.UserName = $SANUserName			
-			$SANC.epwdFile = "Secure String"		
-			$SANC.SessionId = $Session.SessionId
-			$SANC.CLIType = "SshClient"
-			$SANC.CLIDir = "Null"
-						
-			$global:SANConnection = $SANC		
-			
-			$SystemDetails = Get-System
-			$SANC.Name = $SystemDetails.Name
-			$SANC.SystemVersion = Get-Version -S -B
-			$SANC.Model = $SystemDetails.Model
-			$SANC.Serial = $SystemDetails.Serial
-			$SANC.TotalCapacityMiB = $SystemDetails.TotalCap
-			$SANC.AllocatedCapacityMiB = $SystemDetails.AllocCap
-			$SANC.FreeCapacityMiB = $SystemDetails.FreeCap
-			
-			$global:ArrayName = $SANC.Name
-			$global:ConnectionType = "CLI"
-			
-			###making multiple object support
-			$SANC1 = New-Object "_TempSANConn"
-			$SANC1.IPAddress = $ArrayNameOrIPAddress			
-			$SANC1.UserName = $SANUserName
-			$SANC1.epwdFile = "Secure String"
-			$SANC1.SessionId = $Session.SessionId
-			$SANC1.CLIType = "SshClient"
-			$SANC1.CLIDir = "Null"		
-				
-			$global:SANObjArr += @($SANC)
-			$global:SANObjArr1 += @($SANC1)		
-		}
-		Write-DebugLog "End: If there are no errors reported on the console then the SAN connection object is set and ready to be used" $Info		
-		
-		# Set to the prompt as "Array Name:Connection Type (WSAPI|CLI)\>"
-		Function global:prompt {
-			if ($global:SANConnection -ne $null){				
-				$global:ArrayName + ":" + $global:ConnectionType + "\>"
-			} else{
-				(Get-Location).Path + "\>"
+			{	$SANC = New-Object "_SANConnection"
+				$SANC.SessionId = $Session.SessionId		
+				$SANC.IPAddress = $ArrayNameOrIPAddress			
+				$SANC.UserName = $SANUserName
+				$SANC.epwdFile = "Secure String"			
+				$SANC.CLIType = "SshClient"
+				$SANC.CLIDir = "Null"			
+				$global:SANConnection = $SANC
+				$SystemDetails = Get-System
+				$SANC.Name = $SystemDetails.Name
+				$SANC.SystemVersion = Get-Version -S -B
+				$SANC.Model = $SystemDetails.Model
+				$SANC.Serial = $SystemDetails.Serial
+				$SANC.TotalCapacityMiB = $SystemDetails.TotalCap
+				$SANC.AllocatedCapacityMiB = $SystemDetails.AllocCap
+				$SANC.FreeCapacityMiB = $SystemDetails.FreeCap
+				$global:ArrayName = $SANC.Name
+				$global:ConnectionType = "CLI"
+				###making multiple object support
+				$SANC1 = New-Object "_TempSANConn"
+				$SANC1.IPAddress = $ArrayNameOrIPAddress			
+				$SANC1.UserName = $SANUserName
+				$SANC1.epwdFile = "Secure String"		
+				$SANC1.SessionId = $Session.SessionId			
+				$SANC1.CLIType = "SshClient"
+				$SANC1.CLIDir = "Null"
+				$global:SANObjArr += @($SANC)
+				$global:SANObjArr1 += @($SANC1)			
 			}
-		}
+		else
+			{	$global:SANObjArr = @()
+				$global:SANObjArr1 = @()
+				$SANC = New-Object "_SANConnection"
+				$SANC.IPAddress = $ArrayNameOrIPAddress			
+				$SANC.UserName = $SANUserName			
+				$SANC.epwdFile = "Secure String"		
+				$SANC.SessionId = $Session.SessionId
+				$SANC.CLIType = "SshClient"
+				$SANC.CLIDir = "Null"
+				$global:SANConnection = $SANC		
+				$SystemDetails = Get-System
+				$SANC.Name = $SystemDetails.Name
+				$SANC.SystemVersion = Get-Version -S -B
+				$SANC.Model = $SystemDetails.Model
+				$SANC.Serial = $SystemDetails.Serial
+				$SANC.TotalCapacityMiB = $SystemDetails.TotalCap
+				$SANC.AllocatedCapacityMiB = $SystemDetails.AllocCap
+				$SANC.FreeCapacityMiB = $SystemDetails.FreeCap
+				$global:ArrayName = $SANC.Name
+				$global:ConnectionType = "CLI"
+				$SANC1 = New-Object "_TempSANConn"
+				$SANC1.IPAddress = $ArrayNameOrIPAddress			
+				$SANC1.UserName = $SANUserName
+				$SANC1.epwdFile = "Secure String"
+				$SANC1.SessionId = $Session.SessionId
+				$SANC1.CLIType = "SshClient"
+				$SANC1.CLIDir = "Null"		
+				$global:SANObjArr += @($SANC)
+				$global:SANObjArr1 += @($SANC1)		
+			}
+		Write-Verbose "End: If there are no errors reported on the console then the SAN connection object is set and ready to be used"				
 		return $SANC
- }# End Function New-PoshSshConnection
+}
+}
 
-#### FUNCTION Set-PoshSshConnectionPasswordFile
-##Function Set-PoshSshConnectionPasswordFile
+Function Set-A9PoshSshConnectionPasswordFile_CLI
 {
 <#
-  .SYNOPSIS
-   Creates a encrypted password file on client machine to be used by "Set-PoshSshConnectionUsingPasswordFile"
-  
-  .DESCRIPTION
+.SYNOPSIS
+	Creates a encrypted password file on client machine to be used by "Set-PoshSshConnectionUsingPasswordFile"
+.DESCRIPTION
 	Creates an encrypted password file on client machine
-        
-  .EXAMPLE
-   Set-PoshSshConnectionPasswordFile -ArrayNameOrIPAddress "15.1.1.1" -SANUserName "3parDemoUser"  -$SANPassword "demoPass1"  -epwdFile "C:\hpe3paradmepwd.txt"
+.EXAMPLE
+	Set-PoshSshConnectionPasswordFile -ArrayNameOrIPAddress "15.1.1.1" -SANUserName "3parDemoUser"  -$SANPassword "demoPass1"  -epwdFile "C:\hpe3paradmepwd.txt"
 	
 	This examples stores the encrypted password file hpe3paradmepwd.txt on client machine c:\ drive, subsequent commands uses this encryped password file ,
 	This example authenticates the entered credentials if correct creates the password file.
-  .PARAMETER SANUserName 
+.PARAMETER SANUserName 
     Specify the SAN SANUserName .
-    .PARAMETER ArrayNameOrIPAddress 
+.PARAMETER ArrayNameOrIPAddress 
     Specify Array Name or Array IP Address
-    .PARAMETER SANPassword 
+.PARAMETER SANPassword 
     Specify the Password with the Linked IP
-  .PARAMETER epwdFile 
+.PARAMETER epwdFile 
     Specify the file location to create encrypted password file
-	
-  .Notes
-    NAME:   Set-PoshSshConnectionPasswordFile
-	LASTEDIT: January 2020
-    KEYWORDS:  Set-PoshSshConnectionPasswordFile
-   
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 2.0
- #>
+#>
 [CmdletBinding()]
-	param(
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-		[String]
-        $ArrayNameOrIPAddress=$null,
-		
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-		[String]
-		$SANUserName=$null,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$SANPassword=$null,
-		
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-		[String]
-        $epwdFile=$null,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-		$AcceptKey       
+param(	[Parameter(Mandatory=$true)]	[String]    $ArrayNameOrIPAddress,
+		[Parameter(Mandatory=$true)]	[String]	$SANUserName,
+		[Parameter()]					[String]	$SANPassword=$null,
+		[Parameter(Mandatory=$true)]	[String]    $epwdFile=$null,
+		[Parameter()]					[switch]	$AcceptKey       
 	)
-	
-	## Check IP Address Format
+Process	
+{	## Check IP Address Format
 	#if(-not (Test-IPFormat $ArrayNameOrIPAddress))		
-	#{
-	#	Write-DebugLog "Stop: Invalid IP Address $ArrayNameOrIPAddress" "ERR:"
+	#{	Write-DebugLog "Stop: Invalid IP Address $ArrayNameOrIPAddress"
 	#	return "FAILURE : Invalid IP Address $ArrayNameOrIPAddress"
 	#}		
-	
-	#Write-DebugLog "Running: Completed validating IP address format." $Debug		
-	Write-DebugLog "Running: Authenticating credentials - for user $SANUserName and SANIP= $ArrayNameOrIPAddress" $Debug
-	
+	Write-verbose "Running: Authenticating credentials - for user $SANUserName and SANIP= $ArrayNameOrIPAddress"	
 	# Authenticate
 	try
-	{
-		if(!($SANPassword))
-		{				
-			$securePasswordStr = Read-Host "SANPassword" -AsSecureString				
-			$mycreds = New-Object System.Management.Automation.PSCredential ($SANUserName, $securePasswordStr)
-			
-			$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePasswordStr)
-			$tempPwd = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
-		}
-		else
-		{				
-			$tempstring  = convertto-securestring $SANPassword -asplaintext -force				
-			$mycreds = New-Object System.Management.Automation.PSCredential ($SANUserName, $tempstring)	
-
-			$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($tempstring)
-			$tempPwd = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
-		}			
-		
-		if($AcceptKey) 
-		{
-			#$Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential (Get-Credential $SANUserName) -AcceptKey                           
-			$Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential $mycreds -AcceptKey
-		}
-		else 
-		{
-			#$Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential (Get-Credential $SANUserName)                        
-			$Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential $mycreds
-		}
-		
-		Write-DebugLog "Running: Executed . Check on PS console if there are any errors reported" $Debug
-		if (!$Session)
-		{
-			return "FAILURE : In function Set-PoshSshConnectionPasswordFile."
-		}
-		else
-		{
-			$RemveResult = Remove-SSHSession -Index $Session.SessionId
-		}
-		
-		$Enc_Pass = Protect-String $tempPwd 
-		$Enc_Pass,$ArrayNameOrIPAddress,$SANUserName | Export-CliXml $epwdFile	
-	}
-	catch 
-	{	
-		$msg = "In function Set-PoshSshConnectionPasswordFile. "
-		$msg+= $_.Exception.ToString()	
-		
-		Write-Exception $msg -error		
-		return "FAILURE : $msg `n credentials incorrect"
-	}
-
-	Write-DebugLog "Running: encrypted password file has been created successfully and the file location is $epwdFile " "INFO:"
-	return "`n Success : encrypted SANPassword file has been created successfully and the file location : $epwdFile"	
-
-} #  End-of  Set-PoshSshConnectionPasswordFile
- 
-#####################################################################################
-#   Function   Set-PoshSshConnectionUsingPasswordFile
-#####################################################################################
-Function Set-PoshSshConnectionUsingPasswordFile
-{
-<#
-  .SYNOPSIS
-    Creates a SAN Connection object using Encrypted password file
-  
-  .DESCRIPTION
-	Creates a SAN Connection object using Encrypted password file.
-    No connection is made by this cmdlet call, it merely builds the connection object. 
-        
-  .EXAMPLE
-    Set-PoshSshConnectionUsingPasswordFile  -ArrayNameOrIPAddress 10.1.1.1 -SANUserName "3parUser" -epwdFile "C:\HPE3PARepwdlogin.txt"
-	Creates a SAN Connection object with the specified the Array Name or Array IP Address and password file
-	.PARAMETER ArrayNameOrIPAddress 
-    Specify Array Name or Array IP Address
-    .PARAMETER SANUserName
-  Specify the SAN UserName.
-  .PARAMETER epwdFile 
-    Specify the encrypted password file location , example “c:\hpe3parstoreserv244.txt” To create encrypted password file use “New-3parSSHCONNECTION_PassFile” cmdlet           
-	
-  .Notes
-    NAME:  Set-PoshSshConnectionUsingPasswordFile
-	LASTEDIT: January 2020
-    KEYWORDS: Set-PoshSshConnectionUsingPasswordFile
-   
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
- #Requires HPE 3PAR cli.exe 
- #>
-[CmdletBinding()]
-	param(
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-		[String]
-        $ArrayNameOrIPAddress=$null,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-		[String]
-        $SANUserName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-		[String]
-        $epwdFile        
-	) 
-					
-	try{			
-		if( -not (Test-Path $epwdFile))
-		{
-			Write-DebugLog "Running: Path for encrypted password file  was not found. Now created new epwd file." "INFO:"
-			return " Encrypted password file does not exist , create encrypted password file using 'Set-3parSSHConnectionPasswordFile' "
-		}	
-		
-		Write-DebugLog "Running: Patch for encrypted password file ." "INFO:"
-		
-		$tempFile=$epwdFile			
-		$Temp=import-CliXml $tempFile
-		$pass=$temp[0]
-		$ip=$temp[1]
-		$user=$temp[2]
-		if($ip -eq $ArrayNameOrIPAddress)  
-		{
-			if($user -eq $SANUserName)
-			{
-				$Passs = UnProtect-String $pass 
-				#New-SSHConnection -SANUserName $SANUserName  -SANPassword $Passs -ArrayNameOrIPAddress $ArrayNameOrIPAddress -SSHDir "C:\plink"
-				New-PoshSshConnection -ArrayNameOrIPAddress $ArrayNameOrIPAddress -SANUserName $SANUserName -SANPassword $Passs
-
+		{	if(!($SANPassword))
+			{	$securePasswordStr = Read-Host "SANPassword" -AsSecureString				
+				$mycreds = New-Object System.Management.Automation.PSCredential ($SANUserName, $securePasswordStr)
+				$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePasswordStr)
+				$tempPwd = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
 			}
 			else
-			{ 
-				Return "Password file SANUserName $user and entered SANUserName $SANUserName dose not match  . "
-				Write-DebugLog "Running: Password file SANUserName $user and entered SANUserName $SANUserName dose not match ." "INFO:"
+			{	$tempstring  = convertto-securestring $SANPassword -asplaintext -force				
+				$mycreds = New-Object System.Management.Automation.PSCredential ($SANUserName, $tempstring)	
+				$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($tempstring)
+				$tempPwd = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+			}			
+			if($AcceptKey) 
+			{	#$Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential (Get-Credential $SANUserName) -AcceptKey                           
+				$Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential $mycreds -AcceptKey
 			}
+			else 
+			{	#$Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential (Get-Credential $SANUserName)                        
+				$Session = New-SSHSession -ComputerName $ArrayNameOrIPAddress -Credential $mycreds
+			}
+			Write-DebugLog "Running: Executed . Check on PS console if there are any errors reported" $Debug
+			if (!$Session)	{	return "FAILURE : In function Set-PoshSshConnectionPasswordFile."	}
+			else			{	$RemveResult = Remove-SSHSession -Index $Session.SessionId			}
+			$Enc_Pass = Protect-String $tempPwd 
+			$Enc_Pass,$ArrayNameOrIPAddress,$SANUserName | Export-CliXml $epwdFile	
 		}
-		else 
-		{
-			Return  "Password file ip $ip and entered ip $ArrayNameOrIPAddress dose not match"
-			Write-DebugLog "Password file ip $ip and entered ip $ArrayNameOrIPAddress dose not match." "INFO:"
-		}
-	}
 	catch 
-	{	
-		$msg = "In function Set-PoshSshConnectionUsingPasswordFile. "
-		$msg+= $_.Exception.ToString()	
-		# Write-Exception function is used for exception logging so that it creates a separate exception log file.
-		Write-Exception $msg -error		
-		return "FAILURE : $msg"
-	}
-} #End Function Set-PoshSshConnectionUsingPasswordFile
+		{	$msg = "In function Set-PoshSshConnectionPasswordFile. "
+			$msg+= $_.Exception.ToString()	
+			Write-Exception $msg -error		
+			return "FAILURE : $msg `n credentials incorrect"
+		}
+	return "`n Success : encrypted SANPassword file has been created successfully and the file location : $epwdFile"	
+}
+}
 
-#### FUNCTION Get-UserConnectionTemp
-##Function Get-UserConnectionTemp
+Function Set-A9PoshSshConnectionUsingPasswordFile_CLI
+{
+<#
+.SYNOPSIS
+    Creates a SAN Connection object using Encrypted password file
+.DESCRIPTION
+	Creates a SAN Connection object using Encrypted password file.
+    No connection is made by this cmdlet call, it merely builds the connection object. 
+.EXAMPLE
+    Set-PoshSshConnectionUsingPasswordFile  -ArrayNameOrIPAddress 10.1.1.1 -SANUserName "3parUser" -epwdFile "C:\HPE3PARepwdlogin.txt"
+
+	Creates a SAN Connection object with the specified the Array Name or Array IP Address and password file
+.PARAMETER ArrayNameOrIPAddress 
+    Specify Array Name or Array IP Address
+.PARAMETER SANUserName
+	Specify the SAN UserName.
+.PARAMETER epwdFile 
+    Specify the encrypted password file location , example “c:\hpe3parstoreserv244.txt” To create encrypted password file use “New-3parSSHCONNECTION_PassFile” cmdlet           
+#>
+[CmdletBinding()]
+param(	[Parameter(Mandatory=$true)]		[String]    $ArrayNameOrIPAddress,
+		[Parameter(Mandatory=$true)]		[String]    $SANUserName,
+		[Parameter(Mandatory=$true)]		[String]    $epwdFile        
+	) 
+Process			
+{	try		{	if( -not (Test-Path $epwdFile))
+					{	Write-Verbose "Running: Path for encrypted password file  was not found. Now created new epwd file."
+						return " Encrypted password file does not exist , create encrypted password file using 'Set-3parSSHConnectionPasswordFile' "
+					}			
+				Write-Verbose "Running: Patch for encrypted password file ."
+				$tempFile=$epwdFile			
+				$Temp=import-CliXml $tempFile
+				$pass=$temp[0]
+				$ip=$temp[1]
+				$user=$temp[2]
+				if($ip -eq $ArrayNameOrIPAddress)  
+				{	if($user -eq $SANUserName)
+					{	$Passs = UnProtect-String $pass 
+						#New-SSHConnection -SANUserName $SANUserName  -SANPassword $Passs -ArrayNameOrIPAddress $ArrayNameOrIPAddress -SSHDir "C:\plink"
+						New-PoshSshConnection -ArrayNameOrIPAddress $ArrayNameOrIPAddress -SANUserName $SANUserName -SANPassword $Passs
+					}
+					else
+					{ 	Return "Password file SANUserName $user and entered SANUserName $SANUserName dose not match  . "
+						Write-Verbose "Running: Password file SANUserName $user and entered SANUserName $SANUserName dose not match ."
+					}
+				}
+				else 
+				{	Return  "Password file ip $ip and entered ip $ArrayNameOrIPAddress dose not match"
+					Write-Verbose "Password file ip $ip and entered ip $ArrayNameOrIPAddress dose not match."
+				}
+			}
+	catch	{	$msg = "In function Set-PoshSshConnectionUsingPasswordFile. "
+				$msg+= $_.Exception.ToString()	
+				Write-Exception $msg -error		
+				return "FAILURE : $msg"
+			}
+}
+}
+
+Function Get-A9UserConnectionTemp_CLI
 {
 <#
   .SYNOPSIS
@@ -1203,7 +798,7 @@ Function Set-PoshSshConnectionUsingPasswordFile
 	)
 	if( Test-Path $epwdFile)
 	{
-		Write-DebugLog "Running: password file was found , it will use the mentioned file" "INFO:"
+		Write-DebugLog "Running: password file was found , it will use the mentioned file"
 	}
 	#$passwordFile = $epwdFile
 	#$cmd1 = $CLIDir+"\showuserconn.bat"
@@ -1234,29 +829,20 @@ Function Set-PoshSshConnectionUsingPasswordFile
     del $tempFile
 }
 
-########################## FUNCTION Test-CLIObject
-########################Function Test-CLIObject 
+Function Test-CLIObject 
 {
 Param( 	
     [string]$ObjectType, 
 	[string]$ObjectName ,
-	[string]$ObjectMsg = $ObjectType, 
-	$SANConnection = $global:SANConnection
-	)
-
-	$IsObjectExisted = $True
+	[string]$ObjectMsg = $ObjectType
+)
+Process
+{	$IsObjectExisted = $True
 	$ObjCmd = $ObjectType -replace ' ', '' 
 	$Cmds = "show$ObjCmd $ObjectName"
-	
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmds
-	if ($Result -like "no $ObjectMsg listed")
-	{
-		$IsObjectExisted = $false
-	}
+	$Result = Invoke-CLICommand -cmds  $Cmds
+	if ($Result -like "no $ObjectMsg listed")	{	$IsObjectExisted = $false	}
 	return $IsObjectExisted
-	
-} # End FUNCTION Test-CLIObject
+}	
+} 
 
- 
-Export-ModuleMember Close-Connection , Get-CmdList , Get-FcPorts , Get-FcPortsToCsv , Get-ConnectedSession , New-CLIConnection , New-PoshSshConnection ,
-Set-PoshSshConnectionPasswordFile , Set-PoshSshConnectionUsingPasswordFile

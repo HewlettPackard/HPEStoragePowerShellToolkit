@@ -75,7 +75,7 @@ process
 	if($Failed)		{		$taskcmd +=" -failed "	}
 	if($Active)		{		$taskcmd +=" -active "	}
 	if($Hours)		{		$taskcmd +=" -t $Hours "	}	
-	$result = Invoke-CLICommand -Connection $SANConnection -cmds  $taskcmd
+	$result = Invoke-CLICommand -cmds  $taskcmd
 	if($TaskID)	{	return $result	}	
 	if($Result -match "Id" )
     { $tempFile = [IO.Path]::GetTempFileName()
@@ -154,7 +154,7 @@ process
   if ($A) {  $cmd += " -a"  }
   elseif ($D) { $cmd += " -d"		 }
   elseif ($T) { $cmd += " -t $T"  }	
-  $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+  $Result = Invoke-CLICommand -cmds  $cmd
   return 	$Result	
 }
 }
@@ -193,7 +193,7 @@ process
   else {  Return "Force cancellation is only supported with the Stop-Task cmdlet." }
   if ($TaskID) {  $cmd += "$TaskID"		 }
   if ($ALL) { $cmd += " -all"		  }    	
-  $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+  $Result = Invoke-CLICommand -cmds  $cmd
   return 	$Result	
 }
 }
@@ -227,7 +227,7 @@ process
 	if ($V)     { $cmd += " -v "	}
   if ($TaskID){  $cmd += "$TaskID"}
   if ($Q)     { $cmd += " -q"		 }    	
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+	$Result = Invoke-CLICommand -cmds  $cmd
   return 	$Result	
 }
 } 

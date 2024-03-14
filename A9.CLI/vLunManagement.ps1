@@ -3,7 +3,7 @@
 ##
 
 
-Function Get-vLun
+Function Get-A9vLun_CLI
 {
 <#
 .SYNOPSIS
@@ -24,13 +24,16 @@ Function Get-vLun
 [CmdletBinding()]
 param(	[Parameter()]							[String]	$vvName,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$PresentTo
-	)		
+	)
+Begin
+{	Test-A9CLIConnection
+}		
 process	
 {	$ListofvLUNs = @()	
 	$GetvLUNCmd = "showvlun -t -showcols VVName,Lun,HostName,VV_WWN "
 	if ($vvName)	{	$GetvLUNCmd += " -v $vvName"	}	
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $GetvLUNCmd
-	write-debuglog "Get list of vLUN" "INFO:" 
+	$Result = Invoke-CLICommand -cmds  $GetvLUNCmd
+	write-verbose "Get list of vLUN" 
 	if($Result -match "Invalid vv name:")	{	return "FAILURE : No vv $vvName found"	}	
 	$Result = $Result | where-object { ($_ -notlike '*total*') -and ($_ -notlike '*------*')} ## Eliminate summary lines
 	if ($Result.Count -gt 1)
@@ -52,7 +55,7 @@ process
 }
 } 
 
-Function Show-vLun
+Function Show-A9vLun_CLI
 {
 <#
 .SYNOPSIS
@@ -131,7 +134,10 @@ param(	[Parameter()]	[switch]	$Listcols,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$Slotlist,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$Portlist,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$DomainName
-	)		
+	)	
+Begin
+{	Test-A9CLIConnection
+}	
 process	
 {	$cmd = "showvlun "
 	if($Listcols)		{	$cmd += " -listcols " 	}
@@ -148,12 +154,12 @@ process
 	if($Slotlist)		{	$cmd += " -slots $Slotlist" 	}
 	if($Portlist)		{	$cmd += " -ports $Portlist" 	}
 	if($DomainName)		{	$cmd += " -domain $DomainName" 	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+	$Result = Invoke-CLICommand -cmds  $cmd
 	return $Result
 }
 }
 
-Function New-vLun
+Function New-A9vLun_CLI
 {
 <#
 .SYNOPSIS
@@ -216,6 +222,9 @@ param(	[Parameter()]	[String]	$vvName,
 		[Parameter()]	[switch]	$NoVcn,
 		[Parameter()]	[switch]	$Ovrd
 	)		
+Begin
+{	Test-A9CLIConnection
+}
 process
 {	$cmdVlun = " createvlun -f"
 	if($Cnt)	{	$cmdVlun += " -cnt $Cnt "	}
@@ -229,7 +238,7 @@ process
 					}		
 	}
 	else
-		{	Write-DebugLog "No values specified for the parameters vvname. so simply exiting " "INFO:"
+		{	Write-DebugLog "No values specified for the parameters vvname. so simply exiting "
 			Get-help New-vLun
 			return
 		}
@@ -243,8 +252,8 @@ process
 	elseif($HostName)	{	$cmdVlun += " $HostName "	}
 	else				{	return "Please select atlist any one from NSP | HostSet | HostName"	}
 	
-	$Result1 = Invoke-CLICommand -Connection $SANConnection -cmds  $cmdVlun
-	write-debuglog "Presenting $vvName to server $item with the command --> $cmdVlun" "INFO:" 
+	$Result1 = Invoke-CLICommand -cmds  $cmdVlun
+	write-verbose "Presenting $vvName to server $item with the command --> $cmdVlun" 
 	if($Result1 -match "no active paths")		{	$successmsg += $Result1	}
 	elseif([string]::IsNullOrEmpty($Result1))	{	$successmsg += "Success : $vvName exported to host $objName`n"	}
 	else										{	$successmsg += "FAILURE : While exporting vv $vvName to host $objName Error : $Result1`n"	}		
@@ -252,7 +261,7 @@ process
 } 
 }
 
-Function Remove-vLun
+Function Remove-A9vLun_CLI
 {
 <#
 .SYNOPSIS
@@ -310,10 +319,13 @@ param(	[Parameter(ParameterSetName='F',Mandatory=$true)]		[Switch]	$force,
 		[Parameter()]											[Switch]	$Novcn,
 		[Parameter()]											[Switch]	$Pat,
 		[Parameter()]											[Switch]	$Remove_All	
-	)		
+	)
+Begin
+{	Test-A9CLIConnection
+}		
 process	
 {	if(!(($force) -or ($whatif)))
-	{	write-debuglog "no -force or -whatif option selected to remove/dry run of VLUN, Exiting...." "INFO:"
+	{	write-verbose "no -force or -whatif option selected to remove/dry run of VLUN, Exiting...."
 		Get-help Remove-vLun
 		return "FAILURE : no -force or -whatif option selected to remove/dry run of VLUN"
 	}
@@ -331,8 +343,8 @@ process
 				{	$vName = $vLUN.Name
 					if ($vName)
 						{	$RemoveCmds = $ActionCmd + " $vName $($vLun.LunID) $($vLun.PresentTo)"
-							$Result1 = Invoke-CLICommand -Connection $SANConnection -cmds  $RemoveCmds
-							write-debuglog "Removing Virtual LUN's with command $RemoveCmds" "INFO:" 
+							$Result1 = Invoke-CLICommand -cmds  $RemoveCmds
+							write-verbose "Removing Virtual LUN's with command $RemoveCmds" 
 							if ($Result1 -match "Issuing removevlun")
 								{	$successmsg += "Success: Unexported vLUN $vName from $($vLun.PresentTo)"
 								}

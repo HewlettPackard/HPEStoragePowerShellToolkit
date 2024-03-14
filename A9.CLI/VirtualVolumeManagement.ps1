@@ -2,7 +2,7 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Add-Vv
+Function Add-A9Vv_CLI
 {
 <#
 .SYNOPSIS
@@ -31,26 +31,29 @@ param(	[Parameter(ParameterSetName="wwn")]
 		[Parameter(ParameterSetName="wwn")]						[String]	$DomainName ,
 		[Parameter(Mandatory=$true, ParameterSetName="WWN")]	[String]	$VV_WWN ,
 		[Parameter(Mandatory=$true, ParameterSetName="New")]	[String] 	$VV_WWN_NewWWN
-	)		
+	)	
+Begin
+{	Test-A9CLIConnection
+}	
 process	
 {	if($VV_WWN -Or $VV_WWN_NewWWN)
 	{	$cmd = "admitvv"
 		if($DomainName)	{	$Cmd+= " -domain $DomainName"	}		
 		if($VV_WWN)	
 			{	$cmd += " $VV_WWN"
-				$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+				$Result = Invoke-CLICommand -cmds  $cmd
 				return  "$Result"
 			}
 		if($VV_WWN_NewWWN)	
 			{	$cmd += " $VV_WWN_NewWWN"
-				$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+				$Result = Invoke-CLICommand -cmds  $cmd
 				return  $Result
 			}		
 	}
 } 
 }
 
-Function Compress-LD
+Function Compress-A9LD_CLI
 {
 <#
 .SYNOPSIS
@@ -79,8 +82,11 @@ param(	[Parameter()]	[switch]	$Pat,
 		[Parameter()]	[String]	$Taskname,
 		[Parameter()]	[switch]	$Dr,
 		[Parameter()]	[switch]	$Trimonly,
-		[Parameter(Mandatory=$True)]	[String]	$LD_Name,
+		[Parameter(Mandatory=$True)]	[String]	$LD_Name
 )
+Begin
+{	Test-A9CLIConnection
+}
 PROCESS
 {	$Cmd = " compactld -f "
 	if($Pat)		{	$Cmd += " -pat " }
@@ -90,12 +96,12 @@ PROCESS
 	if($Dr) 		{	$Cmd += " -dr "}
 	if($Trimonly) 	{	$Cmd += " -trimonly " }
 	if($LD_Name)	{ $Cmd += " $LD_Name " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
 
-Function Find-LD
+Function Find-A9LD_CLI
 {
 <#
 .SYNOPSIS
@@ -131,6 +137,9 @@ param(
 	[Parameter()]	[String]	$Rs,
 	[Parameter(Mandatory=$True)]	[String]	$LD_Name
 )
+Begin
+{	Test-A9CLIConnection
+}
 PROCESS
 {	$Cmd = " checkld "
 	if($Y) 		{	$Cmd += " -y " }
@@ -139,12 +148,12 @@ PROCESS
 	if($Recover){	$Cmd += " -recover $Recover " }
 	if($Rs)		{	$Cmd += " -rs $Rs " }
 	if($LD_Name)	{	$Cmd += " $LD_Name "}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Get-LD
+Function Get-A9LD_CLI
 {
 <#
 .SYNOPSIS
@@ -190,6 +199,9 @@ param(	[Parameter()]	[String]	$Cpg,
 		[Parameter()]	[switch]	$State,
 		[Parameter()]	[String]	$LD_Name
 )
+Begin
+{	Test-A9CLIConnection
+}
 process
 {	$Cmd = " showld "
 	if($Cpg)	{	$Cmd += " -cpg $Cpg "}
@@ -202,7 +214,7 @@ process
 	if($P)		{	$Cmd += " -p "	}
 	if($State) 	{	$Cmd += " -state " }
 	if($LD_Name)	{ 	$Cmd += " $LD_Name " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($Cpg)	{	Return  $Result	}
 	else
@@ -226,7 +238,7 @@ process
 }
 } 
 
-Function Get-LDChunklet
+Function Get-A9LDChunklet_CLI
 {
 <#
 .SYNOPSIS
@@ -254,13 +266,16 @@ param(	[Parameter()]	[switch]	$Degraded,
 		[Parameter()]	[String]	$Linfo,
 		[Parameter()]	[String]	$LD_Name
 )
+Begin
+{	Test-A9CLIConnection
+}
 process
 {	$Cmd = " showldch "
 	if($Degraded)	{	$Cmd += " -degraded " }
 	if($Lformat)	{	$Cmd += " -lformat $Lformat " }
 	if($Linfo)		{	$Cmd += " -linfo $Linfo " }
 	if($LD_Name)	{	$Cmd += " $LD_Name " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count - 3 
@@ -282,7 +297,7 @@ process
 }
 }
 
-Function Get-Space
+Function Get-A9Space_CLI
 {
 <#
 .SYNOPSIS
@@ -334,12 +349,12 @@ process
 	$sysinfo = @{}	
 	if($cpgName)
 		{	$sysspacecmd += " -cpg $cpgName"
-			$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $sysspacecmd
+			$Result = Invoke-CLICommand -cmds  $sysspacecmd
 			if ($Result -match "FAILURE :")	{	return "FAILURE : no CPGs found or matched"	}
 			if( $Result -match "There is no free space information")	{	return "FAILURE : There is no free space information"		}
 			if( $Result.Count -lt 4 )		{	return "$Result"	}
 			$tempFile = [IO.Path]::GetTempFileName()
-			$3parosver = Get-Version -S -SANConnection  $SANConnection 
+			$3parosver = Get-Version -S 
 			$incre = "true" 
 			foreach ($s in  $Result[2..$Result.Count] )
 				{	$s= [regex]::Replace($s,"^ +","")
@@ -385,7 +400,7 @@ process
 	if($Cage)
 		{	if(($RaidType) -or ($cpgName) -or($Disk))	{	return "FAILURE : Use only One parameter at a time."	}
 			$sysspacecmd += " -p -cg $Cage"
-			$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $sysspacecmd
+			$Result = Invoke-CLICommand -cmds  $sysspacecmd
 			if ($Result -match "Illegal pattern integer or range")	{	return "FAILURE : $Result "	}
 			foreach ($s in $Result[2..$Result.count])
 				{	$s= [regex]::Replace($s,"^ +","")
@@ -399,7 +414,7 @@ process
 		}
 	if($Disk)
 		{	$sysspacecmd += "-p -dk $Disk"
-			$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $sysspacecmd
+			$Result = Invoke-CLICommand -cmds  $sysspacecmd
 			if ($Result -match "Illegal pattern integer or range")	{	return "FAILURE : Illegal pattern integer or range: $Disk"	}
 			foreach ($s in $Result[2..$Result.count])
 				{	$s= [regex]::Replace($s,"^ +","")
@@ -415,7 +430,7 @@ process
 		}
 	if($SSZ)
 	{	$sysspacecmd += " -ssz $SSZ "
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $sysspacecmd
+		$Result = Invoke-CLICommand -cmds  $sysspacecmd
 		if ($Result -match "Invalid setsize")
 			{	return "FAILURE : $Result"
 			}		
@@ -430,7 +445,7 @@ process
 		return
 	}
 	if(-not(( ($Disk) -or ($Cage)) -or (($RaidType) -or ($cpg))))
-		{	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $sysspacecmd
+		{	$Result = Invoke-CLICommand -cmds  $sysspacecmd
 			if ($Result -match "Illegal pattern integer or range")
 				{	return "FAILURE : Illegal pattern integer or range: $Disk"
 				}
@@ -446,7 +461,7 @@ process
 }
 }
 
-Function Get-Vv
+Function Get-A9Vv_CLI
 {
 <#
 .SYNOPSIS
@@ -479,7 +494,7 @@ process
 {	$GetvVolumeCmd = "showvvcpg"
 	if ($DomainName)	{	$GetvVolumeCmd += " -domain $DomainName"	}	
 	if ($vvName)		{	$GetvVolumeCmd += " $vvName"	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $GetvVolumeCmd
+	$Result = Invoke-CLICommand -cmds $GetvVolumeCmd
 	if($Result -match "no vv listed")	{	return "FAILURE: No vv $vvName found"	}
 	$Result = $Result | where-object 	{ ($_ -notlike '*total*') -and ($_ -notlike '*---*')} ## Eliminate summary lines
 	if ( $Result.Count -gt 1)
@@ -498,7 +513,7 @@ process
 }
 }
 
-Function Get-VvList
+Function Get-A9VvList_CLI
 {
 <#
 .SYNOPSIS
@@ -672,12 +687,15 @@ Function Get-VvList
 		[Parameter()]	[String]	$vvolState,
 		[Parameter()]	[String]	$vvolsc,
 		[Parameter()]	[String]	$ShowCols
-	)		
+	)	
+Begin
+{	Test-A9CLIConnection
+}	
 process	
 {	$GetvVolumeCmd = "showvv "
 	$cnt=1
 	if ($Listcols)	{	$GetvVolumeCmd += "-listcols "
-						$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $GetvVolumeCmd
+						$Result = Invoke-CLICommand -cmds  $GetvVolumeCmd
 						return $Result				
 					}
 	if($D)			{	$GetvVolumeCmd += "-d "; 		$cnt=0	}	
@@ -715,7 +733,7 @@ process
 		}
 	if($ShowCols)	{	$GetvVolumeCmd += "-showcols $ShowCols ";	$cnt=0	}	
 	if ($vvName)	{	$GetvVolumeCmd += " $vvName"	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $GetvVolumeCmd
+	$Result = Invoke-CLICommand -cmds  $GetvVolumeCmd
 	if($Result -match "no vv listed")	{	return "FAILURE : No vv $vvName found"	}
 	if ( $Result.Count -gt 1)
 		{	$incre = "true"
@@ -836,7 +854,7 @@ process
 }
 }
 
-Function Get-VvSet
+Function Get-A9VvSet_CLI
 {
 <#
 .SYNOPSIS
@@ -871,7 +889,10 @@ param(	[Parameter()]	[switch]	$Detailed,
 		[Parameter()]	[switch]	$Summary,
 		[Parameter()]	[String]	$vvSetName,
 		[Parameter()]	[String]	$vvName
-	)		
+	)	
+Begin
+{	Test-A9CLIConnection
+}	
 process
 {	$GetVVSetCmd = "showvvset "
 	if ($Detailed)	{	$GetVVSetCmd += " -d "	}
@@ -880,7 +901,7 @@ process
 	if ($vvSetName)	{	$GetVVSetCmd += " $vvSetName"	}
 	elseif($vvName)	{	$GetVVSetCmd += " $vvName"	}
 	else			{	write-verbose "VVSet parameter $vvSetName is empty. Simply return all existing vvset " 			}	
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $GetVVSetCmd
+	$Result = Invoke-CLICommand -cmds  $GetVVSetCmd
 	if($Result -match "No vv set listed")	{	return "FAILURE : No vv set listed"	}
 	if($Result -match "total")
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -898,7 +919,7 @@ process
 }
 }
 
-Function Import-Vv
+Function Import-A9Vv_CLI
 {
 <#
 .SYNOPSIS
@@ -974,6 +995,9 @@ param(	[Parameter()]	[String]	$Usrcpg ,
 		[Parameter()]	[String]	$MinAlloc ,
 		[Parameter()]	[String]	$VVName 
 	)		
+Begin
+{	Test-A9CLIConnection
+}
 process	
 {	$Cmd = "importvv -f"			
 	if($Snapname)	{	$Cmd+= " -snap $Snapname"	}
@@ -999,12 +1023,12 @@ process
 	if($Usrcpg)		{	$Cmd += " $Usrcpg "	}
 	else{	return "FAILURE : No CPG Name specified ."	}	
 	if($VVName)		{	$Cmd += " $VVName"	}	
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	return  "$Result"	
 }
 } 
 
-Function New-Vv
+Function New-A9Vv_CLI
 {
 <#
 .SYNOPSIS
@@ -1029,11 +1053,14 @@ Function New-Vv
 	New-Vv -vvName AVV -CPGName ZZ -Force -Template Test_Template
 .EXAMPLE
     New-Vv -vvName PassThru-Disk -Size 100g -CPGName HV -vvSetName MyVolumeSet
+
 	The command creates a new volume named PassThru-disk of size 100GB.
 	The volume is created under the HV CPG group and will be contained inside the MyvolumeSet volume set.
 	If MyvolumeSet does not exist, the command creates a new volume set.	
 .EXAMPLE
-    New-Vv -vvName PassThru-Disk1 -Size 100g -CPGName MyCPG -tpvv -minalloc 2048 -vvSetName MyVolumeSet The command creates a new thin provision volume named PassThru-disk1 of size 100GB.
+    New-Vv -vvName PassThru-Disk1 -Size 100g -CPGName MyCPG -tpvv -minalloc 2048 -vvSetName MyVolumeSet 
+	
+	The command creates a new thin provision volume named PassThru-disk1 of size 100GB.
 	The volume is created under the MyCPG CPG group and will be contained inside the MyvolumeSet volume set. If MyvolumeSet does not exist, the command creates a new volume set and allocates minimum 2048MB.
 .PARAMETER vvName 
     Specify new name of the virtual volume
@@ -1045,7 +1072,7 @@ Function New-Vv
     Specify the name of CPG
 .PARAMETER Template
 	Use the options defined in template <tname>.  
-	.PARAMETER Volume_ID
+.PARAMETER Volume_ID
 	Specifies the ID of the volume. By default, the next available ID is chosen.
 .PARAMETER Count
 	Specifies the number of identical VVs to create. 
@@ -1058,42 +1085,30 @@ Function New-Vv
 .PARAMETER minalloc	
 	This option specifies the default allocation size (in MB) to be set
 .PARAMETER Snp_aw
-	Enables a snapshot space allocation warning. A warning alert is
-	generated when the reserved snapshot space of the VV
-	exceeds the indicated percentage of the VV size.
+	Enables a snapshot space allocation warning. A warning alert is generated when the reserved snapshot space of the VV exceeds the indicated percentage of the VV size.
 .PARAMETER Snp_al
-	Sets a snapshot space allocation limit. The snapshot space of the
-	VV is prevented from growing beyond the indicated
-	percentage of the virtual volume size.
+	Sets a snapshot space allocation limit. The snapshot space of the VV is prevented from growing beyond the indicated percentage of the virtual volume size.
 .PARAMETER Comment
-	Specifies any additional information up to 511 characters for the
-	volume.
+	Specifies any additional information up to 511 characters for the volume.
 .PARAMETER tdvv
 	Deprecated. Should use -dedup.
 .PARAMETER tpvv
 	Specifies that the volume should be a thinly provisioned volume.
 .PARAMETER snp_cpg 
-	Specifies the name of the CPG from which the snapshot space will be
-	allocated.
+	Specifies the name of the CPG from which the snapshot space will be allocated.
 .PARAMETER sectors_per_track
-	Defines the virtual volume geometry sectors per track value that is
-	reported to the hosts through the SCSI mode pages. The valid range is
+	Defines the virtual volume geometry sectors per track value that is reported to the hosts through the SCSI mode pages. The valid range is
 	between 4 to 8192 and the default value is 304.
 .PARAMETER minalloc 
-	This option specifies the default allocation size (in MB) to be set.
-	Allocation size specified should be at least (number-of-nodes * 256) and
+	This option specifies the default allocation size (in MB) to be set. Allocation size specified should be at least (number-of-nodes * 256) and
 	less than the CPG grow size.
 .PARAMETER heads_per_cylinder
-	Allows you to define the virtual volume geometry heads per cylinder
-	value that is reported to the hosts though the SCSI mode pages. The
+	Allows you to define the virtual volume geometry heads per cylinder value that is reported to the hosts though the SCSI mode pages. The
 	valid range is between 1 to 255 and the default value is 8.
 .PARAMETER snp_aw
-	Enables a snapshot space allocation warning. A warning alert is
-	generated when the reserved snapshot space of the VV
-	exceeds the indicated percentage of the VV size.
+	Enables a snapshot space allocation warning. A warning alert is generated when the reserved snapshot space of the VV exceeds the indicated percentage of the VV size.
 .PARAMETER snp_al
-	Sets a snapshot space allocation limit. The snapshot space of the
-	VV is prevented from growing beyond the indicated
+	Sets a snapshot space allocation limit. The snapshot space of the VV is prevented from growing beyond the indicated
 	percentage of the virtual volume size.
 #>
 [CmdletBinding()]
@@ -1164,7 +1179,7 @@ process
 	if($Snp_al)				{	$CreateVVCmd +=" -snp_al $Snp_al "	}
 	$CreateVVCmd +=" $CPGName $vvName $Size"			
 	$Result1 = $Result2 = $Result3 = ""
-	$Result1 = Invoke-CLICommand -Connection $SANConnection -cmds  $CreateVVCmd
+	$Result1 = Invoke-CLICommand -cmds  $CreateVVCmd
 	#write-host "Result = ",$Result1
 	if([string]::IsNullOrEmpty($Result1))
 		{	$successmsg += "Success : Created vv $vvName"
@@ -1179,7 +1194,7 @@ process
 			if ( !( Test-CLIObject -objectType 'vv set' -objectName $vvSetName -SANConnection $SANConnection))
 				{	write-verbose " Volume Set $vvSetName does not exist. Use New-vVolumeSet to create a Volume set before creating vLUN"  
 					$CreatevvSetCmd = "createvvset $vvSetName"
-					$Result2 =Invoke-CLICommand -Connection $SANConnection -cmds  $CreatevvSetCmd
+					$Result2 =Invoke-CLICommand -cmds  $CreatevvSetCmd
 					if([string]::IsNullOrEmpty($Result2))
 						{	$successmsg += "Success : Created vvset $vvSetName"
 						}
@@ -1189,7 +1204,7 @@ process
 					write-verbose " Creating Volume set with the command --> $CreatevvSetCmd" 
 				}
 			$AddVVCmd = "createvvset -add $vvSetName $vvName" 	## Add vv to existing Volume set
-			$Result3 = Invoke-CLICommand -Connection $SANConnection -cmds  $AddVVCmd
+			$Result3 = Invoke-CLICommand -cmds  $AddVVCmd
 			if([string]::IsNullOrEmpty($Result3))
 				{	$successmsg += "Success : vv $vvName added to vvset $vvSetName"
 				}
@@ -1207,7 +1222,7 @@ process
 }
 }
 
-Function New-VvSet
+Function New-A9VvSet_CLI
 {
 <#
 .SYNOPSIS
@@ -1261,7 +1276,7 @@ process
 	if($Domain) {	$CreateVolumeSetCmd += " -domain $Domain "	}
 	if($vvSetName){	$CreateVolumeSetCmd += " $vvSetName "		}
 	if($vvName)	{	$CreateVolumeSetCmd += " $vvName "			}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $CreateVolumeSetCmd
+	$Result = Invoke-CLICommand -cmds  $CreateVolumeSetCmd
 	if($Add)
 		{	if([string]::IsNullOrEmpty($Result))
 				{	return "Success : New-VvSet command executed vv : $vvName is added to vvSet : $vvSetName"
@@ -1280,7 +1295,7 @@ process
 }
 }
 
-Function Remove-LD
+Function Remove-A9LD_CLI
 {
 <#
 .SYNOPSIS
@@ -1315,12 +1330,12 @@ process
 	if($Rmsys) 	{	$Cmd += " -rmsys " }
 	if($Unused) {	$Cmd += " -unused " }
 	if($LD_Name){	$Cmd += " $LD_Name " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Remove-Vv
+Function Remove-A9Vv_CLI
 {
 <#
 .SYNOPSIS
@@ -1389,7 +1404,7 @@ process
 				{	$vName = $vVolume.Name
 					if ($vName)
 						{	$RemoveCmds = $ActionCmd + " $vName $($vVolume.Lun)"
-							$Result1 = Invoke-CLICommand -Connection $SANConnection -cmds  $removeCmds
+							$Result1 = Invoke-CLICommand -cmds  $removeCmds
 							if( ! (Test-CLIObject -objectType "vv" -objectName $vName -SANConnection $SANConnection))
 								{	$successmsglist += "Success : Removing vv $vName"
 								}
@@ -1405,7 +1420,7 @@ process
 }
 }
 
-Function Remove-Vv_Ld_Cpg_Templates
+Function Remove-A9Vv_Ld_Cpg_Templates_CLI
 {
 <#
 .SYNOPSIS
@@ -1428,12 +1443,12 @@ process
 {	$Cmd = " removetemplate -f "
 	if($Pat)	{	$Cmd += " -pat "	}
 	if($Template_Name)	{	$Cmd += " $Template_Name "	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Remove-VvSet
+Function Remove-A9VvSet_CLI
 {
 <#
 .SYNOPSIS
@@ -1475,7 +1490,7 @@ process
 			if($Pat)	{	$RemovevvsetCmd += " -pat "	}
 			$RemovevvsetCmd += " $vvsetName "
 			if($vvName)	{	$RemovevvsetCmd +=" $vvName"	}		
-			$Result1 = Invoke-CLICommand -Connection $SANConnection -cmds  $RemovevvsetCmd
+			$Result1 = Invoke-CLICommand -cmds  $RemovevvsetCmd
 			if([string]::IsNullOrEmpty($Result1))
 				{	if($vvName)	{	return  "Success : Removed vv $vvName from vvset $vvSetName"	}
 					return  "Success : Removed vvset $vvSetName"
@@ -1487,7 +1502,7 @@ process
 }
 }
 
-Function Set-Template
+Function Set-A9Template_CLI
 {
 <#
 .SYNOPSIS
@@ -1525,12 +1540,12 @@ process
 	if($Remove)			{	$Cmd += " -remove $Remove "	}
 	if($Option_Value)	{	$Cmd += " $Option_Value " }
 	if($Template_Name)	{ 	$Cmd += " $Template_Name " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Set-VvSpace
+Function Set-A9VvSpace_CLI
 {
 <#
 .SYNOPSIS
@@ -1552,12 +1567,12 @@ process
 {	$Cmd = " freespace -f "
 	if($Pat)		{	$Cmd += " -pat "}
 	if($VV_Name)	{	$Cmd += " $VV_Name "}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Show-LdMappingToVvs
+Function Show-A9LdMappingToVvs_CLI
 {
 <#
 .SYNOPSIS
@@ -1575,7 +1590,7 @@ param(		[Parameter(Mandatory=$True)]	[String]	$LD_Name
 process
 {	$Cmd = " showldmap "
 	if($LD_Name)	{	$Cmd += " $LD_Name " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count  
@@ -1595,7 +1610,7 @@ process
 }
 }
 
-Function Show-RSV
+Function Show-A9RSV_CLI
 {
 <#
 .SYNOPSIS
@@ -1625,7 +1640,7 @@ process
 	if($SCSI2)		{	$Cmd += " -l scsi2 " }
 	if($HostInfo)	{	$Cmd += " -host $Hostname " }
 	if($VV_Name)	{	$Cmd += " $VV_Name " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($Result -match "SYNTAX" )	{	Return $Result	}
 			$tempFile = [IO.Path]::GetTempFileName()
@@ -1646,7 +1661,7 @@ process
 }
 }
 
-Function Show-Template
+Function Show-A9Template_CLI
 {
 <#
 .SYNOPSIS
@@ -1674,7 +1689,7 @@ process
 			}
 	if($Fit) 						{	$Cmd += " -fit " }
 	if($Template_name_or_pattern) 	{	$Cmd += " $Template_name_or_pattern " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($Result -match "SYNTAX" )	{	Return $Result	}
 			$tempFile = [IO.Path]::GetTempFileName()
@@ -1695,7 +1710,7 @@ process
 }
 }
 
-Function Show-VvMappedToPD
+Function Show-A9VvMappedToPD_CLI
 {
 <#
 .SYNOPSIS
@@ -1814,7 +1829,7 @@ process
 	if($Rpm) 		{	$Cmd += " -rpm $Rpm " 			}
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " 	}
 	if($PD_ID) 		{	$Cmd += " PD_ID "			 	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($Result -match "SYNTAX" )	{	Return $Result	}
 			$tempFile = [IO.Path]::GetTempFileName()
@@ -1836,7 +1851,7 @@ process
 }
 }
 
-Function Show-VvMapping
+Function Show-A9VvMapping_CLI
 {
 <#
 .SYNOPSIS
@@ -1852,7 +1867,7 @@ param(	[Parameter(Mandatory=$True)]	[String]	$VV_Name
 process
 {	$Cmd = " showvvmap "
 	if($VV_Name)	{	$Cmd += " $VV_Name "}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Write-DebugLog "Executing function : Show-VvMapping command -->" INFO: 
 	if($Result.count -gt 1)
 		{	if($Result -match "SYNTAX" )	{	Return $Result	}
@@ -1875,7 +1890,7 @@ process
 }
 }
 
-Function Show-VvpDistribution
+Function Show-A9VvpDistribution_CLI
 {
 <#
 .SYNOPSIS
@@ -1901,7 +1916,7 @@ process
 {	$Cmd = " showvvpd "
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
 	if($VV_Name) 	{	$Cmd += " $VV_Name " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($Result -match "SYNTAX" )	{	Return $Result	}
 			$tempFile = [IO.Path]::GetTempFileName()
@@ -1923,7 +1938,7 @@ process
 }
 } 
 
-Function Start-LD
+Function Start-A9LD_CLI
 {	
 <#
 .SYNOPSIS
@@ -1945,12 +1960,12 @@ process
 { 	$Cmd = " startld "
 	if($Ovrd)		{	$Cmd += " -ovrd " }
 	if($LD_Name) 	{	$Cmd += " $LD_Name " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Start-Vv
+Function Start-A9Vv_CLI
 {
 <#
 .SYNOPSIS
@@ -1972,12 +1987,12 @@ process
 {	$Cmd = " startvv "
 	if($Ovrd)	{	$Cmd += " -ovrd "	}
 	if($VV_Name)	{	$Cmd += " $VV_Name "	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Test-Vv
+Function Test-A9Vv_CLI
 {
 <#
 .SYNOPSIS
@@ -2033,13 +2048,13 @@ process
 			if($Compr_Dryrun)		{	$cmd += " -compr_dryrun "}
 			if($Dedup_Compr_Dryrun)	{	$cmd += " -dedup_compr_dryrun "}
 			$cmd += " $VVName"
-			$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
-			write-debuglog "  Executing Test-Vv Command.-->  " "INFO:" 
+			$Result = Invoke-CLICommand -cmds  $cmd
+			write-verbose "  Executing Test-Vv Command.-->  " 
 			return  "$Result"
 }
 }
 
-Function Update-SnapSpace
+Function Update-A9SnapSpace_CLI
 {
 <#
 .SYNOPSIS
@@ -2056,12 +2071,12 @@ param(	[Parameter()]	[String]	$VV_Name
 process
 {	$Cmd = " updatesnapspace "
 	if($VV_Name)	{	$Cmd += " $VV_Name " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Update-Vv
+Function Update-A9Vv_CLI
 {
 <#
 .SYNOPSIS
@@ -2093,12 +2108,12 @@ process
 						else					{	return "Error: -Size $Size is Invalid Try eg: 2G  "	}
 					}
 	else			{	return "Error :  -Size  is mandatory. "	}	
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+	$Result = Invoke-CLICommand -cmds  $cmd
 	return  $Result
 } 
 }
 
-Function Update-VvProperties
+Function Update-A9VvProperties_CLI
 {
 <#
 .SYNOPSIS
@@ -2212,13 +2227,13 @@ process
 	if($Hpc)		{	$Cmd += " -hpc $Hpc " 		}
 	if($Pol)		{	$Cmd += " -pol $Pol " 		}
 	if($Vvname) 	{	$Cmd += " $Vvname " 		}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Write-verbose "Executing function : Update-VvProperties command -->"
 	Return $Result
 }
 }
 
-Function Update-VvSetProperties
+Function Update-A9VvSetProperties_CLI
 {
 <#
 .SYNOPSIS
@@ -2245,12 +2260,12 @@ process
 	if($Comment)	{	$Cmd += " -comment $Comment "}
 	if($Name)		{	$Cmd += " -name $Name "}
 	if($Setname)	{	$Cmd += " Setname " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Set-Host
+Function Set-A9Host_CLI
 {
 <#
 .SYNOPSIS
@@ -2320,7 +2335,7 @@ process
 		if($Comment)		{	$SetHostCmd +=" -comment $Comment"	}	
 		$Addr = [string]$Address
 		$SetHostCmd +=" $hostName $Addr"
-		$Result1 = Invoke-CLICommand -Connection $SANConnection -cmds  $SetHostCmd
+		$Result1 = Invoke-CLICommand -cmds  $SetHostCmd
 		write-verbose " Setting  Host with the command --> $SetHostCmd" 
 		if([string]::IsNullOrEmpty($Result1))
 			{	return "Success : Set host $hostName with Optn_Iscsi $Optn_Iscsi $Addr "
@@ -2331,7 +2346,7 @@ process
 } 
 }
 
-Function Show-Peer
+Function Show-A9Peer_CLI
 {
 <#
 .SYNOPSIS   
@@ -2347,8 +2362,8 @@ Function Show-Peer
 param()		
 process	
 {	$cmd = " showpeer"
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
-	write-debuglog "  Executing Show-Peer Command.-->" "INFO:"
+	$Result = Invoke-CLICommand -cmds  $cmd
+	write-verbose "  Executing Show-Peer Command.-->"
 	if($Result -match "No peers")	{	return $Result	}
 	else	{	$tempFile = [IO.Path]::GetTempFileName()
 				$LastItem = $Result.Count  
@@ -2368,7 +2383,7 @@ process
 }
 } 
 
-Function Resize-Vv
+Function Resize-A9Vv_CLI
 {
 <#
 .SYNOPSIS
@@ -2388,7 +2403,7 @@ PROCESS
 {	$Cmd = " compactvv -f "
 	if($PAT)	{	$Cmd += " -pat "	}
 	if($VVName)	{	$Cmd += " $VVName " }
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result 
 }
 }

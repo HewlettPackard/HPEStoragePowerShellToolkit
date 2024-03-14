@@ -36,10 +36,10 @@ process
 	$cmd2 = "showuserconn "
 	if ($Current)	{	$cmd2 += " -current " }
 	if($Detailed)	{	$cmd2 += " -d "
-						$result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd2
+						$result = Invoke-CLICommand -cmds  $cmd2
 						return $result
 					}
-	$result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd2
+	$result = Invoke-CLICommand -cmds  $cmd2
 	$count = $result.count - 3
 	$tempFile = [IO.Path]::GetTempFileName()
 	Add-Content -Path $tempFile -Value "Id,Name,IP_Addr,Role,Connected_since_Date,Connected_since_Time,Connected_since_TimeZone,Current,Client,ClientName"

@@ -83,7 +83,7 @@ process
 {	$cmd = "showvvolvm "
 	if($ListCols)
 		{	$cmd +=" -listcols "
-			$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+			$Result = Invoke-CLICommand -cmds  $cmd
 			write-verbose " The Show-vVolvm command creates and admits physical disk definitions to enable the use of those disks  "  
 			return 	$Result	
 		}
@@ -98,7 +98,7 @@ process
 	if ($container_name)	{	$cmd+="  -sc $container_name "	}	
 	else					{	return " FAILURE :  container_name is mandatory to execute Show-vVolvm command "	}	
 	if ($VM_name)			{	$cmd+=" $VM_name "	}	
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+	$Result = Invoke-CLICommand -cmds  $cmd
 	return 	$Result	
 }
 }
@@ -135,7 +135,7 @@ process
 	if ($Listcols)		{	$cmd+=" -listcols "	}
 	if ($Detailed)		{	$cmd+=" -d "		}
 	if ($SC_name)		{	$cmd+=" $SC_name "	}	
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+	$Result = Invoke-CLICommand -cmds  $cmd
 	return 	$Result	
 }
 }
@@ -184,7 +184,7 @@ process
 	if($Keep)	{	$cmd += " -keep "	}
 	if ($vvset)	{	$cmd +="  set:$vvset "	}	
 	else		{	return " FAILURE :  vvset is mandatory to execute Set-VVolSC command"	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
+	$Result = Invoke-CLICommand -cmds  $cmd
 	return 	$Result	
 }
 }

@@ -26,7 +26,7 @@ process
 	$spareinfocmd = "showspare "
 	if($used)	{	$spareinfocmd+= " -used "	}
 	write-verbose "Get list of spare information cmd is => $spareinfocmd "
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $spareinfocmd
+	$Result = Invoke-CLICommand -cmds  $spareinfocmd
 	$tempFile = [IO.Path]::GetTempFileName()
 	$range1 = $Result.count - 3 
 	$range = $Result.count	
@@ -94,7 +94,7 @@ process
 	if($pos){	$newsparecmd += " -f -pos $pos"
 				if($Pdid_chunkNumber)	{	return "FAILURE : Do not specify both the params , specify either -PDID_chunknumber or -pos"	}
 			}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $newsparecmd
+	$Result = Invoke-CLICommand -cmds  $newsparecmd
 	write-verbose "Spare  cmd -> $newsparecmd "
 	if(-not $Result){	write-host "Success : Create spare chunklet "	}
 	else			{	return "$Result"	}
@@ -159,7 +159,7 @@ process
 		}
 	else	{	return "FAILURE :  No parameters specified "	}
 	write-verbose "move chunklet cmd -> $movechcmd "	
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $movechcmd	
+	$Result = Invoke-CLICommand -cmds  $movechcmd	
 	if([string]::IsNullOrEmpty($Result))	{	return "FAILURE : Disk $SourcePD_Id chunklet $SourceChunk_Position is not in use. "	}
 	if($Result -match "Move")
 		{	$range = $Result.count
@@ -226,7 +226,7 @@ process
 		}
 	else{	return "FAILURE : No parameters specified"	}
 	write-verbose "cmd is -> $movechcmd " 
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $movechcmd
+	$Result = Invoke-CLICommand -cmds  $movechcmd
 	if([string]::IsNullOrEmpty($Result))	{	return "FAILURE : "	}
 	elseif($Result -match "does not exist")	{	return $Result		}
 	elseif($Result.count -gt 1)
@@ -302,7 +302,7 @@ process
 				}
 	else		{	return "FAILURE : No parameters specified"	}
 	write-verbose "Push physical disk command => $movechcmd " 
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $movechcmd
+	$Result = Invoke-CLICommand -cmds  $movechcmd
 	if([string]::IsNullOrEmpty($Result))	{	return "FAILURE : $Result"	}
 	if($Result -match "FAILURE")			{	return $Result	}
 	if($Result -match "-Detailed_State-")
@@ -383,8 +383,8 @@ process
 						$movechcmd += " $params"
 					}
 	else			{	return "FAILURE : No parameters specified"			}	
-	write-debuglog "push physical disk to spare cmd is  => $movechcmd " "INFO:"
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $movechcmd
+	write-verbose "push physical disk to spare cmd is  => $movechcmd "
+	$Result = Invoke-CLICommand -cmds  $movechcmd
 	if([string]::IsNullOrEmpty($Result)){	return "FAILURE : "	}
 	if($Result -match "Error:")			{	return $Result	}
 	if($Result -match "Move")
@@ -439,7 +439,7 @@ process
 	if($diskID)		{	$movechcmd += " $diskID"	}
 	else			{	return "FAILURE : No parameters specified"	}
 	write-verbose "move relocation pd cmd is => $movechcmd " 
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $movechcmd
+	$Result = Invoke-CLICommand -cmds  $movechcmd
 	if([string]::IsNullOrEmpty($Result))	{	return "FAILURE : "	}
 	if($Result -match "Error:")				{	return $Result		}	
 	if($Result -match "There are no chunklets to move")	{	return "There are no chunklets to move"	}	
@@ -496,8 +496,8 @@ process
 			if($pos)	{	return "FAILURE: Please select only one params, either -Pdid_chunkNumber or -pos "	}
 		}
 	if($pos)	{	$newsparecmd += " -f -pos $pos"	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $newsparecmd
-	if($Result -match "removed")	{	write-host "Success : Removed spare chunklet "  "INFO:" -ForegroundColor green	}
+	$Result = Invoke-CLICommand -cmds  $newsparecmd
+	if($Result -match "removed")	{	write-host "Success : Removed spare chunklet "  -ForegroundColor green	}
 	return "$Result"
 }
 }

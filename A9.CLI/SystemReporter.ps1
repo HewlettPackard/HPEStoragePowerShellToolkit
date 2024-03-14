@@ -1,93 +1,34 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
-## 	Permission is hereby granted, free of charge, to any person obtaining a
-## 	copy of this software and associated documentation files (the "Software"),
-## 	to deal in the Software without restriction, including without limitation
-## 	the rights to use, copy, modify, merge, publish, distribute, sublicense,
-## 	and/or sell copies of the Software, and to permit persons to whom the
-## 	Software is furnished to do so, subject to the following conditions:
-##
-## 	The above copyright notice and this permission notice shall be included
-## 	in all copies or substantial portions of the Software.
-##
-## 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-## 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-## 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
-## 	THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-## 	OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-## 	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-## 	OTHER DEALINGS IN THE SOFTWARE.
-##
-##	File Name:		SystemReporter.psm1
-##	Description: 	System Reporter cmdlets 
-##		
-##	Created:		December 2019
-##	Last Modified:	December 2019
-##	History:		v3.0- Created	
-#####################################################################################
-
-
-$Debug = "DEBUG:"
-$global:VSLibraries = Split-Path $MyInvocation.MyCommand.Path
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-########################## FUNCTION Test-CLIObject
-########################Function Test-CLIObject 
-{
-Param( 	
-    [string]$ObjectType, 
-	[string]$ObjectName ,
-	[string]$ObjectMsg = $ObjectType, 
-	$SANConnection = $global:SANConnection
-	)
-
-	$IsObjectExisted = $True
-	$ObjCmd = $ObjectType -replace ' ', '' 
-	$Cmds = "show$ObjCmd $ObjectName"
-	
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmds
-	if ($Result -like "no $ObjectMsg listed")
-	{
-		$IsObjectExisted = $false
-	}
-	return $IsObjectExisted
-	
-} # End FUNCTION Test-CLIObject
-
-##########################################################################
-######################### FUNCTION Get-SRAlertCrit #######################
-##########################################################################
-Function Get-SRAlertCrit
+Function Get-A9SRAlertCrit_CLI
 {
 <#
 .SYNOPSIS
     Shows the criteria that System Reporter evaluates to determine if a performance alert should be generated.
-  
 .DESCRIPTION
-    Shows the criteria that System Reporter evaluates to determine if a performance alert should be generated.
-        
+    Shows the criteria that System Reporter evaluates to determine if a performance alert should be generated.       
 .EXAMPLE
     Get-SRAlertCrit 
+
 	shows the criteria that System Reporter evaluates to determine if a performance alert should be generated.
-	
 .EXAMPLE
     Get-SRAlertCrit -Daily
+
 	Example displays all the criteria evaluated on an hourly basis:
-	
 .EXAMPLE
 	Get-SRAlertCrit -Hires
 .PARAMETER Daily
 	This criterion will be evaluated on a daily basis at midnight.
-	.PARAMETER Hourly
+.PARAMETER Hourly
 	This criterion will be evaluated on an hourly basis.
-	.PARAMETER Hires
+.PARAMETER Hires
 	This criterion will be evaluated on a high resolution (5 minute) basis. This is the default.
-	.PARAMETER Major
+.PARAMETER Major
 	This alert should require urgent action.
-	.PARAMETER Minor
+.PARAMETER Minor
 	This alert should require not immediate action.
-	.PARAMETER Info
+.PARAMETER Info
 	This alert is informational only. This is the default.
 .PARAMETER Enabled
 	Displays only criteria that are enabled.
@@ -95,366 +36,163 @@ Function Get-SRAlertCrit
 	Displays only criteria that are disabled.
 .PARAMETER Critical
 	Displays only criteria that have critical severity.
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
-	
-  .Notes
-    NAME:  Get-SRAlertCrit
-    LASTEDIT: December 2019
-    KEYWORDS: Get-SRAlertCrit
-   
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
-
- #>
+#>
 [CmdletBinding()]
-	param(
-
-		[Parameter($true)]
-		[switch]
-        $Hourly ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Daily ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Hires ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Major ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Minor ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Info ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Enabled ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Disabled ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Critical,
-		
-		[Parameter(ValueFromPipeline=$true)]
-        $SANConnection = $global:SANConnection        
+param(	[Parameter()]	[switch]	$Hourly ,
+		[Parameter()]	[switch]    $Daily ,
+		[Parameter()]	[switch]    $Hires ,
+		[Parameter()]	[switch]    $Major ,
+		[Parameter()]	[switch]    $Minor ,
+		[Parameter()]	[switch]    $Info ,
+		[Parameter()]	[switch]    $Enabled ,
+		[Parameter()]	[switch]    $Disabled ,
+		[Parameter()]	[switch]    $Critical
 	)
-	write-DebugLog "Start: In Get-SRAlertCrit - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{				
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRAlertCrit since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRAlertCrit since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
-	}
-	
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection	
-	if(($cliresult1 -match "FAILURE :"))
-	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
-	}
-	
-	$version1 = Get-Version -S  -SANConnection $SANConnection
-	if( $version1 -lt "3.2.1")
-	{
-		return "Current OS version $version1 does not support these cmdlet"
-	}
-	
+Begin
+{	Test-A9CLIConnection
+}
+Process	
+{	$version1 = Get-Version -S  -SANConnection $SANConnection
+	if( $version1 -lt "3.2.1")	{	return "Current OS version $version1 does not support these cmdlet"	}
 	$srinfocmd = "showsralertcrit "
-	
-	if($Hourly)
-	{
-		$srinfocmd += " -hourly "
-	}
-	if($Daily)
-	{
-		$srinfocmd += " -daily "
-	}
-	if($Hires)
-	{
-		$srinfocmd += " -hires "
-	}
-	if($Major)
-	{
-		$srinfocmd += " -major "
-	}
-	if($Minor)
-	{
-		$srinfocmd += " -minor "
-	}
-	if($Info)
-	{
-		$srinfocmd += " -info "
-	}
-	if($Enabled)
-	{
-		$srinfocmd += " -enabled "
-	}
-	if($Disabled)
-	{
-		$srinfocmd += " -disabled "
-	}
-	if($Critical)
-	{
-		$srinfocmd += " -critical "
-	}
-	
-	write-debuglog "Get alert criteria command => $srinfocmd" "INFO:"
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd	
-	if($Result -match "Invalid")
-	{
-		return "FAILURE : $Result"
-	}
-	if($Result -match "Error")
-	{
-		return "FAILURE : $Result"
-	}
-	if($Result -match "No criteria listed")
-	{
-		return "No srcriteria listed"
-	}
+	if($Hourly)		{	$srinfocmd += " -hourly "	}
+	if($Daily)		{	$srinfocmd += " -daily "	}
+	if($Hires)		{	$srinfocmd += " -hires "	}
+	if($Major)		{	$srinfocmd += " -major "	}
+	if($Minor)		{	$srinfocmd += " -minor "	}
+	if($Info)		{	$srinfocmd += " -info "		}
+	if($Enabled)	{	$srinfocmd += " -enabled "	}
+	if($Disabled)	{	$srinfocmd += " -disabled "	}
+	if($Critical)	{	$srinfocmd += " -critical "	}
+	write-verbose "Get alert criteria command => $srinfocmd"
+	$Result = Invoke-CLICommand -cmds  $srinfocmd	
+	if($Result -match "Invalid")	{	return "FAILURE : $Result"	}
+	if($Result -match "Error")		{	return "FAILURE : $Result"	}
+	if($Result -match "No criteria listed")	{	return "No srcriteria listed"	}
 	$tempFile = [IO.Path]::GetTempFileName()
 	$range1 = $Result.count-3
 	foreach ($s in  $Result[0..$range1] )
-	{
-			$s= [regex]::Replace($s,"^ +","")
+		{	$s= [regex]::Replace($s,"^ +","")
 			$s= [regex]::Replace($s," +"," ")
 			$s= [regex]::Replace($s," ",",")
 			Add-Content -Path $tempFile -Value $s
-	}
+		}
 	Import-Csv $tempFile
 	Remove-Item  $tempFile
 }
-## End Get-SRAlertCrit
+}
 
-############################################## FUNCTION Get-SRAOMoves ##############################################
-Function Get-SRAOMoves
+Function Get-A9SRAOMoves_CLI
 {
 <#
 .SYNOPSIS
-    The Get-SRAOMoves command shows the space that AO has moved between tiers.
-	
+    The Get-SRAOMoves command shows the space that AO has moved between tiers.	
 .DESCRIPTION
     The Get-SRAOMoves command shows the space that AO has moved between tiers.
-	
 .EXAMPLE
-   Get-SRAOMoves -btsecs 7200
-   
- .EXAMPLE
-   Get-SRAOMoves -etsecs 7200
-   
- .EXAMPLE
-   Get-SRAOMoves -oneline 
-   
- .EXAMPLE
-   Get-SRAOMoves -withvv 
-   
- .EXAMPLE
-   Get-SRAOMoves -VV_name XYZ
- .PARAMETER btsecs 
-	Select the begin time in seconds for the report.
-	The value can be specified as either
+	Get-SRAOMoves -btsecs 7200
+.EXAMPLE
+	Get-SRAOMoves -etsecs 7200
+.EXAMPLE
+	Get-SRAOMoves -oneline 
+.EXAMPLE
+	Get-SRAOMoves -withvv 
+.EXAMPLE
+	Get-SRAOMoves -VV_name XYZ
+.PARAMETER btsecs 
+	Select the begin time in seconds for the report. The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
 	- The absolute time as a text string in one of the following formats:
 		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
 		- Full time string excluding time zone: "2012-10-26 11:00:00"
 		- Date string: "2012-10-26" or 2012-10-26
 		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the
-	  current time. Instead of a number representing seconds, <secs> can
-	  be specified with a suffix of m, h or d to represent time in minutes
-	  (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
 	If it is not specified then the time at which the report begins is 12 ho                                                          urs ago.
 	If -btsecs 0 is specified then the report begins at the earliest sample.
 .PARAMETER etsecs 
-	Select the end time in seconds for the report.
-	The value can be specified as either
+	Select the end time in seconds for the report. The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
 	- The absolute time as a text string in one of the following formats:
 		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
 		- Full time string excluding time zone: "2012-10-26 11:00:00"
 		- Date string: "2012-10-26" or 2012-10-26
 		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the
-	  current time. Instead of a number representing seconds, <secs> can
-	  be specified with a suffix of m, h or d to represent time in minutes
-	  (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the report ends with the most recent
-	sample.
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the report ends with the most recent sample.
 .PARAMETER oneline
 	Show data in simplified format with one line per AOCFG.
 .PARAMETER VV_name
-	Limit the analysis to VVs with names that match one or more of
-	the specified names or glob-style patterns. VV set names must be
-	prefixed by "set:".  Note that snapshot VVs will not be considered
-	since only base VVs have region space.
+	Limit the analysis to VVs with names that match one or more of the specified names or glob-style patterns. VV set names must be
+	prefixed by "set:".  Note that snapshot VVs will not be considered since only base VVs have region space.
 .PARAMETER withvv
 	Show the data for each VV.
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
-	
-  .Notes
-    NAME:  Get-SRAOMoves
-    LASTEDIT: December 2019
-    KEYWORDS: Get-SRAOMoves
-   
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
-
- #>
+#>
 [CmdletBinding()]
-	param(
-	
-		[Parameter()]
-		[String]
-		$btsecs,
-		
-		[Parameter()]
-		[String]
-		$etsecs,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-		$oneline,
-		
-		[Parameter()]
-		[String]
-		$VV_name,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-		$withvv,
-		
-		[Parameter(ValueFromPipeline=$true)]
-        $SANConnection = $global:SANConnection       
-	)	
-	
-	Write-DebugLog "Start: In Get-SRAOMoves   - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{		
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRAOMoves since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRAOMoves since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
-	}
-	$plinkresult = Test-PARCli
-	if($plinkresult -match "FAILURE :")
-	{
-		write-debuglog "$plinkresult" "ERR:" 
-		return $plinkresult
-	}		
-	$cmd= "sraomoves "
-	
-	if ($btsecs)
-	{		
-		$cmd+=" -btsecs $btsecs "	
-	}	
-	if ($etsecs)
-	{		
-		$cmd+=" -etsecs $etsecs "	
-	}
-	if ($oneline)
-	{		
-		$cmd+=" -oneline "	
-	}
-	if ($VV_name)
-	{		
-		$cmd+=" -vv $VV_name "	
-	}
-	if ($withvv)
-	{		
-		$cmd+=" -withvv "	
-	}	
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
-	write-debuglog " The Get-SRAOMoves command creates and admits physical disk definitions to enable the use of those disks  " "INFO:" 
+param(	[Parameter()]	[String]	$btsecs,
+		[Parameter()]	[String]	$etsecs,
+		[Parameter()]	[switch]	$oneline,
+		[Parameter()]	[String]	$VV_name,
+		[Parameter()]	[switch]	$withvv		
+)	
+Begin
+{	Test-A9CLIConnection
+}
+Process	
+{	$cmd= "sraomoves "
+	if ($btsecs)	{	$cmd+=" -btsecs $btsecs "		}	
+	if ($etsecs)	{	$cmd+=" -etsecs $etsecs "		}
+	if ($oneline)	{	$cmd+=" -oneline "		}
+	if ($VV_name)	{	$cmd+=" -vv $VV_name "		}
+	if ($withvv)	{	$cmd+=" -withvv "		}	
+	$Result = Invoke-CLICommand -cmds  $cmd
+	write-verbose " The Get-SRAOMoves command creates and admits physical disk definitions to enable the use of those disks  " 
 	return 	$Result	
-} ## End Get-SRAOMoves
+} 
+}
 
-##########################################################################
-######################### FUNCTION Get-SRCpgSpace ########################
-##########################################################################
-Function Get-SRCpgSpace
+Function Get-A9SRCpgSpace_CLI
 {
 <#
 .SYNOPSIS
     Command displays historical space data reports for common provisioning groups (CPGs).
-  
 .DESCRIPTION
-    Command displays historical space data reports for common provisioning groups (CPGs).
-	
+    Command displays historical space data reports for common provisioning groups (CPGs).	
 .EXAMPLE
-    Get-SRCpgSpace 
+    Get-SRCpgSpace
+
 	Command displays historical space data reports for common provisioning groups (CPGs).
-	
 .EXAMPLE
     Get-SRCpgSpace -Option hourly -btsecs -24h fc*
+
 	example displays aggregate hourly CPG space information for CPGs with names that match the pattern "fc*" beginning 24 hours ago:
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
-  .PARAMETER btsecs
+.PARAMETER btsecs
     Select the begin time in seconds for the report.The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> canbe specified with a suffix of m, h or d to represent time in minutes
-	  (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the time at which the report begins depends
-	on the sample category (-hires, -hourly, -daily):        
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> canbe specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):        
 		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
 		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
 		- For daily, the default begin time is 90 days ago (-btsecs -90d).
-	If begin time and sample category are not specified then the time
-	the report begins is 12 hours ago and the default sample category is hires.
+	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
 	If -btsecs 0 is specified then the report begins at the earliest sample.
-  .PARAMETER etsecs
-     Select the end time in seconds for the report.  If -attime is   specified, select the time for the report.
-	The value can be specified as either
+.PARAMETER etsecs
+    Select the end time in seconds for the report.  If -attime is   specified, select the time for the report. The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
-	- A negative number indicating the number of seconds before the
-	  current time. Instead of a number representing seconds, <secs> can
-	  be specified with a suffix of m, h or d to represent time in minutes
-	  (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
 	If it is not specified then the report ends with the most recent sample.  
 .PARAMETER Hires
 	Select high resolution samples (5 minute intervals) for the report. This is the default setting.
-	.PARAMETER Hourly
+.PARAMETER Hourly
 	Select hourly samples for the report.
-	.PARAMETER Daily   
+.PARAMETER Daily   
 	Select daily samples for the report.
-	.PARAMETER Groupby
+.PARAMETER Groupby
 	For -attime reports, generate a separate row for each combination of <groupby> items.  Each <groupby> must be different and  one of the following:
 	DOM_NAME  Domain name
 	CPGID     Common Provisioning Group ID
@@ -470,225 +208,85 @@ Function Get-SRCpgSpace
 	Limit the data to RAID of the specified types. Allowed types are 0, 1, 5 and 6
 .PARAMETER CpgName
 	CPGs matching either the specified CPG_name or glob-style pattern are included. This specifier can be repeated to display information for multiple CPGs. If not specified, all CPGs are included.
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
-	
-  .Notes
-    NAME:  Get-SRCpgSpace
-    LASTEDIT: December 2019
-    KEYWORDS: Get-SRCpgSpace
-   
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
-
- #>
+#>
 [CmdletBinding()]
-	param(
-		[Parameter(alse, ValueFromPipeline=$true)]
-		[switch]
-		$attime,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$btsecs,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$etsecs,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Hourly ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Daily ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Hires ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
-		$groupby,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$DiskType,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$RaidType,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
-		$CpgName,
-		
-		[Parameter(lse, ValueFromPipeline=$true)]
-        $SANConnection = $global:SANConnection 
-       
-	)
-	Write-DebugLog "Start: In Get-SRCpgSpace - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{	
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRCpgSpace since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRCpgSpace since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
-	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
-	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
-	}	
-	$srinfocmd = "srcpgspace"
+param(	[Parameter()]	[switch]	$attime,
+		[Parameter()]	[String]	$btsecs,
+		[Parameter()]	[String]	$etsecs,
+		[Parameter()]	[switch]    $Hourly ,
+		[Parameter()]	[switch]    $Daily ,
+		[Parameter()]	[switch]    $Hires ,
+		[Parameter()]	[String]	$groupby,
+		[Parameter()][ValidateSet("FC","NL","SSD")]	
+						[String]	$DiskType,
+		[Parameter()][ValidateSet("0","1","5","6")]	
+						[String]	$RaidType,
+		[Parameter()]	[String]	$CpgName
+)
+Begin
+{	Test-A9CLIConnection
+}
+Process	
+{	$srinfocmd = "srcpgspace"
 	$3parosver = Get-Version -S  -SANConnection $SANConnection
 	if($3parosver -ge "3.1.2")
-	{
-		$tempFile = [IO.Path]::GetTempFileName()
-
-		if($btsecs)
-		{
-			$srinfocmd += " -btsecs $btsecs"
-		}
-		if($etsecs)
-		{
-			$srinfocmd += " -etsecs $etsecs"
-		}
-		if($groupby)
-		{
-			$commarr = "DOM_NAME","CPGID","CPGID","CPGID","RAID_TYPE"
-			$lista = $groupby.split(",")
-			foreach($suba in $lista)
-			{
-				if($commarr -eq $suba.toUpper())
-				{					
-				}
-				else
-				{
-					Remove-Item  $tempFile
-					return "FAILURE: Invalid groupby option it should be in ( $commarr )"
-				}
-			}
-			$srinfocmd += " -groupby $groupby"
-
-		}	
-		
-		if($Hourly)
-		{
-			$srinfocmd += " -hourly"			
-		}
-		
-		if($Daily)
-		{
-			$srinfocmd += " -daily"			
-		}
-		
-		if($Hires)
-		{
-			$srinfocmd += " -hires"			
-		}
-		if($RaidType)
-		{
-			$raidarray = "0","1","5","6"
-			if($raidarray -eq $RaidType)
-			{
-				$srinfocmd += " -raid_type $RaidType"
-			}
-			else
-			{
-				Remove-Item  $tempFile
-				return "FAILURE: Invalid raid option, it should be in ( $raidarray )"
-			}			
-		}
-		if($DiskType)
-		{
-			$diskarray = "FC","NL","SSD"
-			if($diskarray -eq $DiskType.toUpper()){
-				$srinfocmd += " -disk_type $DiskType"			
-			}
-			else
-			{
-				Remove-Item  $tempFile
-				return "FAILURE: Invalid disktype option, it should be in ( $diskarray )"
-			}
-		}
-		if($CpgName)
-		{
-			$srinfocmd += " $CpgName"			
-		}		
-		if($attime)
-		{		
-			$srinfocmd += " -attime "
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
+		{	$tempFile = [IO.Path]::GetTempFileName()
+			if($btsecs)		{	$srinfocmd += " -btsecs $btsecs"	}
+			if($etsecs)		{	$srinfocmd += " -etsecs $etsecs"	}
 			if($groupby)
-			{
-				$optionname = $groupby.toUpper()
-			}
-			else
-			{
-				$optionname = "CPG_NAME"
-			}
-			#Add-Content -Path $tempFile -Value "$optionname,Used(MB)_Adm,Used(MB)_Snp,Used(MB)_Usr,Used(MB)_Total,Free(MB)_Adm,Free(MB)Snp,Free(MB)Usr,Free(MB)Total,Total(MB)_Adm,Total(MB)_Snp,Total(MB)_Usr,Total(MB)_Total,Growth(MB),CapacityEfficiency_Compaction,CapacityEfficiency_Dedup"
-			Add-Content -Path $tempFile -Value "CPG_NAME,PrivateBase(MB),PrivateSnap(MB),Shared(MB),Free(MB),Total(MB),UsableFree(MB),Dedup_GC(KB/s),Compact,Dedup,Compress,DataReduce,OverProv"
-			$rangestart = "3"			
-		}	
-		else
-		{
-			$rangestart = "2"
-			#Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,Used(MB)_Adm,Used(MB)_Snp,Used(MB)_Usr,Used(MB)_Total,Free(MB)_Adm,Free(MB)Snp,Free(MB)Usr,Free(MB)Total,Total(MB)_Adm,Total(MB)_Snp,Total(MB)_Usr,Total(MB)_Total,Growth(MB),CapacityEfficiency_Compaction,CapacityEfficiency_Dedup"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,PrivateBase(MB),PrivateSnap(MB),Shared(MB),Free(MB),Total(MB),UsableFree(MB),Dedup_GC(KB/s),Compact,Dedup,Compress,DataReduce,OverProv"
-		}
-		
-		write-debuglog "System reporter command => $srinfocmd" "INFO:"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
-		if($Result -contains "FAILURE")
-		{
+				{	$commarr = "DOM_NAME","CPGID","CPGID","CPGID","RAID_TYPE"
+					$lista = $groupby.split(",")
+					foreach($suba in $lista)
+						{	if( -not ($commarr -eq $suba.toUpper()) )
+								{	Remove-Item  $tempFile
+									return "FAILURE: Invalid groupby option it should be in ( $commarr )"
+								}
+						}
+					$srinfocmd += " -groupby $groupby"
+				}	
+			if($Hourly)		{	$srinfocmd += " -hourly"	}
+			if($Daily)		{	$srinfocmd += " -daily"		}
+			if($Hires)		{	$srinfocmd += " -hires"		}
+			if($RaidType)	{	$srinfocmd += " -raid_type $RaidType"	}
+			if($DiskType)	{	$srinfocmd += " -disk_type $DiskType"	}				
+			if($CpgName)	{	$srinfocmd += " $CpgName"	}		
+			if($attime)
+				{	$srinfocmd += " -attime "
+					write-verbose "System reporter command => $srinfocmd"
+					if($groupby)
+						{	$optionname = $groupby.toUpper() }
+					else{	$optionname = "CPG_NAME"	}
+					Add-Content -Path $tempFile -Value "CPG_NAME,PrivateBase(MB),PrivateSnap(MB),Shared(MB),Free(MB),Total(MB),UsableFree(MB),Dedup_GC(KB/s),Compact,Dedup,Compress,DataReduce,OverProv"
+					$rangestart = "3"			
+				}	
+			else{	$rangestart = "2"
+					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,PrivateBase(MB),PrivateSnap(MB),Shared(MB),Free(MB),Total(MB),UsableFree(MB),Dedup_GC(KB/s),Compact,Dedup,Compress,DataReduce,OverProv"
+				}
+			write-verbose "System reporter command => $srinfocmd"
+			$Result = Invoke-CLICommand -cmds  $srinfocmd
+			if($Result -contains "FAILURE")
+				{	Remove-Item  $tempFile
+					return "FAILURE : $Result"
+				}
+			$range1  = $Result.count	
+			if($range1 -le "3")
+				{	Remove-Item  $tempFile
+					return "No data available"
+				}
+			foreach ($s in  $Result[$rangestart..$range1] )
+				{	$s= [regex]::Replace($s,"^ +","")
+					$s= [regex]::Replace($s," +"," ")
+					$s= [regex]::Replace($s," ",",")
+					Add-Content -Path $tempFile -Value  $s
+				}
+			Import-Csv $tempFile
 			Remove-Item  $tempFile
-			return "FAILURE : $Result"
 		}
-		$range1  = $Result.count
-			
-		if($range1 -le "3")
-		{
-			Remove-Item  $tempFile
-			return "No data available"
-		}
-		foreach ($s in  $Result[$rangestart..$range1] )
-		{
-				#write-host " s= $s"
-				$s= [regex]::Replace($s,"^ +","")
-				$s= [regex]::Replace($s," +"," ")
-				$s= [regex]::Replace($s," ",",")
-				Add-Content -Path $tempFile -Value  $s
-		}
-		Import-Csv $tempFile
-		Remove-Item  $tempFile
-	}
-	else
-	{
-		return "Current OS version $3parosver does not support these cmdlet"
-	}
+	else{	return "Current OS version $3parosver does not support these cmdlet"}
 }
-## End Get-SRCpgSpace 
+}
 
-##########################################################################
-######################### FUNCTION Get-SRHistLd ##########################
-##########################################################################
-Function Get-SRHistLd
+Function Get-A9SRHistLd_CLI
 {
 <#
 .SYNOPSIS
@@ -696,15 +294,14 @@ Function Get-SRHistLd
 	
 .DESCRIPTION
     Displays historical histogram performance data reports for logical disks.
-	
 .EXAMPLE
     Get-SRHistLd 
+
 	Displays historical histogram performance data reports for logical disks.
-	
 .EXAMPLE
     Get-SRHistLd -Hourly -btsecs -24h
-	example displays aggregate hourly histogram performance statistics for all logical disks beginning 24 hours ago:
 
+	example displays aggregate hourly histogram performance statistics for all logical disks beginning 24 hours ago:
 .EXAMPLE
     Get-SRHistLd -Metric Both
 .PARAMETER attime
@@ -712,8 +309,7 @@ Function Get-SRHistLd
 .PARAMETER btsecs
     Select the begin time in seconds for the report.The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> canbe specified with a suffix of m, h or d to represent time in minutes
-	  (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> canbe specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
 	If it is not specified then the time at which the report begins depends
 	on the sample category (-hires, -hourly, -daily):        
 		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
@@ -726,10 +322,8 @@ Function Get-SRHistLd
     Select the end time in seconds for the report.  If -attime is   specified, select the time for the report.
 	The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
-	- A negative number indicating the number of seconds before the
-	  current time. Instead of a number representing seconds, <secs> can
-	  be specified with a suffix of m, h or d to represent time in minutes
-	  (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
 	If it is not specified then the report ends with the most recent sample.
 .PARAMETER Hires
 	Select high resolution samples (5 minute intervals) for the report. This is the default setting.
@@ -738,11 +332,9 @@ Function Get-SRHistLd
 .PARAMETER Daily   
 	Select daily samples for the report.
 .PARAMETER rw
-       Specifies that the display includes separate read and write data. If notspecified, the total is displayed.
-	   .PARAMETER Groupby
-	 For -attime reports, generate a separate row for each combination of
-	<groupby> items.  Each <groupby> must be different and
-	one of the following:
+    Specifies that the display includes separate read and write data. If notspecified, the total is displayed.
+.PARAMETER Groupby
+	For -attime reports, generate a separate row for each combination of <groupby> items.  Each <groupby> must be different and one of the following:
 	DOM_NAME  Domain name
 	LDID      Logical disk ID
 	LD_NAME   Logical disk name
@@ -750,7 +342,7 @@ Function Get-SRHistLd
 	NODE      The node that owns the LD
 .PARAMETER cpgName
 	Limit the data to LDs in CPGs with names that match one or more of the specified names or glob-style patterns.
-	.PARAMETER node
+.PARAMETER node
 	Limit the data to that corresponding to one of the specified nodes.
 .PARAMETER LDName
 	LDs matching either the specified LD_name or glob-style pattern are included. This specifier can be repeated to display information for multiple LDs. If not specified, all LDs are included.
@@ -759,229 +351,93 @@ Function Get-SRHistLd
 	both - (Default)Display both I/O time and I/O size histograms
 	time - Display only the I/O time histogram
 	size - Display only the I/O size histogram
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
-	
-  .Notes
-    NAME:  Get-SRHistLd
-    LASTEDIT: December 2019
-    KEYWORDS: Get-SRHistLd   
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
-
- #>
+#>
 [CmdletBinding()]
-	param(
-		[Parameter()]
-		[switch]
-		$attime,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$btsecs,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$etsecs,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Hourly ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Daily ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Hires ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-		$rw,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$groupby,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$cpgName,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$node,
-		
-		[Parameter(lse, ValueFromPipeline=$true)]
-		[String]
-		$LDName,
-		
-		[Parameter()]
-		[String]
-		$Metric,
-		
-		[Parameter(ValueFromPipeline=$true)]
-        $SANConnection = $global:SANConnection       
+param(	[Parameter()]		[switch]		$attime,
+		[Parameter()]		[String]		$btsecs,
+		[Parameter()]		[String]		$etsecs,
+		[Parameter()]		[switch]        $Hourly ,
+		[Parameter()]		[switch]        $Daily ,
+		[Parameter()]		[switch]        $Hires ,
+		[Parameter()]		[switch]		$rw,
+		[Parameter()]		[String]		$groupby,
+		[Parameter()]		[String]		$cpgName,
+		[Parameter()]		[String]		$node,
+		[Parameter()]		[String]		$LDName,
+		[Parameter()]		[String]		$Metric    
 	)
-	Write-DebugLog "Start: In Get-SRHistLd - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{	
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRHistLd since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRHistLd since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
-	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
-	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
-	}
-	$srinfocmd = "srhistld "
+Begin
+{	Test-A9CLIConnection
+}
+Process	
+{	$srinfocmd = "srhistld "
 	$3parosver = Get-Version -S -SANConnection  $SANConnection
 	if($3parosver -ge "3.1.2")
-	{
-		if($btsecs)
-		{
-			$srinfocmd += " -btsecs $btsecs"
-		}
-		if($etsecs)
-		{
-			$srinfocmd += " -etsecs $etsecs"
-		}
-		if($rw)
-		{
-			$srinfocmd +=  " -rw "
-		}
-		if($groupby)
-		{
-			$commarr =  "DOM_NAME","LDID","LD_NAME","CPG_NAME","NODE"
-			$lista = $groupby.split(",")
-			foreach($suba in $lista)
-			{
-				if($commarr -eq $suba.toUpper())
-				{					
+		{	if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
+			if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
+			if($rw)		{	$srinfocmd +=  " -rw "	}
+			if($groupby){	$commarr =  "DOM_NAME","LDID","LD_NAME","CPG_NAME","NODE"
+							$lista = $groupby.split(",")
+							foreach($suba in $lista)
+								{	if(-not ($commarr -eq $suba.toUpper()) )	{	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
+								}
+							$srinfocmd += " -groupby $groupby"
+						}		
+			if($Hourly)	{	$srinfocmd += " -hourly"	}
+			if($Daily)	{	$srinfocmd += " -daily"		}
+			if($Hires)	{	$srinfocmd += " -hires"		}
+			if($cpgName){	$srinfocmd +=  " -cpg $cpgName "	}
+			if($node)	{	$nodes = $node.split(",")
+							$srinfocmd +=  " -node $nodes "			
+						}
+			if($LDName)	{	$srinfocmd += " $LDName "	}
+			if($Metric)	{	$a = "both","time","size"
+							$l=$Metric
+							if($a -eq $l)	{	$srinfocmd += " -metric $Metric"				}
+							else			{ 	Return "FAILURE : Metric :- $Metric is an Incorrect [ both | time | size ]  can be used only . "	}
+						}
+			$tempFile = [IO.Path]::GetTempFileName()
+			if($attime)
+				{	$srinfocmd += " -attime "
+					write-verbose "System reporter command => $srinfocmd"
+					if($groupby)	{	$optionname = $groupby.toUpper()	}
+					else			{	$optionname = "LD_NAME"				}
+					Add-Content -Path $tempFile -Value "$optionname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
+					$rangestart = "3"
 				}
-				else
-				{
-					return "FAILURE: Invalid groupby option it should be in ( $commarr )"
+			elseif($Metric -eq "time")
+				{	$rangestart = "2"
+					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec)"
 				}
-			}
-			$srinfocmd += " -groupby $groupby"
-		}		
-		if($Hourly)
-		{
-			$srinfocmd += " -hourly"			
-		}
-		
-		if($Daily)
-		{
-			$srinfocmd += " -daily"			
-		}
-		
-		if($Hires)
-		{
-			$srinfocmd += " -hires"			
-		}
-		if($cpgName)
-		{
-			$srinfocmd +=  " -cpg $cpgName "
-		}
-		if($node)
-		{
-			$nodes = $node.split(",")
-			$srinfocmd +=  " -node $nodes "			
-		}
-		if($LDName)
-		{
-				$srinfocmd += " $LDName "
-		}
-		if($Metric)
-		{			
-			$a = "both","time","size"
-			$l=$Metric
-			if($a -eq $l)
-			{
-				$srinfocmd += " -metric $Metric"			
-			}
+			elseif($Metric -eq "size")
+				{	$rangestart = "2"
+					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
+				}
 			else
-			{ 
-				Write-DebugLog "Stop: Exiting  Get-SRHistLd   since -Metric $Metric in incorrect "
-				Return "FAILURE : Metric :- $Metric is an Incorrect [ both | time | size ]  can be used only . "
+				{	$rangestart = "2"
+					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
+				}
+			write-verbose "System reporter command => $srinfocmd"
+			$Result = Invoke-CLICommand -cmds  $srinfocmd
+			$range1  = $Result.count
+			if($range1 -le "3")
+			{	Remove-Item  $tempFile
+				return "No data available"
 			}
-		}
-		#write-host " cmd = $srinfocmd"
-		$tempFile = [IO.Path]::GetTempFileName()
-		if($attime)
-		{
-			$srinfocmd += " -attime "
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
-			if($groupby)
-			{
-				$optionname = $groupby.toUpper()
-			}
-			else
-			{
-				$optionname = "LD_NAME"
-			}
-			Add-Content -Path $tempFile -Value "$optionname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
-			$rangestart = "3"
-		}
-		elseif($Metric -eq "time")
-		{
-			$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec)"
-		}
-		elseif($Metric -eq "size")
-		{
-			$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
-		}
-		else
-		{
-			$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
-		}
-		write-debuglog "System reporter command => $srinfocmd" "INFO:"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
-		$range1  = $Result.count
-		if($range1 -le "3")
-		{
+			foreach ($s in  $Result[$rangestart..$range1] )
+				{	$s= [regex]::Replace($s,"^ +","")
+					$s= [regex]::Replace($s," +"," ")
+					$s= [regex]::Replace($s," ",",")
+					Add-Content -Path $tempFile -Value $s
+				}
+			Import-Csv $tempFile
 			Remove-Item  $tempFile
-			return "No data available"
 		}
-		foreach ($s in  $Result[$rangestart..$range1] ){
-			$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +"," ")
-			$s= [regex]::Replace($s," ",",")
-			Add-Content -Path $tempFile -Value $s
-		}
-		Import-Csv $tempFile
-		Remove-Item  $tempFile
-	}
-	else
-	{
-		return "Current OS version $3parosver does not support these cmdlet"
-	}
+	else{	return "Current OS version $3parosver does not support these cmdlet"	}
 }
-## End Get-SRHistLd
+}
 
-##########################################################################
-########################### Start Get-SRHistPD ###########################
-##########################################################################
-Function Get-SRHistPD
+Function Get-A9SRHistPD_CLI
 {
 <#
 .SYNOPSIS
@@ -1008,24 +464,18 @@ Function Get-SRHistPD
 .PARAMETER btsecs
     Select the begin time in seconds for the report.The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> canbe specified with a suffix of m, h or d to represent time in minutes
-	  (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> canbe specified with a suffix of m, h or d to represent time in minutes(e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
 	If it is not specified then the time at which the report begins depends
 	on the sample category (-hires, -hourly, -daily):        
 		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
 		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
 		- For daily, the default begin time is 90 days ago (-btsecs -90d).
-	If begin time and sample category are not specified then the time
-	the report begins is 12 hours ago and the default sample category is hires.
-	If -btsecs 0 is specified then the report begins at the earliest sample.
+	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires. If -btsecs 0 is specified then the report begins at the earliest sample.
 .PARAMETER etsecs
-    Select the end time in seconds for the report.  If -attime is   specified, select the time for the report.
-	The value can be specified as either
+    Select the end time in seconds for the report.  If -attime is   specified, select the time for the report. The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
-	- A negative number indicating the number of seconds before the
-	  current time. Instead of a number representing seconds, <secs> can
-	  be specified with a suffix of m, h or d to represent time in minutes
-	  (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
 	If it is not specified then the report ends with the most recent sample.
 .PARAMETER Hires
 	Select high resolution samples (5 minute intervals) for the report. This is the default setting.
@@ -1034,11 +484,9 @@ Function Get-SRHistPD
 .PARAMETER Daily   
 	Select daily samples for the report.
 .PARAMETER rw
-   Specifies that the display includes separate read and write data. If notspecified, the total is displayed.
-	   .PARAMETER Groupby
-	For -attime reports, generate a separate row for each combination of
-	<groupby> items.  Each <groupby> must be different and
-	one of the following:
+	Specifies that the display includes separate read and write data. If notspecified, the total is displayed.
+.PARAMETER Groupby
+	For -attime reports, generate a separate row for each combination of <groupby> items.  Each <groupby> must be different and one of the following:
 	PDID      Physical disk ID
 	PORT_N    The node number for the primary port for the the PD
 	PORT_S    The PCI slot number for the primary port for the the PD
@@ -1050,286 +498,132 @@ Function Get-SRHistPD
 	FC  - Fast Class
 	NL  - Nearline
 	SSD - Solid State Drive
-	.PARAMETER rpmSpeed
+.PARAMETER rpmSpeed
         Limit the data to disks of the specified RPM. Allowed speeds are 7, 10, 15, 100 and 150
 .PARAMETER Metric both|time|size
 	Selects which metric to display. Metrics can be one of the following:
 	both - (Default)Display both I/O time and I/O size histograms
 	time - Display only the I/O time histogram
 	size - Display only the I/O size histogram
-		
 .PARAMETER PDID
 	LDs matching either the specified LD_name or glob-style pattern are included. This specifier can be repeated to display information for multiple LDs. If not specified, all LDs are included.
-.PARAMETER SANConnection 
-   Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection	
-   
-  .Notes
-    NAME:  Get-SRHistPD
-    LASTEDIT: December 2019
-    KEYWORDS: Get-SRHistPD   
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
-
- #>
+#>
 [CmdletBinding()]
-	param(
-		[Parameter()]
-		[switch]
-		$attime,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$btsecs,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$etsecs,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Hourly ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Daily ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Hires ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-		$rw,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$groupby,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$diskType,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$rpmSpeed,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$PDID,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$Metric,
-		
-		[Parameter(lse, ValueFromPipeline=$true)]
-        $SANConnection = $global:SANConnection 
-       
-	)
-	Write-DebugLog "Start: In Get-SRHistPD - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{	
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRHistPD since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRHistPD since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
-	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
-	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
-	}
-	$srinfocmd = "srhistpd "
+param(	[Parameter()]	[switch]	$attime,
+		[Parameter()]	[String]	$btsecs,
+		[Parameter()]	[String]	$etsecs,
+		[Parameter()]	[switch]    $Hourly ,
+		[Parameter()]	[switch]    $Daily ,
+		[Parameter()]	[switch]    $Hires ,
+		[Parameter()]	[switch]	$rw,
+		[Parameter()]	[String]	$groupby,
+		[Parameter()]	[String]	$diskType,
+		[Parameter()]	[String]	$rpmSpeed,
+		[Parameter()]	[String]	$PDID,
+		[Parameter()]	[String]	$Metric
+)
+Begin
+{	Test-A9CLIConnection
+}
+Process	
+{	$srinfocmd = "srhistpd "
 	$3parosver = Get-Version -S -SANConnection  $SANConnection
 	if($3parosver -ge "3.1.2")
-	{
-		if($btsecs)
-		{
-			$srinfocmd += " -btsecs $btsecs"
-		}
-		if($etsecs)
-		{
-			$srinfocmd += " -etsecs $etsecs"
-		}
-		if($rw)
-		{
-			$srinfocmd +=  " -rw "
-		}
-		if($groupby)
-		{
-			$commarr =  "PDID","PORT_N","PORT_S","PORT_P","DISK_TYPE","SPEED"
-			$lista = $groupby.split(",")
-			foreach($suba in $lista)
-			{
-				if($commarr -eq $suba.toUpper())
-				{					
+		{	if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
+			if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
+			if($rw)		{	$srinfocmd +=  " -rw "	}
+			if($groupby){	$commarr =  "PDID","PORT_N","PORT_S","PORT_P","DISK_TYPE","SPEED"
+							$lista = $groupby.split(",")
+							foreach($suba in $lista)
+								{	if(-not ($commarr -eq $suba.toUpper() ) )	{	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
+								}
+							$srinfocmd += " -groupby $groupby"
+						}		
+			if($Hourly)	{	$srinfocmd += " -hourly"	}
+			if($Daily)	{	$srinfocmd += " -daily"		}
+			if($Hires)	{	$srinfocmd += " -hires"		}
+			if($diskType)
+						{	$diskarr1 = "FC","NL","SSD"
+							if($diskarr1 -eq $diskType.toUpper())		{	$srinfocmd +=  " -disk_type $diskType "	}
+							else	{	return "FAILURE: Invalid diskType it should be in ( $diskarr1 )"	}			
+						}
+			if($Metric)	{	$a = "both","time","size"
+							$l=$Metric
+							if($a -eq $l)	{	$srinfocmd += " -metric $Metric"	}
+							else			{ 	Return "FAILURE : Metric :- $Metric is an Incorrect [ both | time | size ]  can be used only . "	}
+						}
+			if($rpmSpeed)
+				{	$rpmarr1 = "7","10","15","100","150"
+					if($rpmarr1 -eq $rpmSpeed)	{	$srinfocmd +=  " -rpm $rpmSpeed "	}
+					else	{	return "FAILURE: Invalid rpmSpeed it should be in ( $rpmarr1 )"	}		
 				}
-				else
-				{
-					return "FAILURE: Invalid groupby option it should be in ( $commarr )"
+			if($PDID)	{	$srinfocmd += " $PDID "	}
+			$tempFile = [IO.Path]::GetTempFileName()
+			if($attime)
+				{	$srinfocmd += " -attime "
+					write-verbose "System reporter command => $srinfocmd"
+					if($groupby)	{	$optionname = $groupby.toUpper()	}
+					else			{	$optionname = "PDID"				}
+					Add-Content -Path $tempFile -Value "$optionname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
+					$rangestart = "3"
 				}
-			}
-			$srinfocmd += " -groupby $groupby"
-		}		
-		if($Hourly)
-		{
-			$srinfocmd += " -hourly"			
-		}
-		
-		if($Daily)
-		{
-			$srinfocmd += " -daily"			
-		}
-		
-		if($Hires)
-		{
-			$srinfocmd += " -hires"			
-		}
-		if($diskType)
-		{
-			$diskarr1 = "FC","NL","SSD"
-			if($diskarr1 -eq $diskType.toUpper())
-			{
-				$srinfocmd +=  " -disk_type $diskType "
-			}
-			else
-			{
-				return "FAILURE: Invalid diskType it should be in ( $diskarr1 )"
-			}
-			
-		}
-		if($Metric)
-		{			
-			$a = "both","time","size"
-			$l=$Metric
-			if($a -eq $l)
-			{
-				$srinfocmd += " -metric $Metric"			
-			}
-			else
-			{ 
-				Write-DebugLog "Stop: Exiting  Get-SRHistPD   since -Metric $Metric in incorrect "
-				Return "FAILURE : Metric :- $Metric is an Incorrect [ both | time | size ]  can be used only . "
-			}
-		}
-		if($rpmSpeed)
-		{
-			$rpmarr1 = "7","10","15","100","150"
-			if($rpmarr1 -eq $rpmSpeed)
-			{
-				$srinfocmd +=  " -rpm $rpmSpeed "
-			}
-			else
-			{
-				return "FAILURE: Invalid rpmSpeed it should be in ( $rpmarr1 )"
-			}		
-		}
-		if($PDID)
-		{
-				$srinfocmd += " $PDID "
-		}
-		$tempFile = [IO.Path]::GetTempFileName()
-		if($attime)
-		{
-			$srinfocmd += " -attime "
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
-			if($groupby)
-			{
-				$optionname = $groupby.toUpper()
-			}
-			else
-			{
-				$optionname = "PDID"
-			}
-			Add-Content -Path $tempFile -Value "$optionname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
-			$rangestart = "3"
-		}
-		elseif($Metric -eq "time")
-		{
-			$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec)"
-		}
-		elseif($Metric -eq "size")
-		{
-			$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
-		}
-		else
-		{
-			$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
-		}
-		#write-host " cmd = $srinfocmd"
-		write-debuglog "System reporter command => $srinfocmd" "INFO:"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
-		$range1  = $Result.count
-		if($range1 -le "3")
-		{
+			elseif($Metric -eq "time")
+				{	$rangestart = "2"
+					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec)"
+				}
+			elseif($Metric -eq "size")
+				{	$rangestart = "2"
+					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
+				}
+			else{	$rangestart = "2"
+					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
+				}
+			write-verbose "System reporter command => $srinfocmd"
+			$Result = Invoke-CLICommand -cmds  $srinfocmd
+			$range1  = $Result.count
+			if($range1 -le "3")
+				{	Remove-Item  $tempFile
+					return "No data available"
+				}
+			foreach ($s in  $Result[$rangestart..$range1] )
+				{	$s= [regex]::Replace($s,"^ +","")
+					$s= [regex]::Replace($s," +"," ")
+					$s= [regex]::Replace($s," ",",")
+					Add-Content -Path $tempFile -Value $s
+				}
+			Import-Csv $tempFile	
 			Remove-Item  $tempFile
-			return "No data available"
 		}
-		foreach ($s in  $Result[$rangestart..$range1] )
-		{
-			$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +"," ")
-			$s= [regex]::Replace($s," ",",")
-			Add-Content -Path $tempFile -Value $s
-		}
-		Import-Csv $tempFile	
-		Remove-Item  $tempFile
-	}
-	else
-	{
-		return "Current OS version $3parosver does not support these cmdlet"
-	}
+	else{	return "Current OS version $3parosver does not support these cmdlet"	}
 }
-## End Get-SRHistPD
+}
 
-##########################################################################
-############################# Start Get-SRHistPort #######################
-##########################################################################
-Function Get-SRHistPort
+Function Get-A9SRHistPort_CLI
 {
 <#
 .SYNOPSIS
     Command displays historical histogram performance data reports for ports.
-	
 .DESCRIPTION
-    Command displays historical histogram performance data reports for ports. 
-	
+    Command displays historical histogram performance data reports for ports. 	
 .EXAMPLE
     Get-SRHistPort 
-	Command displays historical histogram performance data reports for ports.
-	
+
+	Command displays historical histogram performance data reports for ports.	
 .EXAMPLE
     Get-SRHistPort -Metric_Val size
-
 .EXAMPLE
-    Get-SRHistPort -Groupby PORT_N
-	
+    Get-SRHistPort -Groupby PORT_N	
 .EXAMPLE
     Get-SRHistPort -Hurly -btsecs -24h -portType "host,disk" -port "0:*:* 1:*:*"
+	
 	example displays aggregate hourly histogram performance statistics for disk and host ports on nodes 0 and 1 beginning 24 hours ago:
 .PARAMETER attime
-	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object
- 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
+	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
     Select the begin time in seconds for the report.The value can be specified as either
         - The absolute epoch time (for example 1351263600).
 		- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> canbe specified with a suffix of m, h or d to represent time in minutes
-          (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+			(e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
         If it is not specified then the time at which the report begins depends
         on the sample category (-hires, -hourly, -daily):        
 			- For hires, the default begin time is 12 hours ago (-btsecs -12h).
@@ -1338,40 +632,34 @@ Function Get-SRHistPort
         If begin time and sample category are not specified then the time
         the report begins is 12 hours ago and the default sample category is hires.
         If -btsecs 0 is specified then the report begins at the earliest sample.
-	.PARAMETER etsecs
-     Select the end time in seconds for the report.  If -attime is   specified, select the time for the report.
+.PARAMETER etsecs
+    Select the end time in seconds for the report.  If -attime is   specified, select the time for the report.
         The value can be specified as either
         - The absolute epoch time (for example 1351263600).
-        - A negative number indicating the number of seconds before the
-          current time. Instead of a number representing seconds, <secs> can
-          be specified with a suffix of m, h or d to represent time in minutes
-          (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+        - A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+			be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
         If it is not specified then the report ends with the most recent sample.
 .PARAMETER Hires
-		Select high resolution samples (5 minute intervals) for the report. This is the default setting.
-	.PARAMETER Hourly
-		Select hourly samples for the report.
-	.PARAMETER Daily   
-		Select daily samples for the report.
+	Select high resolution samples (5 minute intervals) for the report. This is the default setting.
+.PARAMETER Hourly
+	Select hourly samples for the report.
+.PARAMETER Daily   
+	Select daily samples for the report.
 .PARAMETER Metric_Val both|time|size
 	Selects which metric to display. Metrics can be one of the following:
 		both - (Default)Display both I/O time and I/O size histograms
 		time - Display only the I/O time histogram
 		size - Display only the I/O size histogram
-
-	.PARAMETER rw
-   Specifies that the display includes separate read and write data. If notspecified, the total is displayed.
-	   .PARAMETER Groupby
-	 For -attime reports, generate a separate row for each combination of
-	<groupby> items.  Each <groupby> must be different and
-	one of the following:
+.PARAMETER rw
+	Specifies that the display includes separate read and write data. If notspecified, the total is displayed.
+.PARAMETER Groupby
+	For -attime reports, generate a separate row for each combination of <groupby> items.  Each <groupby> must be different and one of the following:
 	PORT_N      The node number for the port
 	PORT_S      The PCI slot number for the port
 	PORT_P      The port number for the port
 	PORT_TYPE   The type of the port
 	GBITPS      The speed of the port
 	TRANS_TYPE  The transaction type - ctl or data
-
 .PARAMETER portType
 	Limit the data to port of the types specified. Allowed types are
 	disk  -  Disk port
@@ -1384,257 +672,115 @@ Function Get-SRHistPort
 	rcfc  -  Remote copy FC port
 .PARAMETER Port	
 	Ports with <port_n>:<port_s>:<port_p> that match any of the specified[<npat>:<spat>:<ppat>...] patterns are included, where each of the patterns is a glob-style pattern. If not specified, all ports are included.
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection	
-	
-  .Notes
-    NAME:  Get-SRHistPort
-    LASTEDIT: December 2019
-    KEYWORDS: Get-SRHistPort
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
-
- #>
+#>
 [CmdletBinding()]
-	param(
-		[Parameter(alse, ValueFromPipeline=$true)]
-		[switch]
-		$attime,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$btsecs,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$etsecs,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Hourly ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Daily ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Hires ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-		$rw,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$groupby,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$portType,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$Port,
-		
-		[Parameter(lse, ValueFromPipeline=$true)]
-		[String]
-		$Metric_Val,
-		
-		[Parameter(ValueFromPipeline=$true)]
-        $SANConnection = $global:SANConnection 
-       
+param(	[Parameter()]	[switch]	$attime,
+		[Parameter()]	[String]	$btsecs,
+		[Parameter()]	[String]	$etsecs,
+		[Parameter()]	[switch]    $Hourly ,
+		[Parameter()]	[switch]    $Daily ,
+		[Parameter()]	[switch]    $Hires ,
+		[Parameter()]	[switch]	$rw,
+		[Parameter()]	[String]	$groupby,
+		[Parameter()]	[String]	$portType,
+		[Parameter()]	[String]	$Port,
+		[Parameter()][ValidateSet('both','time','size' )]
+						[String]	$Metric_Val
 	)
-	Write-DebugLog "Start: In Get-SRHistPort - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{				
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRHistPort since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRHistPort since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
-	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
-	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
-	}
-	$srinfocmd = "srhistport "
+Begin
+{	Test-A9CLIConnection
+}
+Process	
+{	$srinfocmd = "srhistport "
 	$3parosver = Get-Version -S -SANConnection  $SANConnection
 	if($3parosver -ge "3.1.2")
-	{
-
-		if($btsecs)
-		{
-			$srinfocmd += " -btsecs $btsecs"
-		}
-		if($etsecs)
-		{
-			$srinfocmd += " -etsecs $etsecs"
-		}
-		if($rw)
-		{
-			$srinfocmd +=  " -rw "
-		}
-		if($groupby)
-		{
-			$commarr =  "PORT_N","PORT_S","PORT_P","PORT_TYPE","GBITPS"
-			$lista = $groupby.split(",")
-			foreach($suba in $lista)
-			{
-				if($commarr -eq $suba.toUpper())
-				{					
+		{	if($btsecs)		{	$srinfocmd += " -btsecs $btsecs"	}
+			if($etsecs)		{	$srinfocmd += " -etsecs $etsecs"	}
+			if($rw)			{	$srinfocmd +=  " -rw "	}
+			if($groupby)	{	$commarr =  "PORT_N","PORT_S","PORT_P","PORT_TYPE","GBITPS"
+								$lista = $groupby.split(",")
+								foreach($suba in $lista)
+									{	if(-not ($commarr -eq $suba.toUpper() ) )	{	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
+									}
+								$srinfocmd += " -groupby $groupby"
+							}		
+			if($Hourly)		{	$srinfocmd += " -hourly"	}
+			if($Daily)		{	$srinfocmd += " -daily"		}
+			if($Hires)		{	$srinfocmd += " -hires"		}
+			if($portType)
+				{	$commarr = "disk","host","iscsi","free","fs","peer","rcip","rcfc"
+					$splitarr = $portType.split(",")
+					foreach ($s in $splitarr)
+						{	if( -not ($commarr -match $s.toLower() ) )
+								{	return "FAILURE: Invalid port type option it should be in ( $commarr )"
+								}
+						}
+					$srinfocmd += " -port_type $portType"	
+				}		
+			if($Port)		{	$srinfocmd += " $Port "	}
+			if($Metric_Val)	{	$srinfocmd += " -metric $Metric_Val"	}				
+			$tempFile = [IO.Path]::GetTempFileName()
+			if($attime)
+				{	$srinfocmd += " -attime "
+					write-verbose "System reporter command => $srinfocmd"
+					if($groupby)	{	$optionname = $groupby.toUpper()	}
+					else			{	$optionname = "PORT_TYPE"			}
+					Add-Content -Path $tempFile -Value "$optionname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
+					$rangestart = "3"
 				}
-				else
-				{
-					return "FAILURE: Invalid groupby option it should be in ( $commarr )"
+			elseif($Metric_Val -eq "time")
+				{	$rangestart = "2"
+					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec)"
 				}
-			}
-			$srinfocmd += " -groupby $groupby"
-		}		
-		if($Hourly)
-		{
-			$srinfocmd += " -hourly"			
-		}
-		
-		if($Daily)
-		{
-			$srinfocmd += " -daily"			
-		}
-		
-		if($Hires)
-		{
-			$srinfocmd += " -hires"			
-		}
-		if($portType)
-		{
-			$commarr = "disk","host","iscsi","free","fs","peer","rcip","rcfc"
-			$splitarr = $portType.split(",")
-			foreach ($s in $splitarr){
-				if($commarr -match $s.toLower())
-				{				
+			elseif($Metric_Val -eq "size")
+				{	$rangestart = "2"
+					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
 				}
-				else
-				{
-					return "FAILURE: Invalid port type option it should be in ( $commarr )"
-				}
-			}
-			$srinfocmd += " -port_type $portType"	
-		}		
-		if($Port)
-		{
-				$srinfocmd += " $Port "
-		}
-		if($Metric_Val)
-		{			
-			$a = "both","time","size"
-			$l=$Metric_Val
-			if($a -eq $l)
-			{
-				$srinfocmd += " -metric $Metric_Val"			
-			}
 			else
-			{ 
-				Write-DebugLog "Stop: Exiting  Get-SRHistPort since -Metric $Metric_Val in incorrect "
-				Return "FAILURE : Metric :- $Metric_Val is an Incorrect [ both | time | size ]  can be used only . "
-			}
-		}
-		$tempFile = [IO.Path]::GetTempFileName()
-		if($attime)
-		{
-			$srinfocmd += " -attime "
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
-			if($groupby)
-			{
-				$optionname = $groupby.toUpper()
-			}
-			else
-			{
-				$optionname = "PORT_TYPE"
-			}
-			Add-Content -Path $tempFile -Value "$optionname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
-			$rangestart = "3"
-		}
-		elseif($Metric_Val -eq "time")
-		{
-			$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec)"
-		}
-		elseif($Metric_Val -eq "size")
-		{
-			$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
-		}
-		else
-		{
-			$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
-		}
-		#write-host " cmd = $srinfocmd"
-		write-debuglog "System reporter command => $srinfocmd" "INFO:"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
-		$range1  = $Result.count		
-		if($range1 -le "3")
-		{
+				{	$rangestart = "2"
+					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
+				}
+			write-verbose "System reporter command => $srinfocmd"
+			$Result = Invoke-CLICommand -cmds  $srinfocmd
+			$range1  = $Result.count		
+			if($range1 -le "3")
+				{	Remove-Item  $tempFile
+					return "No data available "
+				}
+			foreach ($s in  $Result[$rangestart..$range1] )
+				{	$s= [regex]::Replace($s,"^ +","")
+					$s= [regex]::Replace($s," +"," ")
+					$s= [regex]::Replace($s," ",",")
+					Add-Content -Path $tempFile -Value $s
+				}
+			Import-Csv $tempFile
 			Remove-Item  $tempFile
-			return "No data available "
 		}
-		foreach ($s in  $Result[$rangestart..$range1] )
-		{
-			$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +"," ")
-			$s= [regex]::Replace($s," ",",")
-			Add-Content -Path $tempFile -Value $s
-		}
-		Import-Csv $tempFile
-		Remove-Item  $tempFile
-	}
-	else
-	{
-		return "Current OS version $3parosver does not support these cmdlet"
-	}
-
+	else{	return "Current OS version $3parosver does not support these cmdlet"	}
 }
-## End Get-SRHistPort
+}
 
-##########################################################################
-########################### Start Get-SRHistVLun #########################
-##########################################################################
-Function Get-SRHistVLun
+Function Get-A9SRHistVLun_CLI
 {
 <#
 .SYNOPSIS
-    Command displays historical histogram performance data reports for VLUNs. 
-	
+    Command displays historical histogram performance data reports for VLUNs. 	
 .DESCRIPTION
     Command displays historical histogram performance data reports for  VLUNs. 
-	
 .EXAMPLE
     Get-SRHistVLun 
-	Command displays historical histogram performance data reports for  VLUNs. 
-	
+
+	Command displays historical histogram performance data reports for  VLUNs. 	
 .EXAMPLE
     Get-SRHistVLun  -Hourly -btsecs -24h
+
 	example displays aggregate hourly histogram performance statistics for all VLUNs beginning 24 hours ago:
-	
 .EXAMPLE
     Get-SRHistVLun -btsecs -2h -host "set:hostset" -vv "set:vvset*"
+
 	VV or host sets can be specified with patterns:
 .PARAMETER attime
-	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	
-	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
+	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
     Select the begin time in seconds for the report.The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
@@ -1664,8 +810,8 @@ Function Get-SRHistVLun
 .PARAMETER Daily   
 	Select daily samples for the report.
 .PARAMETER rw
-   Specifies that the display includes separate read and write data. If notspecified, the total is displayed.
-	   .PARAMETER Groupby
+	Specifies that the display includes separate read and write data. If notspecified, the total is displayed.
+.PARAMETER Groupby
 	For -attime reports, generate a separate row for each combination of  <groupby> items.  Each <groupby> must be different and one of the following:
 	DOM_NAME  Domain name
 	VV_NAME   Virtual Volume name
@@ -1677,251 +823,115 @@ Function Get-SRHistVLun
 	PORT_P    The port number for the VLUN port
 	VVSET_NAME    Virtual volume set name
 	HOSTSET_NAME  Host set name
-.PARAMETER host
-	 -host <host_name|host_set|pattern>[,<host_name|host_set|pattern>...]
+.PARAMETER hostE
+	-host <host_name|host_set|pattern>[,<host_name|host_set|pattern>...]
 	Limit the data to hosts with names that match one or more of the
 	specified names or glob-style patterns. Host set name must start with
 	"set:" and can also include patterns.
-	.PARAMETER vv		
+.PARAMETER vv		
 	-vv <VV_name|VV_set|pattern>[,<VV_name|VV_set|pattern>...]
 	Limit the data to VVs with names that match one or more of the specified names or glob-style patterns. 
 	VV set name must be prefixed by "set:" and can also include patterns.
-	.PARAMETER lun
+.PARAMETER lun
     -lun <LUN|pattern>[,<LUN|pattern>...]
 	Limit the data to LUNs that match one or more of the specified LUNs or glob-style patterns.
 .PARAMETER Port
     -port <npat>:<spat>:<ppat>[,<npat>:<spat>:<ppat>...]
 	Ports with <port_n>:<port_s>:<port_p> that match any of the specified <npat>:<spat>:<ppat> patterns are included, where each of the patterns is a glob-style pattern. If not specified, all ports are included.
-.PARAMETER Metric_Val both|time|size
+.PARAMETER Metric_Val
 	Selects which metric to display. Metrics can be one of the following:
 	both - (Default)Display both I/O time and I/O size histograms
 	time - Display only the I/O time histogram
 	size - Display only the I/O size histogram
-	.PARAMETER SANConnection 
+.PARAMETER SANConnection 
     Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection	
-	
-  .Notes
-    NAME:  Get-SRHistVLun
-    LASTEDIT: December 2019
-    KEYWORDS: Get-SRHistVLun
-  .Link
-     http://www.hpe.com
- 
- #Requires PS -Version 3.0
-
- #>
+#>
 [CmdletBinding()]
-	param(
-		[Parameter(alse, ValueFromPipeline=$true)]
-		[switch]
-		$attime,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$btsecs,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$etsecs,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Hourly ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Daily ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-        $Hires ,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[switch]
-		$rw,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$groupby,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$host,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$vv,
-		
-		[Parameter(lse, ValueFromPipeline=$true)]
-		[String]
-		$lun,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$Port,
-		
-		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$Metric_Val,
-		
-		[Parameter(ValueFromPipeline=$true)]
-        $SANConnection = $global:SANConnection 
-       
-	)
-	Write-DebugLog "Start: In Get-SRHistVLun - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{				
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRHistVLun since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRHistVLun since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
-	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
-	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
-	}
-	$srinfocmd = "srhistvlun "
+param(	[Parameter()]	[switch]	$attime,
+		[Parameter()]	[String]	$btsecs,
+		[Parameter()]	[String]	$etsecs,
+		[Parameter()]	[switch]    $Hourly ,
+		[Parameter()]	[switch]    $Daily ,
+		[Parameter()]	[switch]    $Hires ,
+		[Parameter()]	[switch]	$rw,
+		[Parameter()]	[String]	$groupby,
+		[Parameter()]	[String]	$hostE,
+		[Parameter()]	[String]	$vv,
+		[Parameter()]	[String]	$lun,
+		[Parameter()]	[String]	$Port,
+		[Parameter()]	[String]	$Metric_Val
+)
+Begin
+{	Test-A9CLIConnection
+}
+Process	
+{	$srinfocmd = "srhistvlun "
 	$3parosver = Get-Version -S -SANConnection  $SANConnection
 	if($3parosver -ge "3.1.2")
-	{
-		if($btsecs)
-		{
-			$srinfocmd += " -btsecs $btsecs"
-		}
-		if($etsecs)
-		{
-			$srinfocmd += " -etsecs $etsecs"
-		}
-		if($rw)
-		{
-			$srinfocmd +=  " -rw "
-		}
-		if($groupby)
-		{
-			$commarr =  "DOM_NAME","VV_NAME","HOST_NAME","LUN","HOST_WWN","PORT_N","PORT_S","PORT_P","VVSET_NAME","HOSTSET_NAME"
-			$lista = $groupby.split(",")
-			foreach($suba in $lista)
-			{
-				if($commarr -eq $suba.toUpper())
-				{					
+		{	if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
+			if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
+			if($rw)		{	$srinfocmd +=  " -rw "				}
+			if($groupby){	$commarr =  "DOM_NAME","VV_NAME","HOST_NAME","LUN","HOST_WWN","PORT_N","PORT_S","PORT_P","VVSET_NAME","HOSTSET_NAME"
+							$lista = $groupby.split(",")
+							foreach($suba in $lista)
+								{	if(-not $commarr -eq $suba.toUpper())	{	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
+								}
+							$srinfocmd += " -groupby $groupby"
+						}		
+			if($Hourly)	{	$srinfocmd += " -hourly"			}	
+			if($Daily)	{	$srinfocmd += " -daily"				}
+			if($Hires)	{	$srinfocmd += " -hires"				}
+			if($hostE)	{	$srinfocmd +=  " -host $hostE "		}
+			if($vv)		{	$srinfocmd +=  " -vv $vv "		}
+			if($lun)	{	$srinfocmd +=  " -l $lun "		}		
+			if($Port)	{	$srinfocmd += " -port $Port "	}
+			if($Metric_Val)
+						{	$a = "both","time","size"
+							$l=$Metric_Val
+							if($a -eq $l)
+								{	$srinfocmd += " -metric $Metric_Val"			
+								}
+							else
+								{ 	Return "FAILURE : Metric :- $Metric_Val is an Incorrect [ both | time | size ]  can be used only . "
+								}
+						}
+			$tempFile = [IO.Path]::GetTempFileName()
+			if($attime)	{	$srinfocmd += " -attime "
+							write-verbose "System reporter command => $srinfocmd"
+							if($groupby)	{	$optionname = $groupby.toUpper()	}
+							else			{	$optionname = "HOST_NAME"			}
+							Add-Content -Path $tempFile -Value "$optionname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
+							$rangestart = "3"
+						}
+			elseif($Metric_Val -eq "time")
+				{	$rangestart = "2"
+					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec)"
 				}
-				else
-				{
-					return "FAILURE: Invalid groupby option it should be in ( $commarr )"
+			elseif($Metric_Val -eq "size")
+				{	$rangestart = "2"
+					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
 				}
-			}
-			$srinfocmd += " -groupby $groupby"
-		}		
-		if($Hourly)
-		{
-			$srinfocmd += " -hourly"			
-		}
-		
-		if($Daily)
-		{
-			$srinfocmd += " -daily"			
-		}
-		
-		if($Hires)
-		{
-			$srinfocmd += " -hires"			
-		}
-		if($host)
-		{
-			$srinfocmd +=  " -host $host "	
-		}
-		if($vv)
-		{
-			$srinfocmd +=  " -vv $vv "	
-		}
-		if($lun)
-		{
-			$srinfocmd +=  " -l $lun "	
-		}		
-		if($Port)
-		{
-				$srinfocmd += " -port $Port "
-		}
-		if($Metric_Val)
-		{			
-			$a = "both","time","size"
-			$l=$Metric_Val
-			if($a -eq $l)
-			{
-				$srinfocmd += " -metric $Metric_Val"			
-			}
-			else
-			{ 
-				Write-DebugLog "Stop: Exiting  Get-SRHistVLun   since -Metric $Metric_Val in incorrect "
-				Return "FAILURE : Metric :- $Metric_Val is an Incorrect [ both | time | size ]  can be used only . "
-			}
-		}
-		$tempFile = [IO.Path]::GetTempFileName()
-		if($attime)
-		{
-			$srinfocmd += " -attime "
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
-			if($groupby)
-			{
-				$optionname = $groupby.toUpper()
-			}
-			else
-			{
-				$optionname = "HOST_NAME"
-			}
-			Add-Content -Path $tempFile -Value "$optionname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
-			$rangestart = "3"
-		}
-		elseif($Metric_Val -eq "time")
-		{
-			$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec)"
-		}
-		elseif($Metric_Val -eq "size")
-		{
-			$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
-		}
-		else
-		{
-			$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
-		}
-		#write-host " cmd = $srinfocmd"
-		write-debuglog "System reporter command => $srinfocmd" "INFO:"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
-		$range1  = $Result.count
-		if($range1 -le "3")
-		{
+			else{	$rangestart = "2"
+					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
+				}
+			write-verbose "System reporter command => $srinfocmd"
+			$Result = Invoke-CLICommand -cmds  $srinfocmd
+			$range1  = $Result.count
+			if($range1 -le "3")
+				{	Remove-Item  $tempFile
+					return "No data available"
+				}
+			foreach ($s in  $Result[$rangestart..$range1] )
+				{	$s= [regex]::Replace($s,"^ +","")
+					$s= [regex]::Replace($s," +"," ")
+					$s= [regex]::Replace($s," ",",")
+					Add-Content -Path $tempFile -Value $s
+				}
+			Import-Csv $tempFile
 			Remove-Item  $tempFile
-			return "No data available"
 		}
-		foreach ($s in  $Result[$rangestart..$range1] )
-		{
-			$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +"," ")
-			$s= [regex]::Replace($s," ",",")
-			Add-Content -Path $tempFile -Value $s
-		}
-		Import-Csv $tempFile
-		Remove-Item  $tempFile
-	}
-	else
-	{
-		return "Current OS version $3parosver does not support these cmdlet"
-	}
+	else{	return "Current OS version $3parosver does not support these cmdlet"	}
+}
 }
 ## End Get-SRHistVLun
 
@@ -1981,7 +991,7 @@ Function Get-SRLDSpace
 	Select hourly samples for the report.
 .PARAMETER Daily   
 	Select daily samples for the report.
-	.PARAMETER Groupby
+.PARAMETER Groupby
 	For -attime reports, generate a separate row for each combination of
 	<groupby> items.  Each <groupby> must be different and
 	one of the following:
@@ -2049,7 +1059,7 @@ Function Get-SRLDSpace
         $Hires ,
 		
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$groupby,
 		
 		[Parameter(ValueFromPipeline=$true)]
@@ -2069,36 +1079,14 @@ Function Get-SRLDSpace
 		$ownernode,
 		
 		[Parameter(lse, ValueFromPipeline=$true)]
-		[system.string]
-		$LDname,
-		
-		[Parameter(ValueFromPipeline=$true)]
-        $SANConnection = $global:SANConnection        
-	)
-	Write-DebugLog "Start: In Get-SRLDSpace - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{				
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRLDSpace since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRLDSpace since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
-	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
+		[String]
+		$LDname
+)
+Begin
+{	Test-A9CLIConnection
+}
+Process	
 	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
-	}	
 	$srinfocmd = "srldspace"
 	$3parosver = Get-Version -S  -SANConnection $SANConnection
 	if($3parosver -ge "3.1.2")
@@ -2181,7 +1169,7 @@ Function Get-SRLDSpace
 		if($attime)
 		{
 			$srinfocmd += " -attime "
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
+			write-verbose "System reporter command => $srinfocmd"
 			if($groupby)
 			{
 				$optionname = $groupby.toUpper()
@@ -2199,8 +1187,8 @@ Function Get-SRLDSpace
 			$rangestart = "2"
 		}
 		#write-host " cmd = $srinfocmd"
-		write-debuglog "System reporter command => $srinfocmd" "INFO:"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-CLICommand -cmds  $srinfocmd
 		if($Result -contains "FAILURE")
 		{
 			Remove-Item  $tempFile
@@ -2295,7 +1283,7 @@ Function Get-SRPDSpace
 	MAG       Disk Magazine number within the cage
 	DISK      Disk position within the magazine
 	DISK_TYPE The disktype of the PD
-	SPEED     The disk speed
+	SPEED     The disk speed		
 .PARAMETER DiskType 
 	Limit the data to disks of the types specified. Allowed types are
 		FC  - Fast Class
@@ -2324,7 +1312,7 @@ Function Get-SRPDSpace
  #>
 [CmdletBinding()]
 	param(
-		[Parameter(alse, ValueFromPipeline=$true)]
+		[Parameter(ValueFromPipeline=$true)]
 		[switch]
 		$attime,
 		
@@ -2349,10 +1337,11 @@ Function Get-SRPDSpace
         $Hires ,
 		
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$groupby,
 		
 		[Parameter(ValueFromPipeline=$true)]
+		[ValidateSet("FC","NL","SSD")]
 		[String]
 		$DiskType,
 		
@@ -2361,53 +1350,23 @@ Function Get-SRPDSpace
 		$capacity,
 		
 		[Parameter(ValueFromPipeline=$true)]
-		[String]
-		$rpmspeed,
+		[ValidateSet("7","10","15","100","150")]
+		[String]	$rpmspeed,
 		
 		[Parameter(lse, ValueFromPipeline=$true)]
-		[String]
-		$PDID,
-		
-		[Parameter(ValueFromPipeline=$true)]
-        $SANConnection = $global:SANConnection 
-       
+		[String]	$PDID
 	)
-	Write-DebugLog "Start: In Get-SRPDSpace - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{	
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRPDSpace since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRPDSpace since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
+	Begin
+	{	Test-A9CLIConnection
 	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
+	Process	
 	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
-	}	
+
 	$srinfocmd = "srpdspace"
 	$3parosver = Get-Version -S  -SANConnection $SANConnection
 	if($3parosver -ge "3.1.2")
-	{		
-		if($btsecs)
-		{
-			$srinfocmd += " -btsecs $btsecs"
-		}
-		if($etsecs)
-		{
-			$srinfocmd += " -etsecs $etsecs"
-		}
+	{	if($btsecs)		{	$srinfocmd += " -btsecs $btsecs"	}
+		if($etsecs)		{	$srinfocmd += " -etsecs $etsecs"	}
 		if($groupby)
 		{
 			$commarr = "PDID","CAGEID","CAGESIDE","MAG","DISK","DISK_TYPE","SPEED"
@@ -2424,57 +1383,18 @@ Function Get-SRPDSpace
 			}
 			$srinfocmd += " -groupby $groupby"
 		}		
-		if($Hourly)
-		{
-			$srinfocmd += " -hourly"			
-		}
-		
-		if($Daily)
-		{
-			$srinfocmd += " -daily"			
-		}
-		
-		if($Hires)
-		{
-			$srinfocmd += " -hires"			
-		}
-		if($capacity)
-		{
-			$srinfocmd +=  " -capacity "
-		}
-		if($rpmspeed)
-		{
-			$rpmarray = "7","10","15","100","150"
-			if($rpmarray -eq $rpmspeed)
-			{
-				$srinfocmd += " -rpm $rpmspeed"
-			}
-			else
-			{
-				return "FAILURE: Invalid rpmspeed it should be in ( $rpmarray )"
-			}			
-		}
-		if($DiskType)
-		{
-			$diskarray = "FC","NL","SSD"
-			if($diskarray -eq $DiskType.toUpper())
-			{
-				$srinfocmd += " -disk_type $DiskType"			
-			}
-			else
-			{
-				return "FAILURE: Invalid disktype option, it should be in ( $diskarray )"
-			}
-		}
-		if($PDID)
-		{
-				$srinfocmd += " $PDID "
-		}
+		if($Hourly)		{	$srinfocmd += " -hourly"				}
+		if($Daily)		{	$srinfocmd += " -daily"					}
+		if($Hires)		{	$srinfocmd += " -hires"					}
+		if($capacity)	{	$srinfocmd +=  " -capacity "			}
+		if($rpmspeed)	{	$srinfocmd += " -rpm $rpmspeed"			}
+		if($DiskType)	{	$srinfocmd += " -disk_type $DiskType"	}
+		if($PDID)		{	$srinfocmd += " $PDID "					}
 		$tempFile = [IO.Path]::GetTempFileName()
 		if($attime)
 		{
 			$srinfocmd += " -attime "
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
+			write-verbose "System reporter command => $srinfocmd"
 			#$rangenodata = "3"
 			if($groupby)
 			{
@@ -2493,8 +1413,8 @@ Function Get-SRPDSpace
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,Normal(Chunklets)_Used_OK,Normal(Chunklets)_Used_Fail,Normal(Chunklets)_Avail_Clean,Normal(Chunklets)_Avail_Dirty,Normal(Chunklets)_Avail_Fail,Spare(Chunklets)_Used_OK,Spare(Chunklets)_Used_Fail,Spare(Chunklets)_Avail_Clean,Spare(Chunklets)_Avail_Dirty,Spare(Chunklets)_Avail_Fail,LifeLeft%,T(C)"
 		}
 		
-		write-debuglog "System reporter command => $srinfocmd" "INFO:"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-CLICommand -cmds  $srinfocmd
 		if($Result -contains "FAILURE")
 		{
 			Remove-Item  $tempFile
@@ -2649,38 +1569,14 @@ Function Get-SRrgiodensity()
 
  [Parameter(lse)]
  [String]
- $Aocfg_name,
- 
- [Parameter()]
- $SANConnection = $global:SANConnection
+ $Aocfg_name
  )
-
- Write-DebugLog "Start: In Get-SRrgiodensity - validating input values" $Debug 
- #check if connection object contents are null/empty
- if(!$SANConnection)
- {
-	#check if connection object contents are null/empty
-	$Validate1 = Test-CLIConnection $SANConnection
-	if($Validate1 -eq "Failed")
-	{
-		#check if global connection object contents are null/empty
-		$Validate2 = Test-CLIConnection $global:SANConnection
-		if($Validate2 -eq "Failed")
-		{
-			Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" " ERR: "
-			Write-DebugLog "Stop: Exiting Get-SRrgiodensity since SAN connection object values are null/empty" $Debug 
-			Return "Unable to execute the cmdlet Get-SRrgiodensity since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-		}
-	}
+ Begin
+ {	Test-A9CLIConnection
  }
-
- $plinkresult = Test-PARCli -SANConnection $SANConnection
- if($plinkresult -match "FAILURE :")
+ Process
  {
-	write-debuglog "$plinkresult"
-	Return $plinkresult
- }
-
+ 
 	$Cmd = " srrgiodensity "
 
  if($Btsecs)
@@ -2738,7 +1634,7 @@ Function Get-SRrgiodensity()
 	$Cmd += " $Aocfg_name "
  }
 
- $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+ $Result = Invoke-CLICommand -cmds  $Cmd
  Write-DebugLog "Executing Function : Get-SRrgiodensity Command -->" INFO: 
  
  Return $Result
@@ -2833,7 +1729,7 @@ Function Get-SRStatCache
  #>
 [CmdletBinding()]
 	param(
-		[Parameter(alse, ValueFromPipeline=$true)]
+		[Parameter(ValueFromPipeline=$true)]
 		[switch]
 		$attime,
 		
@@ -2874,41 +1770,22 @@ Function Get-SRStatCache
         $Full ,	
 		
 		[Parameter(lse, ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$groupby,
 		
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$Node,
 		
 		[Parameter(ValueFromPipeline=$true)]
         $SANConnection = $global:SANConnection 
        
 	)
-	Write-DebugLog "Start: In Get-SRStatCache - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{		
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRStatCache since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRStatCache since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
+	Begin
+	{	Test-A9CLIConnection
 	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
+	Process	
 	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
-	}	
 	$srinfocmd = "srstatcache "
 	$3parosver = Get-Version -S  -SANConnection $SANConnection
 	if($3parosver -ge "3.1.2")
@@ -2983,7 +1860,7 @@ Function Get-SRStatCache
 		if($attime)
 		{
 			$srinfocmd += " -attime "
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
+			write-verbose "System reporter command => $srinfocmd"
 			if($groupby)
 			{
 				$optionname = $groupby.toUpper()
@@ -3007,8 +1884,8 @@ Function Get-SRStatCache
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,CMP_r/s,CMP_w/s,CMP_rhit%,CMP_whit%,FMP_rhit%,FMP_whit%,FMP_Used%,Read_Back_IO/s,Read_Back_MB/s,Dstg_Wrt_IO/s,Dstg_Wrt_MB/s"
 		}
 		#write-host " cmd = $srinfocmd"
-		write-debuglog "System reporter command => $srinfocmd" "INFO:"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-CLICommand -cmds  $srinfocmd
 		if($Result -contains "FAILURE")
 		{
 			Remove-Item  $tempFile
@@ -3152,42 +2029,23 @@ Function Get-SRStatCMP
         $Page ,	
 		
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$groupby,
 		
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$Node,
 		
 		[Parameter(lse, ValueFromPipeline=$true)]
         $SANConnection = $global:SANConnection 
        
 	)
-	Write-DebugLog "Start: In Get-SRStatCMP - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{	
-			
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRStatCMP since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRStatCMP since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
-	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
-	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
-	}	
+	Begin
+{	Test-A9CLIConnection
+}
+Begin	
+{
+}
 	$srinfocmd = "srstatcmp "
 	$3parosver = Get-Version -S  -SANConnection $SANConnection
 	if($3parosver -ge "3.1.2")
@@ -3247,7 +2105,7 @@ Function Get-SRStatCMP
 		if($attime)
 		{
 			$srinfocmd += " -attime "
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
+			write-verbose "System reporter command => $srinfocmd"
 			if($groupby)
 			{
 				$optionname = $groupby.toUpper()
@@ -3281,8 +2139,8 @@ Function Get-SRStatCMP
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,rhit(count/sec),whit(count/sec),r(count/sec),w(count/sec),r+w(count/sec),lockblk(count/sec),r(hit%),w(hit%),NL(dack/sec),FC(dack/sec),SSD(dack/sec)"			
 		}
 		#write-host " cmd = $srinfocmd"
-		write-debuglog "System reporter command => $srinfocmd" "INFO:"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-CLICommand -cmds  $srinfocmd
 		if($Result -contains "FAILURE")
 		{
 			Remove-Item  $tempFile
@@ -3394,7 +2252,7 @@ Function Get-SRStatCPU
  #>
 [CmdletBinding()]
 	param(
-		[Parameter(alse, ValueFromPipeline=$true)]
+		[Parameter(ValueFromPipeline=$true)]
 		[switch]
 		$attime,
 		
@@ -3419,41 +2277,23 @@ Function Get-SRStatCPU
         $Hires ,
 		
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$groupby,
 		
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$Node,
 		
 		[Parameter(ValueFromPipeline=$true)]
         $SANConnection = $global:SANConnection 
        
 	)
-	Write-DebugLog "Start: In Get-SRStatCPU - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{				
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRStatCPU since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRStatCPU since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
+	Begin
+	{	Test-A9CLIConnection
 	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
+	Begin	
 	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
-	}	
+	}
 	$srinfocmd = "srstatcpu "
 	$3parosver = Get-Version -S  -SANConnection $SANConnection
 	if($3parosver -ge "3.1.2")
@@ -3505,7 +2345,7 @@ Function Get-SRStatCPU
 		if($attime)
 		{
 			$srinfocmd += " -attime "
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
+			write-verbose "System reporter command => $srinfocmd"
 			if($groupby)
 			{
 				$optionname = $groupby.toUpper()
@@ -3528,8 +2368,8 @@ Function Get-SRStatCPU
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,User%,Sys%,Idle%,Intr/s,CtxtSw/s"
 		}
 		#write-host " cmd = $srinfocmd"
-		write-debuglog "System reporter command => $srinfocmd" "INFO:"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-CLICommand -cmds  $srinfocmd
 		if($Result -contains "FAILURE")
 		{
 			Remove-Item  $tempFile
@@ -3742,31 +2582,11 @@ Function Get-SRStatfsav()
 	[Parameter(ValueFromPipeline=$true)]
 	$SANConnection = $global:SANConnection
  )
-
- Write-DebugLog "Start: In Get-SRStatfsav - validating input values" $Debug 
- #check if connection object contents are null/empty
- if(!$SANConnection)
- {
-	#check if connection object contents are null/empty
-	$Validate1 = Test-CLIConnection $SANConnection
-	if($Validate1 -eq "Failed")
-	{
-		#check if global connection object contents are null/empty
-		$Validate2 = Test-CLIConnection $global:SANConnection
-		if($Validate2 -eq "Failed")
-		{
-			Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" " ERR: "
-			Write-DebugLog "Stop: Exiting Get-SRStatfsav since SAN connection object values are null/empty" $Debug 
-			Return "Unable to execute the cmdlet Get-SRStatfsav since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-		}
-	}
+ Begin
+ {	Test-A9CLIConnection
  }
-
- $plinkresult = Test-PARCli -SANConnection $SANConnection
- if($plinkresult -match "FAILURE :")
+ Begin	
  {
-	write-debuglog "$plinkresult"
-	Return $plinkresult
  }
 
 	$Cmd = " srstatfsav "
@@ -3831,7 +2651,7 @@ Function Get-SRStatfsav()
 	$Cmd += " $FPGname "
  } 
 
- $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+ $Result = Invoke-CLICommand -cmds  $Cmd
  Write-DebugLog "Executing Function : Get-SRStatfsav Command -->" INFO: 
  Return $Result
 } ##  End-of Get-SRStatfsav
@@ -4024,33 +2844,12 @@ Function Get-SRStatfsblock()
 	[Parameter(ValueFromPipeline=$true)]
 	$SANConnection = $global:SANConnection
  )
-
- Write-DebugLog "Start: In Get-SRStatfsblock - validating input values" $Debug 
- #check if connection object contents are null/empty
- if(!$SANConnection)
- {
-	#check if connection object contents are null/empty
-	$Validate1 = Test-CLIConnection $SANConnection
-	if($Validate1 -eq "Failed")
-	{
-		#check if global connection object contents are null/empty
-		$Validate2 = Test-CLIConnection $global:SANConnection
-		if($Validate2 -eq "Failed")
-		{
-			Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" " ERR: "
-			Write-DebugLog "Stop: Exiting Get-SRStatfsblock since SAN connection object values are null/empty" $Debug 
-			Return "Unable to execute the cmdlet Get-SRStatfsblock since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-		}
-	}
+ Begin
+ {	Test-A9CLIConnection
  }
-
- $plinkresult = Test-PARCli -SANConnection $SANConnection
- if($plinkresult -match "FAILURE :")
+ Begin	
  {
-	write-debuglog "$plinkresult"
-	Return $plinkresult
  }
-
 	$Cmd = " srstatfsblock "
 
  if($Attime)
@@ -4113,7 +2912,7 @@ Function Get-SRStatfsblock()
 	$Cmd += " $Blockdev_name "
  }
 
- $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+ $Result = Invoke-CLICommand -cmds  $Cmd
  Write-DebugLog "Executing Function : Get-SRStatfsblock Command -->" INFO: 
  
  Return $Result
@@ -4305,33 +3104,12 @@ Function Get-SRStatfscpu()
 	[Parameter(ValueFromPipeline=$true)]
 	$SANConnection = $global:SANConnection
  )
-
- Write-DebugLog "Start: In Get-SRStatfscpu - validating input values" $Debug 
- #check if connection object contents are null/empty
- if(!$SANConnection)
- {
-	#check if connection object contents are null/empty
-	$Validate1 = Test-CLIConnection $SANConnection
-	if($Validate1 -eq "Failed")
-	{
-		#check if global connection object contents are null/empty
-		$Validate2 = Test-CLIConnection $global:SANConnection
-		if($Validate2 -eq "Failed")
-		{
-			Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" " ERR: "
-			Write-DebugLog "Stop: Exiting Get-SRStatfscpu since SAN connection object values are null/empty" $Debug 
-			Return "Unable to execute the cmdlet Get-SRStatfscpu since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-		}
-	}
+ Begin
+ {	Test-A9CLIConnection
  }
-
- $plinkresult = Test-PARCli -SANConnection $SANConnection
- if($plinkresult -match "FAILURE :")
+ Begin	
  {
-	write-debuglog "$plinkresult"
-	Return $plinkresult
  }
-
 	$Cmd = " srstatfscpu "
 
  if($Attime)
@@ -4394,7 +3172,7 @@ Function Get-SRStatfscpu()
 	$Cmd += " $CpuId "
  }
 
- $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+ $Result = Invoke-CLICommand -cmds  $Cmd
  Write-DebugLog "Executing Function : Get-SRStatfscpu Command -->" INFO:
  
  Return $Result
@@ -4592,33 +3370,12 @@ Function Get-SRStatfsfpg()
 	[Parameter(ValueFromPipeline=$true)]
 	$SANConnection = $global:SANConnection
  )
-
- Write-DebugLog "Start: In Get-SRStatfsfpg - validating input values" $Debug 
- #check if connection object contents are null/empty
- if(!$SANConnection)
- {
-	#check if connection object contents are null/empty
-	$Validate1 = Test-CLIConnection $SANConnection
-	if($Validate1 -eq "Failed")
-	{
-		#check if global connection object contents are null/empty
-		$Validate2 = Test-CLIConnection $global:SANConnection
-		if($Validate2 -eq "Failed")
-		{
-			Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" " ERR: "
-			Write-DebugLog "Stop: Exiting Get-SRStatfsfpg since SAN connection object values are null/empty" $Debug 
-			Return "Unable to execute the cmdlet Get-SRStatfsfpg since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-		}
-	}
+ Begin
+ {	Test-A9CLIConnection
  }
-
- $plinkresult = Test-PARCli -SANConnection $SANConnection
- if($plinkresult -match "FAILURE :")
+ Begin	
  {
-	write-debuglog "$plinkresult"
-	Return $plinkresult
  }
-
 	$Cmd = " srstatfsfpg "
 
  if($Attime)
@@ -4681,7 +3438,7 @@ Function Get-SRStatfsfpg()
 	$Cmd += " $FpgName "
  }
 
- $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+ $Result = Invoke-CLICommand -cmds  $Cmd
  Write-DebugLog "Executing Function : Get-SRStatfsfpg Command -->" INFO: 
  
  Return $Result
@@ -4863,31 +3620,11 @@ Function Get-SRStatfsmem()
  [Parameter(ValueFromPipeline=$true)]
  $SANConnection = $global:SANConnection
  )
-
- Write-DebugLog "Start: In Get-SRStatfsmem - validating input values" $Debug 
- #check if connection object contents are null/empty
- if(!$SANConnection)
- {
-	#check if connection object contents are null/empty
-	$Validate1 = Test-CLIConnection $SANConnection
-	if($Validate1 -eq "Failed")
-	{
-		#check if global connection object contents are null/empty
-		$Validate2 = Test-CLIConnection $global:SANConnection
-		if($Validate2 -eq "Failed")
-		{
-			Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" " ERR: "
-			Write-DebugLog "Stop: Exiting Get-SRStatfsmem since SAN connection object values are null/empty" $Debug 
-			Return "Unable to execute the cmdlet Get-SRStatfsmem since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-		}
-	}
+ Begin
+ {	Test-A9CLIConnection
  }
-
- $plinkresult = Test-PARCli -SANConnection $SANConnection
- if($plinkresult -match "FAILURE :")
+ Begin	
  {
-	write-debuglog "$plinkresult"
-	Return $plinkresult
  }
 
 	$Cmd = " srstatfsmem "
@@ -4947,7 +3684,7 @@ Function Get-SRStatfsmem()
 	$Cmd += " -sortcol $Sortcol "
  }
 
- $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+ $Result = Invoke-CLICommand -cmds  $Cmd
  Write-DebugLog "Executing Function : Get-SRStatfsmem Command -->" INFO: 
  
  Return $Result
@@ -5139,31 +3876,11 @@ Function Get-SRStatfsnet()
  [Parameter(ValueFromPipeline=$true)]
  $SANConnection = $global:SANConnection
  )
-
- Write-DebugLog "Start: In Get-SRStatfsnet - validating input values" $Debug 
- #check if connection object contents are null/empty
- if(!$SANConnection)
- {
-	#check if connection object contents are null/empty
-	$Validate1 = Test-CLIConnection $SANConnection
-	if($Validate1 -eq "Failed")
-	{
-		#check if global connection object contents are null/empty
-		$Validate2 = Test-CLIConnection $global:SANConnection
-		if($Validate2 -eq "Failed")
-		{
-			Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" " ERR: "
-			Write-DebugLog "Stop: Exiting Get-SRStatfsnet since SAN connection object values are null/empty" $Debug 
-			Return "Unable to execute the cmdlet Get-SRStatfsnet since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-		}
-	}
+ Begin
+ {	Test-A9CLIConnection
  }
-
- $plinkresult = Test-PARCli -SANConnection $SANConnection
- if($plinkresult -match "FAILURE :")
+ Begin	
  {
-	write-debuglog "$plinkresult"
-	Return $plinkresult
  }
 
 	$Cmd = " srstatfsnet "
@@ -5228,7 +3945,7 @@ Function Get-SRStatfsnet()
 	$Cmd += " $EthdevName "
  }
 
- $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+ $Result = Invoke-CLICommand -cmds  $Cmd
  Write-DebugLog "Executing Function : Get-SRStatfsnet Command -->" INFO: 
  
  Return $Result
@@ -5427,31 +4144,11 @@ Function Get-SRStatfsnfs()
  [Parameter()]
  $SANConnection = $global:SANConnection
  )
-
- Write-DebugLog "Start: In Get-SRStatfsnfs - validating input values" $Debug 
- #check if connection object contents are null/empty
- if(!$SANConnection)
- {
-	#check if connection object contents are null/empty
-	$Validate1 = Test-CLIConnection $SANConnection
-	if($Validate1 -eq "Failed")
-	{
-		#check if global connection object contents are null/empty
-		$Validate2 = Test-CLIConnection $global:SANConnection
-		if($Validate2 -eq "Failed")
-		{
-			Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" " ERR: "
-			Write-DebugLog "Stop: Exiting Get-SRStatfsnfs since SAN connection object values are null/empty" $Debug 
-			Return "Unable to execute the cmdlet Get-SRStatfsnfs since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-		}
-	}
+ Begin
+ {	Test-A9CLIConnection
  }
-
- $plinkresult = Test-PARCli -SANConnection $SANConnection
- if($plinkresult -match "FAILURE :")
+ Begin	
  {
-	write-debuglog "$plinkresult"
-	Return $plinkresult
  }
 
 	$Cmd = " srstatfsnfs "
@@ -5511,7 +4208,7 @@ Function Get-SRStatfsnfs()
 	$Cmd += " -sortcol $Sortcol "
  }
 
- $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+ $Result = Invoke-CLICommand -cmds  $Cmd
  Write-DebugLog "Executing Function : Get-SRStatfsnfs Command -->" INFO: 
  
  Return $Result
@@ -5681,29 +4378,11 @@ Function Set-SRAlertCrit
 		[Parameter(ValueFromPipeline=$true)]
         $SANConnection = $global:SANConnection        
 	)
-	Write-DebugLog "Start: In Set-SRAlertCrit - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{				
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Set-SRAlertCrit since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Set-SRAlertCrit since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
+	Begin
+	{	Test-A9CLIConnection
 	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
+	Begin	
 	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
 	}
 	$version1 = Get-Version -S  -SANConnection $SANConnection
 	if( $version1 -lt "3.2.1")
@@ -5778,8 +4457,8 @@ Function Set-SRAlertCrit
 		$srinfocmd += " $NameOfTheCriterionToModify" 
 	}
 	
-	write-debuglog "Set alert crit command => $srinfocmd" "INFO:"
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
+	write-verbose "Set alert crit command => $srinfocmd"
+	$Result = Invoke-CLICommand -cmds  $srinfocmd
 	return $Result
 }
 ## End Set-SRAlertCrit
@@ -5829,29 +4508,11 @@ Function Remove-SRAlertCrit
 		[Parameter(ValueFromPipeline=$true)]
         $SANConnection = $global:SANConnection        
 	)
-	Write-DebugLog "Start: In Remove-SRAlertCrit - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{	
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Remove-SRAlertCrit since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Remove-SRAlertCrit since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
+	Begin
+	{	Test-A9CLIConnection
 	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
+	Begin	
 	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
 	}
 	$version1 = Get-Version -S  -SANConnection $SANConnection
 	if( $version1 -lt "3.2.1")
@@ -5868,8 +4529,8 @@ Function Remove-SRAlertCrit
 		return "FAILURE : Please specify -force or Name parameter values"
 	}
 	#write-host "Final Command is $srinfocmd"
-	write-debuglog "Remove alert crit => $srinfocmd" "INFO:"
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
+	write-verbose "Remove alert crit => $srinfocmd"
+	$Result = Invoke-CLICommand -cmds  $srinfocmd
 	if($Result)
 	{
 		return "FAILURE : $Result"
@@ -6163,29 +4824,11 @@ Function New-SRAlertCrit
 		[Parameter(Position=28, ValueFromPipeline=$true)]
         $SANConnection = $global:SANConnection        
 	)
-	Write-DebugLog "Start: In New-SRAlertCrit - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{	
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting New-SRAlertCrit since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet New-SRAlertCrit since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
+	Begin
+	{	Test-A9CLIConnection
 	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
+	Begin	
 	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
 	}
 	$version1 = Get-Version -S  -SANConnection $SANConnection
 	if( $version1 -lt "3.2.1")
@@ -6337,8 +4980,8 @@ Function New-SRAlertCrit
 	}
 	
 	#write-host "Final Command is $srinfocmd"
-	write-debuglog "Create alert criteria command => $srinfocmd" "INFO:"
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
+	write-verbose "Create alert criteria command => $srinfocmd"
+	$Result = Invoke-CLICommand -cmds  $srinfocmd
 	if([string]::IsNullOrEmpty($Result))
 	{
 		return  "Success : Executing New-SRAlertCrit Command $Result"
@@ -6464,42 +5107,24 @@ Function Get-SRStatPort
 		[switch]
         $Hires ,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$groupby,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$portType,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$port,
 		[Parameter(lse, ValueFromPipeline=$true)]
         $SANConnection = $global:SANConnection 
        
 	)
-	Write-DebugLog "Start: In Get-SRStatPort - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{				
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRStatPort since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRStatPort since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
+	Begin
+	{	Test-A9CLIConnection
 	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
+	Begin	
 	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
-	}	
+	}
 	$srinfocmd = "srstatport "
 	$3parosver = Get-Version -S  -SANConnection $SANConnection
 	if($3parosver -ge "3.1.2")
@@ -6565,7 +5190,7 @@ Function Get-SRStatPort
 		if($attime)
 		{
 			$srinfocmd += " -attime "
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
+			write-verbose "System reporter command => $srinfocmd"
 			if($groupby)
 			{
 				$optionname = $groupby.toUpper()
@@ -6590,8 +5215,8 @@ Function Get-SRStatPort
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"			
 		}
 		#write-host " cmd = $srinfocmd"
-		write-debuglog "System reporter command => $srinfocmd" "INFO:"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-CLICommand -cmds  $srinfocmd
 		if($Result -contains "FAILURE")
 		{
 			return "FAILURE : $Result"
@@ -6710,7 +5335,7 @@ Function Get-SRStatPD
  #>
 [CmdletBinding()]
 	param(
-		[Parameter(alse, ValueFromPipeline=$true)]
+		[Parameter(ValueFromPipeline=$true)]
 		[switch]
 		$attime,
 		[Parameter(ValueFromPipeline=$true)]
@@ -6729,46 +5354,27 @@ Function Get-SRStatPD
 		[switch]
         $Hires ,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$groupby,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$diskType,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$rpmSpeed,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$PDID,		
 		[Parameter(lse, ValueFromPipeline=$true)]
         $SANConnection = $global:SANConnection 
        
 	)
-	Write-DebugLog "Start: In Get-SRStatPD - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{				
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRStatPD since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRStatPD since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
+	Begin
+	{	Test-A9CLIConnection
 	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-
-	if(($cliresult1 -match "FAILURE :"))
+	Begin	
 	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
-	}	
+	}
 	$srinfocmd = "srstatpd "
 	$3parosver = Get-Version -S  -SANConnection $SANConnection
 	if($3parosver -ge "3.1.2")
@@ -6843,7 +5449,7 @@ Function Get-SRStatPD
 		if($attime)
 		{
 			$srinfocmd += " -attime "
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
+			write-verbose "System reporter command => $srinfocmd"
 			if($groupby)
 			{
 				$optionname = $groupby.toUpper()
@@ -6869,7 +5475,7 @@ Function Get-SRStatPD
 		}
 		Write-DebugLog "INFO: In Get-SRStatPD - cmd is -> $srinfocmd" $Debug
 		#write-host " cmd = $srinfocmd"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd		
+		$Result = Invoke-CLICommand -cmds  $srinfocmd		
 		if($Result -contains "FAILURE")
 		{	
 			Remove-Item  $tempFile
@@ -7072,31 +5678,11 @@ Function Get-SRStatfssmb()
  [Parameter(lse, ValueFromPipeline=$true)]
  $SANConnection = $global:SANConnection
  )
-
- Write-DebugLog "Start: In Get-SRStatfssmb - validating input values" $Debug 
- #check if connection object contents are null/empty
- if(!$SANConnection)
- {
-	#check if connection object contents are null/empty
-	$Validate1 = Test-CLIConnection $SANConnection
-	if($Validate1 -eq "Failed")
-	{
-		#check if global connection object contents are null/empty
-		$Validate2 = Test-CLIConnection $global:SANConnection
-		if($Validate2 -eq "Failed")
-		{
-			Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" " ERR: "
-			Write-DebugLog "Stop: Exiting Get-SRStatfssmb since SAN connection object values are null/empty" $Debug 
-			Return "Unable to execute the cmdlet Get-SRStatfssmb since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-		}
-	}
+ Begin
+ {	Test-A9CLIConnection
  }
-
- $plinkresult = Test-PARCli -SANConnection $SANConnection
- if($plinkresult -match "FAILURE :")
+ Begin	
  {
-	write-debuglog "$plinkresult"
-	Return $plinkresult
  }
 
 	$Cmd = " srstatfssmb "
@@ -7151,7 +5737,7 @@ Function Get-SRStatfssmb()
 	$Cmd += " -sortcol $Sortcol "
  }
 
- $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+ $Result = Invoke-CLICommand -cmds  $Cmd
  Write-DebugLog "Executing Function : Get-SRStatfssmb Command -->" INFO: 
  
  Return $Result
@@ -7259,45 +5845,27 @@ Function Get-SRStatLD
 		[switch]
         $Hires ,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$groupby,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$cpgName,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$Node,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$LDName,		
 		[Parameter(lse, ValueFromPipeline=$true)]
         $SANConnection = $global:SANConnection 
        
 	)
-	Write-DebugLog "Start: In Get-SRStatLD - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{				
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRStatLD since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRStatLD since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
+	Begin
+	{	Test-A9CLIConnection
 	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
+	Begin	
 	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
-	}	
+	}
 	$srinfocmd = "srstatld "
 	$3parosver = Get-Version -S  -SANConnection $SANConnection
 	if($3parosver -ge "3.1.2")
@@ -7357,7 +5925,7 @@ Function Get-SRStatLD
 		if($attime)
 		{
 			$srinfocmd += " -attime "
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
+			write-verbose "System reporter command => $srinfocmd"
 			if($groupby)
 			{
 				$optionname = $groupby.toUpper()
@@ -7382,8 +5950,8 @@ Function Get-SRStatLD
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
 		}
 		#write-host " cmd = $srinfocmd"
-		write-debuglog "System reporter command => $srinfocmd" "INFO:"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-CLICommand -cmds  $srinfocmd
 		if($Result -contains "FAILURE")
 		{
 			Remove-Item  $tempFile
@@ -7590,33 +6158,12 @@ Function Get-SRStatfssnapshot()
 	[Parameter(ValueFromPipeline=$true)]
 	$SANConnection = $global:SANConnection
  )
-
- Write-DebugLog "Start: In Get-SRStatfssnapshot - validating input values" $Debug 
- #check if connection object contents are null/empty
- if(!$SANConnection)
- {
-	#check if connection object contents are null/empty
-	$Validate1 = Test-CLIConnection $SANConnection
-	if($Validate1 -eq "Failed")
-	{
-		#check if global connection object contents are null/empty
-		$Validate2 = Test-CLIConnection $global:SANConnection
-		if($Validate2 -eq "Failed")
-		{
-			Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" " ERR: "
-			Write-DebugLog "Stop: Exiting Get-SRStatfssnapshot since SAN connection object values are null/empty" $Debug 
-			Return "Unable to execute the cmdlet Get-SRStatfssnapshot since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-		}
-	}
+ Begin
+ {	Test-A9CLIConnection
  }
-
- $plinkresult = Test-PARCli -SANConnection $SANConnection
- if($plinkresult -match "FAILURE :")
+ Begin	
  {
-	write-debuglog "$plinkresult"
-	Return $plinkresult
  }
-
 	$Cmd = " srstatfssnapshot "
 
  if($Attime)
@@ -7674,7 +6221,7 @@ Function Get-SRStatfssnapshot()
 	$Cmd += " -sortcol $Sortcol "
  }
 
- $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+ $Result = Invoke-CLICommand -cmds  $Cmd
  Write-DebugLog "Executing Function : Get-SRStatfssnapshot Command -->" INFO: 
  
  Return $Result
@@ -7865,33 +6412,12 @@ Function Get-SRStatlink()
 	[Parameter(ValueFromPipeline=$true)]
 	$SANConnection = $global:SANConnection
  )
-
- Write-DebugLog "Start: In Get-SRStatlink - validating input values" $Debug 
- #check if connection object contents are null/empty
- if(!$SANConnection)
- {
-	#check if connection object contents are null/empty
-	$Validate1 = Test-CLIConnection $SANConnection
-	if($Validate1 -eq "Failed")
-	{
-		#check if global connection object contents are null/empty
-		$Validate2 = Test-CLIConnection $global:SANConnection
-		if($Validate2 -eq "Failed")
-		{
-			Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" " ERR: "
-			Write-DebugLog "Stop: Exiting Get-SRStatlink since SAN connection object values are null/empty" $Debug 
-			Return "Unable to execute the cmdlet Get-SRStatlink since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-		}
-	}
+ Begin
+ {	Test-A9CLIConnection
  }
-
- $plinkresult = Test-PARCli -SANConnection $SANConnection
- if($plinkresult -match "FAILURE :")
+ Begin	
  {
-	write-debuglog "$plinkresult"
-	Return $plinkresult
  }
-
 	$Cmd = " srstatlink "
 
  if($Attime)
@@ -7949,7 +6475,7 @@ Function Get-SRStatlink()
 	$Cmd += " $Node "
  }
 
- $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+ $Result = Invoke-CLICommand -cmds  $Cmd
  Write-DebugLog "Executing Function : Get-SRStatlink Command -->" INFO: 
  
  Return $Result
@@ -8162,33 +6688,12 @@ Function Get-SRStatqos()
 	[Parameter(ValueFromPipeline=$true)]
 	$SANConnection = $global:SANConnection
  )
-
- Write-DebugLog "Start: In Get-SRStatqos - validating input values" $Debug 
- #check if connection object contents are null/empty
- if(!$SANConnection)
- {
-	#check if connection object contents are null/empty
-	$Validate1 = Test-CLIConnection $SANConnection
-	if($Validate1 -eq "Failed")
-	{
-		#check if global connection object contents are null/empty
-		$Validate2 = Test-CLIConnection $global:SANConnection
-		if($Validate2 -eq "Failed")
-		{
-			Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" " ERR: "
-			Write-DebugLog "Stop: Exiting Get-SRStatqos since SAN connection object values are null/empty" $Debug 
-			Return "Unable to execute the cmdlet Get-SRStatqos since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-		}
-	}
+ Begin
+ {	Test-A9CLIConnection
  }
-
- $plinkresult = Test-PARCli -SANConnection $SANConnection
- if($plinkresult -match "FAILURE :")
+ Begin	
  {
-	write-debuglog "$plinkresult"
-	Return $plinkresult
  }
-
 	$Cmd = " srstatqos "
 
  if($Attime)
@@ -8256,7 +6761,7 @@ Function Get-SRStatqos()
 	$Cmd += " -sortcol $Sortcol "
  }
 
- $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+ $Result = Invoke-CLICommand -cmds  $Cmd
  Write-DebugLog "Executing Function : Get-SRStatqos Command -->" INFO:
  
  Return $Result
@@ -8479,33 +6984,12 @@ Function Get-SRStatrcvv()
 	[Parameter(ValueFromPipeline=$true)]
 	$SANConnection = $global:SANConnection
  )
-
- Write-DebugLog "Start: In Get-SRStatrcvv - validating input values" $Debug 
- #check if connection object contents are null/empty
- if(!$SANConnection)
- {
-	#check if connection object contents are null/empty
-	$Validate1 = Test-CLIConnection $SANConnection
-	if($Validate1 -eq "Failed")
-	{
-		#check if global connection object contents are null/empty
-		$Validate2 = Test-CLIConnection $global:SANConnection
-		if($Validate2 -eq "Failed")
-		{
-			Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" " ERR: "
-			Write-DebugLog "Stop: Exiting Get-SRStatrcvv since SAN connection object values are null/empty" $Debug 
-			Return "Unable to execute the cmdlet Get-SRStatrcvv since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-		}
-	}
+ Begin
+ {	Test-A9CLIConnection
  }
-
- $plinkresult = Test-PARCli -SANConnection $SANConnection
- if($plinkresult -match "FAILURE :")
+ Begin	
  {
-	write-debuglog "$plinkresult"
-	Return $plinkresult
  }
-
 	$Cmd = " srstatrcvv "
 
  if($Attime)
@@ -8578,7 +7062,7 @@ Function Get-SRStatrcvv()
 	$Cmd += " -group $Group "
  }
 
- $Result = Invoke-CLICommand -Connection $SANConnection -cmds  $Cmd
+ $Result = Invoke-CLICommand -cmds  $Cmd
  Write-DebugLog "Executing Function : Get-SRStatrcvv Command -->" INFO: 
  
  Return $Result
@@ -8727,61 +7211,43 @@ Function Get-SRStatVLun
 		[switch]
         $Hires ,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$groupby,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$host,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$vv,
 		[Parameter(lse, ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$lun,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$port,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$vLun,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$vmName,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$vmHost,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$vvoLsc,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$vmId,
 		[Parameter(ValueFromPipeline=$true)]
         $SANConnection = $global:SANConnection        
 	)
-	Write-DebugLog "Start: In Get-SRStatVLun - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{	
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRStatVLun since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRStatVLun since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
+	Begin
+	{	Test-A9CLIConnection
 	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
+	Begin	
 	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
 	}
     $tempFile = [IO.Path]::GetTempFileName()	
 	$srinfocmd = "srstatvlun "
@@ -8871,7 +7337,7 @@ Function Get-SRStatVLun
 		if($attime)
 		{
 			$srinfocmd += " -attime "
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
+			write-verbose "System reporter command => $srinfocmd"
 			if($groupby)
 			{
 				$optionname = $groupby.toUpper()
@@ -8900,8 +7366,8 @@ Function Get-SRStatVLun
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
 		}
 		#write-host " cmd = $srinfocmd"
-		write-debuglog "System reporter command => $srinfocmd" "INFO:"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-CLICommand -cmds  $srinfocmd
 		$range1  = $Result.count -3	
 		if($Summary){ $range1 = 4 }
 		if($range1 -le "2")
@@ -9067,7 +7533,7 @@ Function Get-SRVvSpace
 		[switch]
        	$Hires ,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$groupby,
 		[Parameter(ValueFromPipeline=$true)]
 		[String]
@@ -9082,46 +7548,28 @@ Function Get-SRVvSpace
 		[String]
 		$VVName,
 		[Parameter(lse, ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$vmName,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$vmHost,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$vvoLsc,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$vmId,
 		[Parameter(ValueFromPipeline=$true)]
-		[system.string]
+		[String]
 		$vvolState,
 		[Parameter(ValueFromPipeline=$true)]
         $SANConnection = $global:SANConnection        
 	)
-	Write-DebugLog "Start: In Get-SRVvSpace - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{	
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Get-SRVvSpace since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Get-SRVvSpace since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
+	Begin
+	{	Test-A9CLIConnection
 	}
-	$cliresult1 = Test-PARCli -SANConnection $SANConnection
-	if(($cliresult1 -match "FAILURE :"))
+	Begin	
 	{
-		write-debuglog "$cliresult1" "ERR:" 
-		return $cliresult1
 	}
 	$srinfocmd = "srvvspace"
 	
@@ -9216,7 +7664,7 @@ Function Get-SRVvSpace
 		if($attime)
 		{		
 			$srinfocmd += " -attime "	
-			write-debuglog "System reporter command => $srinfocmd" "INFO:"
+			write-verbose "System reporter command => $srinfocmd"
 			if($groupby)
 			{
 				$optionname = $groupby.toUpper()
@@ -9243,8 +7691,8 @@ Function Get-SRVvSpace
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,RawRsvd(MB)_User,RawRsvd(MB)_Snap,RawRsvd(MB)_Total,User(MB)_Used,User(MB)_Free,User(MB)_Rsvd,Snap(MB)_Used,Snap(MB)_Free,Snap(MB)_Rsvd,Snap(MB)_Vcopy,Total(MB)_Vcopy,Total(MB)_Used,Total(MB)_Rsvd,Total(MB)_HostWr,Total(MB)_VirtualSize,(KB/s)_Compr_GC,Efficiency_Compact,Efficiency_Compress"
 		}
 		
-		write-debuglog "System reporter command => $srinfocmd" "INFO:"
-		$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $srinfocmd
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-CLICommand -cmds  $srinfocmd
 		if($Result -contains "FAILURE")
 		{
 			Remove-Item  $tempFile
@@ -9428,38 +7876,13 @@ Function Show-SrStatIscsi
 		
 		[Parameter()]
 		[String]
-		$NSP ,		
-			
-		[Parameter(ValueFromPipeline=$true)]
-        $SANConnection = $global:SANConnection 
-       
-	)		
-	Write-DebugLog "Start: In Show-SrStatIscsi   - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{	
-			
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Show-SrStatIscsi since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Show-SrStatIscsi since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
-	}
-	$plinkresult = Test-PARCli
-	if($plinkresult -match "FAILURE :")
-	{
-		write-debuglog "$plinkresult" "ERR:" 
-		return $plinkresult
-	}	
-	$cmd= "srstatiscsi "
+		$NSP 
+)		
+Begin
+{	Test-A9CLIConnection
+}
+Process	
+{	$cmd= "srstatiscsi "
 	
 	if ($Attime)
 	{
@@ -9518,8 +7941,8 @@ Function Show-SrStatIscsi
 	{
 		$cmd+=" $NSP "
 	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
-	write-debuglog "  Executing  Show-SrStatIscsi command that displays information iSNS table for iSCSI ports in the system  " "INFO:"
+	$Result = Invoke-CLICommand -cmds  $cmd
+	write-verbose "  Executing  Show-SrStatIscsi command that displays information iSNS table for iSCSI ports in the system  "
 	
 	$Flag="True"
 	if($Attime -or $Summary)
@@ -9631,10 +8054,10 @@ Function Show-SrStatIscsi
 		return  $Result
 	}
 	
-} # End Show-SrStatIscsi
+}
+}
 
-## FUNCTION Show-SrStatIscsiSession
-Function Show-SrStatIscsiSession
+Function Show-A9SrStatIscsiSession_CLI
 {
 <#
 .SYNOPSIS   
@@ -9671,8 +8094,7 @@ Function Show-SrStatIscsiSession
 .PARAMETER Attime
 	Performance is shown at a particular time interval, specified by the
 	-etsecs option, with one row per object group described by the
-	-groupby option. Without this option performance is shown versus time,
-	with a row per time interval.
+	-groupby option. Without this option performance is shown versus time, with a row per time interval.
 .PARAMETER Btsecs
 	Select the begin time in seconds for the report.
 	The value can be specified as either
@@ -9691,12 +8113,10 @@ Function Show-SrStatIscsiSession
 	- For hires, the default begin time is 12 hours ago (-btsecs -12h).
 	- For hourly, the default begin time is 7 days ago (-btsecs -7d).
 	- For daily, the default begin time is 90 days ago (-btsecs -90d).
-	If begin time and sample category are not specified then the time
-	the report begins is 12 hours ago and the default sample category is hires.
+	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
 	If -btsecs 0 is specified then the report begins at the earliest sample.
 .PARAMETER Etsecs
-	Select the end time in seconds for the report.  If -attime is
-	specified, select the time for the report.
+	Select the end time in seconds for the report.  If -attime is specified, select the time for the report.
 	The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
 	- The absolute time as a text string in one of the following formats:
@@ -9704,12 +8124,9 @@ Function Show-SrStatIscsiSession
 		- Full time string excluding time zone: "2012-10-26 11:00:00"
 		- Date string: "2012-10-26" or 2012-10-26
 		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the
-	  current time. Instead of a number representing seconds, <secs> can
-	  be specified with a suffix of m, h or d to represent time in minutes
-	  (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the report ends with the most recent
-	sample.
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+	be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the report ends with the most recent sample.
 .PARAMETER Hires
 	Select high resolution samples (5 minute intervals) for the report.
 	This is the default.
@@ -9735,340 +8152,176 @@ Function Show-SrStatIscsiSession
 	TPGT        The TPGT ID for the session
 .PARAMETER NSP
 	Node Sloat Poart Value 1:2:3
-.PARAMETER SANConnection 
-	Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
-
-  .Notes
-	NAME: Show-SrStatIscsiSession
-	LASTEDIT: January 2020
-	KEYWORDS: Show-SrStatIscsiSession
-
-  .Link
-	http://www.hpe.com
- 
- #Requires PS -Version 3.0
- #>
+#>
 [CmdletBinding()]
-	param(
-		[Parameter()]
-		[switch]
-		$Attime, 
-		
-		[Parameter()]
-		[switch]
-		$Hires,
-		
-		[Parameter()]
-		[switch]
-		$Hourly,
-		
-		[Parameter()]
-		[switch]
-		$Daily,
-				
-		[Parameter()]
-		[String]
-		$Summary ,
-		
-		[Parameter()]
-		[String]
-		$BTSecs ,
-		
-		[Parameter()]
-		[String]
-		$ETSecs ,
-		
-		[Parameter()]
-		[String]
-		$Groupby ,
-		
-		[Parameter()]
-		[String]
-		$NSP ,		
-			
-		[Parameter(ValueFromPipeline=$true)]
-        $SANConnection = $global:SANConnection       
-	)		
-	Write-DebugLog "Start: In Show-SrStatIscsiSession   - validating input values" $Debug 
-	#check if connection object contents are null/empty
-	if(!$SANConnection)
-	{		
-		#check if connection object contents are null/empty
-		$Validate1 = Test-CLIConnection $SANConnection
-		if($Validate1 -eq "Failed")
-		{
-			#check if global connection object contents are null/empty
-			$Validate2 = Test-CLIConnection $global:SANConnection
-			if($Validate2 -eq "Failed")
-			{
-				Write-DebugLog "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-CLIConnection or New-PoshSshConnection" "ERR:"
-				Write-DebugLog "Stop: Exiting Show-SrStatIscsiSession since SAN connection object values are null/empty" $Debug
-				return "Unable to execute the cmdlet Show-SrStatIscsiSession since no active storage connection session exists. `nUse New-PoshSSHConnection or New-CLIConnection to start a new storage connection session."
-			}
-		}
-	}
-	$plinkresult = Test-PARCli
-	if($plinkresult -match "FAILURE :")
-	{
-		write-debuglog "$plinkresult" "ERR:" 
-		return $plinkresult
-	}	
-	$cmd= "srstatiscsisession "	
-	
-	if ($Attime)
-	{
-		$cmd+=" -attime "
-	}
-	if ($Summary)
-	{
-		$a = "min","avg","max","detail"
-		$l=$Summary
-		if($a -eq $l)
-		{
-			$cmd+=" -summary $Summary "
-		}
-		else
-		{
-			return "Summary : $Summary is incorrect value please use [ min | avg | max | detail] only."
-		}
-		
-	}
-	if ($BTSecs)
-	{
-		$cmd+=" -btsecs $BTSecs "
-	}
-	if ($ETSecs)
-	{
-		$cmd+=" -etsecs $ETSecs "
-	}
-	if ($Hires)
-	{
-		$cmd+=" -hires "
-	}
-	if ($Hourly)
-	{
-		$cmd+=" -hourly "
-	}
-	if ($Daily)
-	{
-		$cmd+=" -daily "
-	}	
-	
-	if($Groupby)
-	{
-		$gbVal="PORT_N","PORT_S","PORT_P","ISCSI_NAME","TPGT"
-		$gbl=$Groupby
-		if($gbVal -eq $gbl)
-		{
-			$cmd+=" -groupby $Groupby"
-		}
-		else
-		{
-			Return "FAILURE : Invalid -Group-by option: $Groupby cannot be used only [PORT_N | PORT_S | PORT_P | ISCSI_NAME | TPGT] "
-		}				
-	}
-	
-	if ($NSP)
-	{
-		$cmd+=" $NSP "
-	}
-	$Result = Invoke-CLICommand -Connection $SANConnection -cmds  $cmd
-	write-debuglog "  Executing  Show-SrStatIscsiSession command that displays information iSNS table for iSCSI ports in the system  " "INFO:"
+param(	[Parameter()]	[switch]	$Attime, 
+		[Parameter()]	[switch]	$Hires,
+		[Parameter()]	[switch]	$Hourly,
+		[Parameter()]	[switch]	$Daily,
+		[Parameter()][ValidateSet("min","avg","max","detail")]	[String]	$Summary ,
+		[Parameter()]	[String]	$BTSecs ,
+		[Parameter()]	[String]	$ETSecs ,
+		[Parameter()][ValidateSet("PORT_N","PORT_S","PORT_P","ISCSI_NAME","TPGT")]	[String]	$Groupby ,
+		[Parameter()]	[String]	$NSP 
+    
+	)	
+Begin
+{	Test-A9CLIConnection
+}
+Process
+{	$cmd= "srstatiscsisession "	
+	if ($Attime)	{	$cmd+=" -attime "	}
+	if ($Summary)	{	$cmd+=" -summary $Summary "	}
+	if ($BTSecs)	{	$cmd+=" -btsecs $BTSecs "	}
+	if ($ETSecs)	{	$cmd+=" -etsecs $ETSecs "	}
+	if ($Hires)		{	$cmd+=" -hires "	}
+	if ($Hourly)	{	$cmd+=" -hourly "	}
+	if ($Daily)		{	$cmd+=" -daily "	}	
+	if ($Groupby)	{	$cmd+=" -groupby $Groupby"	}
+	if ($NSP)	{	$cmd+=" $NSP "	}
+	$Result = Invoke-CLICommand -cmds  $cmd
+	write-verbose "  Executing  Show-SrStatIscsiSession command that displays information iSNS table for iSCSI ports in the system  "
 	if($Attime)
-	{
-		if($Result -match "Time")
-		{
-			if($Result.Count -lt 5)
-			{
-				return "No data found please try with different values."
-			}
-			$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			$incre = "true" 		
-			foreach ($s in  $Result[2..$LastItem] )
-			{			
-				$s= [regex]::Replace($s,"^ ","")						
-				$s= [regex]::Replace($s," +",",")			
-				$s= [regex]::Replace($s,"-","")			
-				$s= $s.Trim()			
-				if($incre -eq "true")
-				{		
-					$sTemp1=$s				
-					$sTemp = $sTemp1.Split(',')					
-					$sTemp[3]="Total(PDUs/s)"				
-					$sTemp[6]="Total(KBytes/s)"
-					$newTemp= [regex]::Replace($sTemp,"^ ","")			
-					$newTemp= [regex]::Replace($sTemp," ",",")				
-					$newTemp= $newTemp.Trim()
-					$s=$newTemp							
+		{	if($Result -match "Time")
+				{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
+					$tempFile = [IO.Path]::GetTempFileName()
+					$LastItem = $Result.Count
+					$incre = "true" 		
+					foreach ($s in  $Result[2..$LastItem] )
+						{	$s= [regex]::Replace($s,"^ ","")						
+							$s= [regex]::Replace($s," +",",")			
+							$s= [regex]::Replace($s,"-","")			
+							$s= $s.Trim()			
+							if($incre -eq "true")
+								{	$sTemp1=$s				
+									$sTemp = $sTemp1.Split(',')					
+									$sTemp[3]="Total(PDUs/s)"				
+									$sTemp[6]="Total(KBytes/s)"
+									$newTemp= [regex]::Replace($sTemp,"^ ","")			
+									$newTemp= [regex]::Replace($sTemp," ",",")				
+									$newTemp= $newTemp.Trim()
+									$s=$newTemp							
+								}
+							if($incre -eq "false")	{	$s=$s.Substring(1)	}			
+							Add-Content -Path $tempFile -Value $s	
+							$incre="false"
+						}			
+					Import-Csv $tempFile 
+					Remove-Item  $tempFile
 				}
-				if($incre -eq "false")
-				{
-					$s=$s.Substring(1)
-				}			
-				Add-Content -Path $tempFile -Value $s	
-				$incre="false"
-			}			
-			Import-Csv $tempFile 
-			Remove-Item  $tempFile
+			else{	return $Result	}
 		}
-		else
-		{
-			return $Result
-		}
-	}
 	elseif($Summary)
-	{
-		if($Result -match "Time")
-		{
-			if($Result.Count -lt 5)
-			{
-				return "No data found please try with different values."
-			}
-			$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			$incre = "true" 		
-			foreach ($s in  $Result[3..$LastItem] )
-			{			
-				$s= [regex]::Replace($s,"^ ","")						
-				$s= [regex]::Replace($s," +",",")			
-				$s= [regex]::Replace($s,"-","")			
-				$s= $s.Trim()			
-				if($incre -eq "true")
-				{		
-					$sTemp1=$s				
-					$sTemp = $sTemp1.Split(',')					
-					$sTemp[3]="Total(PDUs/s)"				
-					$sTemp[6]="Total(KBytes/s)"
-					$newTemp= [regex]::Replace($sTemp,"^ ","")			
-					$newTemp= [regex]::Replace($sTemp," ",",")				
-					$newTemp= $newTemp.Trim()
-					$s=$newTemp							
+		{	if($Result -match "Time")
+				{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
+					$tempFile = [IO.Path]::GetTempFileName()
+					$LastItem = $Result.Count
+					$incre = "true" 		
+					foreach ($s in  $Result[3..$LastItem] )
+						{	$s= [regex]::Replace($s,"^ ","")						
+							$s= [regex]::Replace($s," +",",")			
+							$s= [regex]::Replace($s,"-","")			
+							$s= $s.Trim()			
+							if($incre -eq "true")
+								{	$sTemp1=$s				
+									$sTemp = $sTemp1.Split(',')					
+									$sTemp[3]="Total(PDUs/s)"				
+									$sTemp[6]="Total(KBytes/s)"
+									$newTemp= [regex]::Replace($sTemp,"^ ","")			
+									$newTemp= [regex]::Replace($sTemp," ",",")				
+									$newTemp= $newTemp.Trim()
+									$s=$newTemp							
+								}
+							if($incre -eq "false")	{	$s=$s.Substring(1)	}			
+							Add-Content -Path $tempFile -Value $s	
+							$incre="false"
+						}			
+					Import-Csv $tempFile 
+					Remove-Item  $tempFile
 				}
-				if($incre -eq "false")
-				{
-					$s=$s.Substring(1)
-				}			
-				Add-Content -Path $tempFile -Value $s	
-				$incre="false"
-			}			
-			Import-Csv $tempFile 
-			Remove-Item  $tempFile
+			else{	return $Result	}
 		}
-		else
-		{
-			return $Result
-		}
-	}
 	elseif($Groupby)
-	{		
-		if($Result -match "Time")
-		{	
-			if($Result.Count -lt 5)
-			{
-				return "No data found please try with different values."
-			}
-			$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			$incre = "true" 		
-			foreach ($s in  $Result[1..$LastItem] )
-			{			
-				$s= [regex]::Replace($s,"^ ","")						
-				$s= [regex]::Replace($s," +",",")			
-				$s= [regex]::Replace($s,"-","")			
-				$s= $s.Trim() -replace 'Time','Date,Time,Zone'				
-				if($incre -eq "true")
-				{
-					$sTemp1=$s.Substring(1)					
-					$sTemp2=$sTemp1.Substring(0,$sTemp1.Length - 17)
-					$sTemp2 +="TimeOut"					
-					$sTemp = $sTemp2.Split(',')					
-					$sTemp[7]="Total(PDUs/s)"				
-					$sTemp[10]="Total(KBytes/s)"
-					$newTemp= [regex]::Replace($sTemp,"^ ","")			
-					$newTemp= [regex]::Replace($sTemp," ",",")				
-					$newTemp= $newTemp.Trim()
-					$s=$newTemp							
-				}							
-				Add-Content -Path $tempFile -Value $s	
-				$incre="false"
-			}			
-			Import-Csv $tempFile 
-			Remove-Item  $tempFile
-		}
-		else
-		{
-			return $Result
-		}
-	}
-	else
-	{
-		if($Result -match "Time")
-		{
-			if($Result.Count -lt 5)
-			{
-				return "No data found please try with different values."
-			}
-			$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			$incre = "true" 		
-			foreach ($s in  $Result[1..$LastItem] )
-			{			
-				$s= [regex]::Replace($s,"^ ","")						
-				$s= [regex]::Replace($s," +",",")			
-				$s= [regex]::Replace($s,"-","")			
-				$s= $s.Trim()					
-				if($incre -eq "true")
-				{
-					$s=$s.Substring(1)								
-					$sTemp1=$s				
-					$sTemp = $sTemp1.Split(',')							
-					$sTemp[4]="Total(PDUs/s)"				
-					$sTemp[7]="Total(KBytes/s)"
-					$newTemp= [regex]::Replace($sTemp,"^ ","")			
-					$newTemp= [regex]::Replace($sTemp," ",",")				
-					$newTemp= $newTemp.Trim()
-					$s=$newTemp							
+		{	if($Result -match "Time")
+				{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
+					$tempFile = [IO.Path]::GetTempFileName()
+					$LastItem = $Result.Count
+					$incre = "true" 		
+					foreach ($s in  $Result[1..$LastItem] )
+						{	$s= [regex]::Replace($s,"^ ","")						
+							$s= [regex]::Replace($s," +",",")			
+							$s= [regex]::Replace($s,"-","")			
+							$s= $s.Trim() -replace 'Time','Date,Time,Zone'				
+							if($incre -eq "true")
+								{	$sTemp1=$s.Substring(1)					
+									$sTemp2=$sTemp1.Substring(0,$sTemp1.Length - 17)
+									$sTemp2 +="TimeOut"					
+									$sTemp = $sTemp2.Split(',')					
+									$sTemp[7]="Total(PDUs/s)"				
+									$sTemp[10]="Total(KBytes/s)"
+									$newTemp= [regex]::Replace($sTemp,"^ ","")			
+									$newTemp= [regex]::Replace($sTemp," ",",")				
+									$newTemp= $newTemp.Trim()
+									$s=$newTemp							
+								}							
+							Add-Content -Path $tempFile -Value $s	
+							$incre="false"
+						}			
+					Import-Csv $tempFile 
+					Remove-Item  $tempFile
 				}
-				if($incre -eq "false")
-				{
-					$sTemp1=$s
-					$sTemp = $sTemp1.Split(',')	
-					$sTemp2=$sTemp[0]+"-"+$sTemp[1]+"-"+$sTemp[2]
-					$sTemp[0]=$sTemp2				
-					$sTemp[1]=$sTemp[3]
-					$sTemp[2]=$sTemp[4]
-					$sTemp[3]=$sTemp[5]
-					$sTemp[4]=$sTemp[6]
-					$sTemp[5]=$sTemp[7]
-					$sTemp[6]=$sTemp[8]
-					$sTemp[7]=$sTemp[9]
-					$sTemp[8]=$sTemp[10]
-					$sTemp[9]=$sTemp[11]
-					$sTemp[10]=""
-					$sTemp[11]=""				
-					$newTemp= [regex]::Replace($sTemp," ",",")	
-					$newTemp= $newTemp.Trim()
-					$s=$newTemp				
-				}
-				Add-Content -Path $tempFile -Value $s	
-				$incre="false"
-			}			
-			Import-Csv $tempFile 
-			Remove-Item  $tempFile
+			else{	return $Result	}
 		}
-		else
-		{
-			return $Result
-		}
-	}	
-	if($Result -match "Time")
-	{
-		return  " Success : Executing Show-SrStatIscsiSession"
-	}
-	else
-	{			
-		return  $Result
-	}
-	
+	else{	if($Result -match "Time")
+			{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
+				$tempFile = [IO.Path]::GetTempFileName()
+				$LastItem = $Result.Count
+				$incre = "true" 		
+				foreach ($s in  $Result[1..$LastItem] )
+					{	$s= [regex]::Replace($s,"^ ","")						
+						$s= [regex]::Replace($s," +",",")			
+						$s= [regex]::Replace($s,"-","")			
+						$s= $s.Trim()					
+						if($incre -eq "true")
+							{	$s=$s.Substring(1)								
+								$sTemp1=$s				
+								$sTemp = $sTemp1.Split(',')							
+								$sTemp[4]="Total(PDUs/s)"				
+								$sTemp[7]="Total(KBytes/s)"
+								$newTemp= [regex]::Replace($sTemp,"^ ","")			
+								$newTemp= [regex]::Replace($sTemp," ",",")				
+								$newTemp= $newTemp.Trim()
+								$s=$newTemp							
+							}
+						if($incre -eq "false")
+							{	$sTemp1=$s
+								$sTemp = $sTemp1.Split(',')	
+								$sTemp2=$sTemp[0]+"-"+$sTemp[1]+"-"+$sTemp[2]
+								$sTemp[0]=$sTemp2				
+								$sTemp[1]=$sTemp[3]
+								$sTemp[2]=$sTemp[4]
+								$sTemp[3]=$sTemp[5]
+								$sTemp[4]=$sTemp[6]
+								$sTemp[5]=$sTemp[7]
+								$sTemp[6]=$sTemp[8]
+								$sTemp[7]=$sTemp[9]
+								$sTemp[8]=$sTemp[10]
+								$sTemp[9]=$sTemp[11]
+								$sTemp[10]=""
+								$sTemp[11]=""				
+								$newTemp= [regex]::Replace($sTemp," ",",")	
+								$newTemp= $newTemp.Trim()
+								$s=$newTemp				
+							}
+						Add-Content -Path $tempFile -Value $s	
+						$incre="false"
+					}			
+				Import-Csv $tempFile 
+				Remove-Item  $tempFile
+			}
+			else{	return $Result}
+		}	
+	if($Result -match "Time"){	return  " Success : Executing Show-SrStatIscsiSession"	}
+	else	{	return  $Result	}
+}
 }
