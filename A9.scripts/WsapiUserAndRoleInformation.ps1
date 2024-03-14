@@ -45,16 +45,14 @@ Process
 {	$Result = $null
 	$dataPS = $null
 	if($UserName)
-		{	#Request
-			$uri = '/users/'+$UserName	
+		{	$uri = '/users/'+$UserName	
 			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 				}
 		}	
 	else
-		{	#Request	
-			$Result = Invoke-WSAPI -uri '/users' -type 'GET' 
+		{	$Result = Invoke-WSAPI -uri '/users' -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}	

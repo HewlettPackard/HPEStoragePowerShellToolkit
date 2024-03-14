@@ -531,10 +531,7 @@ Function Remove-A9VvSet
 [CmdletBinding()]
 Param(
 		[Parameter(Mandatory = $true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True)]
-		[String]	$VVSetName,
-	
-	[Parameter(ValueFromPipeline=$true , HelpMessage = 'Connection Paramater')]
-	$WsapiConnection = $global:WsapiConnection
+		[String]	$VVSetName
 	)
 Begin 
 {	Test-WSAPIConnection
@@ -613,46 +610,41 @@ Process
 	$dataPS = $null		
 	$Query="?query=""  """
 	if($VVSetName)
-	{	$uri = '/volumesets/'+$VVSetName
-		$Result = Invoke-WSAPI -uri $uri -type 'GET'		 
-		If($Result.StatusCode -eq 200)
-		{	$dataPS = $Result.content | ConvertFrom-Json
-			write-host "Cmdlet executed successfully" -foreground green
-			return $dataPS
+		{	$uri = '/volumesets/'+$VVSetName
+			$Result = Invoke-WSAPI -uri $uri -type 'GET'		 
+			If($Result.StatusCode -eq 200)
+				{	$dataPS = $Result.content | ConvertFrom-Json
+					write-host "Cmdlet executed successfully" -foreground green
+					return $dataPS
+				}
+			else{	Write-Error "Failure:  While Executing Get-VvSet_WSAPI." 
+					return $Result.StatusDescription
+				}
 		}
-		else
-		{	Write-Error "Failure:  While Executing Get-VvSet_WSAPI." 
-			return $Result.StatusDescription
-		}
-	}
 	if($Members)
-	{	$count = 1
-		$lista = $Members.split(",")
-		foreach($sub in $lista)
-		{	$Query = $Query.Insert($Query.Length-3," setmembers EQ $sub")			
-			if($lista.Count -gt 1)
-			{	if($lista.Count -ne $count)
-				{	$Query = $Query.Insert($Query.Length-3," OR ")
-					$count = $count + 1
-				}				
+		{	$count = 1
+			$lista = $Members.split(",")
+			foreach($sub in $lista)
+				{	$Query = $Query.Insert($Query.Length-3," setmembers EQ $sub")			
+					if($lista.Count -gt 1)
+						{	if($lista.Count -ne $count)
+								{	$Query = $Query.Insert($Query.Length-3," OR ")
+									$count = $count + 1
+								}				
+						}
+				}		
+		}
+	if($Id)	{	if($Members)	{	$Query = $Query.Insert($Query.Length-3," OR id EQ $Id")	}
+				else			{	$Query = $Query.Insert($Query.Length-3," id EQ $Id")	}
 			}
-		}		
-	}
-	if($Id)
-		{	if($Members)	{	$Query = $Query.Insert($Query.Length-3," OR id EQ $Id")	}
-			else			{	$Query = $Query.Insert($Query.Length-3," id EQ $Id")	}
-		}
-	if($Uuid)
-		{	if($Members -or $Id)	{	$Query = $Query.Insert($Query.Length-3," OR uuid EQ $Uuid")}
-			else					{	$Query = $Query.Insert($Query.Length-3," uuid EQ $Uuid")	}
-		}
-	
+	if($Uuid)	{	if($Members -or $Id)	{	$Query = $Query.Insert($Query.Length-3," OR uuid EQ $Uuid")}
+					else					{	$Query = $Query.Insert($Query.Length-3," uuid EQ $Uuid")	}
+				}
 	if($Members -Or $Id -Or $Uuid)
 		{	$uri = '/volumesets/'+$Query
 			$Result = Invoke-WSAPI -uri $uri -type 'GET'	
 		}	
-	else
-		{	$Result = Invoke-WSAPI -uri '/volumesets' -type 'GET' 
+	else{	$Result = Invoke-WSAPI -uri '/volumesets' -type 'GET' 
 		}
 	If($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
@@ -660,13 +652,11 @@ Process
 				{	write-host "Cmdlet executed successfully" -foreground green
 					return $dataPS
 				}
-			else
-				{	Write-Error "Failure:  While Executing Get-VvSet_WSAPI. Expected Result Not Found with Given Filter Option : Members/$Members Id/$Id Uuid/$Uuid." 
+			else{	Write-Error "Failure:  While Executing Get-VvSet_WSAPI. Expected Result Not Found with Given Filter Option : Members/$Members Id/$Id Uuid/$Uuid." 
 					return 
 				}
 		}
-	else
-		{	Write-Error "Failure:  While Executing Get-VvSet_WSAPI." 
+	else{	Write-Error "Failure:  While Executing Get-VvSet_WSAPI." 
 			return $Result.StatusDescription
 		}
 }
@@ -690,24 +680,17 @@ Function Set-A9VvSetFlashCachePolicy
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VvSet,
-		[Parameter(ValueFromPipeline=$true)]		[Switch]	$Enable,
+		[Parameter(ValueFromPipeline=$true)]					[Switch]	$Enable,
 		[Parameter(ValueFromPipeline=$true)]					[Switch]	$Disable
 	)
 Begin 
 {	Test-WSAPIConnection
 }
 Process 
-{	$Massage = ""
-    $body = @{}		
-	If($Enable) 		{	$body["flashCachePolicy"] = 1
-							$Massage = "Enable"
-						}		
-	elseIf($Disable) 	{	$body["flashCachePolicy"] = 2 
-							$Massage = "Disable"
-						}
-	else				{	$body["flashCachePolicy"] = 2 
-						$Massage = "Default (Disable)"
-						}		
+{	$body = @{}		
+	If($Enable) 		{	$body["flashCachePolicy"] = 1	}		
+	elseIf($Disable) 	{	$body["flashCachePolicy"] = 2 	}
+	else				{	$body["flashCachePolicy"] = 2 	}		
     $Result = $null
 	$uri = '/volumesets/'+$VvSet
     $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
@@ -716,8 +699,7 @@ Process
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return $Result
 		}
-	else
-		{	Write-Error "Failure:  While Setting Flash Cache policy $Massage to vv-set $VvSet." 
+	else{	Write-Error "Failure:  While Setting Flash Cache policy (1 = enable, 2 = disable) $body to vv-set $VvSet." 
 			return $Result.StatusDescription
 		}
 }

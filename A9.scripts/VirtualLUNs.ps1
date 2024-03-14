@@ -144,7 +144,6 @@ Function Get-A9vLun
 	The <n:s:p> variable identifies the node, slot, and port of the device. The format of this should be a three numbers seperated by colons. i.e. '1:3:4'
 .EXAMPLE
 	PS:> Get-A9vLun | format-table
-	
 	Cmdlet executed successfully
 
 	lun volumeName     hostname remoteName       portPos                       type volumeWWN                        multipathing failedPathPol failedPathInterval active Subsystem_NQN

@@ -60,8 +60,7 @@ Process
 					write-host "Cmdlet executed successfully" -foreground green
 					return $dataPS		
 				}
-			else
-				{	Write-Error "Failure:  While Executing Get-Port_WSAPI." 
+			else{	Write-Error "Failure:  While Executing Get-Port_WSAPI." 
 					return $Result.StatusDescription
 				}
 		}
@@ -101,8 +100,7 @@ Process
 				{	write-host "Cmdlet executed successfully" -foreground green
 					return $dataPS
 				}
-			else
-				{	Write-Error "Failure:  While Executing Get-Port_WSAPI. " 
+			else{	Write-Error "Failure:  While Executing Get-Port_WSAPI. " 
 					return 
 				}
 		}
@@ -113,8 +111,7 @@ Process
 					write-host "Cmdlet executed successfully" -foreground green
 					return $dataPS		
 				}
-			else
-				{	Write-Error "Failure:  While Executing Get-Port_WSAPI." 
+			else{	Write-Error "Failure:  While Executing Get-Port_WSAPI." 
 					return $Result.StatusDescription
 				} 
 		}
@@ -173,13 +170,12 @@ Process
 		}
 	else
 		{	if($VLANtag)
-			{	if(-not $NSP)	{	Return "N S P required with VLANtag."	}
-				$uri = '/ports/'+$NSP+'/iSCSIVlans/'+$VLANtag
-			}
-			else
-			{	if(-not $NSP)	{	Return "N S P required with VLANtag."	}
-				$uri = '/ports/'+$NSP+'/iSCSIVlans/'
-			}		
+				{	if(-not $NSP)	{	Return "N S P required with VLANtag."	}
+					$uri = '/ports/'+$NSP+'/iSCSIVlans/'+$VLANtag
+				}
+			else{	if(-not $NSP)	{	Return "N S P required with VLANtag."	}
+					$uri = '/ports/'+$NSP+'/iSCSIVlans/'
+				}		
 		}
 	$Result = Invoke-WSAPI -uri $uri -type 'GET'
 
@@ -188,8 +184,7 @@ Process
 			write-host "Cmdlet executed successfully" -foreground green
 			return $dataPS
 		}
-	else
-		{	Write-Error "Failure:  While Executing Get-IscsivLans_WSAPI." 
+	else{	Write-Error "Failure:  While Executing Get-IscsivLans_WSAPI." 
 			return $Result.StatusDescription
 		}
 }	
@@ -213,7 +208,7 @@ Function Get-A9PortDevices
 	The <n:s:p> variable identifies the node, slot, and port of the device.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory = $true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True)]	[String]	$NSP
+Param(	[Parameter(Mandatory = $true,ValueFromPipeline=$True)]	[String]	$NSP
 	)
 Begin 
 {	Test-WSAPIConnection
@@ -244,13 +239,11 @@ Process
 						{	write-host "Cmdlet executed successfully" -foreground green
 							return $dataPS
 						}
-					else
-						{	Write-Error "Failure:  While Executing Get-A9PortDevices." 
+					else{	Write-Error "Failure:  While Executing Get-A9PortDevices." 
 							return 
 						}
 				}
-			else
-				{	$uri = '/portdevices/all/'+$NSP
+			else{	$uri = '/portdevices/all/'+$NSP
 					$Result = Invoke-WSAPI -uri $uri -type 'GET' 
 					If($Result.StatusCode -eq 200)
 						{	$dataPS = ($Result.content | ConvertFrom-Json).members			
@@ -259,8 +252,7 @@ Process
 						{	write-host "Cmdlet executed successfully" -foreground green
 							return $dataPS
 						}
-					else
-						{	Write-Error "Failure:  While Executing Get-A9PortDevices. " 
+					else{	Write-Error "Failure:  While Executing Get-A9PortDevices. " 
 							return 
 						}
 				}
@@ -299,20 +291,18 @@ Process
 	if($NSP)	{	$uri = $uri+'/'+$NSP}	
 	$Result = Invoke-WSAPI -uri  -type 'GET' 	
 	If($Result.StatusCode -eq 200)
-	{	$dataPS = ($Result.content | ConvertFrom-Json).members			
-		if($dataPS.Count -gt 0)
-			{	write-host "Cmdlet executed successfully" -foreground green
-				return $dataPS
-			}
-			else
-			{	Write-Error "Failure:  While Executing Get-A9PortDeviceTDZ. " 
-				return 
-			}
-	}
-	else
-	{	Write-Error "Failure:  While Executing Get-A9PortDeviceTDZ." 
-		return $Result.StatusDescription
-	}
+		{	$dataPS = ($Result.content | ConvertFrom-Json).members			
+			if($dataPS.Count -gt 0)
+					{	write-host "Cmdlet executed successfully" -foreground green
+						return $dataPS
+					}
+				else{	Write-Error "Failure:  While Executing Get-A9PortDeviceTDZ. " 
+						return 
+					}
+		}
+	else{	Write-Error "Failure:  While Executing Get-A9PortDeviceTDZ." 
+			return $Result.StatusDescription
+		}
 }
 }
 
@@ -348,13 +338,11 @@ Process
 				{	write-host "Cmdlet executed successfully" -foreground green
 					return $dataPS
 				}
-			else
-				{	Write-Error "Failure:  While Executing Get-A9FcSwitches. " 
+			else{	Write-Error "Failure:  While Executing Get-A9FcSwitches. " 
 					return 
 				}
 		}
-	else
-		{	Write-Error "Failure:  While Executing Get-A9FcSwitches." 
+	else{	Write-Error "Failure:  While Executing Get-A9FcSwitches." 
 			return $Result.StatusDescription
 		}
 }

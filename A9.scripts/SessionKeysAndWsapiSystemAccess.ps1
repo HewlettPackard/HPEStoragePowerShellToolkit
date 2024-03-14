@@ -58,10 +58,8 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 "@  
 	[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
 }
-#END of (self-signed) certificate,
 	if(!($SANPassword))
 		{	$SANPassword1 = Read-host "SANPassword" -assecurestring
-			#$globalpwd = $SANPassword1
 			$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SANPassword1)
 			$SANPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
 		}
@@ -82,14 +80,13 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 		$postParams = @{user=$SANUserName;password=$SANPassword} | ConvertTo-Json 
 		$headers = @{}  
 		$headers["Accept"] = "application/json" 		
-		Try
-			{	Write-verbose "Running: Invoke-WebRequest for credential data." 
+		Try	{	Write-verbose "Running: Invoke-WebRequest for credential data." 
 				if ($PSEdition -eq 'Core')
-				{	$credentialdata = Invoke-WebRequest -Uri "$APIurl/credentials" -Body $postParams -ContentType "application/json" -Headers $headers -Method POST -UseBasicParsing -SkipCertificateCheck
-				} 
+					{	$credentialdata = Invoke-WebRequest -Uri "$APIurl/credentials" -Body $postParams -ContentType "application/json" -Headers $headers -Method POST -UseBasicParsing -SkipCertificateCheck
+					} 
 				else 
-				{	$credentialdata = Invoke-WebRequest -Uri "$APIurl/credentials" -Body $postParams -ContentType "application/json" -Headers $headers -Method POST -UseBasicParsing 
-				}
+					{	$credentialdata = Invoke-WebRequest -Uri "$APIurl/credentials" -Body $postParams -ContentType "application/json" -Headers $headers -Method POST -UseBasicParsing 
+					}
 			}
 		catch
 			{	Show-RequestException -Exception $_
