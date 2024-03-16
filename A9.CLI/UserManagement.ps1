@@ -2,8 +2,7 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-
-Function Get-UserConnection
+Function Get-A9UserConnection_CLI
 {
 <#
 .SYNOPSIS
@@ -11,13 +10,16 @@ Function Get-UserConnection
 .DESCRIPTION
 	Displays information about users who are currently connected (logged in) to the storage system.
 .EXAMPLE
-    Get-UserConnection  
+    PS:> Get-A9UserConnection_CLI  
+
 	Shows information about users who are currently connected (logged in) to the storage system.
 .EXAMPLE
-    Get-UserConnection   -Current
+    PS:> Get-A9UserConnection_CLI -Current
+
 	Shows all information about the current connection only.
 .EXAMPLE
-    Get-UserConnection   -Detailed
+    PS:> Get-A9UserConnection_CLI -Detailed
+
 	Specifies the more detailed information about the user connection
 .PARAMETER Current
 	Shows all information about the current connection only.
@@ -31,6 +33,9 @@ Function Get-UserConnection
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Current ,		
 		[Parameter(ValueFromPipeline=$true)]	[switch]	$Detailed 
 	)
+Begin
+{ Test-A9Connection -CLientType 'SshClient'
+}
 process	
 {	if ( -not $(Test-A9CLI) ) 	{	return }
 	$cmd2 = "showuserconn "
@@ -55,7 +60,7 @@ process
 }
 }
 
-Function Set-Password
+Function Set-A9Password_CLI
 {
 <#
 .SYNOPSIS
@@ -63,7 +68,7 @@ Function Set-Password
 .DESCRIPTION
 	Creates a encrypted password file on client machine
 .EXAMPLE
-    Set-Password -CLIDir "C:\Program Files (x86)\Hewlett Packard Enterprise\HPE 3PAR CLI\bin" -ArrayNameOrIPAddress "15.212.196.218"  -epwdFile "C:\HPE3paradmepwd.txt"	
+    PS:> Set-A9Password_CLI -CLIDir "C:\Program Files (x86)\Hewlett Packard Enterprise\HPE 3PAR CLI\bin" -ArrayNameOrIPAddress "15.212.196.218"  -epwdFile "C:\HPE3paradmepwd.txt"	
 	This examples stores the encrypted password file HPE3paradmepwd.txt on client machine c:\ drive, subsequent commands uses this encryped password file 
 .PARAMETER ArrayNameOrIPAddress 
     Specify the SAN IP address.
@@ -71,13 +76,15 @@ Function Set-Password
     Specify the absolute path of HPE 3par cli.exe. Default is "C:\Program Files (x86)\Hewlett Packard Enterprise\HPE 3PAR CLI\bin"
 .PARAMETER epwdFile 
     Specify the file location to create encrypted password file
-#Requires HPE 3par cli.exe 
 #>
 [CmdletBinding()]
 param(	[Parameter()]					[String]	$CLIDir="C:\Program Files (x86)\Hewlett Packard Enterprise\HPE 3PAR CLI\bin",
 		[Parameter(Mandatory=$true)]	[String]	$ArrayNameOrIPAddress=$null,
 		[Parameter(Mandatory=$true)]	[String]	$epwdFile ="C:\HPE3parepwdlogin.txt"
-)	
+)
+Begin
+{ Test-A9Connection -CLientType 'SshClient'
+}	
 process
 {	if( Test-Path $epwdFile)	{	Write-verbose "Running: Encrypted password file found. It will be overwritten" }	
 	$passwordFile = $epwdFile	

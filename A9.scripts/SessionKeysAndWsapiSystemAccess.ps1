@@ -141,7 +141,7 @@ Function Close-A9Connection
 [CmdletBinding()]
 Param()
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$key = $WsapiConnection.Key

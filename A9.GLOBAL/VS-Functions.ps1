@@ -208,7 +208,7 @@ Param(	# [Parameter(Mandatory = $true)]	$Connection,
 		[Parameter(Mandatory = $true)]	[string]	$Cmds  
 	)
 	$connection = $SANConnection	
-	$Validate1 = Test-A9CLIConnection
+	$Validate1 = Test-A9Connection -ClientType 'SshClient' 
 	if ($Validate1 -eq "Failed") {
 		Write-Verbose  "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-*Connection and pass it as parameter" 
 		Write-Verbose  "Stop: Exiting Invoke-CLICommand since connection object values are null/empty"

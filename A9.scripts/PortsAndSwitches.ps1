@@ -42,7 +42,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$NSP,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$Type
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -148,7 +148,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Type,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$VLANtag
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -211,7 +211,7 @@ Function Get-A9PortDevices
 Param(	[Parameter(Mandatory = $true,ValueFromPipeline=$True)]	[String]	$NSP
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -282,7 +282,7 @@ Function Get-A9PortDeviceTDZ
 Param(	[Parameter(ValueFromPipeline=$true)]	[String] 	$NSP
 	)
 Begin 
-{	Test-WSAPIConnection	 
+{	Test-A9Connection -ClientType 'API'	 
 }
 Process 
 {	$Result = $null
@@ -324,7 +324,7 @@ Function Get-A9FcSwitches
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NSP
 )
 Begin 
-{	Test-WSAPIConnection	 
+{	Test-A9Connection -ClientType 'API'	 
 }
 Process 
 {	$Result = $null
@@ -384,7 +384,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NSP,
 		[Parameter(ValueFromPipeline=$true)]					[String]	$ISNSAddr
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -437,7 +437,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NSP,
 		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[int]		$VlanTag
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}    
@@ -486,7 +486,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NSP,
 		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[int]		$VlanTag
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}    
@@ -550,7 +550,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NSP,
 		[Parameter(ValueFromPipeline=$true)]					[String]	$ISNSAddr
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -591,7 +591,7 @@ Function Reset-A9IscsiPort
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NSP
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}    
@@ -632,7 +632,7 @@ Param(	[Parameter(omPipeline=$true)]							[String]	$NSP,
 		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[int]		$VlanTag
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$uri = "/ports/"+$NSP+"/iSCSIVlans/"+$VlanTag 

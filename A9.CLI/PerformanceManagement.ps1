@@ -9,15 +9,15 @@ Function Compress-A9VV_CLI
 .DESCRIPTION  
 	The Compress-VV command is used to change the properties of a virtual volume that was created with the createvv command by associating it with a different CPG.
 .EXAMPLE	
-	Compress-VV -SUBCommand usr_cpg -CPGName XYZ
+	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ
 .EXAMPLE
-	Compress-VV -SUBCommand usr_cpg -CPGName XYZ -VVName XYZ
+	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -VVName XYZ
 .EXAMPLE
-	Compress-VV -SUBCommand usr_cpg -CPGName XYZ -Option XYZ -VVName XYZ
+	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -Option XYZ -VVName XYZ
 .EXAMPLE
-	Compress-VV -SUBCommand usr_cpg -CPGName XYZ -Option keepvv -KeepVVName XYZ -VVName XYZ
+	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -Option keepvv -KeepVVName XYZ -VVName XYZ
 .EXAMPLE
-	Compress-VV -SUBCommand snp_cpg -CPGName XYZ -VVName XYZ
+	PS:> Compress-A9VV_CLI -SUBCommand snp_cpg -CPGName XYZ -VVName XYZ
 .PARAMETER SUBCommand
 	usr_cpg <cpg>
 		Moves the logical disks being used for user space to the specified CPG.
@@ -84,7 +84,7 @@ param(		[Parameter(Mandatory=$true)][ValidateSet('usr_cpg','snp_cpg','restart','
 			[Parameter()]					[String]	$Src_Cpg 
 )	
 Begin	
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$Cmd = " tunevv "
@@ -123,15 +123,15 @@ Function Get-A9HistChunklet_CLI
 .DESCRIPTION
 	The Get-HistChunklet command displays a histogram of service times in a timed loop for individual chunklets
 .EXAMPLE
-    Get-HistChunklet -Iteration 1 
+    PS:> Get-A9HistChunklet_CLI -Iteration 1 
 
 	This example displays one iteration of a histogram of service
 .EXAMPLE
-    Get-HistChunklet –LDname dildil -Iteration 1 
+    PS:> Get-A9HistChunklet_CLI –LDname dildil -Iteration 1 
 
 	identified by name, from which chunklet statistics are sampled.
 .EXAMPLE
-	Get-HistChunklet -Iteration 1 -Previous
+	PS:> Get-A9HistChunklet_CLI -Iteration 1 -Previous
 .PARAMETER Chunklet_num
 	Specifies that statistics are limited to only the specified chunklet, identified
 	by number.
@@ -173,7 +173,7 @@ param(	[Parameter()]	[String]	$LDname,
 		[Parameter()]	[switch]	$NI	
 )		
 begin	
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$histchCMD = "histch"
@@ -229,23 +229,23 @@ Function Get-A9HistL_CLI
 .DESCRIPTION
 	The Get-HistLD command displays a histogram of service times for Logical Disks (LDs) in a timed loop.
 .EXAMPLE
-    Get-HistLD -Iteration 1
+    PS:> Get-A9HistLD_CLI -Iteration 1
 
 	displays a histogram of service Iteration number of times
 .EXAMPLE
-	Get-HistLD -LdName abcd -Iteration 1
+	PS:> Get-A9HistLD_CLI -LdName abcd -Iteration 1
 
 	displays a histogram of service linked with LD_NAME on  Iteration number of times
 .EXAMPLE
-	Get-HistLD -Iteration 1 -VV_Name ZXZX
+	PS:> Get-A9HistLD_CLI -Iteration 1 -VV_Name ZXZX
 
 	Shows only logical disks that are mapped to virtual volumes with names matching any of the names or patterns specified.
 .EXAMPLE
-	Get-HistLD -Iteration 1 -Domain ZXZX
+	PS:> Get-A9HistLD_CLI -Iteration 1 -Domain ZXZX
 
 	Shows only logical disks that are in domains with names matching any of the names or patterns specified.
 .EXAMPLE
-	Get-HistLD -Iteration 1 -Percentage Shows the access count in each bucket as a percentage.
+	PS:> Get-A9HistLD_CLI -Iteration 1 -Percentage Shows the access count in each bucket as a percentage.
 .PARAMETER Timecols
 	For the I/O time histogram, shows the columns from the first column <fcol> through last column <lcol>. The available columns range from 0 through 31.
 
@@ -306,7 +306,7 @@ param(
 		[Parameter()]	[String]	$LdName
 )		
 Begin	
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 Process	
 {	$histldCmd = "histld "
@@ -380,19 +380,19 @@ Function Get-A9HistPD_CLI
 .DESCRIPTION
     The Get-HistPD command displays a histogram of service times for Physical Disks (PDs).
 .EXAMPLE
-    Get-HistPD  -iteration 1 -WWN abcd
+    PS:> Get-A9HistPD_CLI -iteration 1 -WWN abcd
 
 	Specifies the world wide name of the PD for which service times are displayed.
 .EXAMPLE
-	Get-HistPD -iteration 1
+	PS:> Get-A9HistPD_CLI -iteration 1
 
 	The Get-HistPD displays a histogram of service iteration number of times Histogram displays data from when the system was last started (–begin).
 .EXAMPLE	
-	Get-HistPD -iteration 1 -Devinfo
+	PS:> Get-A9HistPD_CLI -iteration 1 -Devinfo
 
 	Indicates the device disk type and speed.
 .EXAMPLE	
-	Get-HistPD -iteration 1 -Metric both
+	PS:> Get-A9HistPD_CLI -iteration 1 -Metric both
 
 	(Default)Display both I/O time and I/O size histograms
 .PARAMETER WWN
@@ -444,14 +444,15 @@ param(	[Parameter()]	[String]	$Iteration,
 		[Parameter()]	[String]	$Slots,
 		[Parameter()]	[String]	$Ports,
 		[Parameter()]	[Switch]	$Devinfo,
-		[Parameter()]	[String]	$Metric,
+		[Parameter()]	[ValidateSet('both','time','size')]
+						[String]	$Metric,
 		[Parameter()]	[Switch]	$Percentage,
 		[Parameter()]	[Switch]	$Previous,
 		[Parameter()]	[Switch]	$Beginning,	
 		[Parameter()]	[String]	$FSpec
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$Cmd = "histpd "
@@ -519,23 +520,23 @@ Function Get-A9HistPort_CLI
 {
 <#
 .SYNOPSIS
-    The Get-HistPort command displays a histogram of service times for ports within the system.
+    The command displays a histogram of service times for ports within the system.
 .DESCRIPTION
-	The Get-HistPort command displays a histogram of service times for ports within the system.
+	The command displays a histogram of service times for ports within the system.
 .EXAMPLE
-    Get-HistPort -iteration 1
+    PS:> Get-A9HistPort_CLI -iteration 1
 
 	displays a histogram of service times with option it can be one of these [both|ctrl|data].
 .EXAMPLE
-	Get-HistPort -iteration 1 -Both
+	PS:> Get-A9HistPort_CLI -iteration 1 -Both
 
 	Specifies that both control and data transfers are displayed(-both)
 .EXAMPLE
-	Get-HistPort -iteration 1 -Nodes nodesxyz
+	PS:> Get-A9HistPort_CLI -iteration 1 -Nodes nodesxyz
 
 	Specifies that the display is limited to specified nodes and physical disks connected to those nodes.
 .EXAMPLE	
-	Get-HistPort –Metric both -iteration 1
+	PS:> Get-A9HistPort_CLI –Metric both -iteration 1
 
 	displays a histogram of service times with -metric option. metric can be one of these –metric [both|time|size]
 .PARAMETER Both 
@@ -605,26 +606,26 @@ param(	[Parameter(Mandatory=$true)]	[String]	$Iteration,
 		[Parameter()]	[Switch]	$RW
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$Cmd = "histport "
 	$Cmd +=" -iter $Iteration"	
 	if ($Both)	{	$Cmd +=" -both "	}
-	if ($CTL)	{		$Cmd +=" -ctl "	}
+	if ($CTL)	{	$Cmd +=" -ctl "		}
 	if ($Data)	{	$Cmd +=" -data "	}
 	if ($Nodes)	{	$Cmd += " -nodes $Nodes"	}
 	if ($Slots)	{	$Cmd += " -slots $Slots"	}
 	if ($Ports)	{	$Cmd += " -ports $Ports"	}
-	if ($HostE)	{		$Cmd +=" -host "	}
-	if ($Disk)	{		$Cmd +=" -disk "	}
-	if ($RCFC)	{		$Cmd +=" -rcfc "	}
-	if ($PEER)	{		$Cmd +=" -peer "	}
+	if ($HostE)	{	$Cmd +=" -host "	}
+	if ($Disk)	{	$Cmd +=" -disk "	}
+	if ($RCFC)	{	$Cmd +=" -rcfc "	}
+	if ($PEER)	{	$Cmd +=" -peer "	}
 	if ($Metric){	$Cmd += " -metric "
 					$a1="both","time","size"
 					$Metric = $Metric.toLower()
 					if($a1 -eq $Metric )	{	$Cmd += "$Metric "	}		
-					else	{	return "FAILURE:  -Metric $Metric  is Invalid. Only [ both | time | size ] can be used."	}
+					else					{	return "FAILURE:  -Metric $Metric  is Invalid. Only [ both | time | size ] can be used."	}
 				}	
 	if ($Previous)	{	$Cmd += " -prev "	}
 	if ($Beginning)	{	$Cmd += " -begin "	}
@@ -752,7 +753,7 @@ param(	[Parameter()]	[switch]	$ASync,
 		[Parameter()]	[String]	$iteration	
 	)
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$Cmd = "histrcvv "
@@ -880,7 +881,7 @@ param(	[Parameter()]	[String]	$iteration,
 		[Parameter()]	[String]	$Metric			
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$Cmd = "histvlun "
@@ -1054,7 +1055,7 @@ param(	[Parameter()]	[String]	$iteration,
 		[Parameter()]	[String]	$FSpace
 	)
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$Cmd = "histvv "
@@ -1161,7 +1162,7 @@ param(	[Parameter(Mandatory=$true)]	[String]	$Iteration ,
 		[Parameter()]	[String]	$CHnum 
 	)		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$cmd= "statch"
@@ -1248,7 +1249,7 @@ param(	[Parameter()]	[switch]	$NI,
 		[Parameter()]	[String]	$Iteration 
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$cmd= "statcmp -v "	
@@ -1319,7 +1320,7 @@ param(	[Parameter()]	[String]	$delay,
 		[Parameter(Mandatory=$true)]	[String]	$Iteration 
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$cmd= "statcpu "
@@ -1418,7 +1419,7 @@ param(	[Parameter()]	[switch]	$RW,
 		[Parameter(Mandatory=$true)]	[String]	$Iteration
 	)		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$cmd= "statld -iter $Iteration "	
@@ -1507,7 +1508,7 @@ param(	[Parameter()]					[switch]	$Detail,
 		[Parameter()]					[String]	$Iteration
 	)		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$cmd= "statlink -iter $Iteration "
@@ -1602,7 +1603,7 @@ param(	[Parameter()]	[switch]	$RW,
 		[Parameter()]	[switch]	$DevInfo		
 	)		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$cmd= "statpd "	
@@ -1728,7 +1729,7 @@ param(	[Parameter()]	[switch]	$Both ,
 		[Parameter(Mandatory=$true)]	[String]	$Iteration 
 	)		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$cmd= "statport "
@@ -1871,7 +1872,7 @@ param(	[Parameter(Mandatory=$true)][String]	$Iteration ,
 		[Parameter()]				[switch]	$SubSet
 	)		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$cmd= "statrcvv "	
@@ -2001,7 +2002,7 @@ param(	[Parameter()]		[switch]	$RW,
 		[Parameter(Mandatory=$true)]	[String]	$Iteration 
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$cmd= "statvlun "
@@ -2112,7 +2113,7 @@ param(	[Parameter()]				[switch]	$RW ,
 		[Parameter(Mandatory=$true)][String]	$Iteration
 	)			
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$cmd= "statvv "
@@ -2181,7 +2182,7 @@ param(	[Parameter()]											[switch]	$Start,
 		[Parameter(ValueFromPipeline=$true, Mandatory=$true)]	[String]	$CLnum
 	)		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$cmd1 = "setstatch "
@@ -2226,11 +2227,10 @@ param(	[Parameter(ValueFromPipeline=$true)]					[switch]	$Start,
 		[Parameter(ValueFromPipeline=$true, Mandatory=$true)]	[String]	$PD_ID
 	)			
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
-{	if ( -not $(Test-A9CLI) ) 	{	return }	
-	$cmd1 = "setstatpdch "
+{	$cmd1 = "setstatpdch "
 	if ($Start)		{	$cmd1 += " start "	}
 	if ($Stop)		{	$cmd1 += " stop "	}
 	$cmd2="showpd"
@@ -2335,11 +2335,10 @@ param(
 	[Parameter()]	[switch]	$Waittask
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " tunesys -f "
+{	$Cmd = " tunesys -f "
 	if($Cpg)		{	$Cmd += " -cpg $Cpg " }
 	if($Nodepct)	{	$Cmd += " -nodepct $Nodepct " }
 	if($Spindlepct)	{	$Cmd += " -spindlepct $Spindlepct " }
@@ -2436,11 +2435,10 @@ param(	[Parameter()]	[String]	$Nodes,
 		[Parameter()]	[String]	$AvgSvct
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " tunepd "
+{	$Cmd = " tunepd "
 	if($Nodes)			{	$Cmd += " -nodes $Nodes "		}
 	if($Slots)			{	$Cmd += " -slots $Slots "		}
 	if($Ports)			{	$Cmd += " -ports $Ports "		}

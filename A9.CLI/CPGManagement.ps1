@@ -10,27 +10,27 @@ Function Get-A9CPG_CLI
 .DESCRIPTION
     Get list of common provisioning groups (CPGs) in the system.
 .EXAMPLE
-    Get-CPG
+    PS:> Get-A9CPG_CLI
 
 	List all/specified common provisioning groups (CPGs) in the system.  
 .EXAMPLE
-	Get-CPG -cpgName "MyCPG" 
+	PS:> Get-A9CPG_CLI -cpgName "MyCPG" 
 
 	List Specified CPG name "MyCPG"
 .EXAMPLE
-	Get-CPG -Detailed -cpgName "MyCPG" 
+	PS:> Get-A9CPG_CLI -Detailed -cpgName "MyCPG" 
 
 	Displays detailed information about the CPGs.
 .EXAMPLE
-	Get-CPG -RawSpace -cpgName "MyCPG" 
+	PS:> Get-A9CPG_CLI -RawSpace -cpgName "MyCPG" 
 
 	Specifies that raw space used by the CPGs is displayed.
 .EXAMPLE
-	Get-CPG -AlertTime -cpgName "MyCPG" 
+	PS:> Get-A9CPG_CLI -AlertTime -cpgName "MyCPG" 
 
 	Show times when alerts were posted (when applicable).
 .EXAMPLE
-	Get-CPG -Domain_Name XYZ -cpgName "MyCPG" 
+	PS:> Get-A9CPG_CLI -Domain_Name XYZ -cpgName "MyCPG" 
 
 	Show times with domain name depict.
 .PARAMETER cpgName 
@@ -77,7 +77,7 @@ param(	[Parameter()]	[switch]	$ListCols,
 		[Parameter()]	[String]	$cpgName
 	)		
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$GetCPGCmd = "showcpg "
@@ -389,28 +389,28 @@ Function New-A9CPG_CLI
 {
 <#
 .SYNOPSIS
-    The New-CPG command creates a Common Provisioning Group (CPG).
+    The command creates a Common Provisioning Group (CPG).
 .DESCRIPTION
-    The New-CPG command creates a Common Provisioning Group (CPG).
+    The command creates a Common Provisioning Group (CPG).
 .EXAMPLE
-    New-CPG -cpgName "MyCPG" -Size 32G	-RAIDType r1 
+    New-A9CPG_CLI -cpgName "MyCPG" -Size 32G	-RAIDType r1 
 	Creates a CPG named MyCPG with initial size of 32GB and Raid configuration is r1 (RAID 1)
 .EXAMPLE 
-	New-CPG -cpgName asCpg
+	PS:> New-A9CPG_CLI -cpgName asCpg
 .EXAMPLE 
-	New-CPG -cpgName asCpg1 -TemplateName temp
+	PS:> New-A9CPG_CLI -cpgName asCpg1 -TemplateName temp
 .EXAMPLE	
-	New-CPG -cpgName asCpg1 -AW 1
+	PS:> New-A9CPG_CLI -cpgName asCpg1 -AW 1
 .EXAMPLE	
-	New-CPG -cpgName asCpg1 -SDGS 1
+	PS:> New-A9CPG_CLI -cpgName asCpg1 -SDGS 1
 .EXAMPLE	
-	New-CPG -cpgName asCpg1 -SDGL 12241
+	PS:> New-A9CPG_CLI -cpgName asCpg1 -SDGL 12241
 .EXAMPLE	
-	New-CPG -cpgName asCpg1 -saLD_name XYZ
+	PS:> New-A9CPG_CLI -cpgName asCpg1 -saLD_name XYZ
 .EXAMPLE	
-	New-CPG -cpgName asCpg1 -sdLD_name XYZ
+	PS:> New-A9CPG_CLI -cpgName asCpg1 -sdLD_name XYZ
 .EXAMPLE	
-	New-CPG -cpgName asCpg1 -RAIDType r1	
+	PS:> New-A9CPG_CLI -cpgName asCpg1 -RAIDType r1	
 .PARAMETER TemplateName
 	Use the options defined in template <template_name>. The template is created using the createtemplate command.  Options specified in the
 	template are read-only or read-write. The read-write options may be overridden with new options at the time of their creation, but read-only
@@ -484,7 +484,7 @@ param(	[Parameter(mandatory=$true)]
 						[String]	$CH
 	)		
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$CreateCPGCmd =" createcpg -f" 
@@ -516,7 +516,7 @@ Function Remove-A9CPG_CLI
 .DESCRIPTION
 	Removes a Common Provisioning Group(CPG)
 .EXAMPLE
-    Remove-CPG -cpgName "MyCPG"  -force
+    Remove-A9CPG_CLI -cpgName "MyCPG"  -force
 	
 	Removes a Common Provisioning Group(CPG) "MyCPG"
 .PARAMETER force
@@ -541,7 +541,7 @@ param(	[Parameter()]	[switch]	$force,
 		[Parameter()]	[switch]	$Pat
 	)
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	if ($cpgName)
@@ -581,9 +581,9 @@ Function Set-A9CPG_CLI
 {
 <#
 .SYNOPSIS
-	Set-CPG - Update a Common Provisioning Group (CPG)
+	Update a Common Provisioning Group (CPG)
 .DESCRIPTION
-	The Set-CPG command modifies existing Common Provisioning Groups (CPG).
+	The command modifies existing Common Provisioning Groups (CPG).
 .PARAMETER Sa
 	Specifies that existing logical disks are added to the CPG and are used for snapshot admin (SA) space allocation. The <LD_name> argument can be
 	repeated to specify multiple logical disks. This option is deprecated and will be removed in a subsequent release.
@@ -720,7 +720,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Sa,
 		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$CPG_name
 )
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshType'
 }
 Process
 {	$Cmd = " setcpg -f"
@@ -766,14 +766,14 @@ Function Compress-A9CPG_CLI
 {
 <#
 .SYNOPSIS
-	Compress-CPG - Consolidate space in common provisioning groups.
+	Consolidate space in common provisioning groups.
 .DESCRIPTION
-	The Compress-CPG command consolidates logical disk space in Common Provisioning Groups (CPGs) into as few logical disks as possible, allowing
+	The command consolidates logical disk space in Common Provisioning Groups (CPGs) into as few logical disks as possible, allowing
 	unused logical disks to be removed and their space reclaimed.
 .EXAMPLE
-	Compress-CPG -CPG_name xxx 
+	PS:> Compress-A9CPG_CLI -CPG_name xxx 
 .EXAMPLE
-	Compress-CPG -CPG_name tstCPG
+	PS:> Compress-A9CPG_CLI -CPG_name tstCPG
 .PARAMETER Pat
 	Compacts CPGs that match any of the specified patterns. This option must be used if the pattern specifier is used.
 .PARAMETER Waittask
@@ -795,7 +795,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Pat,
 		[Parameter(Mandatory=$true, ValueFromPipeline=$true)][String]	$CPG_name
 )
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " compactcpg -f "

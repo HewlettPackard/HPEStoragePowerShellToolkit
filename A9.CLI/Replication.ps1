@@ -5,11 +5,11 @@ Function Add-A9RCopyTarget_CLI
 {
 <#
 .SYNOPSIS
-    The Add-RCopyTarget command adds a target to a remote-copy volume group.
+    The command adds a target to a remote-copy volume group.
 .DESCRIPTION
-    The Add-RCopyTarget command adds a target to a remote-copy volume group.
+    The command adds a target to a remote-copy volume group.
 .EXAMPLE
-	Add-RCopyTarget -Target_name XYZ -Mode sync -Group_name test
+	PS:> Add-A9RCopyTarget_CLI -Target_name XYZ -Mode sync -Group_name test
 
 	This example admits physical disks.
 .PARAMETER Target_name 
@@ -26,7 +26,7 @@ param(	[Parameter(Mandatory=$true)]	[String]	$Target_name,
 		[Parameter(Mandatory=$true)]	[String]	$Group_name
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "admitrcopytarget "
@@ -42,21 +42,21 @@ Function Add-A9RCopyVv_CLI
 {
 <#
 .SYNOPSIS
-    The Add-RCopyVv command adds an existing virtual volume to an existing remote copy volume group.
+    The command adds an existing virtual volume to an existing remote copy volume group.
 .DESCRIPTION
-	The Add-RCopyVv command adds an existing virtual volume to an existing remote copy volume group.
+	The command adds an existing virtual volume to an existing remote copy volume group.
 .EXAMPLE	
-    Add-RCopyVv -SourceVolumeName XXXX -Group_name ZZZZ -Target_name TestTarget -TargetVolumeName YYYY
+    PS:> Add-A9RCopyVv_CLI -SourceVolumeName XXXX -Group_name ZZZZ -Target_name TestTarget -TargetVolumeName YYYY
 .EXAMPLE
-    Add-RCopyVv -SourceVolumeName XXXX -Snapname snp -Group_name ZZZZ -Target_name TestTarget -TargetVolumeName YYYY
+    PS:> Add-A9RCopyVv_CLI -SourceVolumeName XXXX -Snapname snp -Group_name ZZZZ -Target_name TestTarget -TargetVolumeName YYYY
 .EXAMPLE
-    Add-RCopyVv -SourceVolumeName XXXX -Snapname snp -Group_name AS_TEST -Target_name CHIMERA03 -TargetVolumeName YYYY
+    PS:> Add-A9RCopyVv_CLI -SourceVolumeName XXXX -Snapname snp -Group_name AS_TEST -Target_name CHIMERA03 -TargetVolumeName YYYY
 .EXAMPLE
-    Add-RCopyVv -Pat -SourceVolumeName XXXX -Group_name ZZZZ -Target_name TestTarget -TargetVolumeName YYYY
+    PS:> Add-A9RCopyVv_CLI -Pat -SourceVolumeName XXXX -Group_name ZZZZ -Target_name TestTarget -TargetVolumeName YYYY
 .EXAMPLE	
-	Add-RCopyVv -CreateVV -SourceVolumeName XXXX -Group_name ZZZZ -Target_name TestTarget -TargetVolumeName YYYY
+	PS:> Add-A9RCopyVv_CLI -CreateVV -SourceVolumeName XXXX -Group_name ZZZZ -Target_name TestTarget -TargetVolumeName YYYY
 .EXAMPLE
-	Add-RCopyVv -NoWWN -SourceVolumeName XXXX -Group_name ZZZZ -Target_name TestTarget -TargetVolumeName YYYY
+	PS:> Add-A9RCopyVv_CLI -NoWWN -SourceVolumeName XXXX -Group_name ZZZZ -Target_name TestTarget -TargetVolumeName YYYY
 .PARAMETER Pat
 	Specifies that the <VV_name> is treated as a glob-style pattern and that all remote copy volumes matching the specified pattern are admitted to the
 	remote copy group. When this option is used the <sec_VV_name> and <snapname> (if specified) are also treated as patterns. It is required
@@ -87,13 +87,13 @@ param(	[Parameter()]	[switch]	$Pat,
 		[Parameter()]	[switch]	$NoWWN,
 		[Parameter()]	[switch]	$NoSync,
 		[Parameter(Mandatory=$true)]	[String]	$SourceVolumeName,
-		[Parameter()]	[String]	$Snapname,
+		[Parameter()]					[String]	$Snapname,
 		[Parameter(Mandatory=$true)]	[String]	$Group_name,
 		[Parameter(Mandatory=$true)]	[String]	$Target_name,
 		[Parameter(Mandatory=$true)]	[String]	$TargetVolumeName
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "admitrcopyvv "
@@ -116,15 +116,15 @@ Function Add-A9RCopyLink_CLI
 {
 <#
 .SYNOPSIS
-    The  command adds one or more links (connections) to a remote-copy target system.
+    The command adds one or more links (connections) to a remote-copy target system.
 .DESCRIPTION
-    The  command adds one or more links (connections) to a remote-copy target system.  
+    The command adds one or more links (connections) to a remote-copy target system.  
 .EXAMPLE
-	Add-RCopyLink  -TargetName demo1 -N_S_P_IP 1:2:1:193.1.2.11
+	PS:> Add-A9RCopyLink_CLI  -TargetName demo1 -N_S_P_IP 1:2:1:193.1.2.11
 	
 	This Example adds a link on System2 using the node, slot, and port information of node 1, slot 2, port 1 of the Ethernet port on the primary system. The IP address 193.1.2.11 specifies the address on the target system:
 .EXAMPLE
-	Add-RCopyLink  -TargetName System2 -N_S_P_WWN 5:3:2:1122112211221122
+	PS:> Add-A9RCopyLink_CLI -TargetName System2 -N_S_P_WWN 5:3:2:1122112211221122
 	
 	This Example WWN creates an RCFC link to target System2, which connects to the local 5:3:2 (N:S:P) in the target system.
 .PARAMETER TargetName 
@@ -140,7 +140,7 @@ param(	[Parameter(Mandatory=$true)]						[String]	$TargetName,
 		[Parameter(ParameterSetName='wwn',Mandatory=$true)]	[String]	$N_S_P_WWN
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd = "admitrcopylink "
@@ -184,7 +184,7 @@ param(	[Parameter()]	[Switch]	$RCIP,
 		[Parameter()]	[String]	$NSP_WWN
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "dismissrcopylink "
@@ -209,10 +209,10 @@ Process
 				}
 		}
 	else
-		{	return "Please Select at-list any one from RCFC -or RCIP to execute Disable-RCopylink command"
+		{	return "Please Select at-list any one from RCFC -or RCIP to execute this command"
 		}
 	$Result = Invoke-CLICommand -cmds  $cmd
-	write-verbose " The Disable-RCopylink command creates and admits physical disk definitions to enable the use of those disks  " 
+	write-verbose " The command creates and admits physical disk definitions to enable the use of those disks  " 
 	return 	$Result	
 }
 }
@@ -225,7 +225,7 @@ Function Disable-A9RCopyTarget_CLI
 .DESCRIPTION
     The Disable-RCopyTarget command removes a remote copy target from a remote copy volume group.
 .EXAMPLE
-	Disable-RCopyTarget -Target_name Test -Group_name Test2
+	PS:> Disable-A9RCopyTarget_CLI -Target_name Test -Group_name Test2
 .PARAMETER Target_name	
 	The name of the target to be removed.
 .PARAMETER Group_name		
@@ -236,7 +236,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Target_name,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$Group_name
 	)	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "dismissrcopytarget -f "
@@ -245,7 +245,7 @@ Process
 	if ($Group_name)	{	$cmd+=" $Group_name "		}	
 	else				{	return " FAILURE :  Group_name is mandatory for to execute  "	}
 	$Result = Invoke-CLICommand -cmds  $cmd
-	write-verbose " The Disable-RCopyTarget command creates and admits physical disk definitions to enable the use of those disks  " 
+	write-verbose " The command creates and admits physical disk definitions to enable the use of those disks  " 
 	return 	$Result	
 }
 }
@@ -258,13 +258,13 @@ Function Disable-A9RCopyVv_CLI
 .DESCRIPTION
     The Disable-RCopyVv command removes a virtual volume from a remote copy volume group.
 .EXAMPLE
-	Disable-RCopyVv -VV_name XYZ -Group_name XYZ
+	PS:> Disable-A9RCopyVv_CLI -VV_name XYZ -Group_name XYZ
 .EXAMPLE
-	Disable-RCopyVv -Pat -VV_name XYZ -Group_name XYZ
+	PS:> Disable-A9RCopyVv_CLI -Pat -VV_name XYZ -Group_name XYZ
 .EXAMPLE
-	Disable-RCopyVv -KeepSnap -VV_name XYZ -Group_name XYZ
+	PS:> Disable-A9RCopyVv_CLI -KeepSnap -VV_name XYZ -Group_name XYZ
 .EXAMPLE
-	Disable-RCopyVv -RemoveVV -VV_name XYZ -Group_name XYZ
+	PS:> Disable-A9RCopyVv_CLI -RemoveVV -VV_name XYZ -Group_name XYZ
 .PARAMETER Pat
 	Specifies that specified patterns are treated as glob-style patterns and all remote copy volumes matching the specified pattern will be
 	dismissed from the remote copy group. This option must be used if the <pattern> specifier is used.
@@ -286,7 +286,7 @@ param(	[Parameter()]	[switch]	$Pat,
 		[Parameter(Mandatory=$true)]	[String]	$Group_name
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "dismissrcopyvv -f "
@@ -304,15 +304,15 @@ Function Get-A9RCopy_CLI
 {
 <#
 .SYNOPSIS
-	The Get-RCopy command displays details of the remote-copy configuration.
+	The command displays details of the remote-copy configuration.
 .DESCRIPTION
-    The Get-RCopy command displays details of the remote-copy configuration.
+    The command displays details of the remote-copy configuration.
 .EXAMPLE
-	Get-RCopy -Detailed -Links
+	PS:> Get-A9RCopy_CLI -Detailed -Links
 
 	This Example displays details of the remote-copy configuration and Specifies all remote-copy links.   
 .EXAMPLE  	
-	Get-RCopy -Detailed -Domain PSTest -Targets Demovv1
+	PS:> Get-A9RCopy_CLI -Detailed -Domain PSTest -Targets Demovv1
 
 	This Example displays details of the remote-copy configuration which Specifies either all target definitions
 .PARAMETER Detailed
@@ -337,7 +337,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Detailed,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$Targets
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "showrcopy "	
@@ -356,19 +356,19 @@ Function Get-A9StatRCopy_CLI
 {
 <#
 .SYNOPSIS
-	The Get-StatRCopy command displays statistics for remote-copy volume groups.
+	The command displays statistics for remote-copy volume groups.
 .DESCRIPTION
-    The Get-StatRCopy command displays statistics for remote-copy volume groups.
+    The command displays statistics for remote-copy volume groups.
 .EXAMPLE
-	Get-StatRCopy -HeartBeat -Iteration 1
+	PS:> Get-A9StatRCopy_CLI -HeartBeat -Iteration 1
 
 	This example shows statistics for sending links ,Specifies that the heartbeat round-trip time.
 .EXAMPLE  
-	Get-StatRCopy -Iteration 1
+	PS:> Get-A9StatRCopy_CLI -Iteration 1
 
 	This example shows statistics for sending links link0 and link1.
 .EXAMPLE  
-	Get-StatRCopy -HeartBeat -Unit k -Iteration 1
+	PS:> Get-A9StatRCopy_CLI -HeartBeat -Unit k -Iteration 1
 
 	This example shows statistics for sending links ,Specifies that the heartbeat round-trip time & displays statistics as kilobytes	
 .PARAMETER HeartBeat  
@@ -382,14 +382,13 @@ Function Get-A9StatRCopy_CLI
 	defaults to an interval of two seconds.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$Interval,
-		[Parameter()]	[switch]	$HeartBeat,
-		[Parameter()][ValidateSet('k','m','g')]	
-						[String]	$Unit,
-		[Parameter()]	[String]	$Iteration
+param(	[Parameter()][ValidateRange(1,2147483647)]	[Int]		$Interval,
+		[Parameter()]								[switch]	$HeartBeat,
+		[Parameter()][ValidateSet('k','m','g')]		[String]	$Unit,
+		[Parameter()][ValidateRange(1,2147483647)]	[Int]		$Iteration
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process
 {	$cmd= "statrcopy "	
@@ -400,36 +399,6 @@ Process
 	if ($Unit)		{	$cmd+=" -u $Unit  "	}
 	$Result = Invoke-CLICommand -cmds  $cmd	
 	return  $Result
-	<#
-	if($Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			$incre = "true" 		
-			foreach ($s in  $Result[1..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")						
-					$s= [regex]::Replace($s," +",",")			
-					$s= [regex]::Replace($s,"-","")			
-					$s= $s.Trim()			
-					if($incre -eq "true")
-						{	$sTemp1=$s				
-							$sTemp = $sTemp1.Split(',')					
-							$sTemp[5]="Current(Throughput)"				
-							$sTemp[6]="Average(Throughput)"
-							$sTemp[7]="Current(Write_Same_Zero)"				
-							$sTemp[8]="Average(Writ_Same_Zero)"
-							$newTemp= [regex]::Replace($sTemp,"^ ","")			
-							$newTemp= [regex]::Replace($sTemp," ",",")				
-							$newTemp= $newTemp.Trim()
-							$s=$newTemp							
-						}					
-					Add-Content -Path $tempFile -Value $s	
-					$incre="false"
-				}			
-			Import-Csv $tempFile 
-			Remove-Item  $tempFile			
-		}
-	else{	return  $Result	}	
-	#>	
 }
 }
 
@@ -437,15 +406,15 @@ Function Remove-A9RCopyGroup_CLI
 {
 <#
 .SYNOPSIS
-	The Remove-RCopyGroup command removes a remote-copy volume group or multiple remote-copy groups that match a given pattern.
+	The command removes a remote-copy volume group or multiple remote-copy groups that match a given pattern.
 .DESCRIPTION
-    The Remove-RCopyGroup command removes a remote-copy volume group or multiple remote-copy groups that match a given pattern.	
+    The command removes a remote-copy volume group or multiple remote-copy groups that match a given pattern.	
 .EXAMPLE  
-	Remove-RCopyGroup -Pat -GroupName testgroup*	
+	PS:> Remove-A9RCopyGroup_CLI -Pat -GroupName testgroup*	
 
 	This example Removes remote-copy groups that start with the name testgroup	
 .EXAMPLE  
-	Remove-RCopyGroup -KeepSnap -GroupName group1	
+	PS:> Remove-A9RCopyGroup_CLI -KeepSnap -GroupName group1	
 
 	This example Removes the remote-copy group (group1) and retains the resync snapshots associated with each volume
 .PARAMETER Pat
@@ -464,7 +433,7 @@ param(	[Parameter()]					[switch]	$RemoveVV,
 		[Parameter(Mandatory=$true)]	[String]	$GroupName		
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "removercopygroup -f "	
@@ -478,8 +447,8 @@ Process
 			else							{	Return "FAILURE : -GroupName $GroupName  is Unavailable . "	}		
 		}		
 	$Result = Invoke-CLICommand -cmds  $cmd	
-	if($Result -match "deleted")	{	return  "Success : Remove-RCopyGroup Command `n $Result  "	}
-	else							{	return  "FAILURE : While Executing Remove-RCopyGroup $Result "	} 	
+	if($Result -match "deleted")	{	return  "Success : Command `n $Result  "	}
+	else							{	return  "FAILURE : While Executing $Result "	} 	
 }
 }
 
@@ -487,11 +456,11 @@ Function Remove-A9RCopyTarget_CLI
 {
 <#
 .SYNOPSIS
-	The Remove-RCopyTarget command command removes target designation from a remote-copy system and removes all links affiliated with that target definition.   
+	The command command removes target designation from a remote-copy system and removes all links affiliated with that target definition.   
 .DESCRIPTION
-	The Remove-RCopyTarget command command removes target designation from a remote-copy system and removes all links affiliated with that target definition.   
+	The command command removes target designation from a remote-copy system and removes all links affiliated with that target definition.   
 .EXAMPLE  
-	Remove-RCopyTarget -ClearGroups -TargetName demovv1
+	PS:> Remove-A9RCopyTarget_CLI -ClearGroups -TargetName demovv1
 
 	This Example removes target designation from a remote-copy system & Remove all groups.
 .PARAMETER ClearGroups
@@ -504,7 +473,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$ClearGroups,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$TargetName
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "removercopytarget -f "
@@ -512,8 +481,8 @@ Process
 	if ($TargetName)	{	$cmd+=" $TargetName "		}
 	else				{	return "Error :  -TargetName is mandatory. "	}	
 	$Result = Invoke-CLICommand -cmds  $cmd
-	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Remove-RCopyTarget   "}
-	else									{	return  "FAILURE : While Executing Remove-RCopyTarget $Result  "} 
+	if([string]::IsNullOrEmpty($Result))	{	return  "Success :  "}
+	else									{	return  "FAILURE : While Executing  $Result  "} 
 }
 }
 
@@ -521,11 +490,11 @@ Function Remove-A9RCopyTargetFromGroup_CLI
 {
 <#
 .SYNOPSIS
-The Remove-RCopyTargetFromGroup removes a remote-copy target from a remote-copy volume group.
+	Removes a remote-copy target from a remote-copy volume group.
 .DESCRIPTION
-The Remove-RCopyTargetFromGroup removes a remote-copy target from a remote-copy volume group.
+	Removes a remote-copy target from a remote-copy volume group.
 .EXAMPLE
-	Remove-RCopyTargetFromGroup -TargetName target1 -GroupName group1
+	PS:> Remove-A9RCopyTargetFromGroup_CLI -TargetName target1 -GroupName group1
 
 	The following example removes target Target1 from Group1.
 .PARAMETER TargetName     
@@ -538,7 +507,7 @@ param(	[Parameter(Mandatory=$true)]	[String]	$TargetName,
 		[Parameter(Mandatory=$true)]	[String]	$GroupName
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "dismissrcopytarget -f "	
@@ -560,17 +529,17 @@ Function Set-A9RCopyGroupPeriod_CLI
 .DESCRIPTION
 	Sets a resynchronization period for volume groups in asynchronous periodic mode.   
 .EXAMPLE
-	Set-RCopyGroupPeriod -Period 10m -TargetName CHIMERA03 -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPeriod_CLI -Period 10m -TargetName CHIMERA03 -GroupName AS_TEST
 .EXAMPLE
-	Set-RCopyGroupPeriod -Period 10m -Force -TargetName CHIMERA03 -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPeriod_CLI -Period 10m -Force -TargetName CHIMERA03 -GroupName AS_TEST
 .EXAMPLE
-	Set-RCopyGroupPeriod -Period 10m -T 1 -TargetName CHIMERA03 -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPeriod_CLI -Period 10m -T 1 -TargetName CHIMERA03 -GroupName AS_TEST
 .EXAMPLE
-	Set-RCopyGroupPeriod -Period 10m -Stopgroups -TargetName CHIMERA03 -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPeriod_CLI -Period 10m -Stopgroups -TargetName CHIMERA03 -GroupName AS_TEST
 .EXAMPLE
-	Set-RCopyGroupPeriod -Period 10m -Local -TargetName CHIMERA03 -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPeriod_CLI -Period 10m -Local -TargetName CHIMERA03 -GroupName AS_TEST
 .EXAMPLE
-	Set-RCopyGroupPeriod -Period 10m -Natural -TargetName CHIMERA03 -GroupName AS_TEST	
+	PS:> Set-A9RCopyGroupPeriod_CLI -Period 10m -Natural -TargetName CHIMERA03 -GroupName AS_TEST	
 .PARAMETER PeriodValue
 	Specifies the time period in units of seconds (s), minutes (m), hours (h), or days (d), for automatic resynchronization (for example, 14h for 14 hours).
 .PARAMETER TargetName
@@ -659,7 +628,7 @@ param(	[Parameter(Mandatory=$true)][ValidateSet('s','m','h','d')]
 		[Parameter(Mandatory=$true)]	[String]	$GroupName
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$cmd= "setrcopygroup period "
@@ -685,8 +654,8 @@ Process
 	$cmd+= " $GroupName "
 	$Result = Invoke-CLICommand -cmds  $cmd	
 	write-verbose "  Executing Set-RCopyGroupPeriod using cmd   " 
-	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing Set-RCopyGroupPeriod Command "	}
-	else									{	return  "FAILURE : While Executing Set-RCopyGroupPeriod  $Result"} 
+	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing Command "	}
+	else									{	return  "FAILURE : While Executing   $Result"} 
 }
 }
 
@@ -698,25 +667,25 @@ Function Set-A9RCopyGroupPol_CLI
 .DESCRIPTION
 	Sets the policy of the remote-copy volume group for dealing with I/O failure and error handling.
 .EXAMPLE	
-	Set-RCopyGroupPol -policy test -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPol_CLI -policy test -GroupName AS_TEST
 .EXAMPLE
-	Set-RCopyGroupPol -policy auto_failover -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPol_CLI -policy auto_failover -GroupName AS_TEST
 .EXAMPLE
-	Set-RCopyGroupPol -Force -policy auto_failover -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPol_CLI -Force -policy auto_failover -GroupName AS_TEST
 .EXAMPLE
-	Set-RCopyGroupPol -T 1 -policy auto_failover -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPol_CLI -T 1 -policy auto_failover -GroupName AS_TEST
 .EXAMPLE
-	Set-RCopyGroupPol -Stopgroups -policy auto_failover -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPol_CLI -Stopgroups -policy auto_failover -GroupName AS_TEST
 .EXAMPLE
-	Set-RCopyGroupPol -Local -policy auto_failover -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPol_CLI -Local -policy auto_failover -GroupName AS_TEST
 .EXAMPLE
-	Set-RCopyGroupPol -Natural -policy auto_failover -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPol_CLI -Natural -policy auto_failover -GroupName AS_TEST
 .EXAMPLE
-	Set-RCopyGroupPol -policy no_auto_failover -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPol_CLI -policy no_auto_failover -GroupName AS_TEST
 .EXAMPLE
-	Set-RCopyGroupPol -Force -policy no_auto_failover -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPol_CLI -Force -policy no_auto_failover -GroupName AS_TEST
 .EXAMPLE
-	Set-RCopyGroupPol -T 1 -policy no_auto_failover -GroupName AS_TEST
+	PS:> Set-A9RCopyGroupPol_CLI -T 1 -policy no_auto_failover -GroupName AS_TEST
 .PARAMETER T
 	When used with <dr_operation> subcommands, specifies the target to which the <dr_operation> command applies to.  This is optional for single
 	target groups, but is required for multi-target groups. If no groups are specified, it applies to all relevant groups. When used with the pol subcommand,
@@ -812,7 +781,7 @@ param(	[Parameter()]	[Switch]	$Force,
 		[Parameter(Mandatory=$true)]	[String]	$GroupName
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "setrcopygroup pol "
@@ -837,8 +806,8 @@ Process
 	$cmd+="$GroupName "			
 	$Result = Invoke-CLICommand -cmds  $cmd	
 	write-verbose "  Executing Set-RCopyGroupPol using cmd    "	
-	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing Set-RCopyGroupPol Command "	}
-	else									{	return  "FAILURE : While Executing Set-RCopyGroupPol $Result " } 	
+	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing Command "	}
+	else									{	return  "FAILURE : While Executing  $Result " } 	
 }
 }
 
@@ -846,15 +815,15 @@ Function Set-A9RCopyTarget_CLI
 {
 <#
 .SYNOPSIS
-	The Set-RCopyTarget Changes the name of the indicated target using the <NewName> specifier.
+	The Changes the name of the indicated target using the <NewName> specifier.
 .DESCRIPTION
-	The Set-RCopyTarget Changes the name of the indicated target using the <NewName> specifier.  
+	The Changes the name of the indicated target using the <NewName> specifier.  
 .EXAMPLE
-	Set-RCopyTarget -Enable -TargetName Demo1
+	Set-A9RCopyTarget_CLI -Enable -TargetName Demo1
 
 	This Example Enables  the targetname Demo1.
 .EXAMPLE
-	Set-RCopyTarget -Disable -TargetName Demo1
+	Set-A9RCopyTarget_CLI -Disable -TargetName Demo1
 
 	This Example disables  the targetname Demo1.  
 .PARAMETER Enables/Disable 
@@ -868,7 +837,7 @@ param(	[Parameter(Mandatory=$true, ParameterSetName='Enable')]		[switch]	$Enable
 		[Parameter(Mandatory=$true)]								[String]	$TargetName
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process
 {	$cmd= "setrcopytarget "
@@ -876,9 +845,9 @@ Process
 	elseif ($Disable)	{	$cmd += " disable "	}
 	$cmd+=" $TargetName "	
 	$Result = Invoke-CLICommand -cmds  $cmd	
-	write-verbose "  Executing Set-RCopyTarget Changes the name of the indicated target   " 
-	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing Set-RCopyTarget $Result"	}
-	else									{	return  "FAILURE : While Executing Set-RCopyTarget $Result "} 	
+	write-verbose "  Executing Changes the name of the indicated target   " 
+	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing $Result"	}
+	else									{	return  "FAILURE : While Executing  $Result "} 	
 }
 }
 
@@ -886,11 +855,11 @@ Function Set-A9RCopyTargetName_CLI
 {
 <#
 .SYNOPSIS
-	The Set-RCopyTargetName Changes the name of the indicated target using the <NewName> specifier.
+	The Changes the name of the indicated target using the <NewName> specifier.
 .DESCRIPTION
-	The Set-RCopyTargetName Changes the name of the indicated target using the <NewName> specifier.
+	The Changes the name of the indicated target using the <NewName> specifier.
 .EXAMPLE
-	Set-RCopyTargetName -NewName DemoNew1  -TargetName Demo1
+	Set-A9RCopyTargetName_CLI -NewName DemoNew1  -TargetName Demo1
 
 	This Example Changes the name of the indicated target using the -NewName demoNew1.   
 .PARAMETER NewName 
@@ -903,15 +872,15 @@ param(	[Parameter(Mandatory=$true)]	[String]	$NewName,
 		[Parameter(Mandatory=$true)]	[String]	$TargetName
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "setrcopytarget name "
 	$cmd+="$NewName "	
 	$cmd+="$TargetName "	
 	$Result = Invoke-CLICommand -cmds  $cmd	
-	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing Set-RCopyTargetName $Result"	}
-	else									{	return  "FAILURE : While Executing Set-RCopyTargetName $Result "} 	
+	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing $Result"	}
+	else									{	return  "FAILURE : While Executing  $Result "} 	
 }
 }
 
@@ -919,11 +888,11 @@ Function Set-A9RCopyTargetPol_CLI
 {
 <#
 .SYNOPSIS
-The Set-RCopyTargetPol command Sets the policy for the specified target using the <policy> specifier
+	he command Sets the policy for the specified target using the <policy> specifier
 .DESCRIPTION
-	The Set-RCopyTargetPol command Sets the policy for the specified target using the <policy> specifier
+	The command Sets the policy for the specified target using the <policy> specifier
 .EXAMPLE
-	Set-RCopyTargetPol -Mmirror_Config -Target vv3
+	Set-A9RCopyTargetPol_CLI -Mmirror_Config -Target vv3
 
 	This Example sets the policy that all configuration commands,involving the specified target are duplicated for the target named vv3.   	
 .PARAMETER Mirror_Config
@@ -942,7 +911,7 @@ param(
 		[Parameter(Mandatory=$true)]								[String]	$Target
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "setrcopytarget pol "
@@ -950,8 +919,8 @@ Process
 	elseif($No_Mirror_Config)	{	$cmd+=" no_mirror_config "	}
 	$cmd+="$Target "
 	$Result = Invoke-CLICommand -cmds  $cmd	
-	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing Set-RCopyTargetPol Command "	}
-	else									{	return  "FAILURE : While Executing Set-RCopyTargetPol $result "	} 
+	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing Command "	}
+	else									{	return  "FAILURE : While Executing $result "	} 
 }
 }
 
@@ -960,23 +929,23 @@ Function Set-A9RCopyTargetWitness_CLI
 {
 <#
 .SYNOPSIS
-	The Set-RCopyTargetWitness Changes the name of the indicated target using the <NewName> specifier.
+	The Changes the name of the indicated target using the <NewName> specifier.
 .DESCRIPTION
-	The Set-RCopyTargetWitness Changes the name of the indicated target using the <NewName> specifier.
+	The Changes the name of the indicated target using the <NewName> specifier.
 .EXAMPLE
-	Set-RCopyTargetWitness -SubCommand create -Witness_ip 1.2.3.4 -Target TEST
+	PS:> Set-A9RCopyTargetWitness_CLI -SubCommand create -Witness_ip 1.2.3.4 -Target TEST
 
 	This Example Changes the name of the indicated target using the -NewName demoNew1.
 .EXAMPLE	
-	Set-RCopyTargetWitness -SubCommand create -Remote -Witness_ip 1.2.3.4 -Target TEST
+	PS:> Set-A9RCopyTargetWitness_CLI -SubCommand create -Remote -Witness_ip 1.2.3.4 -Target TEST
 .EXAMPLE
-	Set-RCopyTargetWitness -SubCommand start -Target TEST
+	PS:> Set-A9RCopyTargetWitness_CLI -SubCommand start -Target TEST
 .EXAMPLE
-	Set-RCopyTargetWitness -SubCommand stop  -Target TEST
+	PS:> Set-A9RCopyTargetWitness_CLI -SubCommand stop  -Target TEST
 .EXAMPLE  
-	Set-RCopyTargetWitness -SubCommand remove -Remote -Target TEST
+	PS:> Set-A9RCopyTargetWitness_CLI -SubCommand remove -Remote -Target TEST
 .EXAMPLE  
-	Set-RCopyTargetWitness -SubCommand check  -Node_id 1 -Witness_ip 1.2.3.4
+	PS:> Set-A9RCopyTargetWitness_CLI -SubCommand check  -Node_id 1 -Witness_ip 1.2.3.4
 .PARAMETER SubCommand 
 	Sub Command like create, Start, Stop, Remove and check.				
 	create - Create an association between a synchronous target and a Quorum Witness (QW) as part of a Peer Persistence configuration.
@@ -1002,7 +971,7 @@ param(	[Parameter(Mandatory=$true)]			[ValidateSet('witness','create','start','s
 		[Parameter(ValueFromPipeline=$true)]	[String]	$Node_id
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	if($SubCommand -eq "create")
@@ -1023,9 +992,9 @@ Process
 					if ($Remote)	{	$cmd += " -remote "	}
 					$cmd +=" $Target"
 					$Result = Invoke-CLICommand -cmds  $cmd	
-					write-verbose "  Executing Set-RCopyTargetWitness Changes the name of the indicated target   " 
-					if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing Set-RCopyTargetWitness Command`n$result "	}
-					else	{	return  "FAILURE : While Executing Set-RCopyTargetWitness`n$result "} 
+					write-verbose "  Executing Changes the name of the indicated target   " 
+					if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing Command`n$result "	}
+					else	{	return  "FAILURE : While Executing `n$result "} 
 				}		
 			else{	return "FAILURE : Target is missing."	}
 		}
@@ -1037,27 +1006,26 @@ Process
 					$cmd +=" $Witness_ip $Target"
 					#write-host "$cmd"
 					$Result = Invoke-CLICommand -cmds  $cmd	
-					write-verbose "  Executing Set-RCopyTargetWitness Changes the name of the indicated target   " 
-					if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing Set-RCopyTargetWitness Command`n$result "	}
-					else	{	return  "FAILURE : While Executing Set-RCopyTargetWitness`n$result "	} 
+					write-verbose "  Executing Changes the name of the indicated target   " 
+					if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing Command`n$result "	}
+					else	{	return  "FAILURE : While Executing`n$result "	} 
 				}		
 			else{	return "FAILURE : Witness_ip is missing."	}
 		}
 }
 }
 
-## FUNCTION Show-RCopyTransport
 Function Show-A9RCopyTransport_CLI
 {
 <#
 .SYNOPSIS
-    The Show-RCopyTransport command shows status and information about end-to-end transport for Remote Copy in the system.
+    The command shows status and information about end-to-end transport for Remote Copy in the system.
 .DESCRIPTION
-    The Show-RCopyTransport command shows status and information about end-to-end transport for Remote Copy in the system.
+    The command shows status and information about end-to-end transport for Remote Copy in the system.
 .EXAMPLE
-	Show-RCopyTransport -RCIP
+	PS:> Show-A9RCopyTransport_CLI -RCIP
 .EXAMPLE
-	Show-RCopyTransport -RCFC
+	PS:> Show-A9RCopyTransport_CLI -RCFC
 .PARAMETER RCIP
 	Show information about Ethernet end-to-end transport.
 .PARAMETER RCFC
@@ -1068,7 +1036,7 @@ param(	[Parameter()]	[switch]	$RCIP,
 		[Parameter()]	[switch]	$RCFC
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "showrctransport "
@@ -1088,7 +1056,7 @@ Process
 		}
 	Import-Csv $tempFile 
 	Remove-Item  $tempFile			
-	if($Result -match "N:S:P")	{	return  " Success : Executing Show-RCopyTransport "	}
+	if($Result -match "N:S:P")	{	return  " Success : Executing "	}
 	else						{	return  $Result	}
 }
 }
@@ -1097,24 +1065,24 @@ Function Start-A9RCopy_CLI
 {
 <#
 .SYNOPSIS
-	The Start-RCopy command starts the Remote Copy Service.
+	The command starts the Remote Copy Service.
 .DESCRIPTION
-    The Start-RCopy command starts the Remote Copy Service.
+    The command starts the Remote Copy Service.
 .EXAMPLE  
-	Start-RCopy 
+	PS:> Start-A9RCopy_CLI 
     
 	command starts the Remote Copy Service.
 #>
 [CmdletBinding()]
 param()	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "startrcopy "	
 	$Result = Invoke-CLICommand -cmds  $cmd
-	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing Start-RCopy Command `n $Result "	}
-	else									{	return  "FAILURE : While Executing Start-RCopy `n $Result "	}
+	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing  Command `n $Result "	}
+	else									{	return  "FAILURE : Executing  `n $Result "	}
 }
 }
 
@@ -1122,15 +1090,15 @@ Function Start-A9RCopyGroup_CLI
 {
 <#
 .SYNOPSIS
-	The Start-RCopyGroup command enables remote copy for the specified remote-copy volume group.
+	The command enables remote copy for the specified remote-copy volume group.
 .DESCRIPTION
-    The Start-RCopyGroup command enables remote copy for the specified remote-copy volume group.
+    The command enables remote copy for the specified remote-copy volume group.
 .EXAMPLE
-	Start-RCopyGroup -NoSync -GroupName Group1
+	PS:> Start-A9RCopyGroup_CLI -NoSync -GroupName Group1
 
 	This example starts remote copy for Group1.   
 .EXAMPLE  	
-	Start-RCopyGroup -NoSync -GroupName Group2 -Volumes_Snapshots "vv1:sv1 vv2:sv2 vv3:sv3"
+	PS:> Start-A9RCopyGroup_CLI -NoSync -GroupName Group2 -Volumes_Snapshots "vv1:sv1 vv2:sv2 vv3:sv3"
 
 	This Example  starts Group2, which contains 4 virtual volumes, and specify starting snapshots, with vv4 starting from a full resynchronization.
 .PARAMETER NoSync
@@ -1156,7 +1124,7 @@ param(	[Parameter()]	[switch]	$NoSync,
 		[Parameter()]	[String]	$Volumes_Snapshots		
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "startrcopygroup "
@@ -1179,7 +1147,7 @@ Function Stop-A9RCopy_CLI
 .DESCRIPTION
     The Stop-RCopy command disables the remote-copy functionality for any started remote-copy
 .EXAMPLE  
-	Stop-RCopy -StopGroups
+	PS:> Stop-A9RCopy_CLI -StopGroups
 	
 	This example disables the remote-copy functionality of all primary remote-copy volume groups
 .PARAMETER StopGroups
@@ -1192,7 +1160,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$StopGroups,
 		[Parameter(ValueFromPipeline=$true)]	[switch]	$Clear
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "stoprcopy -f "	
@@ -1208,13 +1176,13 @@ Function Stop-A9RCopyGroup_CLI
 {
 <#
 .SYNOPSIS
-	The Stop-RCopyGroup command stops the remote-copy functionality for the specified remote-copy volume group.
+	The command stops the remote-copy functionality for the specified remote-copy volume group.
 .DESCRIPTION
-    The Stop-RCopyGroup command stops the remote-copy functionality for the specified remote-copy volume group.
+    The command stops the remote-copy functionality for the specified remote-copy volume group.
 .EXAMPLE  
-	Stop-RCopyGroup -NoSnap -GroupName RCFromRMC 	  
+	PS:> Stop-A9RCopyGroup_CLI -NoSnap -GroupName RCFromRMC 	  
 .EXAMPLE  
-	Stop-RCopyGroup -TargetName RCFC_Romulus_1 -GroupName RCFromRMC 	
+	PS:> Stop-A9RCopyGroup_CLI -TargetName RCFC_Romulus_1 -GroupName RCFromRMC 	
 .PARAMETER NoSnap
 	In synchronous mode, this option turns off the creation of snapshots.
 .PARAMETER TargetName
@@ -1223,27 +1191,24 @@ Function Stop-A9RCopyGroup_CLI
 	The name of the remote-copy volume group.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$NoSnap,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$TargetName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GroupName		
+param(	[Parameter()]					[switch]	$NoSnap,
+		[Parameter()]					[String]	$TargetName,
+		[Parameter(Mandatory=$true)]	[String]	$GroupName		
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "stoprcopygroup -f "
 	if ($NoSnap)		{	$cmd+= " -nosnap "}	
 	if ($TargetName)	{	$cmd+=" -t $TargetName  "	}
-	if ($GroupName)
-		{	$cmd1= "showrcopy"
-			$Result1 = Invoke-CLICommand -cmds  $cmd1
-			if ($Result1 -match $GroupName )	{	$cmd+="$GroupName "	}
-			else	{	Return "FAILURE : -GroupName $GroupName  is Not Available Try with a new Name. "	}		
-		}
-	else{	return "Error :  -GroupName is mandatory. "	}	
+	$cmd1= "showrcopy"
+	$Result1 = Invoke-CLICommand -cmds  $cmd1
+	if ($Result1 -match $GroupName )	{	$cmd+="$GroupName "	}
+	else								{	Return "FAILURE : -GroupName $GroupName  is Not Available Try with a new Name. "	}		
 	$Result = Invoke-CLICommand -cmds  $cmd
-	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing Stop-RCopyGroup Command $Result"	}
-	else	{	return 	$Result	}
+	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing  Command $Result"	}
+	else									{	return 	$Result	}
 }
 }
 
@@ -1251,13 +1216,13 @@ Function Sync-A9RCopy_CLI
 {
 <#
 .SYNOPSIS
-	The Sync-RCopy command manually synchronizes remote-copy volume groups.
+	The command manually synchronizes remote-copy volume groups.
 .DESCRIPTION
-    The Sync-RCopy command manually synchronizes remote-copy volume groups.
+    The command manually synchronizes remote-copy volume groups.
 .EXAMPLE
-	Sync-RCopy -Wait -TargetName RCFC_Romulus_1 -GroupName AS_TEST1	   
+	PS:> Sync-A9RCopy_CLI -Wait -TargetName RCFC_Romulus_1 -GroupName AS_TEST1	   
 .EXAMPLE  
-	Sync-RCopy -N -TargetName RCFC_Romulus_1 -GroupName AS_TEST1	
+	PS:> Sync-A9RCopy_CLI -N -TargetName RCFC_Romulus_1 -GroupName AS_TEST1	
 .PARAMETER Wait
 	Wait for synchronization to complete before returning to a command prompt.
 .PARAMETER N
@@ -1270,14 +1235,14 @@ Function Sync-A9RCopy_CLI
 	Specifies the name of the remote-copy volume group to be synchronized.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Wait,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$N,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Ovrd,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$TargetName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GroupName
+param(	[Parameter()]	[switch]	$Wait,
+		[Parameter()]	[switch]	$N,
+		[Parameter()]	[switch]	$Ovrd,
+		[Parameter()]	[String]	$TargetName,
+		[Parameter(Mandatory=$true)]	[String]	$GroupName
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "syncrcopy "
@@ -1285,8 +1250,7 @@ Process
 	if ($N)			{	$cmd+= " -n "	}
 	if ($Ovrd)		{	$cmd+= " -ovrd "	}
 	if ($TargetName){	$cmd+=" -t $TargetName  "	}			
-	if ($GroupName)	{	$cmd+="$GroupName "	}
-	else			{	return "Error :  -GroupName is mandatory. "	}			
+	$cmd+="$GroupName "	
 	$Result = Invoke-CLICommand -cmds  $cmd	
 	return $Result	
 }
@@ -1296,26 +1260,27 @@ Function Test-A9RCopyLink_CLI
 {
 <#checkrclink
 .SYNOPSIS
-    The Test-RCopyLink command performs a connectivity, latency, and throughput test between two connected storage systems..DESCRIPTION
-    The Test-RCopyLink command performs a connectivity, latency, and throughput test between two connected storage systems.
+    The command performs a connectivity, latency, and throughput test between two connected storage systems.
+.DESCRIPTION
+    The command performs a connectivity, latency, and throughput test between two connected storage systems.
 .EXAMPLE
-	Test-RCopyLink -StartClient -NSP 0:5:4 -Dest_IP_Addr 1.1.1.1 -Time 20 -Port 1
+	PS:> Test-A9RCopyLink_CLI -StartClient -NSP 0:5:4 -Dest_IP_Addr 1.1.1.1 -Time 20 -Port 1
 .EXAMPLE
-	Test-RCopyLink -StartClient -TimeInSeconds 30 -NSP 0:5:4 -Dest_IP_Addr 1.1.1.1 -Time 20 -Port 1 
+	PS:> Test-A9RCopyLink_CLI -StartClient -TimeInSeconds 30 -NSP 0:5:4 -Dest_IP_Addr 1.1.1.1 -Time 20 -Port 1 
 .EXAMPLE
-	Test-RCopyLink -StartClient -FCIP -NSP 0:5:4 -Dest_IP_Addr 1.1.1.1 -Time 20 -Port 1
+	PS:> Test-A9RCopyLink_CLI -StartClient -FCIP -NSP 0:5:4 -Dest_IP_Addr 1.1.1.1 -Time 20 -Port 1
 .EXAMPLE
-	Test-RCopyLink -StopClient -NSP 0:5:4
+	PS:> Test-A9RCopyLink_CLI -StopClient -NSP 0:5:4
 .EXAMPLE
-	Test-RCopyLink -StartServer -NSP 0:5:4 
+	PS:> Test-A9RCopyLink_CLI -StartServer -NSP 0:5:4 
 .EXAMPLE
-	Test-RCopyLink -StartServer -TimeInSeconds 30 -NSP 0:5:4 -Dest_IP_Addr 1.1.1.2 -Port 1
+	PS:> Test-A9RCopyLink_CLI -StartServer -TimeInSeconds 30 -NSP 0:5:4 -Dest_IP_Addr 1.1.1.2 -Port 1
 .EXAMPLE
-	Test-RCopyLink -StartServer -FCIP -NSP 0:5:4 -Dest_IP_Addr 1.1.1.2 -Port 1
+	PS:> Test-A9RCopyLink_CLI -StartServer -FCIP -NSP 0:5:4 -Dest_IP_Addr 1.1.1.2 -Port 1
 .EXAMPLE
-	Test-RCopyLink -StopServer -NSP 0:5:4
+	PS:> Test-A9RCopyLink_CLI -StopServer -NSP 0:5:4
 .EXAMPLE
-	Test-RCopyLink -PortConn -NSP 0:5:4 
+	PS:> Test-A9RCopyLink_CLI -PortConn -NSP 0:5:4 
 .PARAMETER StartClient
 	start the link test
 .PARAMETER StopClient
@@ -1345,16 +1310,16 @@ param(	[Parameter(ParameterSetName='StartC',Mandatory=$true)]	[switch]	$StartCli
 		[Parameter(ParameterSetName='StartS',Mandatory=$true)]	[switch]	$StartServer,
 		[Parameter(ParameterSetName='StopS', Mandatory=$true )]	[switch]	$StopServer,
 		[Parameter(ParameterSetName='PortC', Mandatory=$true )]	[switch]	$PortConn,
-		[Parameter()]	[String]	$TimeInSeconds,	
-		[Parameter()]	[switch]	$FCIP,
-# Need to create a RedEx for NSP
-		[Parameter(Mandatory=$true)]		[String]	$NSP,
-		[Parameter()]	[String]	$Dest_IP_Addr,
+		[Parameter()]											[String]	$TimeInSeconds,	
+		[Parameter()]											[switch]	$FCIP,
+		[Parameter(Mandatory=$true)][ValidatePattern("^\d:\d:\d")]		
+																[String]	$NSP,
+		[Parameter()]											[String]	$Dest_IP_Addr,
 		[Parameter(ParameterSetName='StartC',Mandatory=$true)]	[String]	$Time,
-		[Parameter()]	[String]	$Port
+		[Parameter()]											[String]	$Port
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "checkrclink "	
@@ -1376,28 +1341,27 @@ Process
 } 
 }
 
-## FUNCTION Remove-RCopyVvFromGroup
 Function Remove-A9RCopyVvFromGroup_CLI
 {
 <#
 .SYNOPSIS
-	The Remove-RCopyVvFromGroup command removes a virtual volume from a remote-copy volume group.
+	The command removes a virtual volume from a remote-copy volume group.
 .DESCRIPTION
-	The Remove-RCopyVvFromGroup command removes a virtual volume from a remote-copy volume group.
+	The command removes a virtual volume from a remote-copy volume group.
 .EXAMPLE
-	Remove-RCopyVvFromGroup -VV_name vv1 -group_name Group1
+	ps:> Remove-a9RCopyVvFromGroup_CLI -VV_name vv1 -group_name Group1
 
 	dismisses virtual volume vv1 from Group1:
 .EXAMPLE  
-	Remove-RCopyVvFromGroup -Pat -VV_name testvv* -group_name Group1
+	ps:> Remove-a9RCopyVvFromGroup_CLI -Pat -VV_name testvv* -group_name Group1
 
 	dismisses all virtual volumes that start with the name testvv from Group1:
 .EXAMPLE  
-	Remove-RCopyVvFromGroup -KeepSnap -VV_name vv1 -group_name Group1
+	ps:> Remove-a9RCopyVvFromGroup_CLI -KeepSnap -VV_name vv1 -group_name Group1
 
 	dismisses volume vv1 from Group1 and removes the corresponding volumes of vv1 on all the target systems of Group1.
 .EXAMPLE 
-	Remove-RCopyVvFromGroup -RemoveVV -VV_name vv2 -group_name Group1
+	ps:> Remove-a9RCopyVvFromGroup_CLI -RemoveVV -VV_name vv2 -group_name Group1
 
 	dismisses volume vv2 from Group2 and retains the resync snapshot associated with vv2 for this group.
 .PARAMETER Pat
@@ -1412,14 +1376,14 @@ Function Remove-A9RCopyVvFromGroup_CLI
 	The name of the group that currently includes the target.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[switch]	$Pat,
-		[Parameter()]	[switch]	$KeepSnap,
-		[Parameter()]	[switch]	$RemoveVV,
+param(	[Parameter()]					[switch]	$Pat,
+		[Parameter()]					[switch]	$KeepSnap,
+		[Parameter()]					[switch]	$RemoveVV,
 		[Parameter(Mandatory=$true)]	[String]	$VVname,
-		[Parameter()]	[String]	$GroupName
+		[Parameter(Mandatory=$true)]	[String]	$GroupName
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "dismissrcopyvv -f "	
@@ -1427,14 +1391,10 @@ Process
 	if ($KeepSnap)	{	$cmd+=" -keepsnap "	}
 	if ($RemoveVV)	{	$cmd+=" -removevv "	}
 	if ($VVname)	{	$cmd+=" $VVname "	}
-	if ($GroupName)
-		{	$cmd1= "showrcopy"
-			$Result1 = Invoke-CLICommand -cmds  $cmd1
-			if ($Result1 -match $GroupName )	{	$cmd+=" $GroupName "	}
-			else								{	Return "FAILURE : -GroupName $GroupName  is Unavailable to execute. "	}	
-		}
-	else{	return "Error :  -GroupName is mandatory. "		
-		}
+	$cmd1= "showrcopy"
+	$Result1 = Invoke-CLICommand -cmds  $cmd1
+	if ($Result1 -match $GroupName )	{	$cmd+=" $GroupName "	}
+	else								{	Return "FAILURE : -GroupName $GroupName  is Unavailable to execute. "	}	
 	$Result = Invoke-CLICommand -cmds  $cmd
 	return $Result
 }	
@@ -1444,29 +1404,29 @@ Function Sync-A9RecoverDRRcopyGroup_CLI
 {
 <#
 .SYNOPSIS
-    The Sync-RecoverDRRcopyGroup command performs the following actions:
+    The command performs the following actions:
     Performs data synchronization from primary remote copy volume groups to secondary remote copy volume groups.
     Performs the complete recovery operation (synchronization and storage failover operation which performs role reversal to make secondary volumes as primary which becomes read-write) for the remote copy volume group in both planned migration and disaster scenarios.
 .DESCRIPTION
-    The Sync-RecoverDRRcopyGroup command performs the following actions:
+    The command performs the following actions:
     Performs data synchronization from primary remote copy volume groups to secondary remote copy volume groups.
     Performs the complete recovery operation (synchronization and storage failover operation which performs role reversal to make secondary volumes as primary which becomes read-write) for the remote copy volume group in both planned migration and disaster scenarios.
 .EXAMPLE
-	Sync-RecoverDRRcopyGroup  -Subcommand sync -Target_name test -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand sync -Target_name test -Group_name Grp1
 .EXAMPLE
-	Sync-RecoverDRRcopyGroup  -Subcommand recovery -Target_name test -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand recovery -Target_name test -Group_name Grp1
 .EXAMPLE
-	Sync-RecoverDRRcopyGroup  -Subcommand sync -Force -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand sync -Force -Group_name Grp1
 .EXAMPLE
-	Sync-RecoverDRRcopyGroup  -Subcommand sync -Nowaitonsync -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand sync -Nowaitonsync -Group_name Grp1
 .EXAMPLE
-	Sync-RecoverDRRcopyGroup  -Subcommand sync -Nosyncbeforerecovery -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand sync -Nosyncbeforerecovery -Group_name Grp1
 .EXAMPLE
-	Sync-RecoverDRRcopyGroup  -Subcommand sync -Nofailoveronlinkdown -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand sync -Nofailoveronlinkdown -Group_name Grp1
 .EXAMPLE
-	Sync-RecoverDRRcopyGroup  -Subcommand sync -Forceassecondary -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand sync -Forceassecondary -Group_name Grp1
 .EXAMPLE
-	Sync-RecoverDRRcopyGroup  -Subcommand sync -Waittime 60 -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand sync -Waittime 60 -Group_name Grp1
 .PARAMETER Subcommand
 	sync
 	Performs the data synchronization from primary remote copy volume group to secondary remote copy volume group.
@@ -1519,7 +1479,7 @@ param(	[Parameter(Mandatory=$true)]	[ValidateSet('sync','recovery')]
 		[Parameter(Mandatory=$true)]	[String]	$Group_name
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd= "controldrrcopygroup "
@@ -1537,7 +1497,6 @@ Process
 }
 }
 
-## FUNCTION Set-AdmitRCopyHost
 Function Set-A9AdmitRCopyHost_CLI 
 {
 <#
@@ -1556,10 +1515,10 @@ Function Set-A9AdmitRCopyHost_CLI
     The host name, as specified with New-Host cmldet.
 .EXAMPLE
     The following example adds host1 to group1 with Proximity primary:
-    Set-AdmitRCopyHost -proximity primary group1 host1
+    PS:> Get-A9HostSet_CLI -proximity primary group1 host1
 
     The following example shows the Active/Active groups with different proximities set:
-    Get-HostSet -summary
+    PS:> Get-A9HostSet_CLI -summary
 
         Id Name             HOST_Cnt VVOLSC Flashcache QoS RC_host
         552 RH2_Group0_1            1 NO     NO         NO  All
@@ -1577,7 +1536,7 @@ param(	[Parameter(ValueFromPipeline = $true)]
         [Parameter(ValueFromPipeline = $true)]			[String]    $HostName	
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd = "admitrcopyhost  "
@@ -1605,7 +1564,7 @@ Function Remove-A9RCopyHost_CLI
 .EXAMPLE
     The following example removes host1 from group1:
 
-	Remove-RCopyHost group1 host1
+	PS:> Remove-A9RCopyHost_CLI group1 host1
 .NOTES
 	SUPPORTED ARRAY VERSIONS HPE Primera OS 4.3 onwards, HPE Alletra OS 9.3 onwards
     This command is only supported for groups for which the active_active policy is set.
@@ -1616,7 +1575,7 @@ param(	[Parameter(ValueFromPipeline = $true)]    [String]	$F,
         [Parameter(ValueFromPipeline = $true)]    [String]	$HostName
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd = "dismissrcopyhost  "
@@ -1624,7 +1583,7 @@ Process
     if ($GroupName) {	$cmd += " $GroupName "	}
     if ($HostName) 	{	$cmd += " $HostName "	}
     $Result = Invoke-CLICommand -cmds  $cmd
-    write-verbose " The Remove-RCopyHost command removes hosts from a remote copy group" 
+    write-verbose " The command removes hosts from a remote copy group" 
     return 	$Result	
 }
 } 

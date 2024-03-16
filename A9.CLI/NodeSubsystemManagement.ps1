@@ -6,9 +6,9 @@ Function Find-A9Node_CLI
 {
 <#
 .SYNOPSIS
-	Find-Node - Locate a node by blinking its LEDs.
+	Locate a node by blinking its LEDs.
 .DESCRIPTION
-	The Find-Node command helps locate a particular node or its components by illuminating LEDs on the node.
+	The command helps locate a particular node or its components by illuminating LEDs on the node.
 .PARAMETER T
 	Specifies the number of seconds to illuminate the LEDs. For HPE 3PAR 7000 and HPE 3PAR 8000 storage systems, the default time to illuminate the LEDs is 15
 	minutes with a maximum time of one hour. For STR (Safe to Remove) systems, the default time is one hour with a maximum time of one week. For all
@@ -37,9 +37,11 @@ param(	[Parameter()]	[String]	$T,
 		[Parameter()]	[switch]	$Bat,
 		[Parameter()]	[String]	$NodeID
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " locatenode "
+{	$Cmd = " locatenode "
 	if($T)	{	$Cmd += " -t $T " }
 	if($Ps)		{	$Cmd += " -ps $Ps " 	}
 	if($Pci) 	{	$Cmd += " -pci $Pci " 	}
@@ -58,7 +60,7 @@ Function Find-A9System_CLI
 .SYNOPSIS
     Locate a system by illuminating or blinking its LEDs.
 .DESCRIPTION
-    The Find-System command helps locate a storage system by illuminating the blue UID LEDs or by alternating the node status LEDs amber and green on all
+    The command helps locate a storage system by illuminating the blue UID LEDs or by alternating the node status LEDs amber and green on all
     nodes of the storage system. By default, the LEDs in all connected cages will illuminate blue or will oscillate green and amber, depending on the system or cage model.
 .PARAMETER T
 	Specifies the number of seconds to illuminate or blink the LEDs. default may vary depending on the system model. For example, the default time 
@@ -71,16 +73,18 @@ Function Find-A9System_CLI
 .EXAMPLE
 	In the following example, a storage system is identified by illuminating or blinking the LEDs on all drive cages in the system for 90 seconds. 
 	
-	Find-System -T 90
+	PS:> Find-A9System_CLI -T 90
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$T,
 		[Parameter()]	[String]	$NodeList,
 		[Parameter()]	[switch]	$NoCage
 )
+Begin
+{	Test-A9Connection -CLientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " locatesys "
+{	$Cmd = " locatesys "
 	if($T) 			{	$Cmd += " -t $T " }
 	if($NodeList) 	{	$Cmd += " -nodes $NodeList " }
 	if($NoCage)		{	$Cmd += " -nocage " }
@@ -93,18 +97,19 @@ Function Get-A9System_CLI
 {
 <#
 .SYNOPSIS
-    Command displays the Storage system information. 
+    Displays the Storage system information. 
 .DESCRIPTION
     Command displays the Storage system information.
 .EXAMPLE
-    Get-System 
+    PS:> Get-A9System_CLI 
+
 	Command displays the Storage system information.such as system name, model, serial number, and system capacity information.
 .EXAMPLE
-    Get-System -SystemCapacity
+    PS:> Get-A9System_CLI -SystemCapacity
 
 	Lists Storage system space information in MB(1024^2 bytes)
 .EXAMPLE	
-	Get-System -DevType FC
+	PS:> Get-A9System_CLI -DevType FC
 .PARAMETER Detailed
 	Specifies that more detailed information about the system is displayed.
 .PARAMETER SystemParameters
@@ -127,16 +132,18 @@ Function Get-A9System_CLI
 param(	
         [Parameter()]	[switch]    $Detailed,
         [Parameter()]   [switch]    $SystemParameters,
-        [Parameter()]    [switch]    $Fan,
-        [Parameter()]    [switch]    $SystemCapacity,
-        [Parameter()]    [switch]    $vvSpace,
-        [Parameter()]    [switch]    $DomainSpace,
-        [Parameter()]    [switch]    $Descriptor,
-        [Parameter()]    [String]    $DevType
+        [Parameter()]   [switch]    $Fan,
+        [Parameter()]   [switch]    $SystemCapacity,
+        [Parameter()]   [switch]    $vvSpace,
+        [Parameter()]   [switch]    $DomainSpace,
+        [Parameter()]   [switch]    $Descriptor,
+        [Parameter()]   [String]    $DevType
     )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$sysinfocmd = "showsys "
+{	$sysinfocmd = "showsys "
     if ($Detailed) 			{    $sysinfocmd += " -d " 		}
     if ($SystemParameters) 	{    $sysinfocmd += " -param "	}
     if ($Fan) 				{    $sysinfocmd += " -fan "	}
@@ -162,8 +169,7 @@ process
 							$s = [regex]::Replace($s, " +", ",")
 							if ($noOfColumns -eq 0) 
 								{    $noOfColumns = $s.Split(",").Count;    }
-							else 
-								{	$noOfValues = $s.Split(",").Count;
+							else{	$noOfValues = $s.Split(",").Count;
 									if ($noOfValues -ge $noOfColumns) 
 										{  	[System.Collections.ArrayList]$CharArray1 = $s.Split(",");
 											if ($noOfValues -eq 12) 
@@ -223,15 +229,15 @@ Function Ping-A9RCIPPorts_CLI
 .DESCRIPTION
 	Verifying That the Servers Are Connected.
 .EXAMPLE	
-	Ping-RCIPPorts -IP_address 192.168.245.5 -NSP 0:3:1
+	PS:> Ping-A9RCIPPorts_CLI -IP_address 192.168.245.5 -NSP 0:3:1
 .EXAMPLE
-	Ping-RCIPPorts -count 2 -IP_address 192.168.245.5 -NSP 0:3:1
+	PS:> Ping-A9RCIPPorts_CLI -count 2 -IP_address 192.168.245.5 -NSP 0:3:1
 .EXAMPLE
-	Ping-RCIPPorts -wait 2 -IP_address 192.168.245.5 -NSP 0:3:1
+	PS:> Ping-A9RCIPPorts_CLI -wait 2 -IP_address 192.168.245.5 -NSP 0:3:1
 .EXAMPLE
-	Ping-RCIPPorts -size 2 -IP_address 192.168.245.5 -NSP 0:3:1
+	PS:> Ping-A9RCIPPorts_CLI -size 2 -IP_address 192.168.245.5 -NSP 0:3:1
 .EXAMPLE
-	Ping-RCIPPorts -PF -IP_address 192.168.245.5 -NSP 0:3:1
+	PS:> Ping-A9RCIPPorts_CLI -PF -IP_address 192.168.245.5 -NSP 0:3:1
 .PARAMETER IP_address
 	IP address on the secondary system to ping
 .PARAMETER NSP
@@ -252,24 +258,24 @@ Function Ping-A9RCIPPorts_CLI
 #Requires HPE 3par cli.exe
 #>
 [CmdletBinding()]
-Param(		[Parameter(ValueFromPipeline=$true)]	[String]	$IP_address,
-			[Parameter(ValueFromPipeline=$true)]	[String]	$NSP,
-			[Parameter(ValueFromPipeline=$true)]	[String]	$count,
-			[Parameter(ValueFromPipeline=$true)]	[String]	$wait,
-			[Parameter(ValueFromPipeline=$true)]	[String]	$size,
-			[Parameter(ValueFromPipeline=$true)]	[switch]	$PF
+Param(		[Parameter(Mandatory=$true)]	[System.IPAddress]	$IP_address,
+			[Parameter(Mandatory=$true)]	[String]	$NSP,
+			[Parameter()]					[String]	$count,
+			[Parameter()]					[String]	$wait,
+			[Parameter()]					[String]	$size,
+			[Parameter()]					[switch]	$PF
 	)
+Begin
+{	Test-A9Connection -ClientType "SshClient"
+}	
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmds="controlport rcip ping "
+{	$Cmds="controlport rcip ping "
 	if($count)	{	$Cmds +=" -c $count "	}
 	if($wait)	{	$Cmds +=" -w $wait "	}
 	if($size)	{	$Cmds +=" -s $size "	}
 	if($PF)		{	$Cmds +=" -pf"	}
-	if($IP_address){$Cmds +=" $IP_address "	}
-	else		{	return "IP_address required "}
-	if($NSP)	{	$Cmds +=" $NSP "	}
-	else		{	return "NSP required Ex: 1:1:1 "}
+	$Cmds +=" $IP_address "	
+	$Cmds +=" $NSP "
 	$result = Invoke-CLICommand  -cmds $Cmds	
 	return $result	
 }
@@ -279,16 +285,16 @@ Function Set-A9Battery_CLI
 {
 <#
 .SYNOPSIS
-	Set-Battery - set a battery's serial number, expiration date, reset test logs or reset recharge time.
+	Set a battery's serial number, expiration date, reset test logs or reset recharge time.
 .DESCRIPTION
-	The Set-Battery command may be used to set battery information such as the battery's expiration date, its recharging 
+	The command may be used to set battery information such as the battery's expiration date, its recharging 
 	time, and its serial number. This information gives the system administrator a record or log of the battery age and battery charge status.
 .EXAMPLE
 	The following example resets the battery test log and the recharging time
 	for a newly installed battery on node 2, power supply 1, and battery 0, with
 	an expiration date of July 4, 2006:
 	
-	Set-Battery -X " 07/04/2006" -Node_ID 2 -Powersupply_ID 1 -Battery_ID 0	
+	PS:> Set-A9Battery_CLI -X " 07/04/2006" -Node_ID 2 -Powersupply_ID 1 -Battery_ID 0	
 .PARAMETER S
 	Specifies the serial number of the battery using a limit of 31 alphanumeric characters.
 	This option is not supported on HPE 3PAR 10000 and 20000 systems.
@@ -315,9 +321,11 @@ param(
 	[Parameter(Mandatory=$True)]	[String]	$Powersupply_ID,
 	[Parameter()]					[String]	$Battery_ID
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process	
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " setbattery "
+{	$Cmd = " setbattery "
 	if($S)				{	$Cmd += " -s $S "}
 	if($X)				{	$Cmd += " -x $X " }
 	if($L)				{	$Cmd += " -l " }
@@ -342,27 +350,28 @@ Function Set-A9FCPorts_CLI
 .PARAMETER DirectConnect
 	If present, configure port for a direct connection to a host By default, the port is configured as fabric attached
 .EXAMPLE
-	Set-FCPorts -Ports 1:2:1
+	PS:> Set-A9FCPorts_CLI -Ports 1:2:1
 	
 	Configure port 1:2:1 as Fibre Channel connected to a fabric
 .EXAMPLE
-	Set-FCPorts -Ports 1:2:1 -DirectConnect
+	PS:> Set-A9FCPorts_CLI -Ports 1:2:1 -DirectConnect
 	
 	Configure port 1:2:1 as Fibre Channel connected to host ( no SAN fabric)
 .EXAMPLE		
-	Set-FCPorts -Ports 1:2:1,1:2:2 
+	PS:> Set-A9FCPorts_CLI -Ports 1:2:1,1:2:2 
 	
 	Configure ports 1:2:1 and 1:2:2 as Fibre Channel connected to a fabric 
-#Requires HPE 3par cli.exe
 #>
 [CmdletBinding()]
 Param(	[Parameter()]	[String]	$Ports,
 		[Parameter()]	[Switch]	$DirectConnect,
 		[Parameter()]	[Switch]	$Demo
 	)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Port_Pattern = "(\d):(\d):(\d)"	
+{	$Port_Pattern = "(\d):(\d):(\d)"	
 	foreach ($P in $Ports)
 		{	if ( $p -match $Port_Pattern)
 				{	Write-Verbose  "Set port $p offline " 
@@ -398,25 +407,25 @@ Function Set-A9HostPorts_CLI
 .DESCRIPTION
 	Configures with settings specified in the text file
 .EXAMPLE
-	Set-HostPorts -FCConfigFile FC-Nodes.CSV
+	PS:> Set-A9HostPorts_CLI -FCConfigFile FC-Nodes.CSV
 
 	Configures all FC host controllers on array
 .EXAMPLE	
-	Set-HostPorts -iSCSIConfigFile iSCSI-Nodes.CSV
+	PS:> Set-A9HostPorts_CLI -iSCSIConfigFile iSCSI-Nodes.CSV
 
 	Configures all iSCSI host controllers on array
 .EXAMPLE
-	Set-HostPorts -LDConfigFile LogicalDisks.CSV
+	PS:> Set-A9HostPorts_CLI -LDConfigFile LogicalDisks.CSV
 
 	Configures logical disks on array
 .EXAMPLE	
-	Set-HostPorts -FCConfigFile FC-Nodes.CSV -iSCSIConfigFile iSCSI-Nodes.CSV -LDConfigFile LogicalDisks.CSV
+	PS:> Set-A9HostPorts_CLI -FCConfigFile FC-Nodes.CSV -iSCSIConfigFile iSCSI-Nodes.CSV -LDConfigFile LogicalDisks.CSV
 
 	Configures FC, iSCSI host controllers and logical disks on array
 .EXAMPLE	
-	Set-HostPorts -RCIPConfiguration -Port_IP 0.0.0.0 -NetMask xyz -NSP 1:2:3> for rcip port
+	PS:> Set-A9HostPorts_CLI -RCIPConfiguration -Port_IP 0.0.0.0 -NetMask xyz -NSP 1:2:3> for rcip port
 .EXAMPLE	
-	Set-HostPorts -RCFCConfiguration -NSP 1:2:3>
+	PS:> Set-A9HostPorts_CLI -RCFCConfiguration -NSP 1:2:3>
 	
 	For RCFC port  
 .PARAMETER FCConfigFile
@@ -449,10 +458,11 @@ Param(		[Parameter()]	[String]	$FCConfigFile,
 			[Parameter()]	[String]	$NSP,
 			[Parameter()]	[switch]	$Demo
 	)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	#		FC Config file here
-	if (!(($FCConfigFile) -or ($iSCSIConfigFile) -or ($LDConfigFile) -or ($RCIPConfiguration) -or ($RCFCConfiguration))) 
+{	if (!(($FCConfigFile) -or ($iSCSIConfigFile) -or ($LDConfigFile) -or ($RCIPConfiguration) -or ($RCFCConfiguration))) 
 		{	return "FAILURE : No config file selected"
 		}
 	if ($RCIPConfiguration)
@@ -538,7 +548,7 @@ Function Set-A9NodeProperties_CLI
 .DESCRIPTION
 	The Set-NodeProperties command sets properties of the node components such as serial number of the power supply.
 .EXAMPLE
-	Set-NodeProperties -PS_ID 1 -S xxx -Node_ID 1
+	PS:> Set-A9NodeProperties_CLI -PS_ID 1 -S xxx -Node_ID 1
 .PARAMETER S
 	Specify the serial number. It is up to 8 characters in length.
 .PARAMETER PS_ID
@@ -551,9 +561,11 @@ param( 	[Parameter(Mandatory=$True)]	[String]	$PS_ID,
 		[Parameter(Mandatory=$True)]	[String]	$S,
 		[Parameter()]					[String]	$Node_ID	
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " setnode ps "
+{	$Cmd = " setnode ps "
 	if($PS_ID)		{	$Cmd += " $PS_ID "	}	
 	if($S) 			{	$Cmd += " -s $S " 	} 
 	if($Node_ID) 	{	$Cmd += " $Node_ID "}
@@ -566,18 +578,21 @@ Function Set-A9NodesDate_CLI
 {
 <#
 .SYNOPSIS
-	Set-NodesDate - Sets date and time information.
+	Sets date and time information.
 .DESCRIPTION
-	The Set-NodesDate command allows you to set the system time and date on all nodes.
+	The command allows you to set the system time and date on all nodes.
 .EXAMPLE
 	The following example displays the timezones with the -tzlist option:
-	Set-NodesDate -Tzlist
+	
+	PS:> Set-A9NodesDate_CLI -Tzlist
 .EXAMPLE
 	The following example narrows down the list to the required timezone of Etc:
-	Set-NodesDate -Tzlist -TzGroup Etc
+
+	PS:> Set-A9NodesDate_CLI -Tzlist -TzGroup Etc
 .EXAMPLE
 	The following example shows the timezone being set:
-	Set-NodesDate -Tzlist -TzGroup "Etc/GMT"
+
+	PS:> Set-A9NodesDate_CLI  -Tzlist -TzGroup "Etc/GMT"
 .PARAMETER Tzlist
 	Displays a timezone within a group, if a group is specified. If a group is not specified, displays a list of valid groups.
 .PARAMETER TzGroup
@@ -587,9 +602,11 @@ Function Set-A9NodesDate_CLI
 param(	[Parameter()]	[switch]	$Tzlist,
 		[Parameter()]	[String]	$TzGroup
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " setdate "
+{	$Cmd = " setdate "
 	if($Tzlist)
 		{	$Cmd += " -tzlist "
 			if($TzGroup) 	{	$Cmd += " $TzGroup " }
@@ -603,9 +620,9 @@ Function Set-A9SysMgr_CLI
 {
 <#
 .SYNOPSIS
-	Set-SysMgr - Set the system manager startup state.
+	Set the system manager startup state.
 .DESCRIPTION
-	The Set-SysMgr command sets the system manager startup state.
+	The command sets the system manager startup state.
 .PARAMETER Wipe
 	Requests that the specified system be started in the new system state. Warning: This option will result in the loss of data and configuration info.
 .PARAMETER Tocgen
@@ -632,9 +649,11 @@ param(	[Parameter()]	[switch]	$Wipe,
 		[Parameter()]	[String]	$System_name,
 		[Parameter()]	[String]	$Toc_gen_number
 )
+Begin
+{	test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " setsysmgr -f "
+{	$Cmd = " setsysmgr -f "
 	if($Wipe)
 		{	$Cmd += " wipe "
 			if($System_name)	{	$Cmd += " $System_name " }
@@ -656,7 +675,7 @@ Function Show-A9Battery_CLI
 {
 <#
 .SYNOPSIS
-	Show-Battery - Show battery status information.
+	Show battery status information.
 .DESCRIPTION
 	Displays battery status information such as serial number, expiration date and battery life, 
 	which could be helpful in determining battery maintenance schedules.
@@ -691,9 +710,11 @@ param(
 	[Parameter()]	[switch]	$Svc,
 	[Parameter()]	[String]	$Node_ID
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " showbattery "
+{	$Cmd = " showbattery "
 	if($Listcols)
 		{	$Cmd += " -listcols "
 			$Result = Invoke-CLICommand -cmds  $Cmd
@@ -737,18 +758,18 @@ Function Show-A9EEProm_CLI
 {
 <#
 .SYNOPSIS
-	Show-EEProm - Show node EEPROM information.
+	Show node EEPROM information.
 .DESCRIPTION
-	The Show-EEProm command displays node EEPROM log information.
+	The command displays node EEPROM log information.
 .EXAMPLE
 	The following example displays the EEPROM log for all nodes:
-	PS:> Show-EEProm
+	PS:> Show-A9EEProm_CLI
 .EXAMPLE
-	PS:> Show-EEProm -Node_ID 0
+	PS:> Show-A9EEProm_CLI -Node_ID 0
 .EXAMPLE
-	PS:> Show-EEProm -Dead 
+	PS:> Show-A9EEProm_CLI -Dead 
 .EXAMPLE
-	PS:> Show-EEProm -Dead -Node_ID 0
+	PS:> Show-A9EEProm_CLI -Dead -Node_ID 0
 .PARAMETER Dead
 	Specifies that an EEPROM log for a node that has not started or successfully joined the cluster be displayed. If this option is used, it must be followed by a non empty list of nodes.
 .PARAMETER Node_ID
@@ -759,9 +780,11 @@ Function Show-A9EEProm_CLI
 param(	[Parameter()]	[switch]	$Dead,
 		[Parameter()]	[String]	$Node_ID
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " showeeprom "
+{	$Cmd = " showeeprom "
 	if($Dead)	{	$Cmd += " -dead "}
 	if($Node_ID)	{	$Cmd += " $Node_ID "}
 	$Result = Invoke-CLICommand -cmds  $Cmd
@@ -777,11 +800,11 @@ Function Get-A9SystemInformation_CLI
 .DESCRIPTION
     Command displays the Storage system information.
 .EXAMPLE
-    PS:> Get-SystemInformation 
+    PS:> Get-A9SystemInformation_CLI 
 
 	Command displays the Storage system information.such as system name, model, serial number, and system capacity information.
 .EXAMPLE
-    PS:> Get-SystemInformation -Option space
+    PS:> Get-A9SystemInformation_CLI -Option space
 
 	Lists Storage system space information in MB(1024^2 bytes).PARAMETER Option
 	space 
@@ -798,10 +821,12 @@ Function Get-A9SystemInformation_CLI
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Option
-	)		
+	)	
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}	
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$sysinfocmd = "showsys "
+{	$sysinfocmd = "showsys "
 	$Option = $Option.toLower()
 	if ($Option)
 		{	$a = "d","param","fan","space","vvspace","domainspace","desc","devtype","date"
@@ -885,9 +910,11 @@ param(	[Parameter()]		[String]	$D,
 		[Parameter()]		[switch]	$Prev,
 		[Parameter()]		[switch]	$Begin
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 Process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " statfcoe "
+{	$Cmd = " statfcoe "
 	if($D)			{	$Cmd += " -d $D " }
 	if($Iter)		{	$Cmd += " -iter $Iter " }
 	if($Nodes)		{	$Cmd += " -nodes $Nodes " }
@@ -907,17 +934,17 @@ Function Show-A9Firmwaredb_CLI
 {
 <#
 .SYNOPSIS
-	Show-Firmwaredb - Show database of current firmware levels.
+	Show database of current firmware levels.
 .DESCRIPTION
-	The Show-Firmwaredb command displays the current database of firmware levels for possible upgrade. If issued without any options, the firmware for all vendors is displayed.
+	Displays the current database of firmware levels for possible upgrade. If issued without any options, the firmware for all vendors is displayed.
 .EXAMPLE
-	Show-Firmwaredb 
+	PS:> Show-A9Firmwaredb_CLI 
 .EXAMPLE
-	Show-Firmwaredb -VendorName xxx
+	PS:> Show-A9Firmwaredb_CLI -VendorName xxx
 .EXAMPLE
-	Show-Firmwaredb -All
+	PS:> Show-A9Firmwaredb_CLI -All
 .EXAMPLE
-	Show-Firmwaredb -L
+	PS:> Show-A9Firmwaredb_CLI -L
 .PARAMETER VendorName
 	Specifies that the firmware vendor from the SCSI database file is displayed.
 .PARAMETER L
@@ -930,9 +957,11 @@ param(	[Parameter()]	[String]	$VendorName,
 		[Parameter()]	[switch]	$L,
 		[Parameter()]	[switch]	$All	
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 Process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " showfirmwaredb "
+{	$Cmd = " showfirmwaredb "
 	if($VendorName)	{	$Cmd += " -n $VendorName "}
 	if($L)			{	$Cmd += " -l "	}
 	if($All)		{	$Cmd += " -all " }
@@ -945,15 +974,17 @@ Function Show-A9TOCGen_CLI
 {
 <#
 .SYNOPSIS
-	Show-TOCGen - Shows system Table of Contents (TOC) generation number.
+	Shows system Table of Contents (TOC) generation number.
 .DESCRIPTION
-	The Show-TOCGen command displays the table of contents generation number.
+	Displays the table of contents generation number.
 #>
 [CmdletBinding()]
 param()
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " showtocgen "
+{	$Cmd = " showtocgen "
 	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -967,19 +998,19 @@ Function Show-A9iSCSISessionStatistics_CLI
 .DESCRIPTION  
 	The Show-iSCSISessionStatistics command displays the iSCSI session statistics.
 .EXAMPLE
-	Show-iSCSISessionStatistics
+	PS:> Show-A9iSCSISessionStatistics_CLI
 .EXAMPLE
-	Show-iSCSISessionStatistics -Iterations 1
+	PS:> Show-A9iSCSISessionStatistics_CLI -Iterations 1
 .EXAMPLE
-	Show-iSCSISessionStatistics -Iterations 1 -Delay 2
+	PS:> Show-A9iSCSISessionStatistics_CLI -Iterations 1 -Delay 2
 .EXAMPLE
-	Show-iSCSISessionStatistics -Iterations 1 -NodeList 1
+	PS:> Show-A9iSCSISessionStatistics_CLI -Iterations 1 -NodeList 1
 .EXAMPLE
-	Show-iSCSISessionStatistics -Iterations 1 -SlotList 1
+	PS:> Show-A9iSCSISessionStatistics_CLI -Iterations 1 -SlotList 1
 .EXAMPLE
-	Show-iSCSISessionStatistics -Iterations 1 -PortList 1
+	PS:> Show-A9iSCSISessionStatistics_CLI -Iterations 1 -PortList 1
 .EXAMPLE
-	Show-iSCSISessionStatistics -Iterations 1 -Prev
+	PS:> Show-A9iSCSISessionStatistics_CLI -Iterations 1 -Prev
 .PARAMETER Iterations 
 	The command stops after a user-defined <number> of iterations.
 .PARAMETER Delay
@@ -995,8 +1026,6 @@ Function Show-A9iSCSISessionStatistics_CLI
 	Shows the differences from the previous sample.
 .PARAMETER Begin
 	Shows the values from when the system was last initiated.
-.PARAMETER SANConnection 
-	Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
 #>
 [CmdletBinding()]
 param(	[Parameter(mandatory=$true)]	[String]	$Iterations,
@@ -1006,10 +1035,12 @@ param(	[Parameter(mandatory=$true)]	[String]	$Iterations,
 		[Parameter()]	[String]	$PortList,		
 		[Parameter()]	[Switch]	$Previous,	
 		[Parameter()]	[Switch]	$Begin
-)		
+)	
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}	
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$cmd= "statiscsisession "	
+{	$cmd= "statiscsisession "	
 	if($Iterations)	{	$cmd+=" -iter $Iterations "	}
 	if($Delay)		{	$cmd+=" -d $Delay "	}	
 	if($NodeList)	{	$cmd+=" -nodes $NodeList "	}
@@ -1093,23 +1124,23 @@ Function Show-A9iSCSIStatistics_CLI
 .DESCRIPTION  
 	The Show-iSCSIStatistics command displays the iSCSI statistics.
 .EXAMPLE
-	Show-iSCSIStatistics
+	PS:> Show-A9iSCSIStatistics_CLI
 .EXAMPLE
-	Show-iSCSIStatistics -Iterations 1
+	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1
 .EXAMPLE
-	Show-iSCSIStatistics -Iterations 1 -Delay 2
+	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1 -Delay 2
 .EXAMPLE
-	Show-iSCSIStatistics -Iterations 1 -NodeList 1
+	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1 -NodeList 1
 .EXAMPLE
-	Show-iSCSIStatistics -Iterations 1 -SlotList 1
+	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1 -SlotList 1
 .EXAMPLE
-	Show-iSCSIStatistics -Iterations 1 -PortList 1
+	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1 -PortList 1
 .EXAMPLE
-	Show-iSCSIStatistics -Iterations 1 -Fullcounts
+	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1 -Fullcounts
 .EXAMPLE
-	Show-iSCSIStatistics -Iterations 1 -Prev
+	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1 -Prev
 .EXAMPLE
-	Show-iSCSIStatistics -Iterations 1 -Begin
+	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1 -Begin
 .PARAMETER Iterations 
 	The command stops after a user-defined <number> of iterations.
 .PARAMETER Delay
@@ -1147,10 +1178,12 @@ param(	[Parameter()]	[String]	$Iterations,
 		[Parameter()]	[Switch]	$Fullcounts,
 		[Parameter()]	[Switch]	$Prev,		
 		[Parameter()]	[Switch]	$Begin
-	)		
+	)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}		
 process	
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$cmd= " statiscsi "	
+{	$cmd= " statiscsi "	
 	if($Iterations)	{	$cmd+=" -iter $Iterations "	}
 	else			{	return " Iterations is mandatory "	}
 	if($Delay)		{	$cmd+=" -d $Delay "	}	
@@ -1210,21 +1243,23 @@ Function Show-A9NetworkDetail_CLI
 {
 <#
 .SYNOPSIS
-	Show-NetworkDetail - Show the network configuration and status
+	Show the network configuration and status
 .DESCRIPTION
-	The Show-NetworkDetail command displays the configuration and status of the administration network interfaces, including the configured gateway and network time protocol (NTP) server.
+	The command displays the configuration and status of the administration network interfaces, including the configured gateway and network time protocol (NTP) server.
 .EXAMPLE 
 	The following example displays the status of the system administration network interfaces:
-	Show-NetworkDetail -D
+	PS:> Show-A9NetworkDetail_CLI -D
 .PARAMETER D
 	Show detailed information.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$D
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " shownet "
+{	$Cmd = " shownet "
 	if($D)	{	$Cmd += " -d "}
 	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
@@ -1242,7 +1277,7 @@ Function Show-A9NodeEnvironmentStatus_CLI
 	The following example displays the operating environment status for all nodes
 	in the system:
 
-	Show-NodeEnvironmentStatus
+	PS:> Show-A9NodeEnvironmentStatus_CLI
 .PARAMETER Node_ID
 	Specifies the ID of the node whose environment status is displayed. Multiple node IDs can be specified as a series of integers separated by
 	a space (1 2 3). If no option is used, then the environment status of all nodes is displayed.
@@ -1250,9 +1285,11 @@ Function Show-A9NodeEnvironmentStatus_CLI
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Node_ID
 	)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " shownodeenv "
+{	$Cmd = " shownodeenv "
 	if($Node_ID)	{	$Cmd += " -n $Node_ID "} 
 	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
@@ -1263,15 +1300,15 @@ Function Show-A9iSCSISession_CLI
 {
 <#
 .SYNOPSIS
-	The Show-iSCSISession command shows the iSCSI sessions.
+	Shows the iSCSI sessions.
 .DESCRIPTION  
-	The Show-iSCSISession command shows the iSCSI sessions.
+	The command shows the iSCSI sessions.
 .EXAMPLE
-	Show-iSCSISession
+	PS:> Show-A9iSCSISession_CLI
 .EXAMPLE
-	Show-iSCSISession -NSP 1:2:1
+	PS:> Show-A9iSCSISession_CLI -NSP 1:2:1
 .EXAMPLE
-	Show-iSCSISession -Detailed -NSP 1:2:1
+	PS:> Show-A9iSCSISession_CLI -Detailed -NSP 1:2:1
 .PARAMETER Detailed
     Specifies that more detailed information about the iSCSI session is displayed. If this option is not used, then only summary information
     about the iSCSI session is displayed.
@@ -1284,10 +1321,12 @@ Function Show-A9iSCSISession_CLI
 param(	[Parameter()]	[switch]	$Detailed,
 		[Parameter()]	[switch]	$ConnectionState,
 		[Parameter()]	[String]	$NSP 
-)		
+)	
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}	
 process	
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$cmd= "showiscsisession "
+{	$cmd= "showiscsisession "
 	if ($Detailed)	{	$cmd+=" -d "	}
 	if ($ConnectionState)	{	$cmd+=" -state "	}
 	if ($NSP)	{	$cmd+=" $NSP "	}
@@ -1317,21 +1356,21 @@ Function Show-A9NodeProperties_CLI
 {
 <#
 .SYNOPSIS
-	Show-NodeProperties - Show node and its component information.
+	Show node and its component information.
 .DESCRIPTION
-	The Show-NodeProperties command displays an overview of the node-specific properties and its component information. Various command options can be used to
+	The command displays an overview of the node-specific properties and its component information. Various command options can be used to
 	display the properties of PCI cards, CPUs, Physical Memory, IDE drives, and Power Supplies.
 .EXAMPLE
 	The following example displays the operating environment status for all
 	nodes in the system:
 	
-	Show-NodeProperties
+	PS:> Show-A9NodeProperties_CLI
 .EXAMPLE
 	The following examples display detailed information (-d option) for the nodes including their components in a table format. The shownode -d command
 	can be used to display the tail information of the nodes including their components in name and value pairs.
 
-	Show-NodeProperties - Mem
-	Show-NodeProperties - Mem -Node_ID 1	
+	PS:> Show-A9NodeProperties_CLI - Mem
+	PS:> Show-A9NodeProperties_CLI - Mem -Node_ID 1	
     
 	The following options are for node summary and inventory information:
 .PARAMETER Listcols
@@ -1406,9 +1445,11 @@ param(	[Parameter()]	[switch]	$Listcols,
 		[Parameter()]	[switch]	$Svc,
 		[Parameter()]	[String]	$Node_ID
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{ 	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " shownode "
+{ 	$Cmd = " shownode "
 	if($Listcols)
 		{	$Cmd += " -listcols "
 			$Result = Invoke-CLICommand -cmds  $Cmd
@@ -1562,9 +1603,11 @@ param(
 	[Parameter()]	[String]	$NSP,	
 	[Parameter()]	[String]	$WWN
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " showportdev "		
+{	$Cmd = " showportdev "		
 	if($Loop)		{	$Cmd += " loop " }
 	elseif($All)	{	$Cmd += " all " }
 	elseif($NS) 	{	$Cmd += " ns " }
@@ -1609,10 +1652,12 @@ Function Show-A9PortISNS_CLI
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$NSP 
-	)		
+	)	
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$cmd= "showportisns "	
+{	$cmd= "showportisns "	
 	if ($NSP)	{	$cmd+=" $NSP "	}
 	$Result = Invoke-CLICommand -cmds  $cmd
 	write-verbose "  Executing  Show-PortISNS command that displays information iSNS table for iSCSI ports in the system  " 
@@ -1638,9 +1683,9 @@ Function Show-A9SysMgrCLI
 {
 <#
 .SYNOPSIS
-	Show-SysMgr - Show system manager startup state.
+	Show system manager startup state.
 .DESCRIPTION
-	The Show-SysMgr displays startup state information about the system manager.
+	The displays startup state information about the system manager.
 .PARAMETER D
 	Shows additional detailed information if available.
 .PARAMETER L
@@ -1650,9 +1695,11 @@ Function Show-A9SysMgrCLI
 param(	[Parameter()]	[switch]	$D,
 		[Parameter()]	[switch]	$L
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " showsysmgr "
+{	$Cmd = " showsysmgr "
 	if($D)	{	$Cmd += " -d "	}
 	if($L)	{	$Cmd += " -l "}
 	$Result = Invoke-CLICommand -cmds  $Cmd
@@ -1664,15 +1711,17 @@ Function Show-A9SystemResourcesSummary_CLI
 {
 <#
 .SYNOPSIS
-	Show-SystemResourcesSummary - Show system Table of Contents (TOC) summary.
+	Show system Table of Contents (TOC) summary.
 .DESCRIPTION
-	The Show-SystemResourcesSummary command displays the system table of contents summary that provides a summary of the system's resources.
+	The command displays the system table of contents summary that provides a summary of the system's resources.
 #>
 [CmdletBinding()]
 param()
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " showtoc "
+{	$Cmd = " showtoc "
 	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1682,20 +1731,22 @@ Function Start-A9NodeRescue_CLI
 {
 <#
 .SYNOPSIS
-	Start-NodeRescue - Starts a node rescue.
+	Starts a node rescue.
 .DESCRIPTION
 	Initiates a node rescue, which initializes the internal node disk of the specified node to match the contents of the other node disks. Progress is reported as a task.
 .EXAMPLE
-	Start-NodeRescue -Node 0
+	Start-A9NodeRescue_CLI -Node 0
 .PARAMETER Node
 	Specifies the node to be rescued.  This node must be physically present in the system and powered on, but not part of the cluster.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$True)]	[String]	$Node
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " startnoderescue "
+{	$Cmd = " startnoderescue "
 	if($Node)	{	$Cmd += " -node $Node " }
 	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
@@ -1753,27 +1804,26 @@ Function Get-A9HostPorts_CLI
 .PARAMETER NSP
 	Nede sloat poart
 .EXAMPLE
-	Get-HostPorts
+	PS:> Get-A9HostPorts_CLI
 		Lists all ports including targets, disks, and RCIP ports
 .EXAMPLE
-	Get-HostPorts  -I
+	PS:> Get-A9HostPorts_CLI  -I
 .EXAMPLE
-	Get-HostPorts  -I -NSP 0:0:0
+	PS:> Get-A9HostPorts_CLI -I -NSP 0:0:0
 .EXAMPLE
-	Get-HostPorts  -PAR
+	PS:> Get-A9HostPorts_CLI -PAR
 .EXAMPLE
-	Get-HostPorts  -PAR -NSP 0:0:0
+	PS:> Get-A9HostPorts_CLI -PAR -NSP 0:0:0
 .EXAMPLE
-	Get-HostPorts  -RC
+	PS:> Get-A9HostPorts_CLI -RC
 .EXAMPLE
-	Get-HostPorts  -RC -NSP 0:0:0
+	PS:> Get-A9HostPorts_CLI -RC -NSP 0:0:0
 .EXAMPLE
-	Get-HostPorts  -RCFC
+	PS:> Get-A9HostPorts_CLI -RCFC
 .EXAMPLE
-	Get-HostPorts  -RCFC -NSP 0:0:0
+	PS:> Get-A9HostPorts_CLI -RCFC -NSP 0:0:0
 .EXAMPLE
-	Get-HostPorts  -RCIP
-#Requires HPE 3par cli.exe
+	PS:> Get-A9HostPorts_CLI -RCIP
 #>
 [CmdletBinding()]
 Param(		[Parameter()]	[switch]	$I,
@@ -1795,9 +1845,11 @@ Param(		[Parameter()]	[switch]	$I,
 			[Parameter()]	[String]	$NSP,
 			[Parameter()]	[switch]	$D
 		)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmds = "showport"
+{	$Cmds = "showport"
 	if($I)	{	$Cmds+=" -i "		}
 	if($C)	{	$Cmds+=" -c "		}
 	if($PAR){	$Cmds+=" -par "		}
@@ -1849,15 +1901,12 @@ Function Get-A9Node_CLI
 {
 <#
 .SYNOPSIS
-	Get-Node - Show node and its component information.
+	Show node and its component information.
 .DESCRIPTION
-	The Get-Node command displays an overview of the node-specific properties
+	The command displays an overview of the node-specific properties
 	and its component information. Various command options can be used to
 	display the properties of PCI cards, CPUs, Physical Memory, IDE drives,
 	and Power Supplies.
-
-.EXAMPLE
-	The following options are for node summary and inventory information:
 .PARAMETER Listcols
 	List the columns available to be shown with the -showcols option
 	described below (see 'clihelp -col Get-Node' for help on each column).
@@ -1948,9 +1997,11 @@ param(	[Parameter()]	[switch]	$Listcols,
 		[Parameter()]	[switch]	$Svc,	
 		[Parameter()]	[String]	$NodeID
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " shownode "
+{	$Cmd = " shownode "
 	if($Listcols)
 		{	$Cmd += " -listcols "
 			$Result = Invoke-CLICommand -cmds  $Cmd
@@ -2013,17 +2064,17 @@ Function Get-A9Target_CLI
 .DESCRIPTION
 	The Get-Target command displays information about unrecognized targets.
 .EXAMPLE
-	Get-Target  
+	PS:> Get-A9Target_CLI  
 .EXAMPLE 
-	Get-Target -Lun -Node_WWN 2FF70002AC00001F
+	PS:> Get-A9Target_CLI -Lun -Node_WWN 2FF70002AC00001F
 .EXAMPLE 
-	Get-Target -Lun -All
+	PS:> Get-A9Target_CLI -Lun -All
 .EXAMPLE 	
-	Get-Target -Inq -Page 0 -LUN_WWN  50002AC00001001F
+	PS:> Get-A9Target_CLI -Inq -Page 0 -LUN_WWN  50002AC00001001F
 .EXAMPLE 
-	Get-Target -Inq -Page 0 -D -LUN_WWN  50002AC00001001F
+	PS:> Get-A9Target_CLI -Inq -Page 0 -D -LUN_WWN  50002AC00001001F
 .EXAMPLE 	
-	Get-Target -Mode -Page 0x3 -D -LUN_WWN  50002AC00001001F 
+	PS:> Get-A9Target_CLI -Mode -Page 0x3 -D -LUN_WWN  50002AC00001001F 
 .PARAMETER Lun
 	Displays the exported Logical Unit Numbers (LUNs) from the unknown
 	targets. Use the "all" specifier to display the exported LUNs from all
@@ -2046,8 +2097,9 @@ Function Get-A9Target_CLI
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Lun,
 		[Parameter()]	[switch]	$Inq,
-		[Parameter()]	[switch]	 $Mode,
-		[Parameter()]	[String]	$Page,
+		[Parameter()]	[switch]	$Mode,
+		[Parameter()]	[ValidateSet('0','0x88','0x83','0xc0','0x3','0x4')]	
+						[String]	$Page,
 		[Parameter()]	[switch]	$D,
 		[Parameter()]	[switch]	$Force,
 		[Parameter()]	[switch]	$Rescan,
@@ -2055,9 +2107,11 @@ param(	[Parameter()]	[switch]	$Lun,
 		[Parameter()]	[String]	$LUN_WWN,
 		[Parameter()]	[switch]	$All
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " showtarget "
+{	$Cmd = " showtarget "
 	if($Lun)	{	$Cmd += " -lun "} 
 	if($All)	{	$Cmd += " all " }
 	if($Inq)	{	$Cmd += " -inq " }
@@ -2078,22 +2132,24 @@ Function Show-A9PortARP_CLI
 {
 <#
 .SYNOPSIS   
-	The Show-PortARP command shows the ARP table for iSCSI ports in the system.
+	The command shows the ARP table for iSCSI ports in the system.
 .DESCRIPTION  
-	The Show-PortARP command shows the ARP table for iSCSI ports in the system.
+	The command shows the ARP table for iSCSI ports in the system.
 .EXAMPLE
-	Show-PortARP 
+	PS:> Show-A9PortARP_CLI 
 .EXAMPLE
-	Show-PortARP -NSP 1:2:3
+	PS:> Show-A9PortARP_CLI -NSP 1:2:3
 .PARAMETER NSP
 	Specifies the port for which information about devices on that port are displayed.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$NSP 			
-	)		
+param(	[Parameter()]	[ValidatePattern("^\d:\d:\d")]	[String]	$NSP 			
+	)	
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}	
 Process	
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$cmd= "showportarp "	
+{	$cmd= "showportarp "	
 	if ($NSP)	{	$cmd+=" $NSP "	}
 	$Result = Invoke-CLICommand -cmds  $cmd
 	if($Result.Count -gt 1)
@@ -2163,13 +2219,16 @@ param(	[Parameter()]	[switch]	$Lun,
 		[Parameter()]	[switch]	$Force,
 		[Parameter()]	[switch]	$VerboseE,
 		[Parameter()]	[switch]	$Rescan,
-		[Parameter()]	[String]	$Sortcol,
+		[Parameter()][ValidateSet('inc','dec')]	
+						[String]	$Sortcol,
 		[Parameter()]	[String]	$Node_WWN,
 		[Parameter()]	[String]	$LUN_WWN
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 Process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$Cmd = " showtarget "	
+{	$Cmd = " showtarget "	
 	if($Lun)		{	$Cmd += " -lun "}
 	if($Inq)		{ 	$Cmd += " -inq "}
 	if($Mode)		{	$Cmd += " -mode "	}
@@ -2210,7 +2269,7 @@ Function Test-A9Por_CLI
 .EXAMPLE
     Test-Port test is performed on port 0:0:1 a total of five times:
 
-    Test-Port -iter 5 0:0:1
+    PS:> Test-A9Port_CLI -iter 5 0:0:1
     Starting loopback test on port 0:0:1
     Port 0:0:1 completed 5 loopback frames in 0 seconds Passed
 .NOTES
@@ -2222,25 +2281,20 @@ Function Test-A9Por_CLI
     when not specified.
     The default loopback is an ELS-ECHO sent to the HBA itself.
 #>
-    [CmdletBinding()]
-    param(
-        [Parameter(HelpMessage = "Number of seconds for the test to run using an integer from 0 to 300")]
-        [String]    $TimeInSeconds,		
-        [Parameter(HelpMessage = "Number of times for the test to run using an integer from 1 to 1000000")]
-        [String]    $Iter,
-        [Parameter(HelpMessage = "Specify the port to be tested <node:slot:port>")]
-        [String]    $PortNSP,
-        [Parameter(HelpMessage = "Specifies the node using a number from 0 through 7")]
-        [String]    $Node,		
-        [Parameter(HelpMessage = "Specifies the PCI slot in the specified node. Valid range is 0 - 9")]
-        [String]    $Slot,		
-        [Parameter(HelpMessage = "Specifies the port using a number from 1 through 4")]
-        [String]    $Port,		
-        [Parameter(ValueFromPipeline = $true)]    $SANConnection = $global:SANConnection        
+[CmdletBinding()]
+param(
+        [Parameter()]	[ValidateRange(0,300)]    		[int]    	$TimeInSeconds,		
+        [Parameter()]   [ValidateRange(1,100000)]		[int]    	$Iter,
+        [Parameter()]	[ValidatePatter("^\d:\d:\d")]	[String]    $PortNSP,
+        [Parameter()]	[ValidateRange(0,7)]    		[int]    	$Node,		
+        [Parameter()]   [ValidateRange(0,9)]			[int]    	$Slot,		
+        [Parameter()]   [ValidateRange(1,4)]    		[int]    	$Port
     )	
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 Process	
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$cmd = "checkport "	
+{	$cmd = "checkport "	
     if ($TimeInSeconds) {    $cmd += " -time $TimeInSeconds"    }
     if ($Iter) 			{    $cmd += " -iter $Iter"	    }
     if ($PortNSP) 		{    $cmd += "$PortNSP"		   }

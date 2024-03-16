@@ -9,15 +9,15 @@ Function Join-A9Federation_CLI
 .DESCRIPTION
 	The Join-Federation command makes the StoreServ system a member of the Federation identified by the specified name and UUID.
 .EXAMPLE
-	Join-Federation -FedName test -UUID 12345
+	PS:> Join-A9Federation_CLI -FedName test -UUID 12345
 .EXAMPLE
-	Join-Federation -Comment hello -UUID 12345
+	PS:> Join-A9Federation_CLI -Comment hello -UUID 12345
 .EXAMPLE
-	Join-Federation -Comment hello -UUID 12345 -FedName test
+	PS:> Join-A9Federation_CLI -Comment hello -UUID 12345 -FedName test
 .EXAMPLE
-	Join-Federation -Setkv 10 -UUID 12345 -FedName test
+	PS:> Join-A9Federation_CLI -Setkv 10 -UUID 12345 -FedName test
 .EXAMPLE
-	Join-Federation -Setkvifnotset 20  -UUID 12345 -FedName test
+	PS:> Join-A9Federation_CLI -Setkvifnotset 20  -UUID 12345 -FedName test
 .PARAMETER Force
 	If the StoreServ system is already a member of a Federation, the option forcefully removes the system from the current Federation and makes it a
 	member of the new Federation identified by the specified name and UUID.
@@ -42,7 +42,7 @@ param(	[Parameter()]	[Switch]	$Force ,
 		[Parameter()]	[String]	$Setkvifnotset 
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	if($FedName )
@@ -70,13 +70,13 @@ Function New-A9Federation_CLI
 .DESCRIPTION
 	The New-Federation command generates a UUID for the named Federation and makes the StoreServ system a member of that Federation.
 .EXAMPLE
-	New-Federation -Fedname XYZ
+	PS:> New-A9Federation_CLI -Fedname XYZ
 .EXAMPLE
-	New-Federation –CommentString XYZ -Fedname XYZ
+	PS:> New-A9Federation_CLI –CommentString XYZ -Fedname XYZ
 .EXAMPLE
-	New-Federation -Setkv TETS -Fedname XYZ
+	PS:> New-A9Federation_CLI -Setkv TETS -Fedname XYZ
 .EXAMPLE
-	New-Federation -Setkvifnotset TETS -Fedname XYZ
+	PS:> New-A9Federation_CLI -Setkvifnotset TETS -Fedname XYZ
 .PARAMETER comment
 	Specifies any additional textual information.
 .PARAMETER Setkv 
@@ -94,7 +94,7 @@ param(	[Parameter(Mandatory=$true)]	[String]	$Fedname ,
 		[Parameter()]	[String]	$Setkvifnotset
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$cmd = "createfed"
@@ -111,17 +111,17 @@ Function Set-A9Federation_CLI
 {
 <#
 .SYNOPSIS
-	The Set-Federation command modifies name, comment, or key/value attributes of the Federation of which the StoreServ system is member.
+	The command modifies name, comment, or key/value attributes of the Federation of which the StoreServ system is member.
 .DESCRIPTION 
-	The Set-Federation command modifies name, comment, or key/value attributes of the Federation of which the StoreServ system is member.
+	The command modifies name, comment, or key/value attributes of the Federation of which the StoreServ system is member.
 .EXAMPLE
-	Set-Federation -FedName test
+	PS:> Set-A9Federation_CLI -FedName test
 .EXAMPLE
-	Set-Federation -Comment hello
+	PS:> Set-A9Federation_CLI -Comment hello
 .EXAMPLE
-	Set-Federation -ClrAllKeys
+	PS:> Set-A9Federation_CLI -ClrAllKeys
 .EXAMPLE
-	Set-Federation -Setkv 1
+	PS:> Set-A9Federation_CLI -Setkv 1
 .PARAMETER Comment
 	Specifies any additional textual information.
 .PARAMETER Setkv
@@ -151,7 +151,7 @@ param(	[Parameter()]	[String]	$FedName ,
 		[Parameter()]	[String]	$IfKV 
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd = "setfed"	
@@ -177,12 +177,12 @@ Function Remove-A9Federation_CLI
 .DESCRIPTION 
 	The Remove-Federation command removes the StoreServ system from Federation membership.
 .EXAMPLE	
-	Remove-Federation	
+	PS:> Remove-A9Federation_CLI	
 #>
 [CmdletBinding()]
 param()		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd = " removefed -f"
@@ -195,17 +195,17 @@ Function Show-A9Federation_CLI
 {
 <#
 .SYNOPSIS 
-	The Show-Federation command displays the name, UUID, and comment of the Federation of which the StoreServ system is member.
+	The Show Federation command displays the name, UUID, and comment of the Federation of which the StoreServ system is member.
 .DESCRIPTION 
-	The Show-Federation command displays the name, UUID, and comment
+	The Show Federation command displays the name, UUID, and comment
 	of the Federation of which the StoreServ system is member.
 .EXAMPLE	
-	Show-Federation	
+	PS:> Show-A9Federation_CLI	
 #>
 [CmdletBinding()]
 param()		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd = " showfed"

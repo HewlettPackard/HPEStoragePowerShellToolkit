@@ -39,7 +39,7 @@ Function Get-A9Users
 Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$UserName		
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$Result = $null
@@ -111,7 +111,7 @@ Function Get-A9Roles
 Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$RoleName
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$Result = $null

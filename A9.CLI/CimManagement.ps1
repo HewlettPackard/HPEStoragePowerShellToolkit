@@ -7,7 +7,7 @@ Function Show-A9CIM_CLI
 .SYNOPSIS
     Show the CIM server information
 .DESCRIPTION
-    The Show-CIM cmdlet displays the CIM server service state being configured, either enabled or disabled. It also displays the server current running
+    This cmdlet displays the CIM server service state being configured, either enabled or disabled. It also displays the server current running
     status, either active or inactive. It displays the current status of the HTTP and HTTPS ports and their port numbers. In addition, it shows the
     current status of the SLP port, that is either enabled or disabled.
 .PARAMETER Pol
@@ -15,7 +15,7 @@ Function Show-A9CIM_CLI
 .EXAMPLE
     The following example shows the current CIM status:
 
-        Show-CIM
+        PS:> Show-A9CIM_CLI
 
         -Service- -State-- --SLP-- SLPPort -HTTP-- HTTPPort -HTTPS- HTTPSPort PGVer  CIMVer
         Enabled   Active   Enabled     427 Enabled     5988 Enabled      5989 2.14.1 3.3.1
@@ -23,7 +23,7 @@ Function Show-A9CIM_CLI
 .EXAMPLE
     The following example shows the current CIM policy:
 
-        Show-CIM -Pol
+        PS:> Show-A9CIM_CLI -Pol
 
         --------------Policy---------------
         replica_entity,one_hwid_per_view,use_pegasus_interop_namespace,no_tls_strict
@@ -33,7 +33,7 @@ param(  [Parameter()]    [Switch]    $Pol
 )	
 	
 Begin 
-{ Test-A9CLIConnection
+{ Test-A9Connection -ClientType 'SshClient' 
 }
 process
 {   $cmd = "showcim "
@@ -51,17 +51,17 @@ Function Start-A9CIM_CLI
 .SYNOPSIS
     Start the CIM server to service CIM requests
 .DESCRIPTION
-    The Start-CIM cmdlet starts the CIM server to service CIM requests. By default, the CIM server is not started until this command is issued.
+    The cmdlet starts the CIM server to service CIM requests. By default, the CIM server is not started until this command is issued.
 .EXAMPLE
     The following example starts the CIM server:
 
-    Start-CIM
+    Start-A9CIM_CLI
     CIM server will start shortly.
 #>
 [CmdletBinding()]
 param()	
 begin
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }	
 process 
 {   $cmd = "startcim "
@@ -77,7 +77,7 @@ Function Set-A9CIM_CLI
 .SYNOPSIS
     Set the CIM server properties
 .DESCRIPTION
-    The Set-CIM cmdlet sets properties of the CIM server, including options to enable/disable the HTTP and HTTPS ports for the CIM server. setcim allows
+    The cmdlet sets properties of the CIM server, including options to enable/disable the HTTP and HTTPS ports for the CIM server. setcim allows
     a user to enable/disable the SLP port. The command also sets the CIM server policy.
 .PARAMETER F
     Forces the operation of the setcim command, bypassing the typical confirmation message.
@@ -103,23 +103,23 @@ Function Set-A9CIM_CLI
 .EXAMPLE
     To disable the HTTPS ports:
 
-        Set-CIM -F -Https Disable
+    PS:> Set-A9CIM_CLI -F -Https Disable
 .EXAMPLE
     To enable the HTTPS port:
 
-    Set-CIM -F -Https Enable
+    PS:> Set-A9CIM_CLI -F -Https Enable
 .EXAMPLE
     To disable the HTTP port and enable the HTTPS port:
 
-        Set-CIM -F -Http Disable -Https Enable
+    PS:> Set-A9CIM_CLI -F -Http Disable -Https Enable
 .EXAMPLE
     To set the no_use_pegasus_interop_namespace policy:
 
-    Set-CIM -F -Pol no_use_pegasus_interop_namespace
+    PS:> Set-A9CIM_CLI -F -Pol no_use_pegasus_interop_namespace
 .EXAMPLE
     To set the replica_entity policy:
 
-    Set-CIM -F -Pol replica_entity
+    PS:> Set-A9CIM_CLI -F -Pol replica_entity
 .NOTES
     Access to all domains is required to run this command.    You cannot disable both of the HTTP and HTTPS ports.
 
@@ -144,7 +144,7 @@ param(  [Parameter(HelpMessage = "To forces the operation")]
                                                 [String]    $Pol
 )	
 Begin	
-{   Test-A8CLIConnection
+{   Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {   $cmd = "setcim "
@@ -169,7 +169,7 @@ Function Stop-A9CIM_CLI
 .SYNOPSIS
     Stop the CIM server. Future CIM requests will be not supported.
 .DESCRIPTION
-    The Stop-CIM cmdlet stops the CIM server from servicing CIM requests.
+    The cmdlet stops the CIM server from servicing CIM requests.
 .PARAMETER F
     Specifies that the operation is forced. If this option is not used, the command requires confirmation before proceeding with its operation.
 .PARAMETER X
@@ -178,20 +178,20 @@ Function Stop-A9CIM_CLI
 .EXAMPLE
     The following example stops the CIM server without confirmation
 
-    Stop-CIM -F        
+    Stop-A9CIM_CLI -F        
 
     The following example stops the CIM server immediately without graceful shutdown notice and confirmation:
 
-    Stop-CIM -F -X        
+    Stop-A9CIM_CLI -F -X        
 #>
 [CmdletBinding()]
-param(  [Parameter(HelpMessage = "To forces the operation")]
+param(  [Parameter()]
         [Switch]    $F,
-        [Parameter(HelpMessage = "To terminates the server immediately without graceful shutdown notice")]        
+        [Parameter()]        
         [Switch]    $X
     )	
 Begin	
-{   Test-A8CLIConnection
+{   Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {   $cmd = "setcim "	

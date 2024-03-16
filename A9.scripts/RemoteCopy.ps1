@@ -48,7 +48,7 @@ Param(
 	[Parameter(ValueFromPipeline=$true)]					[String]	$LocalSnapCPG
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -118,7 +118,7 @@ Param(
 		[Parameter(ValueFromPipeline=$true)]					[String]	$SnapshotName
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -178,7 +178,7 @@ Param(
 		[Parameter(ValueFromPipeline=$true)]					[String]	$TargetName
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -239,7 +239,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName
 		[Parameter(ValueFromPipeline=$true)]					[switch]	$FullSync
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -287,7 +287,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName
 		[Parameter(ValueFromPipeline=$true)]		[boolean]	$KeepSnap	
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$uri = '/remotecopygroups/'+ $GroupName
@@ -384,7 +384,7 @@ Param(
 	[Parameter(ValueFromPipeline=$true)]	[int]		$MultiTargetPeerPersistence
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -501,7 +501,7 @@ Param(
 	[Parameter(ValueFromPipeline=$true)]								[int]		$MultiTargetPeerPersistence
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -580,7 +580,7 @@ Param(
 	[Parameter(ValueFromPipeline=$true)]					[Switch]	$LocalGroupsDirection
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -646,7 +646,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$GroupN
 		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$SecVolumeName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -706,7 +706,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName
 		[Parameter(ValueFromPipeline=$true)]					[boolean]	$RemoveSecondaryVolume
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -765,7 +765,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]							[String]	$Tar
 		[Parameter(ValueFromPipeline=$true)]											[Switch]	$Disabled
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -824,7 +824,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetNam
 		[Parameter(ValueFromPipeline=$true)]					[Switch]	$MirrorConfig
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -885,7 +885,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName
 		[Parameter(ValueFromPipeline=$true)]					[String]	$RemoteVolumeName
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -933,7 +933,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName
 		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -993,7 +993,7 @@ Param(
 		[Parameter(ValueFromPipeline=$true)]					[Switch]	$SkipBlock
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -1036,7 +1036,7 @@ Function Get-A9RCopyInfo
 [CmdletBinding()]
 Param()
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -1072,7 +1072,7 @@ Function Get-A9RCopyTarget
 Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$TargetName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -1122,7 +1122,7 @@ Function Get-A9RCopyGroup
 Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$GroupName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -1190,7 +1190,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
 		[String]	$TargetName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -1233,7 +1233,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName
 		[Parameter(ValueFromPipeline=$true)]					[String]	$VolumeName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -1275,7 +1275,7 @@ Function Get-A9RCopyLink
 Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$LinkName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null

@@ -2,7 +2,7 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 	
-Function Show-vVolvm
+Function Show-A9vVolvm_CLI
 {
 <#
 .SYNOPSIS
@@ -14,17 +14,17 @@ Function Show-vVolvm
     can be used to determine the association between virtual machines and their associated virtual volumes. showvvolvm will also show the
     accumulation of space usage information for a virtual machine.
 .EXAMPLE
-	Show-vVolvm -container_name XYZ -option listcols 
+	PS:> Show-A9vVolvm_CLI -container_name XYZ -option listcols 
 .EXAMPLE
-	Show-vVolvm -container_name XYZ -Detailed 
+	PS:> Show-A9vVolvm_CLI -container_name XYZ -Detailed 
 .EXAMPLE
-	Show-vVolvm -container_name XYZ -StorageProfiles
+	PS:> Show-A9vVolvm_CLI -container_name XYZ -StorageProfiles
 .EXAMPLE
-	Show-vVolvm -container_name XYZ -Summary 
+	PS:> Show-A9vVolvm_CLI -container_name XYZ -Summary 
 .EXAMPLE
-	Show-vVolvm -container_name XYZ -Binding
+	PS:> Show-A9vVolvm_CLI -container_name XYZ -Binding
 .EXAMPLE
-	Show-vVolvm -container_name XYZ -VVAssociatedWithVM	
+	PS:> Show-A9vVolvm_CLI -container_name XYZ -VVAssociatedWithVM	
 .PARAMETER container_name
     The name of the virtual volume storage container. May be "sys:all" to display all VMs.
 .PARAMETER Listcols
@@ -79,6 +79,9 @@ param(	[Parameter()]	[String]	$container_name,
 		[Parameter()]	[switch]	$AutoDismissed,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$VM_name
 	)	
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process	
 {	$cmd = "showvvolvm "
 	if($ListCols)
@@ -103,20 +106,19 @@ process
 }
 }
 
-Function Get-vVolSc
+Function Get-A9vVolSc_CLI
 {
 <#
 .SYNOPSIS
-    The Get-vVolSc command displays VVol storage containers, used to contain
+    The command displays VVol storage containers, used to contain
     VMware Volumes for Virtual Machines (VVols).
-
 .DESCRIPTION
-    The Get-vVolSc command displays VVol storage containers, used to contain
+    The command displays VVol storage containers, used to contain
     VMware Volumes for Virtual Machines (VVols).
 .EXAMPLE
-	Get-vVolSc 
+	PS:> Get-A9vVolSc_CLI 
 .EXAMPLE
-	Get-vVolSc -Detailed -SC_name test
+	PS:> Get-A9vVolSc_CLI -Detailed -SC_name test
 .PARAMETER Listcols
 	List the columns available to be shown in the -showcols option described below.
 .PARAMETER Detailed
@@ -130,6 +132,9 @@ param(	[Parameter()]	[switch]	$Detailed,
 		[Parameter()]	[switch]	$Listcols,
 		[Parameter()]	[String]	$SC_name
 	)	
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process	
 {	$cmd= "showvvolsc "	
 	if ($Listcols)		{	$cmd+=" -listcols "	}
@@ -140,23 +145,23 @@ process
 }
 }
 
-Function Set-VVolSC
+Function Set-A9VVolSC_CLI
 {
 <#
 .SYNOPSIS
-    Set-VVolSC can be used to create and remove storage containers for VMware Virtual Volumes (VVols).
+    Used to create and remove storage containers for VMware Virtual Volumes (VVols).
 
     VVols are managed by the vSphere environment, and storage containers are used to maintain a logical collection of them. No physical space is
     pre-allocated for a storage container. Special VV sets (see showvvset) are used to manage VVol storage containers.
 .DESCRIPTION    
-    Set-VVolSC can be used to create and remove storage containers for VMware Virtual Volumes (VVols).
+    Used to create and remove storage containers for VMware Virtual Volumes (VVols).
 
     VVols are managed by the vSphere environment, and storage containers are used to maintain a logical collection of them. No physical space is
     pre-allocated for a storage container. The special VV sets (see showvvset) are used to manage VVol storage containers.
 .EXAMPLE
-	Set-VVolSC -vvset XYZ (Note: set: already include in code please dont add with vvset)
+	PS:> Set-A9VVolSC_CLI -vvset XYZ (Note: set: already include in code please dont add with vvset)
 .EXAMPLE
-	Set-VVolSC -Create -vvset XYZ
+	PS:> Set-A9VVolSC_CLI -Create -vvset XYZ
 .PARAMETER Create
 	An empty existing <vvset> not already marked as a VVol Storage Container will be updated. The VV set should not contain any
 	existing volumes (see -keep option below), must not be already marked as a storage container, nor may it be in use for other
@@ -177,6 +182,9 @@ param(	[Parameter()]	[String]	$vvset,
 		[Parameter()]	[switch]	$Remove,
 		[Parameter()]	[switch]	$Keep
 	)	
+Begin
+{	Test-A9Connection -ClientType "SshClient"
+}
 process
 {	$cmd= " setvvolsc -f"			
 	if ($Create){	$cmd += " -create "	}

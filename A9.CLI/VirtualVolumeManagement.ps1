@@ -15,9 +15,10 @@ Function Add-A9Vv_CLI
 	Add-Vv -VV_WWN  migvv.0:50002AC00037001A
 	Specifies the local name that should be given to the volume being admitted and Specifies the World Wide Name (WWN) of the remote volumes to be admitted.
 .EXAMPLE
-	Add-Vv -VV_WWN  "migvv.0:50002AC00037001A migvv.1:50002AC00047001A"
+	PS:> Add-A9Vv_CLI -VV_WWN  "migvv.0:50002AC00037001A migvv.1:50002AC00047001A"
 .EXAMPLE
-	Add-Vv -DomainName XYZ -VV_WWN X:Y
+	PS:> Add-A9Vv_CLI -DomainName XYZ -VV_WWN X:Y
+
 	Create the admitted volume in the specified domain. The default is to create it in the current domain, or no domain if the current domain is not set.
 .PARAMETER DomainName
 	Create the admitted volume in the specified domain   
@@ -33,7 +34,7 @@ param(	[Parameter(ParameterSetName="wwn")]
 		[Parameter(Mandatory=$true, ParameterSetName="New")]	[String] 	$VV_WWN_NewWWN
 	)	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }	
 process	
 {	if($VV_WWN -Or $VV_WWN_NewWWN)
@@ -57,9 +58,9 @@ Function Compress-A9LD_CLI
 {
 <#
 .SYNOPSIS
-	Compress-LD - Consolidate space in logical disks (LD).
+	Consolidate space in logical disks (LD).
 .DESCRIPTION
-	The Compress-LD command consolidates space on the LDs.
+	The command consolidates space on the LDs.
 .PARAMETER Pat
 	Compacts the LDs that match any of the specified patterns.
 .PARAMETER Cons
@@ -85,7 +86,7 @@ param(	[Parameter()]	[switch]	$Pat,
 		[Parameter(Mandatory=$True)]	[String]	$LD_Name
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 PROCESS
 {	$Cmd = " compactld -f "
@@ -105,9 +106,9 @@ Function Find-A9LD_CLI
 {
 <#
 .SYNOPSIS
-	Find-LD - Perform validity checks of data on logical disks (LD).
+	Perform validity checks of data on logical disks (LD).
 .DESCRIPTION
-	The Find-LD command executes consistency checks of data on LDs
+	The command executes consistency checks of data on LDs
 	in the event of an uncontrolled system shutdown and optionally repairs
 	inconsistent LDs.
 .PARAMETER Y
@@ -138,7 +139,7 @@ param(
 	[Parameter(Mandatory=$True)]	[String]	$LD_Name
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 PROCESS
 {	$Cmd = " checkld "
@@ -200,7 +201,7 @@ param(	[Parameter()]	[String]	$Cpg,
 		[Parameter()]	[String]	$LD_Name
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 process
 {	$Cmd = " showld "
@@ -242,9 +243,9 @@ Function Get-A9LDChunklet_CLI
 {
 <#
 .SYNOPSIS
-	Get-LDChunklet - Show chunklet mapping for a logical disk.
+	Show chunklet mapping for a logical disk.
 .DESCRIPTION
-	The Get-LDChunklet command displays configuration information about the chunklet mapping for one logical disk (LD).
+	The command displays configuration information about the chunklet mapping for one logical disk (LD).
 .PARAMETER Degraded
 	Shows only the chunklets in sets that cause the logical disk availability to be degraded. For example, if the logical disk normally
 	has cage level availability, but one set has two chunklets in the same cage, then the chunklets in that set are shown. This option cannot be
@@ -267,7 +268,7 @@ param(	[Parameter()]	[switch]	$Degraded,
 		[Parameter()]	[String]	$LD_Name
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 process
 {	$Cmd = " showldch "
@@ -305,10 +306,10 @@ Function Get-A9Space_CLI
 .DESCRIPTION
     Displays estimated free space for logical disk creation.
 .EXAMPLE
-    Get-Space 
+    PS:> Get-A9Space_CLI 
 	Displays estimated free space for logical disk creation.
 .EXAMPLE
-    Get-Space -RaidType r1
+    PS:> Get-A9Space_CLI -RaidType r1
 		
 	Example displays the estimated free space for a RAID-1 logical disk:
 .PARAMETER cpgName
@@ -344,6 +345,9 @@ param(	[Parameter(ValueFromPipeline=$true,parametersetname='CPGName')]	[String]	
 		[Parameter(ValueFromPipeline=$true,parametersetname='SSZ')]		
 		[ValidateRange(0,65536)]										[String]	$SSZ
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process	
 {	$sysspacecmd = "showspace "
 	$sysinfo = @{}	
@@ -469,13 +473,16 @@ Function Get-A9Vv_CLI
 .DESCRIPTION
     Get list of virtual volumes per Domain and CPG
 .EXAMPLE
-    Get-Vv
+    PS:> Get-A9Vv_CLI
+
 	List all virtual volumes
 .EXAMPLE	
-	Get-Vv -vvName PassThru-Disk 
+	PS:> Get-A9Vv_CLI -vvName PassThru-Disk 
+
 	List virtual volume PassThru-Disk
 .EXAMPLE	
-	Get-Vv -vvName PassThru-Disk -Domain mydom
+	PS:> Get-A9Vv_CLI -vvName PassThru-Disk -Domain mydom
+
 	List volumes in the domain specified DomainName	
 .PARAMETER vvName 
     Specify name of the volume. 
@@ -521,27 +528,27 @@ Function Get-A9VvList_CLI
 .DESCRIPTION
     The Get-VvList command displays information about all Virtual Volumes (VVs) or a specific VV in a system.
 .EXAMPLE
-    Get-VvList
+    PS:> Get-A9VvList_CLI
 
 	List all virtual volumes
 .EXAMPLE	
-	Get-VvList -vvName xyz 
+	PS:> Get-A9VvList_CLI -vvName xyz 
 
 	List virtual volume xyz
 .EXAMPLE	
-	Get-VvList -Space -vvName xyz 
+	PS:> Get-A9VvList_CLI -Space -vvName xyz 
 .EXAMPLE	
-	Get-VvList -Pattern -Prov full
+	PS:> Get-A9VvList_CLI -Pattern -Prov full
 
 	List virtual volume  provision type as "tpvv"
 .EXAMPLE	
-	Get-VvList -Pattern -Type base
+	PS:> Get-A9VvList_CLI -Pattern -Type base
 
 	List snapshot(vitual copy) volumes 
 .EXAMPLE	
-	Get-VvList -R -Pattern -Prov tp* -Host TTest -Baseid 50
+	PS:> Get-A9VvList_CLI -R -Pattern -Prov tp* -Host TTest -Baseid 50
 .EXAMPLE	
-	Get-VvList -Showcols "Id,Name"
+	PS:> Get-A9VvList_CLI -Showcols "Id,Name"
 .PARAMETER Listcols
 	List the columns available to be shown in the -showcols option described below
 .PARAMETER D
@@ -552,35 +559,27 @@ Function Get-A9VvList_CLI
 	are shown: Id Name Policies
 .PARAMETER Space
 	Displays Logical Disk (LD) space use by the VVs.  The following columns are shown:
-	Id Name Prov Compr Dedup Type Adm_Rsvd_MB Adm_Used_MB Snp_Rsvd_MB
-	Snp_Used_MB Snp_Used_Perc Warn_Snp_Perc Limit_Snp_Perc Usr_Rsvd_MB
-	Usr_Used_MB Usr_Used_Perc Warn_Usr_Perc Limit_Usr_Perc Tot_Rsvd_MB
-	Tot_Used_MB VSize_MB Host_Wrt_MB Compaction Compression
+	Id Name Prov Compr Dedup Type Adm_Rsvd_MB Adm_Used_MB Snp_Rsvd_MB Snp_Used_MB Snp_Used_Perc Warn_Snp_Perc Limit_Snp_Perc Usr_Rsvd_MB
+	Usr_Used_MB Usr_Used_Perc Warn_Usr_Perc Limit_Usr_Perc Tot_Rsvd_MB Tot_Used_MB VSize_MB Host_Wrt_MB Compaction Compression
 
 	Note: For snapshot (vcopy) VVs, the Adm_Used_MB, Snp_Used_MB, Usr_Used_MB and the corresponding _Perc columns have a '*' before
 	the number for two reasons: to indicate that the number is an estimate that must be updated using the updatesnapspace command, and to indicate
 	that the number is not included in the total for the column since the corresponding number for the snapshot's base VV already includes that number.
 .PARAMETER R
-	Displays raw space use by the VVs.  The following columns are shown:
-	Id Name Prov Compr Dedup Type Adm_RawRsvd_MB Adm_Rsvd_MB Snp_RawRsvd_MB
-	Snp_Rsvd_MB Usr_RawRsvd_MB Usr_Rsvd_MB Tot_RawRsvd_MB Tot_Rsvd_MB
-	VSize_MB
+	Displays raw space use by the VVs.  The following columns are shown: Id Name Prov Compr Dedup Type Adm_RawRsvd_MB Adm_Rsvd_MB Snp_RawRsvd_MB
+	Snp_Rsvd_MB Usr_RawRsvd_MB Usr_Rsvd_MB Tot_RawRsvd_MB Tot_Rsvd_MB VSize_MB
 .PARAMETER Zone
 	Displays mapping zone information for VVs. The following columns are shown:
-	Id Name Prov Compr Dedup Type VSize_MB Adm_Zn Adm_Free_Zn Snp_Zn
-	Snp_Free_Zn Usr_Zn Usr_Free_Zn
+	Id Name Prov Compr Dedup Type VSize_MB Adm_Zn Adm_Free_Zn Snp_Zn Snp_Free_Zn Usr_Zn Usr_Free_Zn
 .PARAMETER G
 	Displays the SCSI geometry settings for the VVs.  The following columns are shown: Id Name SPT HPC SctSz
 .PARAMETER Alert
 	Indicates whether alerts are posted on behalf of the VVs. The following columns are shown:
-	Id Name Prov Compr Dedup Type VSize_MB Snp_Used_Perc Warn_Snp_Perc
-	Limit_Snp_Perc Usr_Used_Perc Warn_Usr_Perc Limit_Usr_Perc
-	Alert_Adm_Fail_Y Alert_Snp_Fail_Y Alert_Snp_Wrn_Y Alert_Snp_Lim_Y
-	Alert_Usr_Fail_Y Alert_Usr_Wrn_Y Alert_Usr_Lim_Y
+	Id Name Prov Compr Dedup Type VSize_MB Snp_Used_Perc Warn_Snp_Perc Limit_Snp_Perc Usr_Used_Perc Warn_Usr_Perc Limit_Usr_Perc
+	Alert_Adm_Fail_Y Alert_Snp_Fail_Y Alert_Snp_Wrn_Y Alert_Snp_Lim_Y Alert_Usr_Fail_Y Alert_Usr_Wrn_Y Alert_Usr_Lim_Y
 .PARAMETER AlertTime
 	Shows times when alerts were posted (when applicable). The following columns are shown:
-	Id Name Alert_Adm_Fail Alert_Snp_Fail Alert_Snp_Wrn Alert_Snp_Lim
-	Alert_Usr_Fail Alert_Usr_Wrn Alert_Usr_Lim
+	Id Name Alert_Adm_Fail Alert_Snp_Fail Alert_Snp_Wrn Alert_Snp_Lim Alert_Usr_Fail Alert_Usr_Wrn Alert_Usr_Lim
 .PARAMETER CPProg
 	Shows the physical copy and promote progress. The following columns are shown:
 	Id Name Prov Compr Dedup Type CopyOf VSize_MB Copied_MB Copied_Perc
@@ -609,26 +608,21 @@ Function Get-A9VvList_CLI
 	Pattern for matching VVs to show (see below for description of <pattern>) If the -p option is specified multiple times, each
 	instance of <pattern> adds additional candidate VVs that match that pattern.        
 .PARAMETER CPG
-    Show only VVs whose UsrCPG or SnpCPG matches the one or more of
-    the cpgname_or_patterns.
+    Show only VVs whose UsrCPG or SnpCPG matches the one or more of the cpgname_or_patterns.
 .PARAMETER Prov
     Show only VVs with Prov (provisioning) values that match the prov_or_pattern.
 .PARAMETER Type
 	Show only VVs of types that match the type_or_pattern.
 .PARAMETER HostV
-    Show only VVs that are exported as VLUNs to hosts with names that
-    match one or more of the hostname_or_patterns.
+    Show only VVs that are exported as VLUNs to hosts with names that match one or more of the hostname_or_patterns.
 .PARAMETER Baseid
     Show only VVs whose BsId column matches one more of the baseid_or_patterns.
 .PARAMETER Copyof
-    Show only VVs whose CopyOf column matches one more of the
-    vvname_or_patterns.
+    Show only VVs whose CopyOf column matches one more of the vvname_or_patterns.
 .PARAMETER Rcopygroup
-	Show only VVs that are in Remote Copy groups that match
-	one or more of the groupname_or_patterns.
+	Show only VVs that are in Remote Copy groups that match one or more of the groupname_or_patterns.
 .PARAMETER Policy
-	Show only VVs whose policy matches the one or more of the
-	policy_or_pattern.
+	Show only VVs whose policy matches the one or more of the policy_or_pattern.
 .PARAMETER vmName
 	Show only VVs whose vmname matches one or more of the vvname_or_patterns.
 .PARAMETER vmId
@@ -689,7 +683,7 @@ Function Get-A9VvList_CLI
 		[Parameter()]	[String]	$ShowCols
 	)	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }	
 process	
 {	$GetvVolumeCmd = "showvv "
@@ -862,16 +856,19 @@ Function Get-A9VvSet_CLI
 .DESCRIPTION
     Get lists of Virtual Volume(VV) sets defined on the storage system and their members
 .EXAMPLE
-    Get-VvSet
+    PS:> Get-A9VvSet_CLI
+
 	List all virtual volume set(s)
 .EXAMPLE  
-	Get-VvSet -vvSetName "MyVVSet" 
+	PS:> Get-A9VvSet_CLI -vvSetName "MyVVSet" 
+
 	List Specific VVSet name "MyVVSet"
 .EXAMPLE  
-	Get-VvSet -vvName "MyVV" 
+	PS:> Get-A9VvSet_CLI -vvName "MyVV" 
+
 	List VV sets containing VVs matching vvname "MyVV"
 .EXAMPLE	
-	Get-VvSet -VV -vvName AIX_PERF_VV_SET
+	PS:> Get-A9VvSet_CLI -VV -vvName AIX_PERF_VV_SET
 .PARAMETER vvSetName 
     Specify name of the vvset to be listed.
 .PARAMETER Detailed
@@ -891,7 +888,7 @@ param(	[Parameter()]	[switch]	$Detailed,
 		[Parameter()]	[String]	$vvName
 	)	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }	
 process
 {	$GetVVSetCmd = "showvvset "
@@ -923,21 +920,21 @@ Function Import-A9Vv_CLI
 {
 <#
 .SYNOPSIS
-	The Import-Vv command starts migrating the data from a remote LUN to the local Storage System. The remote LUN should have been prepared using the admitvv command.
+	The Import Vv command starts migrating the data from a remote LUN to the local Storage System. The remote LUN should have been prepared using the admitvv command.
 .DESCRIPTION  
-	The Import-Vv command starts migrating the data from a remote LUN to the local Storage System. The remote LUN should have been prepared using the admitvv command.
+	The Import Vv command starts migrating the data from a remote LUN to the local Storage System. The remote LUN should have been prepared using the admitvv command.
 .EXAMPLE
-	Import-Vv -Usrcpg asCpg
+	PS:> Import-A9Vv_CLI -Usrcpg asCpg
 .EXAMPLE
-	Import-Vv -Usrcpg asCpg -VVName as4
+	PS:> Import-A9Vv_CLI -Usrcpg asCpg -VVName as4
 .EXAMPLE
-	Import-Vv -Usrcpg asCpg -Snapname asTest -VVName as4
+	PS:> Import-A9Vv_CLI -Usrcpg asCpg -Snapname asTest -VVName as4
 .EXAMPLE
-	Import-Vv -Usrcpg asCpg -Snp_cpg asCpg -VVName as4
+	PS:> Import-A9Vv_CLI -Usrcpg asCpg -Snp_cpg asCpg -VVName as4
 .EXAMPLE
-	Import-Vv -Usrcpg asCpg -Priority high -VVName as4
+	PS:> Import-A9Vv_CLI -Usrcpg asCpg -Priority high -VVName as4
 .EXAMPLE
-	Import-Vv -Usrcpg asCpg -NoTask -VVName as4
+	PS:> Import-A9Vv_CLI -Usrcpg asCpg -NoTask -VVName as4
 .PARAMETER NoCons
 	Any VV sets specified will not be imported as consistent groups. Allows multiple VV sets to be specified.
 	If the VV set contains any VV members that in a previous import attempt were imported consistently, they will continue to get imported consistently.
@@ -996,7 +993,7 @@ param(	[Parameter()]	[String]	$Usrcpg ,
 		[Parameter()]	[String]	$VVName 
 	)		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 process	
 {	$Cmd = "importvv -f"			
@@ -1036,29 +1033,29 @@ Function New-A9Vv_CLI
 .DESCRIPTION
 	Creates a vitual volume.
 .EXAMPLE	
-	New-Vv
+	PS:> New-A9Vv_CLI
 .EXAMPLE
-	New-Vv -vvName AVV
+	PS:> New-A9Vv_CLI -vvName AVV
 .EXAMPLE
-	New-Vv -vvName AVV -CPGName ACPG
+	PS:> New-A9Vv_CLI -vvName AVV -CPGName ACPG
 .EXAMPLE
-	New-Vv -vvName XX -CPGName ZZ
+	PS:> New-A9Vv_CLI -vvName XX -CPGName ZZ
 .EXAMPLE
-	New-Vv -vvName AVV -CPGName ZZ
+	PS:> New-A9Vv_CLI -vvName AVV -CPGName ZZ
 .EXAMPLE
-	New-Vv -vvName AVV1 -CPGName ZZ -Force
+	PS:> New-A9Vv_CLI -vvName AVV1 -CPGName ZZ -Force
 .EXAMPLE
-	New-Vv -vvName AVV -CPGName ZZ -Force -tpvv
+	PS:> New-A9Vv_CLI -vvName AVV -CPGName ZZ -Force -tpvv
 .EXAMPLE
-	New-Vv -vvName AVV -CPGName ZZ -Force -Template Test_Template
+	PS:> New-A9Vv_CLI -vvName AVV -CPGName ZZ -Force -Template Test_Template
 .EXAMPLE
-    New-Vv -vvName PassThru-Disk -Size 100g -CPGName HV -vvSetName MyVolumeSet
+    PS:> New-A9Vv_CLI -vvName PassThru-Disk -Size 100g -CPGName HV -vvSetName MyVolumeSet
 
 	The command creates a new volume named PassThru-disk of size 100GB.
 	The volume is created under the HV CPG group and will be contained inside the MyvolumeSet volume set.
 	If MyvolumeSet does not exist, the command creates a new volume set.	
 .EXAMPLE
-    New-Vv -vvName PassThru-Disk1 -Size 100g -CPGName MyCPG -tpvv -minalloc 2048 -vvSetName MyVolumeSet 
+    PS:> New-A9Vv_CLI -vvName PassThru-Disk1 -Size 100g -CPGName MyCPG -tpvv -minalloc 2048 -vvSetName MyVolumeSet 
 	
 	The command creates a new thin provision volume named PassThru-disk1 of size 100GB.
 	The volume is created under the MyCPG CPG group and will be contained inside the MyvolumeSet volume set. If MyvolumeSet does not exist, the command creates a new volume set and allocates minimum 2048MB.
@@ -1131,7 +1128,10 @@ param(	[Parameter(Mandatory=$true)]			[String]	$vvName,
 		[Parameter(ValueFromPipeline=$true)]	[String]    $minAlloc,
 		[Parameter(ValueFromPipeline=$true)]	[String]    $Snp_aw,
 		[Parameter(ValueFromPipeline=$true)]	[String]    $Snp_al
-	)		
+	)	
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process	
 {	if ( !( Test-CLIObject -objectType 'cpg' -objectName $CPGName -SANConnection $SANConnection))
 		{	write-verbose " CPG $CPGName does not exist. Please use New-CPG to create a CPG before creating vv"  
@@ -1230,21 +1230,25 @@ Function New-A9VvSet_CLI
 .DESCRIPTION
 	Creates a new VolumeSet
 .EXAMPLE
-    New-VvSet -vvSetName "MyVolumeSet"  
+    PS:> New-A9VvSet_CLI -vvSetName "MyVolumeSet"  
+
 	Creates a VolumeSet named MyVolumeSet
 .EXAMPLE	
-	New-VvSet -vvSetName "MYVolumeSet" -Domain MyDomain
+	PS:> New-A9VvSet_CLI -vvSetName "MYVolumeSet" -Domain MyDomain
+
 	Creates a VolumeSet named MyVolumeSet in the domain MyDomain
 .EXAMPLE
-	New-VvSet -vvSetName "MYVolumeSet" -Domain MyDomain -vvName "MyVV"
+	PS:> New-A9VvSet_CLI -vvSetName "MYVolumeSet" -Domain MyDomain -vvName "MyVV"
+
 	Creates a VolumeSet named MyVolumeSet in the domain MyDomain and adds VV "MyVV" to that vvset
 .EXAMPLE
-	New-VvSet -vvSetName "MYVolumeSet" -vvName "MyVV"
+	PS:> New-A9VvSet_CLI -vvSetName "MYVolumeSet" -vvName "MyVV"
+
 	adds vv "MyVV"  to existing vvset "MyVolumeSet" if vvset exist, if not it will create vvset and adds vv to vvset
 .EXAMPLE
-	New-VvSet -vvSetName asVVset2 -vvName "as4 as5 as6"
+	PS:> New-A9VvSet_CLI -vvSetName asVVset2 -vvName "as4 as5 as6"
 .EXAMPLE
-	New-VvSet -vvSetName set:asVVset3 -Add -vvName as3
+	PS:> New-A9VvSet_CLI -vvSetName set:asVVset3 -Add -vvName as3
 .PARAMETER vvSetName 
     Specify new name of the VolumeSet
 .PARAMETER Domain 
@@ -1266,10 +1270,12 @@ param(	[Parameter(Mandatory=$true)]			[String]	$vvSetName,
 		[Parameter()]	[String]	$Comment,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$Domain,		
 		[Parameter(ValueFromPipeline=$true)]	[String]	$vvName
-	)		
+	)	
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 {	$CreateVolumeSetCmd = "createvvset "
-	
 	if($Add) 	{	$CreateVolumeSetCmd += " -add "				}
 	if($Count) 	{	$CreateVolumeSetCmd += " -cnt $Count "		}
 	if($Comment){	$CreateVolumeSetCmd += " -comment $Comment "}
@@ -1279,13 +1285,13 @@ process
 	$Result = Invoke-CLICommand -cmds  $CreateVolumeSetCmd
 	if($Add)
 		{	if([string]::IsNullOrEmpty($Result))
-				{	return "Success : New-VvSet command executed vv : $vvName is added to vvSet : $vvSetName"
+				{	return "Success : command executed vv : $vvName is added to vvSet : $vvSetName"
 				}
 			else{	return $Result	}
 		}	
 	else
 	{	if([string]::IsNullOrEmpty($Result))
-		{	return "Success : New-VvSet command executed vvSet : $vvSetName is created with vv : $vvName"
+		{	return "Success :  command executed vvSet : $vvSetName is created with vv : $vvName"
 		}
 		else
 		{	return $Result
@@ -1303,7 +1309,7 @@ Function Remove-A9LD_CLI
 .DESCRIPTION
 	The Remove-LD command removes a specified LD from the system service group.
 .EXAMPLE
-	Remove-LD -LD_Name xxx
+	PS:> Remove-A9LD_CLI -LD_Name xxx
 .PARAMETER Pat
 	Specifies glob-style patterns. All LDs matching the specified pattern are removed. By default, confirmation is required to proceed
 	with the command unless the -f option is specified. This option must be	used if the pattern specifier is used.
@@ -1323,6 +1329,9 @@ param(	[Parameter()]	[switch]	$Pat,
 		[Parameter()]	[switch]	$Unused,
 		[Parameter(Mandatory=$True)][String]	$LD_Name
 		)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 {	$Cmd = " removeld -f "
 	if($Pat) 	{	$Cmd += " -pat " }
@@ -1343,14 +1352,16 @@ Function Remove-A9Vv_CLI
 .DESCRIPTION
 	Delete virtual volumes         
 .EXAMPLE	
-	Remove-Vv -vvName PassThru-Disk -whatif
+	PS:> Remove-A9Vv_CLI -vvName PassThru-Disk -whatif
+
 	Dry-run of deleted operation on vVolume named PassThru-Disk
 .EXAMPLE	
-	Remove-Vv -vvName VV1 -force -Snaponly
+	PS:> Remove-A9Vv_CLI -vvName VV1 -force -Snaponly
 .EXAMPLE	
-	Remove-Vv -vvName VV1 -force -Expired
+	PS:> Remove-A9Vv_CLI -vvName VV1 -force -Expired
 .EXAMPLE		
-	Remove-Vv -vvName PassThru-Disk -force
+	PS:> Remove-A9Vv_CLI -vvName PassThru-Disk -force
+
 	Forcibly deletes vVolume named PassThru-Disk 
 .PARAMETER vvName 
     Specify name of the volume to be removed. 
@@ -1383,6 +1394,9 @@ Function Remove-A9Vv_CLI
 		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Cascade, 
 		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Nowait
 	)		
+Begin
+{	Test-A9Connection -Clienttype 'SshClient'
+}	
 process	
 {	if (!(($force) -or ($whatif)))
 		{	return "FAILURE : Specify -force or -whatif options to delete or delete dryrun of a virtual volume"
@@ -1428,7 +1442,7 @@ Function Remove-A9Vv_Ld_Cpg_Templates_CLI
 .DESCRIPTION
 	The Remove-Vv_Ld_Cpg_Templates command removes one or more virtual volume (VV), logical disk (LD), and common provisioning group (CPG) templates.
 .EXAMPLE
-	Remove-Vv_Ld_Cpg_Templates -Template_Name xxx
+	PS:> Remove-A9Vv_Ld_Cpg_Templates_CLI -Template_Name xxx
 .PARAMETER Template_Name
 	Specifies the name of the template to be deleted, using up to 31 characters. This specifier can be repeated to remove multiple templates
 .PARAMETER Pat
@@ -1439,6 +1453,9 @@ Function Remove-A9Vv_Ld_Cpg_Templates_CLI
 param(	[Parameter()]	[String]	$Template_Name,
 		[Parameter()]	[switch]	$Pat
 )
+Begin
+{	Test-A9Connection -Clienttype 'SshClient'
+}
 process
 {	$Cmd = " removetemplate -f "
 	if($Pat)	{	$Cmd += " -pat "	}
@@ -1456,10 +1473,12 @@ Function Remove-A9VvSet_CLI
 .DESCRIPTION
 	Removes a VV set or removes VVs from an existing set.
 .EXAMPLE
-    Remove-VvSet -vvsetName "MyVVSet"  -force
+    PS:> Remove-A9VvSet_CLI -vvsetName "MyVVSet"  -force
+
 	Remove a VV set "MyVVSet"
 .EXAMPLE
-	Remove-VvSet -vvsetName "MyVVSet" -vvName "MyVV" -force
+	PS:> Remove-A9VvSet_CLI -vvsetName "MyVVSet" -vvName "MyVV" -force
+
 	Remove a single VV "MyVV" from a vvset "MyVVSet"
 .PARAMETER vvsetName 
     Specify name of the vvsetName
@@ -1475,7 +1494,10 @@ param(	[Parameter(Mandatory=$true)]	[String]	$vvsetName,
 		[Parameter()]					[String]	$vvName,
 		[Parameter()]					[switch]	$force,
 		[Parameter()]					[switch]	$Pat
-	)		
+	)	
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 {	if (!($force))
 		{	return "FAILURE : no -force option is selected to remove vvset"		}
@@ -1506,20 +1528,20 @@ Function Set-A9Template_CLI
 {
 <#
 .SYNOPSIS
-	Set-Template - Add, modify or remove template properties
+	Add, modify or remove template properties
 .DESCRIPTION
-The Set-Template command modifies the properties of existing templates.
+	The Set Template command modifies the properties of existing templates.
 .EXAMPLE
 	In the following example, template vvtemp1 is modified to support the
 	availability of data should a drive magazine fail (mag) and to use the
 	the stale_ss policy:
 
-	Set-Template -Option_Value " -ha mag -pol stale_ss v" -Template_Name vtemp1
+	PS:> Set-A9Template_CLI -Option_Value " -ha mag -pol stale_ss v" -Template_Name vtemp1
 .EXAMPLE 
 	In the following example, the -nrw and -ha mag options are added to the
 	template template1, and the -t option is removed:
 
-	Set-Template -Option_Value "-nrw -ha mag -remove -t" -Template_Name template1
+	PS:> Set-A9Template_CLI -Option_Value "-nrw -ha mag -remove -t" -Template_Name template1
 .PARAMETER Option_Value
 	Indicates the specified options and their values (if any) are added to an existing template. The specified option replaces the existing option
 	in the template. For valid options, refer to createtemplate command.
@@ -1535,6 +1557,9 @@ param(	[Parameter(Mandatory=$True)]	[String]	$Option_Value,
 		[Parameter(Mandatory=$True)]	[String]	$Template_Name,
 		[Parameter()]					[String]	$Remove
 )
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 {	$Cmd = " settemplate -f "
 	if($Remove)			{	$Cmd += " -remove $Remove "	}
@@ -1549,11 +1574,11 @@ Function Set-A9VvSpace_CLI
 {
 <#
 .SYNOPSIS
-	Set-VvSpace - Free SA and SD space from a VV if they are not in use.
+	Free SA and SD space from a VV if they are not in use.
 .DESCRIPTION
-	The Set-VvSpace command frees snapshot administration and snapshot data spaces from a Virtual Volume (VV) if they are not in use.
+	The command frees snapshot administration and snapshot data spaces from a Virtual Volume (VV) if they are not in use.
 .EXAMPLE
-	Set-VvSpace -VV_Name xxx
+	PS:> Set-A9VvSpace_CLI -VV_Name xxx
 .PARAMETER Pat
 	Remove the snapshot administration and snapshot data spaces from all the virtual volumes that match any of the specified glob-style patterns.
 .PARAMETER VV_Name
@@ -1563,6 +1588,9 @@ Function Set-A9VvSpace_CLI
 param(	[Parameter()]					[switch]	$Pat,
 		[Parameter(Mandatory=$True)]	[String]	$VV_Name
 )
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 {	$Cmd = " freespace -f "
 	if($Pat)		{	$Cmd += " -pat "}
@@ -1576,17 +1604,22 @@ Function Show-A9LdMappingToVvs_CLI
 {
 <#
 .SYNOPSIS
-	Show-LdMappingToVvs - Show mapping from a logical disk to virtual volumes.
+	Show mapping from a logical disk to virtual volumes.
 .DESCRIPTION
-	The Show-LdMappingToVvs command displays the mapping from a logical (LD) disk to virtual volumes (VVs).
+	The command displays the mapping from a logical (LD) disk to virtual volumes (VVs).
 .EXAMPLE
-	The following example displays the region of logical disk v0.usr.0 that is used for a virtual volume: Show-LdMappingToVvs -LD_Name v0.usr.0
+	The following example displays the region of logical disk v0.usr.0 that is used for a virtual volume: 
+	
+	PS:> Show-A9LdMappingToVvs_CLI -LD_Name v0.usr.0
 .PARAMETER LD_Name
 	Specifies the logical disk name.
 #>
 [CmdletBinding()]
 param(		[Parameter(Mandatory=$True)]	[String]	$LD_Name
 )
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 {	$Cmd = " showldmap "
 	if($LD_Name)	{	$Cmd += " $LD_Name " }
@@ -1614,9 +1647,9 @@ Function Show-A9RSV_CLI
 {
 <#
 .SYNOPSIS
-	Show-RSV - Show information about scsi reservations of virtual volumes (VVs).
+	Show information about scsi reservations of virtual volumes (VVs).
 .DESCRIPTION
-	The Show-RSV command displays SCSI reservation and registration information for Virtual Logical Unit Numbers (VLUNs) bound for a specified port.
+	The command displays SCSI reservation and registration information for Virtual Logical Unit Numbers (VLUNs) bound for a specified port.
 .PARAMETER VV_Name
 	Specifies the virtual volume name, using up to 31 characters.
 .PARAMETER SCSI3
@@ -1634,6 +1667,9 @@ param(	[Parameter()]	[switch]	$SCSI3,
 		[Parameter()]	[String]	$Hostname,
 		[Parameter()]	[String]	$VV_Name
 )
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 {	$Cmd = " showrsv "
 	if($SCSI3)		{	$Cmd += " -l scsi3 "}
@@ -1665,9 +1701,9 @@ Function Show-A9Template_CLI
 {
 <#
 .SYNOPSIS
-	Show-Template - Show templates.
+	Show templates.
 .DESCRIPTION
-	The Show-Template command displays existing templates that can be used for Virtual Volume (VV), Logical Disk (LD) Common Provisioning Group (CPG) creation.
+	The command displays existing templates that can be used for Virtual Volume (VV), Logical Disk (LD) Common Provisioning Group (CPG) creation.
 .PARAMETER T
 	Specifies that the template type displayed is a VV, LD, or CPG template.
 .PARAMETER Fit
@@ -1680,6 +1716,9 @@ param(	[Parameter()]	[String]	$T,
 		[Parameter()]	[switch]	$Fit,
 		[Parameter()]	[String]	$Template_name_or_pattern
 )
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process 
 {	$Cmd = " showtemplate "
 	if($T)	{	$Val = "vv","cpg" ,"ld"
@@ -1714,24 +1753,21 @@ Function Show-A9VvMappedToPD_CLI
 {
 <#
 .SYNOPSIS
-	Show-VvMappedToPD - Show which virtual volumes are mapped to a physical disk (or a chunklet in that physical disk).
+	Show which virtual volumes are mapped to a physical disk (or a chunklet in that physical disk).
 .DESCRIPTION
-	The Show-VvMappedToPD command displays the virtual volumes that are mapped to a particular physical disk.
+	The command displays the virtual volumes that are mapped to a particular physical disk.
 .EXAMPLE
-	Show-VvMappedToPD -PD_ID 4
+	PS:> Show-A9VvMappedToPD_CLI -PD_ID 4
 .EXAMPLE
-	Show-VvMappedToPD -Sum -PD_ID 4
+	PS:> Show-A9VvMappedToPD_CLI -Sum -PD_ID 4
 .EXAMPLE
-	Show-VvMappedToPD -P -Nd 1 -PD_ID 4
+	PS:> Show-A9VvMappedToPD_CLI -P -Nd 1 -PD_ID 4
 .PARAMETER PD_ID
-	Specifies the physical disk ID using an integer. This specifier is not
-	required if -p option is used, otherwise it must be used at least once
-	on the command line.
+	Specifies the physical disk ID using an integer. This specifier is not required if -p option is used, otherwise it must be used at least once on the command line.
 .PARAMETER Sum
 	Shows number of chunklets used by virtual volumes for different space types for each physical disk.
 .PARAMETER P
-	Specifies a pattern to select <PD_ID> disks.
-	The following arguments can be specified as patterns for this option: An item is specified as an integer, a comma-separated list of integers,
+	Specifies a pattern to select <PD_ID> disks. The following arguments can be specified as patterns for this option: An item is specified as an integer, a comma-separated list of integers,
 	or a range of integers specified from low to high.
 .PARAMETER Nd
 	Specifies one or more nodes. Nodes are identified by one or more integers (item). Multiple nodes are separated with a single comma
@@ -1779,7 +1815,6 @@ Function Show-A9VvMappedToPD_CLI
 	benchmark that takes into account I/O's per second, bandwidth and access time.
 	Disks that satisfy all of the specified characteristics are used. For example -p -fc_gt 60 -fc_lt 230 -nd 2 specifies all the disks that
 	have greater than 60 and less than 230 free chunklets and that are connected to node 2 through their primary path.
-
 .PARAMETER Sortcol
 	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
 	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
@@ -1809,6 +1844,9 @@ param(
 	[Parameter()]	[String]	$Sortcol,
 	[Parameter()]	[String]	$PD_ID
 )
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 { 	$Cmd = " showpdvv "
 	if($Sum)		{	$Cmd += " -sum "		 		}
@@ -1855,15 +1893,18 @@ Function Show-A9VvMapping_CLI
 {
 <#
 .SYNOPSIS
-	Show-VvMapping - Show mapping from the virtual volume to logical disks.
+	Show mapping from the virtual volume to logical disks.
 .DESCRIPTION
-	The Show-VvMapping command displays information about how virtual volume regions are mapped to logical disks.
+	The command displays information about how virtual volume regions are mapped to logical disks.
 .PARAMETER VV_Name
 	The virtual volume name.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$True)]	[String]	$VV_Name
 )
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 {	$Cmd = " showvvmap "
 	if($VV_Name)	{	$Cmd += " $VV_Name "}
@@ -1894,9 +1935,9 @@ Function Show-A9VvpDistribution_CLI
 {
 <#
 .SYNOPSIS
-	Show-VvpDistribution - Show virtual volume distribution across physical disks.
+	Show virtual volume distribution across physical disks.
 .DESCRIPTION
-	The Show-VvpDistribution command displays virtual volume (VV) distribution across physical disks (PD).
+	The command displays virtual volume (VV) distribution across physical disks (PD).
 .PARAMETER VV_Name
 	Specifies the virtual volume with the specified name (31 character maximum) or matches the glob-style pattern for which information is
 	displayed. This specifier can be repeated to display configuration information about multiple virtual volumes. This specifier is not
@@ -1912,6 +1953,9 @@ Function Show-A9VvpDistribution_CLI
 param(	[Parameter()]	[String]	$Sortcol,
 		[Parameter()]	[String]	$VV_Name
 )
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 {	$Cmd = " showvvpd "
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
@@ -1942,11 +1986,11 @@ Function Start-A9LD_CLI
 {	
 <#
 .SYNOPSIS
-	Start-LD - Start a logical disk (LD).  
+	Start a logical disk (LD).  
 .DESCRIPTION
-	The Start-LD command starts data services on a LD that has not yet been started.
+	The command starts data services on a LD that has not yet been started.
 .EXAMPLE
-	Start-LD -LD_Name xxx
+	Start-A9LD_CLI -LD_Name xxx
 .PARAMETER LD_Name
 	Specifies the LD name, using up to 31 characters.
 .PARAMETER Ovrd
@@ -1956,6 +2000,9 @@ Function Start-A9LD_CLI
 param(	[Parameter()]					[switch]	$Ovrd,
 		[Parameter(Mandatory=$True)]	[String]	$LD_Name
 )
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 { 	$Cmd = " startld "
 	if($Ovrd)		{	$Cmd += " -ovrd " }
@@ -1969,11 +2016,11 @@ Function Start-A9Vv_CLI
 {
 <#
 .SYNOPSIS
-	Start-Vv - Start a virtual volume.
+	Start a virtual volume.
 .DESCRIPTION
-	The Start-Vv command starts data services on a Virtual Volume (VV) that has not yet been started.
+	The command starts data services on a Virtual Volume (VV) that has not yet been started.
 .EXAMPLE
-	Start-Vv
+	Start-A9Vv_CLI
 .PARAMETER VV_Name
 	Specifies the VV name, using up to 31 characters.
 .PARAMETER Ovrd
@@ -1983,6 +2030,9 @@ Function Start-A9Vv_CLI
 param(	[Parameter()]				[switch]	$Ovrd,
 		[Parameter(Mandatory=$True)][String]	$VV_Name
 )
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 {	$Cmd = " startvv "
 	if($Ovrd)	{	$Cmd += " -ovrd "	}
@@ -1996,15 +2046,15 @@ Function Test-A9Vv_CLI
 {
 <#
 .SYNOPSIS
-	The Test-Vv command executes validity checks of VV administration information in the event of an uncontrolled system shutdown and optionally repairs corrupted virtual volumes.   
+	The command executes validity checks of VV administration information in the event of an uncontrolled system shutdown and optionally repairs corrupted virtual volumes.   
 .DESCRIPTION
-	The Test-Vv command executes validity checks of VV administration information in the event of an uncontrolled system shutdown and optionally repairs corrupted virtual volumes.
+	The command executes validity checks of VV administration information in the event of an uncontrolled system shutdown and optionally repairs corrupted virtual volumes.
 .EXAMPLE
-	Test-Vv -VVName XYZ
+	PS:> Test-A9Vv_CLI -VVName XYZ
 .EXAMPLE
-	Test-Vv -Yes -VVName XYZ
+	PS:> Test-A9Vv_CLI -Yes -VVName XYZ
 .EXAMPLE
-	Test-Vv -Offline -VVName XYZ
+	PS:> Test-A9Vv_CLI -Offline -VVName XYZ
 .PARAMETER Yes
 	Specifies that if errors are found they are either modified so they are valid (-y) or left unmodified (-n). If not specified, errors are left unmodified (-n).
 .PARAMETER No
@@ -2037,20 +2087,23 @@ param(	[Parameter()]				[switch]	$Yes,
 		[Parameter()]				[switch]	$Dedup_Dryrun,
 		[Parameter()]				[switch]	$Compr_Dryrun,
 		[Parameter()]				[switch]	$Dedup_Compr_Dryrun
-	)		
+	)	
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}	
 process
-{			$cmd = "checkvv -f "	
-			if($Yes)				{	$cmd += " -y "	}
-			if($No)					{	$cmd += " -n "	}
-			if($Offline)			{	$cmd += " -offline "}
-			if($Fixsd)				{	$cmd += " -fixsd "}
-			if($Dedup_Dryrun)		{	$cmd += " -dedup_dryrun "}
-			if($Compr_Dryrun)		{	$cmd += " -compr_dryrun "}
-			if($Dedup_Compr_Dryrun)	{	$cmd += " -dedup_compr_dryrun "}
-			$cmd += " $VVName"
-			$Result = Invoke-CLICommand -cmds  $cmd
-			write-verbose "  Executing Test-Vv Command.-->  " 
-			return  "$Result"
+{	$cmd = "checkvv -f "	
+	if($Yes)				{	$cmd += " -y "	}
+	if($No)					{	$cmd += " -n "	}
+	if($Offline)			{	$cmd += " -offline "}
+	if($Fixsd)				{	$cmd += " -fixsd "}
+	if($Dedup_Dryrun)		{	$cmd += " -dedup_dryrun "}
+	if($Compr_Dryrun)		{	$cmd += " -compr_dryrun "}
+	if($Dedup_Compr_Dryrun)	{	$cmd += " -dedup_compr_dryrun "}
+	$cmd += " $VVName"
+	$Result = Invoke-CLICommand -cmds  $cmd
+	write-verbose "  Executing Test-Vv Command.-->  " 
+	return  "$Result"
 }
 }
 
@@ -2058,9 +2111,9 @@ Function Update-A9SnapSpace_CLI
 {
 <#
 .SYNOPSIS
-	Update-SnapSpace - Update the snapshot space usage accounting.
+	Update the snapshot space usage accounting.
 .DESCRIPTION
-	The Update-SnapSpace command starts a non-cancelable task to update the snapshot space usage accounting. The snapshot space usage displayed by
+	The command starts a non-cancelable task to update the snapshot space usage accounting. The snapshot space usage displayed by
 	"showvv -hist" is not necessarily the current usage and the SpaceCalcTime column will show when it was last calculated.  This command causes the
 	system to start calculating current snapshot space usage.  If one or more VV names or patterns are specified, only the specified VVs will be updated.
 	If none are specified, all VVs will be updated.
@@ -2068,6 +2121,9 @@ Function Update-A9SnapSpace_CLI
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$VV_Name
 )
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 {	$Cmd = " updatesnapspace "
 	if($VV_Name)	{	$Cmd += " $VV_Name " }
@@ -2080,11 +2136,11 @@ Function Update-A9Vv_CLI
 {
 <#
 .SYNOPSIS
-	The Update-Vv command increases the size of a virtual volume.
+	The command increases the size of a virtual volume.
 .DESCRIPTION	
-	The Update-Vv command increases the size of a virtual volume.
+	The command increases the size of a virtual volume.
 .EXAMPLE
-	Update-Vv -VVname XYZ -Size 1g
+	PS:> Update-A9Vv_CLI -VVname XYZ -Size 1g
 .PARAMETER VVname     
 	The name of the volume to be grown.
 .PARAMETER Size       
@@ -2096,18 +2152,17 @@ Function Update-A9Vv_CLI
 param(	[Parameter(Mandatory=$true)]		[String]	$VVname ,		
 		[Parameter(Mandatory=$true)]		[String]	$Size 
 )
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 {	$cmd= "growvv -f "
 	if ($VVname)	{	$cmd+=" $VVname "	}
-	else			{	Write-DebugLog "Stop: VVname  is mandatory" $Debug
-						return "Error :  -VVname  is mandatory. "		
-					}
 	if ($Size)		{	$demo=$Size[-1]
 						$de=" g | G | t | T "
 						if($de -match $demo)	{	$cmd+=" $Size "	}
 						else					{	return "Error: -Size $Size is Invalid Try eg: 2G  "	}
 					}
-	else			{	return "Error :  -Size  is mandatory. "	}	
 	$Result = Invoke-CLICommand -cmds  $cmd
 	return  $Result
 } 
@@ -2117,22 +2172,26 @@ Function Update-A9VvProperties_CLI
 {
 <#
 .SYNOPSIS
-	Update-VvProperties - Change the properties associated with a virtual volume.
+	Change the properties associated with a virtual volume.
 .DESCRIPTION
-	The Update-VvProperties command changes the properties associated with a virtual volume. Use the Update-VvProperties to modify volume 
+	The command changes the properties associated with a virtual volume. Use the Update-VvProperties to modify volume 
 	names, volume policies, allocation warning and limit levels, and the volume's controlling common provisioning group (CPG).
 .EXAMPLE  
 	The following example sets the policy of virtual volume vv1 to no_stale_ss.
-	Update-VvProperties -Pol "no_stale_ss" -Vvname vv1
+	
+	PS:> Update-A9VvProperties_CLI -Pol "no_stale_ss" -Vvname vv1
 .EXAMPLE
 	Use the command to change the name:
-	cli% setvv -name newtest test
+	
+	PS:> Update-A9VvProperties_CLI setvv -name newtest test
 .EXAMPLE
 	The following example modifies the WWN of virtual volume vv1
-	Update-VvProperties -Wwn "50002AC0001A0024" -Vvname vv1
+
+	PS:> Update-VvProperties_CLI -Wwn "50002AC0001A0024" -Vvname vv1
 .EXAMPLE
 	The following example modifies the udid value for virtual volume vv1.
-	Update-VvProperties -Udid "1715" -Vvname vv1
+
+	PS:> Update-VvProperties_CLI -Udid "1715" -Vvname vv1
 .PARAMETER Vvname  
 	Specifies the virtual volume name or all virtual volumes that match the pattern specified, using up to 31 characters. The patterns are glob-
 	style patterns (see help on sub, globpat). Valid characters include alphanumeric characters, periods, dashes, and underscores.
@@ -2207,6 +2266,9 @@ param(	[Parameter()]	[String]	$Name,
 		[Parameter()]	[String]	$Hpc,
 		[Parameter(Mandatory=$True)]	[String]	$Vvname
 )
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 {	$Cmd = " setvv -f "
 	if($Name)		{	$Cmd += " -name $Name " 	}
@@ -2255,11 +2317,14 @@ param(	[Parameter()]					[String]	$Comment,
 		[Parameter()]					[String]	$Name,
 		[Parameter(Mandatory=$True)]	[String]	$Setname
 )
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
 {	$Cmd = " setvvset "
 	if($Comment)	{	$Cmd += " -comment $Comment "}
 	if($Name)		{	$Cmd += " -name $Name "}
-	if($Setname)	{	$Cmd += " Setname " }
+	$Cmd += " Setname " 
 	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -2273,15 +2338,15 @@ Function Set-A9Host_CLI
 .DESCRIPTION
 	Add WWN or iSCSI name to an existing host.
 .EXAMPLE
-    Set-Host -hostName HV01A -Address  10000000C97B142E, 10000000C97B142F
+    PS:> Set-A9Host_CLI -hostName HV01A -Address  10000000C97B142E, 10000000C97B142F
 	Adds WWN 10000000C97B142E, 0000000C97B142F to host HV01A
 .EXAMPLE	
-	Set-Host -hostName HV01B  -iSCSI:$true -Address  iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com
+	PS:> Set-A9Host_CLI -hostName HV01B  -iSCSI:$true -Address  iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com
 	Adds iSCSI  iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com to host HV01B
 .EXAMPLE
-    Set-Host -hostName HV01A  -Domain D_Aslam
+    PS:> Set-A9Host_CLI -hostName HV01A  -Domain D_Aslam
 .EXAMPLE
-    Set-Host -hostName HV01A  -Add
+    PS:> Set-A9Host_CLI -hostName HV01A  -Add
 .PARAMETER hostName
     Name of an existing host
 .PARAMETER Address
@@ -2304,7 +2369,7 @@ Function Set-A9Host_CLI
 	Specifies the host's owner and contact information.
 .PARAMETER  Comment <comment>
 	Specifies any additional information for the host.
-	.PARAMETER  Persona <hostpersonaval>
+.PARAMETER  Persona <hostpersonaval>
 	Sets the host persona that specifies the personality for all ports which are part of the host set.  
 #>
 [CmdletBinding()]
@@ -2321,28 +2386,31 @@ param(	[Parameter(Mandatory=$true)]		[String]	$hostName,
 		[Parameter(ValueFromPipeline=$true)][String[]]	$Comment,
 		[Parameter(ValueFromPipeline=$true)][String[]]	$Persona		
 )		
+Begin
+{	Test-A9Connection -ClientType 'SshClient' 
+}
 process
-{		$SetHostCmd = "createhost -f "			 
-		if ($iSCSI)			{ 	$SetHostCmd +=" -iscsi "	}
-		if($Add)			{	$SetHostCmd +=" -add "		}
-		if($Domain)			{	$SetHostCmd +=" -domain $Domain"}
-		if($Loc)			{	$SetHostCmd +=" -loc $Loc"	}
-		if($Persona)		{	$SetHostCmd +=" -persona $Persona"	}
-		if($IP)				{	$SetHostCmd +=" -ip $IP"}
-		if($OS)				{	$SetHostCmd +=" -os $OS"	}
-		if($Model)			{	$SetHostCmd +=" -model $Model"	}
-		if($Contact)		{	$SetHostCmd +=" -contact $Contact"	}
-		if($Comment)		{	$SetHostCmd +=" -comment $Comment"	}	
-		$Addr = [string]$Address
-		$SetHostCmd +=" $hostName $Addr"
-		$Result1 = Invoke-CLICommand -cmds  $SetHostCmd
-		write-verbose " Setting  Host with the command --> $SetHostCmd" 
-		if([string]::IsNullOrEmpty($Result1))
-			{	return "Success : Set host $hostName with Optn_Iscsi $Optn_Iscsi $Addr "
-			}
-		else
-			{	return $Result1
-			}			
+{	$SetHostCmd = "createhost -f "			 
+	if ($iSCSI)			{ 	$SetHostCmd +=" -iscsi "	}
+	if($Add)			{	$SetHostCmd +=" -add "		}
+	if($Domain)			{	$SetHostCmd +=" -domain $Domain"}
+	if($Loc)			{	$SetHostCmd +=" -loc $Loc"	}
+	if($Persona)		{	$SetHostCmd +=" -persona $Persona"	}
+	if($IP)				{	$SetHostCmd +=" -ip $IP"}
+	if($OS)				{	$SetHostCmd +=" -os $OS"	}
+	if($Model)			{	$SetHostCmd +=" -model $Model"	}
+	if($Contact)		{	$SetHostCmd +=" -contact $Contact"	}
+	if($Comment)		{	$SetHostCmd +=" -comment $Comment"	}	
+	$Addr = [string]$Address
+	$SetHostCmd +=" $hostName $Addr"
+	$Result1 = Invoke-CLICommand -cmds  $SetHostCmd
+	write-verbose " Setting  Host with the command --> $SetHostCmd" 
+	if([string]::IsNullOrEmpty($Result1))
+		{	return "Success : Set host $hostName with Optn_Iscsi $Optn_Iscsi $Addr "
+		}
+	else
+		{	return $Result1
+		}			
 } 
 }
 
@@ -2350,16 +2418,19 @@ Function Show-A9Peer_CLI
 {
 <#
 .SYNOPSIS   
-	The Show-Peer command displays the arrays connected through the host ports or peer ports over the same fabric.
+	The command displays the arrays connected through the host ports or peer ports over the same fabric.
 .DESCRIPTION  
-	The Show-Peer command displays the arrays connected through the host ports or peer ports over the same fabric. The Type field
+	The command displays the arrays connected through the host ports or peer ports over the same fabric. The Type field
     specifies the connectivity type with the array. The Type value of Slave means the array is acting as a source, the Type value
     of Master means the array is acting as a destination, the type value of Peer means the array is acting as both source and destination.
 .EXAMPLE	
-	Show-Peer
+	PS:> Show-A9Peer_CLI
 #>
 [CmdletBinding()]
-param()		
+param()	
+Begin
+{	Test-A9Connection -ClientType 'SshClient' 
+}	
 process	
 {	$cmd = " showpeer"
 	$Result = Invoke-CLICommand -cmds  $cmd
@@ -2387,9 +2458,9 @@ Function Resize-A9Vv_CLI
 {
 <#
 .SYNOPSIS
-	Resize-Vv - Consolidate space in virtual volumes (VVs). (HIDDEN)
+	Consolidate space in virtual volumes (VVs). (HIDDEN)
 .EXAMPLE
-	Resize-Vv -VVName testv
+	VVName testv
 .PARAMETER VVName
 	Specifies the name of the VV.
 .PARAMETER PAT
@@ -2399,6 +2470,9 @@ Function Resize-A9Vv_CLI
 param(	[Parameter()]	[String]	$VVName,
 		[Parameter()]	[switch]	$PAT
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient' 
+}
 PROCESS
 {	$Cmd = " compactvv -f "
 	if($PAT)	{	$Cmd += " -pat "	}

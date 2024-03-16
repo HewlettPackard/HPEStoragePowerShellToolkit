@@ -11,11 +11,11 @@ Function Get-A9vLun_CLI
 .DESCRIPTION
     Get list of LUNs that are exported/ presented to hosts
 .EXAMPLE
-    Get-vLun 
+    PS:> Get-A9vLun_CLI 
 
 	List all exported volumes
 .EXAMPLE	
-	Get-vLun -vvName PassThru-Disk 
+	PS:> Get-A9vLun_CLI -vvName PassThru-Disk 
 
 	List LUN number and hosts/host sets of LUN PassThru-Disk
 .PARAMETER vvName 
@@ -26,7 +26,7 @@ param(	[Parameter()]							[String]	$vvName,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$PresentTo
 	)
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }		
 process	
 {	$ListofvLUNs = @()	
@@ -63,24 +63,24 @@ Function Show-A9vLun_CLI
 .DESCRIPTION
     Get list of LUNs that are exported/ presented to hosts
 .EXAMPLE
-    Show-vLun 
+    PS:> Show-A9vLun_CLI 
 
 	List all exported volumes
 .EXAMPLE	
-	Show-vLun -vvName XYZ 
+	PS:> Show-A9vLun_CLI -vvName XYZ 
 
 	List LUN number and hosts/host sets of LUN XYZ
 .EXAMPLE	
-	Show-vLun -Listcols
+	PS:> Show-A9vLun_CLI -Listcols
 .EXAMPLE	
-	Show-vLun -Nodelist 1
+	PS:> Show-A9vLun_CLI -Nodelist 1
 .EXAMPLE	
-	Show-vLun -DomainName Aslam_D	
+	PS:> Show-A9vLun_CLI -DomainName Aslam_D	
 .PARAMETER vvName 
     Specify name of the volume to be exported.  If prefixed with 'set:', the name is a volume set name.
 .PARAMETER Listcols
 	List the columns available to be shown in the -showcols option described below (see 'clihelp -col showvlun' for help on each column).
-.PARAMETER Showcols <column>[,<column>...]
+.PARAMETER Showcols
 	Explicitly select the columns to be shown using a comma-separated list of column names.  For this option the full column names are shown in
 	the header. Run 'showvlun -listcols' to list the available columns. Run 'clihelp -col showvlun' for a description of each column.
 .PARAMETER ShowWWN
@@ -136,7 +136,7 @@ param(	[Parameter()]	[switch]	$Listcols,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$DomainName
 	)	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }	
 process	
 {	$cmd = "showvlun "
@@ -163,10 +163,10 @@ Function New-A9vLun_CLI
 {
 <#
 .SYNOPSIS
-    The New-vLun command creates a VLUN template that enables export of a Virtual Volume as a SCSI VLUN to a host or hosts. A SCSI VLUN is created when the
+    The command creates a VLUN template that enables export of a Virtual Volume as a SCSI VLUN to a host or hosts. A SCSI VLUN is created when the
     current system state matches the rule established by the VLUN template
 .DESCRIPTION
-	The New-vLun command creates a VLUN template that enables export of a Virtual Volume as a SCSI VLUN to a host or hosts. A SCSI VLUN is created when the
+	The command creates a VLUN template that enables export of a Virtual Volume as a SCSI VLUN to a host or hosts. A SCSI VLUN is created when the
     current system state matches the rule established by the VLUN template.
     There are four types of VLUN templates:
         Port presents - created when only the node:slot:port are specified. The VLUN is visible to any initiator on the specified port.
@@ -180,9 +180,9 @@ Function New-A9vLun_CLI
     Conflicts between overlapping VLUN templates are resolved using prioritization, with port presents templates having the lowest priority and
     matched set templates having the highest.
 .EXAMPLE
-    New-vLun -vvName xyz -LUN 1 -HostName xyz
+    PS:> New-A9vLun_CLI -vvName xyz -LUN 1 -HostName xyz
 .EXAMPLE
-    New-vLun -vvSet set:xyz -NoVcn -LUN 2 -HostSet set:xyz
+    PS:> New-A9vLun_CLI -vvSet set:xyz -NoVcn -LUN 2 -HostSet set:xyz
 .PARAMETER vvName 
 	Specifies the virtual volume or virtual volume set name, using up to 31 characters in length. 
 	The volume name is provided in the syntax of basename.int.  The VV set name must start with "set:".
@@ -212,46 +212,48 @@ Function New-A9vLun_CLI
 	Specifies that existing lower priority VLUNs will be overridden, if necessary. Can only be used when exporting to a specific host.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$vvName,
-		[Parameter()]	[String]	$vvSet,
-		[Parameter()]	[String]	$LUN,
-		[Parameter()]	[String]	$NSP,
-		[Parameter()]	[String]	$HostSet,
-		[Parameter()]	[String]	$HostName,
+param(	
+		[Parameter(ParameterSetName='vvName_NSP', 		Mandatory=$true)]
+		[Parameter(ParameterSetName='vvName_HostSet', 	Mandatory=$true)]
+		[Parameter(ParameterSetName='vvName_HostName', 	Mandatory=$true)]	[String]	$vvName,
+
+		[Parameter(ParameterSetName='vvSet_NSP',  		Mandatory=$true)]	
+		[Parameter(ParameterSetName='vvSet_HostSet',  	Mandatory=$true)]	
+		[Parameter(ParameterSetName='vvSet_HostName', 	Mandatory=$true)]
+		[ValidateScript({	if( $_ -match "^set:") { $true } else { throw "Valid vvSet Parameter must start with 'Set:'"} } )]	
+																			[String]	$vvSet,
+
+		[Parameter(Mandatory=$true)]										[String]	$LUN,
+		
+		[Parameter(ParameterSetName='vvSet_NSP',  		Mandatory=$true)]
+		[Parameter(ParameterSetName='vvName_NSP', 		Mandatory=$true)]	[String]	$NSP,
+
+		[Parameter(ParameterSetName='vvName_HostSet', 	Mandatory=$true)]
+		[Parameter(ParameterSetName='vvSet_HostSet',  	Mandatory=$true)]
+		[ValidateScript({	if( $_ -match "^set:") { $true } else { throw "Valid vvSet Parameter must start with 'Set:'"} } )]	
+																			[String]	$HostSet,
+
+		[Parameter(ParameterSetName='vvName_HostName', 	Mandatory=$true)]
+		[Parameter(ParameterSetName='vvSet_HostSet', 	Mandatory=$true)]	[String]	$HostName,
+
 		[Parameter()]	[String]	$Cnt,
 		[Parameter()]	[switch]	$NoVcn,
 		[Parameter()]	[switch]	$Ovrd
 	)		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 process
 {	$cmdVlun = " createvlun -f"
-	if($Cnt)	{	$cmdVlun += " -cnt $Cnt "	}
-	if($NoVcn)	{	$cmdVlun += " -novcn "	}
-	if($Ovrd)	{	$cmdVlun += " -ovrd "	}	
-	###Added v2.1 : checking the parameter values if vvName or present to empty simply return
-	if ($vvName -Or $vvSet)
-	{	if($vvName)	{	$cmdVlun += " $vvName "	}
-		else		{	if ($vvSet -match "^set:")	{	$cmdVlun += " $vvSet "	}
-						else						{	return "Please make sure The VV set name must start with set: Ex:- set:xyz"	}
-					}		
-	}
-	else
-		{	Write-DebugLog "No values specified for the parameters vvname. so simply exiting "
-			Get-help New-vLun
-			return
-		}
+	if($Cnt)			{	$cmdVlun += " -cnt $Cnt "	}
+	if($NoVcn)			{	$cmdVlun += " -novcn "	}
+	if($Ovrd)			{	$cmdVlun += " -ovrd "	}	
+	if($vvName)			{	$cmdVlun += " $vvName "	}
+	if($vvSet)			{	$cmdVlun += " $vvSet "	}
 	if($LUN)			{	$cmdVlun += " $LUN "	}
-	else				{	return " Specifies the LUN as an integer from 0 through 16383."	}	
 	if($NSP)			{	$cmdVlun += " $NSP "	}
-	elseif($HostSet)
-		{	if ($HostSet -match "^set:")	{	$cmdVlun += " $HostSet "	}
-			else							{	return "Please make sure The set name must start with set: Ex:- set:xyz"	}
-		}
+	elseif($HostSet)	{	$cmdVlun += " $HostSet "	}
 	elseif($HostName)	{	$cmdVlun += " $HostName "	}
-	else				{	return "Please select atlist any one from NSP | HostSet | HostName"	}
-	
 	$Result1 = Invoke-CLICommand -cmds  $cmdVlun
 	write-verbose "Presenting $vvName to server $item with the command --> $cmdVlun" 
 	if($Result1 -match "no active paths")		{	$successmsg += $Result1	}
@@ -269,37 +271,37 @@ Function Remove-A9vLun_CLI
 .DESCRIPTION
     Unpresent  virtual volumes 
 .EXAMPLE
-	Remove-vLun -vvName PassThru-Disk -force
+	PS:> Remove-A9vLun_CLI -vvName PassThru-Disk -force
 
 	Unpresent the virtual volume PassThru-Disk to all hosts
 .EXAMPLE	
-	Remove-vLun -vvName PassThru-Disk -whatif 
+	PS:> Remove-A9vLun_CLI -vvName PassThru-Disk -whatif 
 
 	Dry-run of deleted operation on vVolume named PassThru-Disk
 .EXAMPLE		
-	Remove-vLun -vvName PassThru-Disk -PresentTo INF01  -force
+	PS:> Remove-A9vLun_CLI -vvName PassThru-Disk -PresentTo INF01  -force
 
 	Unpresent the virtual volume PassThru-Disk only to host INF01.	all other presentations of PassThru-Disk remain intact.
 .EXAMPLE	
-	Remove-vLun -PresentTo INF01 -force
+	PS:> Remove-A9vLun_CLI -PresentTo INF01 -force
 
 	Remove all LUNS presented to host INF01
 .EXAMPLE	
-	Remove-vLun -vvName CSV* -PresentTo INF01 -force
+	PS:> Remove-A9vLun_CLI -vvName CSV* -PresentTo INF01 -force
 
 	Remove all LUNS started with CSV* and presented to host INF01
 .EXAMPLE
-	Remove-vLun -vvName vol2 -force -Novcn
+	PS:> Remove-A9vLun_CLI -vvName vol2 -force -Novcn
 .EXAMPLE
-	Remove-vLun -vvName vol2 -force -Pat
+	PS:> Remove-A9vLun_CLI -vvName vol2 -force -Pat
 .EXAMPLE
-	Remove-vLun -vvName vol2 -force -Remove_All   
+	PS:> Remove-A9vLun_CLI -vvName vol2 -force -Remove_All   
 
 	It removes all vluns associated with a VVOL Container.
 .PARAMETER whatif
-    If present, perform a dry run of the operation and no VLUN is removed	
+    If present, perform a dry run of the operation and no VLUN is removed. You must select either WhatIf or Force. 
 .PARAMETER force
-	If present, perform forcible delete operation
+	If present, perform forcible delete operation. This option is required unless you are running the WhatIf Option
 .PARAMETER vvName 
     Specify name of the volume to be exported. 
 .PARAMETER PresentTo 
@@ -315,26 +317,21 @@ Function Remove-A9vLun_CLI
 param(	[Parameter(ParameterSetName='F',Mandatory=$true)]		[Switch]	$force, 
 		[Parameter(ParameterSetName='W',Mandatory=$true)]		[Switch]	$whatif, 		
 		[Parameter(Mandatory=$true)]							[String]	$vvName,
-		[Parameter(,Mandatory=$true)]							[String]	$PresentTo, 		
+		[Parameter(Mandatory=$true)]							[String]	$PresentTo, 		
 		[Parameter()]											[Switch]	$Novcn,
 		[Parameter()]											[Switch]	$Pat,
 		[Parameter()]											[Switch]	$Remove_All	
 	)
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }		
 process	
-{	if(!(($force) -or ($whatif)))
-	{	write-verbose "no -force or -whatif option selected to remove/dry run of VLUN, Exiting...."
-		Get-help Remove-vLun
-		return "FAILURE : no -force or -whatif option selected to remove/dry run of VLUN"
-	}
-	if($PresentTo)	{	$ListofvLuns = Get-vLun -vvName $vvName -PresentTo $PresentTo }
+{	if($PresentTo)	{	$ListofvLuns = Get-vLun -vvName $vvName -PresentTo $PresentTo }
 	else			{	$ListofvLuns = Get-vLun -vvName $vvName 	}
 	if($ListofvLuns -match "FAILURE")	{	return "FAILURE : No vLUN $vvName found"	}
 	$ActionCmd = "removevlun "
 	if ($whatif)	{	$ActionCmd += "-dr "	}
-	else			{	if($force)	{	$ActionCmd += "-f "	} }	
+	if($force)		{	$ActionCmd += "-f "		} 
 	if ($Novcn)		{	$ActionCmd += "-novcn "	}
 	if ($Pat)		{	$ActionCmd += "-pat "	}
 	if($Remove_All)	{	$ActionCmd += " -set "	}

@@ -120,7 +120,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -308,7 +308,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -484,7 +484,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -641,7 +641,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -807,7 +807,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -984,7 +984,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -1183,7 +1183,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -1365,7 +1365,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -1561,7 +1561,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -1769,7 +1769,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -1985,7 +1985,7 @@ Param(
 	[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -2182,7 +2182,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -2400,7 +2400,7 @@ Param(
 	[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -2482,7 +2482,7 @@ Function Add-A9DiskType
 param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$DT
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$lista = $DT.split(",")		
@@ -2526,7 +2526,7 @@ Function Add-A9RedType
 param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$RT
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$lista = $RT.split(",")		

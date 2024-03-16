@@ -322,7 +322,7 @@ process
 }
 }
 
-Function Move-PDToSpare
+Function Move-A9PDToSpare_CLI
 {
 <#
 .SYNOPSIS
@@ -330,17 +330,19 @@ Function Move-PDToSpare
 .DESCRIPTION
 	Moves data from specified Physical Disks (PDs) to a temporary location selected by the system.
 .EXAMPLE
-    Move-PDToSpare -PD_Id 0 -force  
+    PS:> Move-A9PDToSpare_CLI -PD_Id 0 -force  
+
 	Displays  moving the data on PD 0 to free or spare space
 .EXAMPLE
-    Move-PDToSpare -PD_Id 0 
+    PS:> Move-A9PDToSpare_CLI -PD_Id 0 
+
 	Displays a dry run of moving the data on PD 0 to free or spare space
 .EXAMPLE
-    Move-PDToSpare -PD_Id 0 -DryRun
+    PS:> Move-A9PDToSpare_CLI -PD_Id 0 -DryRun
 .EXAMPLE
-    Move-PDToSpare -PD_Id 0 -Vacate
+    PS:> Move-A9PDToSpare_CLI -PD_Id 0 -Vacate
 .EXAMPLE
-    Move-PDToSpare -PD_Id 0 -Permanent
+    PS:> Move-A9PDToSpare_CLI -PD_Id 0 -Permanent
 .PARAMETER PD_Id
     Specifies the physical disk ID.
 .PARAMETER force
@@ -370,9 +372,11 @@ param(	[Parameter()]	[String]	$PD_Id,
 		[Parameter()]	[Switch]	$Permanent, 
 		[Parameter()]	[Switch]	$Ovrd
 )
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$movechcmd = "movepdtospare -f"
+{	$movechcmd = "movepdtospare -f"
 	if($DryRun)		{	$movechcmd += " -dr "		}	
 	if($nowait)		{	$movechcmd += " -nowait "	}
 	if($DevType)	{	$movechcmd += " -devtype "	}
@@ -404,7 +408,7 @@ process
 }
 }
 
-Function Move-RelocPD
+Function Move-A9RelocPD_CLI
 {
 <#
 .SYNOPSIS
@@ -412,7 +416,7 @@ Function Move-RelocPD
 .DESCRIPTION
 	Command moves chunklets that were on a physical disk to the target of relocation.
 .EXAMPLE
-    Move-RelocPD -diskID 8 -DryRun
+    PS:> Move-A9RelocPD_CLI -diskID 8 -DryRun
 	moves chunklets that were on physical disk 8 that were relocated to another position, back to physical disk 8
 .PARAMETER diskID    
 	Specifies that the chunklets that were relocated from specified disk (<fd>), are moved to the specified destination disk (<td>). If destination disk (<td>) is not specified then the chunklets are moved back
@@ -430,6 +434,9 @@ param(	[Parameter(ValueFromPipeline=$true)]	[String]	$diskID,
 		[Parameter()]							[Switch]	$nowait,
 		[Parameter()]							[Switch]	$partial
 	)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process	
 {	if ( -not $(Test-A9CLI) ) 	{	return }
 	$movechcmd = "moverelocpd -f "
@@ -460,7 +467,7 @@ process
 }
 }
 
-Function Remove-Spare
+Function Remove-A9Spare_CLI
 {
 <#
 .SYNOPSIS
@@ -468,11 +475,11 @@ Function Remove-Spare
 .DESCRIPTION
     Command removes chunklets from the spare chunklet list.
 .EXAMPLE
-    Remove-Spare -Pdid_chunkNumber "1:3"
+    PS:> Remove-A9Spare_CLI -Pdid_chunkNumber "1:3"
 	
 	Example removes a spare chunklet from position 3 on physical disk 1:
 .EXAMPLE
-	Remove-Spare –pos "1:0.2:3:121"
+	PS:> Remove-A9Spare_CLI –pos "1:0.2:3:121"
 	
 	Example removes a spare chuklet from  the position in a drive cage, drive magazine, physical disk,and chunklet number. –pos 1:0.2:3:121, where 1 is the drive cage, 0.2 is the drive magazine, 3 is the physical disk, and 121 is the chunklet number. 	
 .PARAMETER Pdid_chunkNumber
@@ -485,9 +492,11 @@ param(
 		[Parameter(ValueFromPipeline=$true)]	[String]	$Pdid_chunkNumber,	
 		[Parameter(ValueFromPipeline=$true)]	[String]	$pos
 	)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
 process	
-{ 	if ( -not $(Test-A9CLI) ) 	{	return }
-	$newsparecmd = "removespare "
+{ 	$newsparecmd = "removespare "
 	if(!(($Pdid_chunkNumber) -or ($pos)))
 		{	return "FAILURE: No parameters specified"
 		}

@@ -35,7 +35,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeNam
 		[Parameter(ValueFromPipeline=$true)]					[Boolean]	$NoVcn = $false
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$body = @{}    
@@ -97,7 +97,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeNam
 		[Parameter(ValueFromPipeline=$true)]					[String]	$NSP
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {   Write-DebugLog "Running: Building uri to Remove-vLun_WSAPI  ." $Debug
@@ -176,7 +176,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$VolumeName,
 		[ValidatePattern("[0-9]:[0-9]:[0-9]")]	[String]	$NSP
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	Write-Verbose "Request: Request to Get-vLun_WSAPI [ VolumeName : $VolumeName | LUNID : $LUNID | HostName : $HostName | NSP : $NSP] (Invoke-WSAPI)."

@@ -10,29 +10,29 @@ Function Get-A9Host_CLI
 .DESCRIPTION
 	Queries hosts
 .EXAMPLE
-    Get-Host 
+    PS:> Get-A9Host_CLI 
 
 	Lists all hosts
 .EXAMPLE	
-	Get-Host -hostName HV01A
+	PS:> Get-A9Host_CLI -hostName HV01A
 
 	List host HV01A
 .EXAMPLE
-	Get-Host -Domain scvmm
+	PS:> Get-A9Host_CLI -Domain scvmm
 .EXAMPLE	
-	Get-Host -D
+	PS:> Get-A9Host_CLI -D
 .EXAMPLE
-	Get-Host -CHAP
+	PS:> Get-A9Host_CLI -CHAP
 .EXAMPLE
-	Get-Host -Descriptor
+	PS:> Get-A9Host_CLI -Descriptor
 .EXAMPLE
-	Get-Host -Agent
+	PS:> Get-A9Host_CLI -Agent
 .EXAMPLE
-	Get-Host -Pathsum
+	PS:> Get-A9Host_CLI -Pathsum
 .EXAMPLE
-	Get-Host -Persona
+	PS:> Get-A9Host_CLI -Persona
 .EXAMPLE
-	Get-Host -Listpersona
+	PS:> Get-A9Host_CLI -Listpersona
 .PARAMETER D
 	Shows a detailed listing of host and path information. This option can be used with -agent and -domain options.
 .PARAMETER Verb
@@ -75,7 +75,7 @@ param(	[Parameter()]	[String]	$Domain,
 		[Parameter()]							[String]	$hostName
 )		
 Begin	
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$CurrentId = $CurrentName = $CurrentPersona = $null
@@ -189,21 +189,26 @@ Function Get-A9HostSet_CLI
 .SYNOPSIS
     show host set(s) information	
 .DESCRIPTION
-    The showhostset command lists the host sets defined on the storage system and their members.
+    The command lists the host sets defined on the storage system and their members.
 .EXAMPLE
-    Get-HostSet	
+    PS:> Get-A9HostSet_CLI	
+
 	List all host set information
 .EXAMPLE
-	Get-HostSet -D myset
+	PS:> Get-A9HostSet_CLI -D myset
+
 	Show the details of myset
 .EXAMPLE
-	Get-HostSet -hostSetName "MyVVSet"	
+	PS:> Get-A9HostSet_CLI -hostSetName "MyVVSet"
+
 	List Specific HostSet name "MyVVSet"
 .EXAMPLE	
-	Get-HostSet -hostName "MyHost"	 
+	PS:> Get-A9HostSet_CLI -hostName "MyHost"
+	
 	Show the host sets containing host "MyHost"	
 .EXAMPLE	
-	Get-HostSet -D	 
+	PS:> Get-A9HostSet_CLI -D	
+
 	Show a more detailed listing of each set
 .PARAMETER D
 	Show a more detailed listing of each set.
@@ -221,7 +226,7 @@ param(	[Parameter()]	[String]	$hostSetName,
 		[Parameter()]	[Switch]	$summary
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$GetHostSetCmd = "showhostset "
@@ -243,20 +248,20 @@ Function New-A9Host_CLI
 .DESCRIPTION
 	Creates a new host.
 .EXAMPLE
-    New-Host -HostName HV01A -Persona 2 -WWN 10000000C97B142E
+    PS:> New-A9Host_CLI -HostName HV01A -Persona 2 -WWN 10000000C97B142E
 
 	Creates a host entry named HV01A with WWN equals to 10000000C97B142E
 .EXAMPLE	
-	New-Host -HostName HV01B -Persona 2 -iSCSI
+	PS:> New-A9Host_CLI -HostName HV01B -Persona 2 -iSCSI
 
 	Creates a host entry named HV01B with iSCSI equals to iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com
 .EXAMPLE
-    New-Host -HostName HV01A -Persona 2 
+    PS:> New-A9Host_CLI -HostName HV01A -Persona 2 
 
 .EXAMPLE 
-	New-Host -HostName Host3 -iSCSI
+	PS:> New-A9Host_CLI -HostName Host3 -iSCSI
 .EXAMPLE 
-	New-Host -HostName Host4 -iSCSI -Domain ZZZ
+	PS:> New-A9Host_CLI -HostName Host4 -iSCSI -Domain ZZZ
 .PARAMETER HostName
     Specify new name of the host
 .PARAMETER Add
@@ -311,7 +316,7 @@ param(	[Parameter(Mandatory=$true)]	[String]	$HostName,
 		[Parameter()]	[String]	$IscsiName
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd ="createhost "
@@ -347,33 +352,33 @@ Function New-A9HostSet_CLI
 .DESCRIPTION
 	Creates a new host set.
 .EXAMPLE
-    New-HostSet -HostSetName xyz
+    PS:> New-A9HostSet_CLI -HostSetName xyz
 	
 	Creates an empty host set named "xyz"
 .EXAMPLE
 	To create an empty hostset:
 
-	New-HostSet hostset
+	PS:> New-A9HostSet_CLI hostset
 .EXAMPLE
     To add a host to the set:
 
-	New-HostSet -Add -HostSetName hostset -HostName hosta
+	PS:> New-A9HostSet_CLI -Add -HostSetName hostset -HostName hosta
 .EXAMPLE
     To create a host set with hosts in it:
 
-	New-HostSet -HostSetName hostset -HostName "host1 host2"
+	PS:> New-A9HostSet_CLI -HostSetName hostset -HostName "host1 host2"
     or
-    New-HostSet -HostSetName set:hostset -HostName "host1 host2" 
+    PS:> New-A9HostSet_CLI -HostSetName set:hostset -HostName "host1 host2" 
 .EXAMPLE
     To create a host set with a comment and a host in it:
 
-	New-HostSet -Comment "A host set" -HostSetName hostset -HostName hosta
+	PS:> New-A9HostSet_CLI -Comment "A host set" -HostSetName hostset -HostName hosta
 .EXAMPLE
-    New-HostSet -HostSetName xyz -Domain xyz
+   PS:> New-A9HostSet_CLI -HostSetName xyz -Domain xyz
 
 	Create the host set in the specified domain
 .EXAMPLE
-    New-HostSet -hostSetName HV01C-HostSet -hostName "MyHost" 
+    PS:> New-A9HostSet_CLI -hostSetName HV01C-HostSet -hostName "MyHost" 
 	
 	Creates an empty host set and  named "HV01C-HostSet" and adds host "MyHost" to hostset
 			(or)
@@ -400,7 +405,7 @@ param(	[Parameter()]	[String]	$HostSetName,
 		[Parameter()]	[String]	$Domain
 )		
 Begin	
-{	Test-A9CLIConnection	
+{	Test-A9Connection -ClientType 'SshClient' 	
 }
 Process
 {	$cmdCrtHostSet =" createhostset "	
@@ -439,15 +444,15 @@ Function Remove-A9Host_CLI
 .DESCRIPTION
 	Removes a host.
 .EXAMPLE
-    Remove-Host -hostName HV01A 
+    PS:> Remove-A9Host_CLI -hostName HV01A 
 
 	Remove the host named HV01A
 .EXAMPLE
-    Remove-Host -hostName HV01A -address 10000000C97B142E
+    PS:> Remove-A9Host_CLI -hostName HV01A -address 10000000C97B142E
 
 	Remove the WWN address of the host named HV01A
 .EXAMPLE	
-	Remove-Host -hostName HV01B -iSCSI -Address  iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com
+	PS:> Remove-A9Host_CLI -hostName HV01B -iSCSI -Address  iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com
 
 	Remove the iSCSI address of the host named HV01B
 .PARAMETER hostName
@@ -462,8 +467,6 @@ Function Remove-A9Host_CLI
 	Specifies that host name will be treated as a glob-style pattern and that all hosts matching the specified pattern are removed. T
 .PARAMETER  Port 
 	Specifies the NSP(s) for the zones, from which the specified WWN will be removed in the target driven zoning. 
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]			[String]	$hostName,
@@ -474,7 +477,7 @@ param(	[Parameter(Mandatory=$true)]			[String]	$hostName,
 		[Parameter(ValueFromPipeline=$true)]	[System.String[]]	$Address
 	)		
 Begin	
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$objType = "host"
@@ -521,11 +524,11 @@ Function Remove-A9HostSet_CLI
 .DESCRIPTION
 	Remove a host set or remove hosts from an existing set
 .EXAMPLE
-    Remove-HostSet -hostsetName "MyHostSet"  -force 
+    PS:> Remove-A9HostSet_CLI -hostsetName "MyHostSet"  -force 
 
 	Remove a hostset  "MyHostSet"
 .EXAMPLE
-	Remove-HostSet -hostsetName "MyHostSet" -hostName "MyHost" -force
+	PS:> Remove-A9HostSet_CLI -hostsetName "MyHostSet" -hostName "MyHost" -force
 
 	Remove a single host "MyHost" from a hostset "MyHostSet"
 .PARAMETER hostsetName 
@@ -544,7 +547,7 @@ param(	[Parameter(Mandatory=$true)]	[String]	$hostsetName,
 		[Parameter()]					[switch]	$Pat
 )		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$RemovehostsetCmd = "removehostset "
@@ -603,7 +606,7 @@ param(	[Parameter()]	[String]	$Comment,
 		[Parameter(Mandatory=$true)]	[String]    $Setname
 )
 Begin
-{	Test-A9CLIConnection 
+{	Test-A9Connection -ClientType 'SshClient'  
 }
 Process
 {	$Cmd = " sethostset "

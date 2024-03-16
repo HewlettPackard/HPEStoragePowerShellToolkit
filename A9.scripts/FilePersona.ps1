@@ -14,7 +14,7 @@ Function Get-A9FileServices
 [CmdletBinding()]
 Param()
 Begin
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process
 {	$Result = Invoke-WSAPI -uri '/fileservices' -type 'GET'
@@ -72,7 +72,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]		$FPGName,
 		[Parameter(ValueFromPipeline=$true)]		[String]		$Comment
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}    
@@ -114,7 +114,7 @@ Param(	[Parameter(Mandatory = $true,ValueFromPipeline=$True,ValueFromPipelinebyP
 		[String]	$FPGId
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$uri = '/fpgs/'+$FPGId
@@ -158,7 +158,7 @@ Function Get-A9FPG
 Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$FPG
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -230,7 +230,7 @@ Function Get-A9FPGReclamationTasks
 [CmdletBinding()]
 Param()
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process
 {	$Result = Invoke-WSAPI -uri '/fpgs/reclaimtasks' -type 'GET' 
@@ -323,7 +323,7 @@ Param(
 	[Parameter(ValueFromPipeline=$true)]					[Switch]	$SnapshotQuotaEnabled
 )
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$body = @{}
@@ -378,7 +378,7 @@ Function Remove-A9VFS
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]		[int]	$VFSID
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$Result = $null
@@ -425,7 +425,7 @@ Param(
 	[Parameter(ParameterSetName='ByOther', ValueFromPipeline=$true)]	[String]	$FPGName
 )
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$Result = $null
@@ -516,7 +516,7 @@ Param(
 	[Parameter(ValueFromPipeline=$true)]					[String]	$Comment
 )
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$body = @{}	
@@ -569,7 +569,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$FStoreID,
 		[Parameter(ValueFromPipeline=$true)]					[Switch]	$SupressSecOpErr
 )
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$body = @{}		
@@ -608,7 +608,7 @@ Function Remove-A9FileStore
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$FStoreID
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$uri = '/filestores/'+$FStoreID
@@ -656,7 +656,7 @@ Param(	[Parameter(ParameterSetName='ById',	ValueFromPipeline=$true)]		[int]		$FS
 		[Parameter(ParameterSetName='ByOther',ValueFromPipeline=$true)]		[String]	$FPGName
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$Result = $null
@@ -766,7 +766,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TAG,
 		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$FPG
 )
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$body = @{}	
@@ -805,7 +805,7 @@ Function Remove-A9FileStoreSnapshot
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$ID
 )
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$uri = '/filestoresnapshots/'+$ID
@@ -856,7 +856,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$ID,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$FPGName
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$Result = $null
@@ -1042,7 +1042,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$FSName,
 		[Parameter(ValueFromPipeline=$true)]					[String]	$FtpOptions
 )
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$body = @{}	
@@ -1103,7 +1103,7 @@ Function Remove-A9FileShare
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$ID
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$uri = '/fileshares/'+$ID
@@ -1158,7 +1158,7 @@ Param(	[Parameter(ParameterSetName='ByID', ValueFromPipeline=$true)]		[int]		$ID
 		[Parameter(ParameterSetName='ByOther',ValueFromPipeline=$true)]	[String]	$FStore
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$Result = $null
@@ -1241,7 +1241,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[int]	$ID
 	)
 
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$Result = $null
@@ -1307,7 +1307,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$Name,
 		[Parameter(ValueFromPipeline=$true)]					[int]		$HardFileLimit
 )
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$body = @{}	
@@ -1388,7 +1388,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$ID,
 		[Parameter(ValueFromPipeline=$true)]	[Int]	$RMHardBlockMiB
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$body = @{}
@@ -1432,7 +1432,7 @@ Function Remove-A9FilePersonaQuota
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$ID
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$uri = '/filepersonaquotas/'+$ID
@@ -1486,7 +1486,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[int]		$ID,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$FPG
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$Result = $null
@@ -1587,7 +1587,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VFSUUID,
 		[Parameter(ValueFromPipeline=$true)]					[String]	$ArchivedPath
 )
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$body = @{}
@@ -1624,7 +1624,7 @@ Function Group-A9FilePersonaQuota
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$QuotaArchiveParameter
 )
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$body = @{}

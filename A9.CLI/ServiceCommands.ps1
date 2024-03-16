@@ -51,9 +51,9 @@ Function Get-A9SystemPatch_CLI
 .DESCRIPTION
 	The Get-SystemPatch command displays patches applied to a system.
 .EXAMPLE
-	Get-SystemPatch
+	PS:> Get-A9SystemPatch_CLI
 .EXAMPLE
-	Get-SystemPatch -Hist
+	PS:> Get-A9SystemPatch_CLI -Hist
 .PARAMETER Hist
 	Provides an audit log of all patches and updates that have been applied to the system.
 .PARAMETER D
@@ -65,7 +65,7 @@ param(	[Parameter()]	[switch]	$Hist,
 		[Parameter()]	[switch]	$D
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " showpatch "
@@ -84,15 +84,15 @@ Function Get-A9Version__CLI
 .DESCRIPTION
     Get list of Storage system software version information
 .EXAMPLE
-    Get-A9Version_CLI	
+    PS:> Get-A9Version_CLI	
 
 	Get list of Storage system software version information
 .EXAMPLE
-    Get-Version -S	
+    PS:> Get-A9Version_CLI -S	
 
 	Get list of Storage system release version number only
 .EXAMPLE
-    Get-Version -B	
+    PS:> Get-A9Version_CLI -B	
 
 	Get list of Storage system build levels
 .PARAMETER A
@@ -108,7 +108,7 @@ param(	[Parameter()]    [switch]    $A,
         [Parameter()]    [switch]    $S
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process
 {	$Cmd = "showversion"
@@ -124,16 +124,16 @@ Function Update-A9Cage_CLI
 {
 <#
 .SYNOPSIS
-	Update-Cage - Upgrade firmware for the specified cage.
+	Upgrade firmware for the specified cage.
 .DESCRIPTION
-	The Update-Cage command downloads new firmware into the specified cage.
+	The command downloads new firmware into the specified cage.
 .PARAMETER A
 	All drive cages are upgraded one at a time.
 .PARAMETER Parallel
 	All drive cages are upgraded in parallel by interface card domain. If -wait is specified, the command will not return until the upgrades
 	are completed. Otherwise, the command returns immediately and completion of the upgrade can be monitored with the -status option.
 .PARAMETER Status
-	Print status of the current Update-Cage operation in progress or the last executed Update-Cage operation. If any cagenames are specified, result
+	Print status of the current operation in progress or the last executed operation. If any cagenames are specified, result
 is filtered to only display those cages.
 #>
 [CmdletBinding()]
@@ -144,7 +144,7 @@ param(	[Parameter()]	[switch]	$A,
 		[Parameter()]	[String]	$Cagename
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process 
 {	$Cmd = " upgradecage "
@@ -182,11 +182,11 @@ Function Reset-A9SystemNode_CLI
 {
 <#
 .SYNOPSIS
-	Reset-SystemNode - Halts or reboots a system node.
+	Halts or reboots a system node.
 .DESCRIPTION
-	The Reset-SystemNode command shuts down a system node.
+	The command shuts down a system node.
 .EXAMPLE
-	Reset-SystemNode -Halt -Node_ID 0.
+	PS:> Reset-A9SystemNode_CLI -Halt -Node_ID 0.
 .PARAMETER Node_ID
 	Specifies the node, identified by its ID, to be shut down.
 .PARAMETER Halt
@@ -207,7 +207,7 @@ param(	[Parameter(ParameterSetName='Halt',Mandatory=$true)]	[switch]	$Halt,
 		[Parameter(Mandatory=$True)]							[String]	$Node_ID
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " shutdownnode "
@@ -225,14 +225,14 @@ Function Set-A9Magazines_CLI
 {
 <#
 .SYNOPSIS
-	Set-Magazines - Take magazines or disks on or off loop.
+	Take magazines or disks on or off loop.
 .DESCRIPTION
-	The Set-Magazines command takes drive magazines, or disk drives within a magazine, either on-loop or off-loop. Use this command when replacing a
+	The command takes drive magazines, or disk drives within a magazine, either on-loop or off-loop. Use this command when replacing a
 	drive magazine or disk drive within a drive magazine.
 .EXAMPLE
-	Set-Magazines -Offloop -Cage_name "xxx" -Magazine "xxx"
+	PS:> Set-A9Magazines_CLI -Offloop -Cage_name "xxx" -Magazine "xxx"
 .EXAMPLE
-	Set-Magazines -Offloop -Port "Both" -Cage_name "xxx" -Magazine "xxx"
+	PS:> Set-A9Magazines_CLI -Offloop -Port "Both" -Cage_name "xxx" -Magazine "xxx"
 .PARAMETER Offloop
 	Specifies that the specified drive magazine or disk drive is either taken off-loop or brought back on-loop.
 .PARAMETER Onloop
@@ -260,7 +260,7 @@ param( 	[Parameter()]					[switch]	$Offloop,
 		[Parameter()]					[switch]	$F
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process 
 {	$Cmd = " controlmag "
@@ -285,9 +285,9 @@ Function Set-A9ServiceCage_CLI
 {
 <#
 .SYNOPSIS
-	Set-ServiceCage - Service a cage.
+	Service a cage.
 .DESCRIPTION
-	The Set-ServiceCage command is necessary when executing removal and replacement actions for a drive cage interface card or power cooling module. The
+	The command is necessary when executing removal and replacement actions for a drive cage interface card or power cooling module. The
 	start subcommand is used to initiate service on a cage, and the end subcommand is used to indicate that service is completed.
 .PARAMETER Start
 	Specifies the start of service on a cage.
@@ -328,7 +328,7 @@ param(	[Parameter(ParameterSetName='Start', Mandatory=$true)]	[switch]	$Start,
 		[Parameter(Mandatory=$true)]	[String]	$CageName
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " servicecage "
@@ -373,13 +373,13 @@ Function Set-A9ServiceNodes_CLI
 {
 <#
 .SYNOPSIS
-	Set-ServiceNodes - Prepare a node for service.
+	Prepare a node for service.
 .DESCRIPTION
 	The Set-ServiceNodes command informs the system that a certain component will be replaced, and will cause the system to indicate the physical location of that component.
 .EXAMPLE
-	Set-ServiceNodes -Start -Nodeid 0
+	Set-A9ServiceNodes_CLI -Start -Nodeid 0
 .EXAMPLE
-	Set-ServiceNodes -Start -Pci 3 -Nodeid 0
+	Set-A9ServiceNodes_CLI -Start -Pci 3 -Nodeid 0
 .PARAMETER Start
 	Specifies the start of service on a node. If shutting down the node is required to start the service, the command will prompt for confirmation before proceeding further.
 .PARAMETER Status
@@ -410,7 +410,7 @@ param(	[Parameter(Mandatory=$True)] 	[String] 	$Nodeid,
 		[Parameter()]					[switch]	$Bat
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }	
 Process
 {	$Cmd = " servicenode "
@@ -431,11 +431,11 @@ Function Reset-A9System_CLI
 {
 <#
 .SYNOPSIS
-	Reset-System - Halts or reboots the entire system.
+	Halts or reboots the entire system.
 .DESCRIPTION
-	The Reset-System command shuts down an entire system.
+	The command shuts down an entire system.
 .EXAMPLE
-	Reset-System -Halt.
+	PS:> Reset-A9System_CLI -Halt
 .PARAMETER Halt
 	Specifies that the system should be halted after shutdown. If this subcommand is not specified, the reboot or restart subcommand must be used.
 .PARAMETER Reboot
@@ -449,14 +449,13 @@ param(	[Parameter(ParameterSetName='Halt',   Mandatory=$true)]	[switch]	$Halt,
 		[Parameter(ParameterSetName='Restart',Mandatory=$true)]	[switch]	$Restart
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " shutdownsys "
-	if($Halt)		{	$Cmd += " halt " }
-	Elseif($Reboot)	{	$Cmd += " reboot " }
-	Elseif($Restart){	$Cmd += " restart " }
-	else			{	Return "Select at least one from [Halt | Reboot | Restart ]" }
+	if($Halt)	{	$Cmd += " halt " }
+	if($Reboot)	{	$Cmd += " reboot " }
+	if($Restart){	$Cmd += " restart " }
 	$Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -466,9 +465,9 @@ Function Update-A9PdFirmware_CLI
 {
 <#
 .SYNOPSIS
-	Update-PdFirmware - Upgrade physical disk firmware.
+	Upgrade physical disk firmware.
 .DESCRIPTION
-	The Update-PdFirmware command upgrades the physical disk firmware.
+	The command upgrades the physical disk firmware.
 .PARAMETER F
 	Upgrades the physical disk firmware without requiring confirmation.
 .PARAMETER Skiptest
@@ -491,7 +490,7 @@ param(	[Parameter()]	[switch]	$F,
 		[Parameter()]	[String]	$PD_ID
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " upgradepd "
@@ -509,9 +508,9 @@ Function Search-A9ServiceNode_CLI
 {
 <#
 .SYNOPSIS
-	Search-ServiceNode - Prepare a node for service.
+	Prepare a node for service.
 .DESCRIPTION
-	The Search-ServiceNode command informs the system that a certain component will be replaced, and will cause the system to indicate the physical location of that component.
+	The command informs the system that a certain component will be replaced, and will cause the system to indicate the physical location of that component.
 .PARAMETER Start
 	Specifies the start of service on a node. If shutting down the node	is required to start the service, the command will prompt for confirmation before proceeding further.
 .PARAMETER Status
@@ -543,7 +542,7 @@ param(	[Parameter()]	[switch]	$Start,
 		[Parameter(Mandatory=$true)]	[String]	$NodeId
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " servicenode "
@@ -565,9 +564,9 @@ Function Get-A9ResetReason_CLI
 {
 <#
 .SYNOPSIS
-	The Get-ResetReason cmdlet displays component reset reason details.
+	The cmdlet displays component reset reason details.
 .DESCRIPTION
-	The showreset command displays component reset reason details.
+	The command displays component reset reason details.
 .PARAMETER D
 	Specifies that more detailed information about the system is displayed.
 .PARAMETER SANConnection 
@@ -575,17 +574,17 @@ Function Get-A9ResetReason_CLI
 .EXAMPLE
 	To display reset reason in table format:
 
-	Get-ResetReason
+	PS:> Get-A9ResetReason_CLI
 .EXAMPLE
 	To display reset reason in more detail (-d option):
 	
-	Get-ResetReason -d
+	PS:> Get-A9ResetReason_CLI -d
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$D
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " showreset "
@@ -599,9 +598,9 @@ Function Set-A9Security_CLI
 {
 <#
 .SYNOPSIS
-	Set-Security - Control security parameters.
+	Control security parameters.
 .DESCRIPTION
-	The Set-Security cmdlet controls security parameters of the system
+	The cmdlet controls security parameters of the system
 .PARAMETER FipsEnable
 	Enables the use of FIPS 140-2 validated cryptographic modules on system management interfaces.
 .PARAMETER FipsDisable
@@ -617,7 +616,7 @@ Function Set-A9Security_CLI
 .EXAMPLE
     Enables fips mode
 
-    Set-Security fips enable
+    PS:> Set-A9Security_CLI -fipsenable
 
     Warning: Enabling FIPS mode requires restarting all system management interfaces,  which will terminate ALL existing connections including this one.
     When that happens, you must reconnect to continue.
@@ -625,7 +624,7 @@ Function Set-A9Security_CLI
 .EXAMPLE
     Disables fips mode
 
-    Set-Security fips disable
+    PS:> Set-A9Security_CLI -fipsdisable
 
     Warning: Disabling FIPS mode requires restarting all system management interfaces,
     which will terminate ALL existing connections including this one. When that happens, you must reconnect to continue.
@@ -633,44 +632,43 @@ Function Set-A9Security_CLI
 .EXAMPLE
     Restarts services which are not currently enabled
     
-    Set-Security fips restart
+    PS:> Set-A9Security_CLI -fipsrestart
     
     Warning: Will restart all services that are not enabled, which may terminate ALL existing connections including this one. When that happens, you must reconnect to continue.
     Continue restarting (yes/no)?
 .EXAMPLE
     Regenerates the SSH host keys and distributes them to the other nodes
 
-    Set-Security ssh-keys generate
+    PS:> Set-A9Security_CLI -ssh-keysgenerate
 
     Warning: This action will restart the ssh service, which may terminate ALL existing connections including this one. When that happens, you must reconnect to continue.
     Continue restarting (yes/no)?
 .EXAMPLE
     Syncs the SSH host keys from the current node to all other nodes
 
-    Set-Security ssh-keys sync
+    PS:> Set-A9Security_CLI -ssh-keyssync
 
     Warning: This action will restart the ssh service, which may terminate ALL existing connections including this one. When that happens, you must reconnect to continue.
     Continue restarting (yes/no)?
 #>
 [CmdletBinding()]
-param(  [Parameter()]    [switch]    $FipsEnable,
-        [Parameter()]    [switch]    $FipsDisable,
-        [Parameter()]    [switch]    $FipsRestart,
-        [Parameter()]    [switch]    $SSHKeysGenerate,
-        [Parameter()]    [switch]    $SSHKeysSync,
-        [Parameter()]    [switch]    $F
+param(  [Parameter(ParameterSetName='FE', Mandatory=$true)]	[switch]    $FipsEnable,
+        [Parameter(ParameterSetName='FD', Mandatory=$true)]	[switch]    $FipsDisable,
+        [Parameter(ParameterSetName='FR', Mandatory=$true)]	[switch]    $FipsRestart,
+        [Parameter(ParameterSetName='SG', Mandatory=$true)]	[switch]    $SSHKeysGenerate,
+        [Parameter(ParameterSetName='SS', Mandatory=$true)]	[switch]    $SSHKeysSync,
+        [Parameter()]   			 						[switch]    $F
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process 
 {	$Cmd = " controlsecurity "
     if ($FipsEnable) {    $Cmd += " fips enable "    }
-    Elseif ($FipsDisable) {    $Cmd += " fips disable "    }
-    Elseif ($FipsRestart) {    $Cmd += " fips restart "    }
-    Elseif ($SSHKeysGenerate) {    $Cmd += " ssh-keys generate "    }
-    Elseif ($SSHKeysSync) {    $Cmd += " ssh-keys sync "    } 
-    else {    Return "Select one option from [ Fips Enable | Fips Disable | Fips Restart | SSHKeys Generate | SSHKeys Sync ] and proceed."    }
+    if ($FipsDisable) {    $Cmd += " fips disable "    }
+    if ($FipsRestart) {    $Cmd += " fips restart "    }
+    if ($SSHKeysGenerate) {    $Cmd += " ssh-keys generate "    }
+    if ($SSHKeysSync) {    $Cmd += " ssh-keys sync "    } 
 	if ($F) {    $Cmd += " -f "    } 
     $Result = Invoke-CLICommand -cmds  $Cmd
 	Return $Result
@@ -681,15 +679,15 @@ Function Get-A9Security_CLI
 {    
 <#
 .SYNOPSIS
-	Get-Security - Show Control security parameters.
+	Show Control security parameters.
 .DESCRIPTION
-	The Get-Security cmdlet shows the status of security parameters of system management interfaces.
+	The cmdlet shows the status of security parameters of system management interfaces.
 .PARAMETER FipsStatus
 	Shows the status of security parameters of system management interfaces.
 .EXAMPLE
     Shows the current mode of FIPS and status of services
 
-    Get-Security fips status
+    PS:> Get-A9Security_CLI -fipsstatus
 
     FIPS mode: Enabled
 
@@ -709,16 +707,15 @@ Function Get-A9Security_CLI
     11      6 Enabled
 #>
 [CmdletBinding()]
-param( 	[Parameter()]   [switch]    $FipsStatus
+param( 	[Parameter(Mandatory=$true)]   [switch]    $FipsStatus
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " controlsecurity "
     if ($FipsStatus) {    $Cmd += " fips status "    } 
-    else {    Return "Select Fips Status and proceed."    }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+    $Result = Invoke-CLICommand -cmds  $Cmd
     Return $Result
 }
 }

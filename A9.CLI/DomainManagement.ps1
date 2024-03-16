@@ -5,9 +5,9 @@ Function Get-A9Domain_CLI
 {
 <#
 .SYNOPSIS
-	Get-Domain - Show information about domains in the system.
+	Show information about domains in the system.
 .DESCRIPTION
-	The Get-Domain command displays a list of domains in a system.
+	Displays a list of domains in a system.
 .PARAMETER D
 	Specifies that detailed information is displayed.
 #>
@@ -15,7 +15,7 @@ Function Get-A9Domain_CLI
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$D
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$Cmd = " showdomain "
@@ -46,15 +46,15 @@ Function Get-A9DomainSet_CLI
 {
 <#
 .SYNOPSIS
-Get-DomainSet - show domain set information
+	show domain set information
 .DESCRIPTION
-The Get-DomainSet command lists the domain sets defined on the system and their members.
+	Lists the domain sets defined on the system and their members.
 .EXAMPLE
-Get-DomainSet -D
+	PS:> Get-A9DomainSet_CLI -D
 .PARAMETER D
-Show a more detailed listing of each set.
-.PARAMETER Domain
-Show domain sets that contain the supplied domains or patterns
+	Show a more detailed listing of each set.
+.PARAMETER DomainShow 
+	domain sets that contain the supplied domains or patterns
 .PARAMETER SetOrDomainName
 	specify either Domain Set name or domain name (member of Domain set)
 #>
@@ -64,7 +64,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$D,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$SetOrDomainName
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$Cmd = " showdomainset "
@@ -81,9 +81,9 @@ Function Move-A9Domain_CLI
 {
 <#
 .SYNOPSIS
-	Move-Domain - Move objects from one domain to another, or into/out of domains
+	Move objects from one domain to another, or into/out of domains
 .DESCRIPTION
-	The Move-Domain command moves objects from one domain to another.
+	Moves objects from one domain to another.
 .PARAMETER ObjName
 	Specifies the name of the object to be moved.
 .PARAMETER DomainName
@@ -107,7 +107,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$vv,
 	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]		[String]	$DomainName
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$Cmd = " movetodomain "
@@ -140,13 +140,13 @@ Function New-A9Domain_CLI
 {
 <#
 .SYNOPSIS
-	New-Domain : Create a domain.
+	Create a domain.
 .DESCRIPTION
 	The New-Domain command creates system domains.
 .EXAMPLE
-	New-Domain -Domain_name xxx
+	Domain_name xxx
 .EXAMPLE
-	New-Domain -Domain_name xxx -Comment "Hello"
+	PS:> New-A9Domain_CLI -Domain_name xxx -Comment "Hello"
 .PARAMETER Domain_name
 	Specifies the name of the domain you are creating. The domain name can be no more than 31 characters. The name "all" is reserved.
 .PARAMETER Comment
@@ -163,20 +163,18 @@ param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Comment,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$Domain_name
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 } 
 Process
 {	$Cmd = " createdomain "
-if($Comment)			{	$Cmd += " -comment " + '" ' + $Comment +' "'	 }
-if($Vvretentiontimemax) {	$Cmd += " -vvretentiontimemax $Vvretentiontimemax " } 
-if($Domain_name) 		{	$Cmd += " $Domain_name " }
-else {	return "Domain Required.." }
-$Result = Invoke-CLICommand -cmds  $Cmd
-Return $Result
-if ([string]::IsNullOrEmpty($Result))
-	{   Return $Result = "Domain : $Domain_name Created Successfully."
-	}
-else{	Return $Result}
+	if($Comment)			{	$Cmd += " -comment " + '" ' + $Comment +' "'	 }
+	if($Vvretentiontimemax) {	$Cmd += " -vvretentiontimemax $Vvretentiontimemax " } 
+	if($Domain_name) 		{	$Cmd += " $Domain_name " }
+	else {	return "Domain Required.." }
+	$Result = Invoke-CLICommand -cmds  $Cmd
+	Return $Result
+	if ([string]::IsNullOrEmpty($Result))	{   Return $Result = "Domain : $Domain_name Created Successfully."	}
+	else									{	Return $Result	}
 }
 }
 
@@ -184,12 +182,12 @@ Function New-A9DomainSet_CLI
 {
 <#
 .SYNOPSIS
-	New-DomainSet : create a domain set or add domains to an existing set
+	Create a domain set or add domains to an existing set
 .DESCRIPTION
-	The New-DomainSet command defines a new set of domains and provides the option of assigning one or more existing domains to that set. 
+	The command defines a new set of domains and provides the option of assigning one or more existing domains to that set. 
 	The command also allows the addition of domains to an existing set by use of the -add option.
 .EXAMPLE
-	New-DomainSet -SetName xyz 
+	New-A9DomainSet_CLI -SetName xyz 
 .PARAMETER SetName
 	Specifies the name of the domain set to create or add to, using up to 27 characters in length.
 .PARAMETER Add
@@ -203,7 +201,7 @@ param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$SetName,
 		[Parameter(ValueFromPipeline=$true)]					[String]	$Comment
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$Cmd = " createdomainset " 
@@ -219,11 +217,11 @@ Function Remove-A9Domain_CLI
 {
 <#
 .SYNOPSIS
-	Remove-Domain - Remove a domain
+	Remove a domain
 .DESCRIPTION
-	The Remove-Domain command removes an existing domain from the system.
+	The command removes an existing domain from the system.
 .EXAMPLE
-	Remove-Domain -DomainName xyz
+	Remove-A9Domain_CLI -DomainName xyz
 .PARAMETER DomainName
 	Specifies the domain that is removed. If the -pat option is specified the DomainName will be treated as a glob-style pattern, and multiple domains will be considered.
 .PARAMETER Pat
@@ -234,7 +232,7 @@ param(	[Parameter(ValueFromPipeline=$true)]					[switch]	$Pat,
 		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$DomainName
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " removedomain -f "
@@ -249,11 +247,11 @@ Function Remove-A9DomainSet_CLI
 {
 <#
 .SYNOPSIS
-	Remove-DomainSet : remove a domain set or remove domains from an existing set
+	Remove a domain set or remove domains from an existing set
 .DESCRIPTION
-	The Remove-DomainSet command removes a domain set or removes domains from an existing set.
+	The command removes a domain set or removes domains from an existing set.
 .EXAMPLE
-	Remove-DomainSet -SetName xyz
+	PS:> Remove-A9DomainSet_CLI -SetName xyz
 .PARAMETER SetName
 	Specifies the name of the domain set. If the -pat option is specified the setname will be treated as a glob-style pattern, and multiple domain sets will be considered.
 .PARAMETER Domain
@@ -271,7 +269,7 @@ param(	[Parameter(ValueFromPipeline=$true)]					[switch]	$F,
 		[Parameter(ValueFromPipeline=$true)]					[String]	$Domain
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " removedomainset "
@@ -288,13 +286,13 @@ Function Set-A9Domain_CLI
 {
 <#
 .SYNOPSIS
-	Set-Domain Change current domain CLI environment parameter.
+	Change current domain CLI environment parameter.
 .DESCRIPTION
-	The Set-Domain command changes the current domain CLI environment parameter.
+	The command changes the current domain CLI environment parameter.
 .EXAMPLE
-	Set-Domain
+	PS:> Set-A9Domain_CLI
 .EXAMPLE
-	Set-Domain -Domain "XXX"
+	PS:> Set-Domain -Domain "XXX"
 .PARAMETER Domain
 	Name of the domain to be set as the working domain for the current CLI session. If the <domain> parameter is not present or is equal to -unset then the working domain is set to no current domain.
 #>
@@ -302,7 +300,7 @@ Function Set-A9Domain_CLI
 param(	[Parameter()]	[String]	$Domain
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " changedomain "
@@ -325,11 +323,11 @@ Function Update-A9Domain_CLI
 {
 <#
 .SYNOPSIS
-	Update-Domain : Set parameters for a domain.
+	Set parameters for a domain.
 .DESCRIPTION
-	The Update-Domain command sets the parameters and modifies the properties of a domain.
+	The command sets the parameters and modifies the properties of a domain.
 .EXAMPLE
-	Update-Domain -DomainName xyz
+	Update-A9Domain_CLI -DomainName xyz
 .PARAMETER DomainName
 	Indicates the name of the domain.(Existing Domain Name)
 .PARAMETER NewName
@@ -350,7 +348,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[String]	$NewName,
 		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$DomainName
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " setdomain "
@@ -367,11 +365,11 @@ Function Update-A9DomainSet_CLI
 {
 <#
 .SYNOPSIS
-	Update-DomainSet : set parameters for a domain set
+	set parameters for a domain set
 .DESCRIPTION
-	The Update-DomainSet command sets the parameters and modifies the properties of a domain set.
+	The command sets the parameters and modifies the properties of a domain set.
 .EXAMPLE
-	Update-DomainSet -DomainSetName xyz
+	Update-A9DomainSet_CLI -DomainSetName xyz
 .PARAMETER DomainSetName
 	Specifies the name of the domain set to modify.
 .PARAMETER Comment
@@ -385,7 +383,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Comment,
 		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$DomainSetName
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " setdomainset "

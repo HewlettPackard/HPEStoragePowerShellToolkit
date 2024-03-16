@@ -104,7 +104,7 @@ Param(	[Parameter(Mandatory = $true,ValueFromPipeline=$True,ValueFromPipelinebyP
 		[Parameter()]					[Boolean]	$Compression = $false
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -258,7 +258,7 @@ Param(
 	[Parameter()]	[Boolean]	$RmUsrSpcAllocLimit
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -335,7 +335,7 @@ Param(
     [String]$VVName
 )
 Begin 
-{	Test-WSAPIConnection	
+{	Test-A9Connection -ClientType 'API'	
 }
 Process 
 {	$Result = $null
@@ -386,7 +386,7 @@ Param(	[Parameter(Mandatory = $true)]	[String]	$VVName,
 		[Parameter(Mandatory = $true)]	[int]		$SizeMiB
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -454,7 +454,7 @@ Param(	[Parameter(Mandatory = $true)]	[String]$VVName,
 		[Parameter()]					[Boolean]	$Compression
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{} 	
@@ -566,7 +566,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$VVName,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$ProvisioningType
 )
 Begin 
-{	Test-WSAPIConnection	 
+{	Test-A9Connection -ClientType 'API'	 
 }
 Process 
 {	$Result = $null
@@ -671,7 +671,7 @@ Param(
 	[String]	$VVName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$uri = '/volumes/'+$VVName

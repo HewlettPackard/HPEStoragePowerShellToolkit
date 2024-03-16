@@ -109,7 +109,7 @@ Param(
 	[Parameter()]		[int]	$Rpm = $null
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -337,7 +337,7 @@ Function Update-A9Cpg
 	[Parameter()]			[int]		$Rpm = $null
 )
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$body = @{}
@@ -472,7 +472,7 @@ Param(	[Parameter(Mandatory = $true,ValueFromPipeline=$True,ValueFromPipelinebyP
 		[String]	$CPGName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {  	$uri = '/cpgs/'+$CPGName
@@ -512,7 +512,7 @@ Function Get-A9Cpg
 Param(	[Parameter(ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True)]	[String]	$CPGName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null

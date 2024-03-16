@@ -5,13 +5,13 @@ Function Get-A9Maint_CLI
 {
 <#
 .SYNOPSIS
-	Get-Maint - Show maintenance window records.
+	Show maintenance window records.
 .DESCRIPTION
-	The Get-Maint command displays maintenance window records.
+	The command displays maintenance window records.
 .EXAMPLE
-	Get-Maint
+	Get-A9Maint_CLI
 .EXAMPLE
-	Get-Maint -All 
+	Get-A9Maint_CLI -All 
 .PARAMETER All
 	Display all maintenance window records, including active and expired ones. If this option is not specified, only active window records will be displayed.
 .PARAMETER Sortcol
@@ -25,7 +25,7 @@ param(	[Parameter()]	[switch]	$All,
 		[Parameter()]	[String]	$Sortcol
 )
 Begin
-{	Test-CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " showmaint "
@@ -58,11 +58,11 @@ Function New-A9Maint_CLI
 {
 <#
 .SYNOPSIS
-	New-Maint - Create a maintenance window record.
+	Create a maintenance window record.
 .DESCRIPTION
-	The New-Maint command creates a maintenance window record with the specified options and maintenance type.
+	The command creates a maintenance window record with the specified options and maintenance type.
 .EXAMPLE
-	New-Maint -Duration 1m -MaintType Node
+	PS:> New-A9Maint_CLI -Duration 1m -MaintType Node
 .PARAMETER Comment
 	Specifies any comment or additional information for the maintenance window record. The comment can be up to 255 characters long. Unprintable
 	characters are not allowed.
@@ -77,7 +77,7 @@ param(	[Parameter()]	[String]	$Comment,
 		[Parameter(Mandatory=$true)]	[String]	$MaintType
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }	
 Process
 {	$Cmd = " createmaint -f "
@@ -93,7 +93,7 @@ Function Set-A9Maint_CLI
 {
 <#
 .SYNOPSIS
-	Set-Maint - Modify a maintenance window record with the specified options for the maintenance type.
+	Modify a maintenance window record with the specified options for the maintenance type.
 .DESCRIPTION
 	Allows modification of the Maintenance window record with the specified options for the maintenance type.
 .PARAMETER Comment
@@ -117,7 +117,7 @@ param(	[Parameter()]	[String]	$Comment,
 		[Parameter(Mandatory=$true)]	[String]	$MaintType
 )
 Begin
-{	Test-CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " setmaint "

@@ -5,9 +5,9 @@ Function New-A9FlashCache_CLI
 {
 <#
 .SYNOPSIS
-	New-FlashCache - Creates flash cache for the cluster.
+	Creates flash cache for the cluster.
 .DESCRIPTION
-	The New-FlashCache command creates flash cache of <size> for each node pair. The flash cache will be created from SSD drives.
+	The command creates flash cache of <size> for each node pair. The flash cache will be created from SSD drives.
 .PARAMETER Sim
 	Specifies that the Adaptive Flash Cache will be run in simulator mode. The simulator mode does not require the use of SSD drives.
 .PARAMETER RAIDType
@@ -23,7 +23,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Sim,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$Size
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process 
 {	$Cmd = " createflashcache "
@@ -39,12 +39,12 @@ Function Set-A9FlashCache_CLI
 {
 <#
 .SYNOPSIS
-	Set-FlashCache - Sets the flash cache policy for virtual volumes
+	Sets the flash cache policy for virtual volumes
 .DESCRIPTION
-	The Set-FlashCache command allows you to set the policy of the flash cache for virtual volumes. The policy is set by using virtual volume sets(vvset). 
+	The command allows you to set the policy of the flash cache for virtual volumes. The policy is set by using virtual volume sets(vvset). 
 	The sys:all is used to enable the policy on all virtual volumes in the system.
 .EXAMPLE
-	Set-FlashCache
+	PS:> Set-A9FlashCache_CLI
 .PARAMETER Enable
 	Will turn on the flash cache policy for the target object.
 .PARAMETER Disable
@@ -65,7 +65,7 @@ param(	[Parameter(ParameterSetName='Enable', Mandatory=$true, ValueFromPipeline=
 		[Parameter(ValueFromPipeline=$true)]	[switch]	$All
 )
 Begin 
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$Cmd = " setflashcache "
@@ -83,11 +83,11 @@ Function Remove-A9FlashCache_CLI
 {
 <#
 .SYNOPSIS
-	Remove-FlashCache - Removes flash cache from the cluster.
+	Removes flash cache from the cluster.
 .DESCRIPTION
-	The Remove-FlashCache command removes the flash cache from the cluster and will stop use of the extended cache.
+	The command removes the flash cache from the cluster and will stop use of the extended cache.
 .EXAMPLE
-	Remove-FlashCache
+	PS:> Remove-A9FlashCache_CLI
 .PARAMETER F
 	Specifies that the command is forced. If this option is not used, the command requires confirmation before proceeding with its operation.
 #>
@@ -95,7 +95,7 @@ Function Remove-A9FlashCache_CLI
 param(	[Parameter()]	[switch]	$F
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " removeflashcache "

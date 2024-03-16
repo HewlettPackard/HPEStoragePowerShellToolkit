@@ -6,15 +6,15 @@ Function Get-A9Alert_CLI
 {
 <#
 .SYNOPSIS
-	Get-Alert - Display system alerts.
+	Display system alerts.
 .DESCRIPTION
-	The Get-Alert command displays the status of system alerts. When issued without options, all new customer alerts are displayed.
+	The command displays the status of system alerts. When issued without options, all new customer alerts are displayed.
 .EXAMPLE
-	Get-Alert -N
+	PS:> Get-A9Alert_CLI -N
 .EXAMPLE
-	Get-Alert -F
+	PS:> Get-A9Alert_CLI -F
 .EXAMPLE
-	Get-Alert -All
+	PS:> Get-A9Alert_CLI -All
 .PARAMETER N
 	Specifies that only new customer alerts are displayed. This is the default.
 .PARAMETER A
@@ -46,7 +46,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$N,
 		[Parameter(ValueFromPipeline=$true)]	[switch]	$Wide
 )
 Begin
-{	Test-CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " showalert "
@@ -67,10 +67,9 @@ Function Get-A9EventLog_CLI
 {
 <#
 .SYNOPSIS
-	Get-EventLog - Show the system event log.
+	Show the system event log.
 .DESCRIPTION
-	The Get-EventLog command displays the current system event log.
-.EXAMPLE
+	The command displays the current system event log.
 .PARAMETER Min
 	Specifies that only events occurring within the specified number of minutes are shown. The <number> is an integer from 1 through 2147483647.
 .PARAMETER More
@@ -143,7 +142,7 @@ param(
 	[Parameter(ValueFromPipeline=$true)]	[String]	$Ncomp
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " showeventlog "
@@ -174,9 +173,9 @@ Function Get-A9Health_CLI
 {
 <#
 .SYNOPSIS
-	Get-Health - Check the current health of the system.
+	Check the current health of the system.
 .DESCRIPTION
-	The Get-Health command checks the status of system hardware and software components, and reports any issues
+	The command checks the status of system hardware and software components, and reports any issues
 .PARAMETER Component
 	Indicates the component to check. Use -list option to get the list of components.
 .PARAMETER Lite
@@ -202,7 +201,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Lite,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$Component
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " checkhealth "
@@ -222,9 +221,9 @@ Function Remove-A9Alerts_CLI
 {
 <#
 .SYNOPSIS
-	Remove-Alerts - Remove one or more alerts.
+	Remove one or more alerts.
 .DESCRIPTION
-	The Remove-Alerts command removes one or more alerts from the system.
+	The command removes one or more alerts from the system.
 .PARAMETER  Alert_ID
 	Indicates a specific alert to be removed from the system. This specifier can be repeated to remove multiple alerts. If this specifier is not used, the -a option must be used.
 .PARAMETER All
@@ -239,7 +238,7 @@ param(	[Parameter(ParameterSetName='All', Mandatory=$true, ValueFromPipeline=$tr
 		[Parameter(ParameterSetName='Id',  Mandatory=$true, ValueFromPipeline=$true)]	[String]	$Alert_ID
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " removealert "
@@ -255,9 +254,9 @@ Function Set-A9Alert_CLI
 {
 <#
 .SYNOPSIS
-	Set-Alert - Set the status of system alerts.
+	Set the status of system alerts.
 .DESCRIPTION
-	The Set-Alert command sets the status of system alerts.
+	The command sets the status of system alerts.
 .PARAMETER Alert_ID
 	Specifies that the status of a specific alert be set. This specifier can be repeated to indicate multiple specific alerts. Up to 99 alerts
 	can be specified in one command. If not specified, the -a option must be specified on the command line.
@@ -289,7 +288,7 @@ param(	[Parameter(ParameterSetName='NewAll', Mandatory=$true)]
 		[Parameter(ParameterSetName='FixId',  Mandatory=$true)]		[int]		$Alert_ID
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " setalert "

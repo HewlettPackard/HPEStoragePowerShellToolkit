@@ -6,13 +6,13 @@ Function Get-A9Wsapi_CLI
 {
 <#
   .SYNOPSIS
-  Get-Wsapi - Show the Web Services API server information.
+  Shows the Web Services API server information.
 .DESCRIPTION
-  The Get-Wsapi command displays the WSAPI server service configuration state as either Enabled or Disabled. It displays the server current running
+  The command displays the WSAPI server service configuration state as either Enabled or Disabled. It displays the server current running
   status as Active, Inactive or Error. It also displays the current status of the HTTP and HTTPS ports and their port numbers. WSAPI server URL is
   also displayed.
 .EXAMPLE
-    Get-Wsapi -D
+    Get-A9Wsapi_CLI -D
 .PARAMETER D
     Shows WSAPI information in table format.
 #>
@@ -20,7 +20,7 @@ Function Get-A9Wsapi_CLI
 param(  [Parameter()] [switch]	$D
 )
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 { $Cmd = " showwsapi "
@@ -47,17 +47,17 @@ Function Get-A9WsapiSession_CLI
 {
 <#
 .SYNOPSIS
-  Get-WsapiSession - Show the Web Services API server sessions information.
+  Get-A9WsapiSession_CLI - Show the Web Services API server sessions information.
 .DESCRIPTION
   The Get-WsapiSession command displays the WSAPI server sessions connection information, including the id, node, username, role, hostname,
   and IP Address of the connecting client. It also displays the session creation time and session type.
 .EXAMPLE
-	Get-WsapiSession
+	Get-A9WsapiSession_CLI
 #>
 [CmdletBinding()]
 param()
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 { $Cmd = " showwsapisession "
@@ -85,11 +85,11 @@ Function Remove-A9WsapiSession_CLI
 {
 <#
 .SYNOPSIS
-  Remove-WsapiSession - Remove WSAPI user connections.
+  Remove WSAPI user connections.
 .DESCRIPTION
-  The Remove-WsapiSession command removes the WSAPI user connections from the current system.
+  The command removes the WSAPI user connections from the current system.
 .EXAMPLE
-	Remove-WsapiSession -Id "1537246327049685" -User_name 3parxyz -IP_address "10.10.10.10"
+	Remove-A9WsapiSession_CLI -Id "1537246327049685" -User_name 3parxyz -IP_address "10.10.10.10"
 .PARAMETER Pat
   Specifies that the <id>, <user_name> and <IP_address> specifiers are treated as glob-style (shell-style) patterns and all WSAPI user
   connections matching those patterns are removed. By default, confirmation is required to proceed with removing each connection
@@ -114,7 +114,7 @@ param(  [Parameter()]   [switch]   $Pat,
         [Parameter(Mandatory=$true)]  [String]  $IP_address
 )
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 { $Cmd = " removewsapisession -f"
@@ -134,11 +134,11 @@ Function Set-A9Wsapi_CLI
 {
 <#
 .SYNOPSIS
-  Set-Wsapi - Set the Web Services API server properties.
+  Set the Web Services API server properties.
 .DESCRIPTION
-  The Set-Wsapi command sets properties of the Web Services API server, including options to enable or disable the HTTP and HTTPS ports.
+  The command sets properties of the Web Services API server, including options to enable or disable the HTTP and HTTPS ports.
 .EXAMPLE
-	Set-Wsapi -Force -Enable_Http
+	Set-A9Wsapi_CLI -Force -Enable_Http
 .PARAMETER Force
   Forces the operation of the setwsapi command, bypassing the typical confirmation message. At least one of the following options are required:
 .PARAMETER Pol
@@ -159,7 +159,7 @@ param(  [Parameter()]   [switch]	$Force,
         [Parameter()] 	[String]	$Evtstream
 )
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 { $Cmd = " setwsapi "
@@ -176,17 +176,17 @@ Function Start-A9Wsapi_CLI
 {
 <#
 .SYNOPSIS
-  Start-Wsapi - Start the Web Services API server to service HTTP and HTTPS requests.
+  Start the Web Services API server to service HTTP and HTTPS requests.
 .DESCRIPTION
-  The Start-Wsapi command starts the Web Services API server to service HTTP and HTTPS requests.
+  The command starts the Web Services API server to service HTTP and HTTPS requests.
   By default, the Web Services API server is not started until this command is issued.
 .EXAMPLE
-  Start-Wsapi
+  Start-A9Wsapi_CLI
 #>
 [CmdletBinding()]
 param()
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 { $cmd= " startwsapi "
@@ -199,16 +199,14 @@ Function Stop-A9Wsapi_CLI
 {
 <#
 .SYNOPSIS
-  Stop-Wsapi - Stop the Web Services API server. Future HTTP and HTTPS requests will be rejected.
+  Stop the Web Services API server. Future HTTP and HTTPS requests will be rejected.
 .DESCRIPTION
-  The Stop-Wsapi command stops the Web Services API server from servicing HTTP and HTTPS requests.
-.EXAMPLE
-	Stop-Wsapi
+  The command stops the Web Services API server from servicing HTTP and HTTPS requests.
 #>
 [CmdletBinding()]
 param()
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 { $Cmd = " stopwsapi -f "

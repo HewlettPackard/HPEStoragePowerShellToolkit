@@ -14,7 +14,7 @@ Function Open-A9SSE
 [CmdletBinding()]
 Param()
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -47,7 +47,7 @@ Function Get-A9EventLogs
 [CmdletBinding()]
 Param()
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null

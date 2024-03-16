@@ -43,7 +43,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$HostSetNa
 		[Parameter(ValueFromPipeline=$true)]					[String[]]	$SetMembers
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}    
@@ -128,7 +128,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]					[String]	$HostS
 		[ValidateSet('high','medium','low')]									[String]	$Priority
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -196,7 +196,7 @@ Param(	[Parameter(Mandatory = $true,ValueFromPipeline=$True,ValueFromPipelinebyP
 		[String]$HostSetName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$uri = '/hostsets/'+$HostSetName
@@ -265,7 +265,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$HostSetName,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$Uuid
 )
 Begin 
-{	Test-WSAPIConnection	 
+{	Test-A9Connection -ClientType 'API'	 
 }
 Process 
 {	$Result = $null
@@ -370,7 +370,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]		[String]	$VVSetNam
 		[Parameter(ValueFromPipeline=$true)]						[String[]]	$SetMembers
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}    
@@ -464,7 +464,7 @@ Param(
 	[ValidateSet('high','medium','low')]	[String]	$Priority
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -534,7 +534,7 @@ Param(
 		[String]	$VVSetName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$uri = '/volumesets/'+$VVSetName
@@ -603,7 +603,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$VVSetName,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$Uuid
 )
 Begin 
-{	Test-WSAPIConnection	 
+{	Test-A9Connection -ClientType 'API'	 
 }
 Process 
 {	$Result = $null
@@ -684,7 +684,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VvSet,
 		[Parameter(ValueFromPipeline=$true)]					[Switch]	$Disable
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}		

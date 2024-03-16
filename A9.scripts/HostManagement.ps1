@@ -84,7 +84,7 @@ Param(	[Parameter()]	[String]	$HostName,
 		[Parameter()]	[String[]]	$Port
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}    
@@ -157,7 +157,7 @@ Param(	[Parameter(Mandatory=$true)]				[String]	$HostName,
 		[Parameter(ParameterSetName='RemZone', Mandatory=$true)]	[switch]	$RemoveWwnFromTZone
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
@@ -266,7 +266,7 @@ Param(
 											[String]	$Persona
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}		
@@ -318,7 +318,7 @@ Function Remove-A9Host
 Param(	[Parameter(Mandatory = $true)]	[String]$HostName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$uri = '/hosts/'+$HostName
@@ -358,7 +358,7 @@ Function Get-A9Host
 Param(	[Parameter()]	[String]	$HostName
 )
 Begin 
-{	Test-WSAPIConnection	 
+{	Test-A9Connection -ClientType 'API'	 
 }
 Process 
 {	$Result = $null
@@ -419,7 +419,7 @@ Param(	[Parameter()]	[String]	$WWN,
 )
 
 Begin 
-{	Test-WSAPIConnection	 
+{	Test-A9Connection -ClientType 'API'	 
 }
 Process 
 {	$Result = $null
@@ -525,7 +525,7 @@ Param(	[Parameter()]	[int]		$Id,
 		[Parameter()]	[String]	$WsapiAssignedId
 )
 Begin 
-{	Test-WSAPIConnection	 
+{	Test-A9Connection -ClientType 'API'	 
 }
 Process 
 {	$Result = $null

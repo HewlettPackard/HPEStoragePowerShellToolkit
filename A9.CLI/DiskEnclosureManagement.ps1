@@ -6,23 +6,24 @@ Function Set-A9AdmitsPD_CLI
 {
 <#
 .SYNOPSIS
-    The Set-AdmitsPD command creates and admits physical disk definitions to enable the use of those disks.
+    The command creates and admits physical disk definitions to enable the use of those disks.
 .DESCRIPTION
-    The Set-AdmitsPD command creates and admits physical disk definitions to enable the use of those disks.
+    The command creates and admits physical disk definitions to enable the use of those disks.
 .EXAMPLE
-	Set-AdmitsPD 
+	PS:> Set-A9AdmitsPD_CLI 
 	
 	This example admits physical disks.
 .EXAMPLE
-	Set-AdmitsPD -Nold
+	PS:> Set-A9AdmitsPD_CLI -Nold
 	
 	Do not use the PD (as identified by the <world_wide_name> specifier) For logical disk allocation.
 .EXAMPLE
-	Set-AdmitsPD -NoPatch
+	PS:> Set-A9AdmitsPD_CLI -NoPatch
 	
 	Suppresses the check for drive table update packages for new hardware enablement.
 .EXAMPLE  	
-	Set-AdmitsPD -Nold -wwn xyz
+	PS:> Set-A9AdmitsPD_CLI -Nold -wwn xyz
+
 	Do not use the PD (as identified by the <world_wide_name> specifier) For logical disk allocation.
 .PARAMETER Nold
 	Do not use the PD (as identified by the <world_wide_name> specifier) for logical disk allocation.
@@ -37,7 +38,7 @@ param(	[Parameter()]	[switch]	$Nold,
 		[Parameter()]	[switch]	$NoPatch,
 		[Parameter()]	[String]	$wwn	)	
 	Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$cmd= "admitpd -f  "
@@ -53,22 +54,23 @@ Function Find-A9Cage_CLI
 {
 <#
 .SYNOPSIS
-	The Find-Cage command allows system administrators to locate a drive cage, drive magazine, or port in the system using the devices’ blinking LEDs.
+	The command allows system administrators to locate a drive cage, drive magazine, or port in the system using the devices’ blinking LEDs.
 .DESCRIPTION
-	The Find-Cage command allows system administrators to locate a drive cage, drive magazine, or port in the system using the devices’ blinking LEDs. 
+	The command allows system administrators to locate a drive cage, drive magazine, or port in the system using the devices’ blinking LEDs. 
 .EXAMPLE
-	Find-Cage -Time 30 -CageName cage0	
+	PS:> Find-A9Cage_CLI -Time 30 -CageName cage0	
 	
 	This example causes the Fibre Channel LEDs on the drive CageName cage0 to blink for 30 seconds.
 .EXAMPLE  
-	Find-Cage -Time 30 -CageName cage0 -mag 3	
+	PS:> Find-A9Cage_CLI -Time 30 -CageName cage0 -mag 3	
 
 	This example causes the Fibre Channel LEDs on the drive CageName cage0 to blink for 30 seconds,Indicates the drive magazine by number 3.
 .EXAMPLE  
-	Find-Cage -Time 30 -CageName cage0 -PortName demo1	
+	PS:> Find-A9Cage_CLI -Time 30 -CageName cage0 -PortName demo1
+
 	This example causes the Fibre Channel LEDs on the drive CageName cage0 to blink for 30 seconds, If a port is specified, the port LED will oscillate between green and off.
 .EXAMPLE  	
-	Find-Cage -CageName cage1 -Mag 2	
+	PS:> Find-A9Cage_CLI -CageName cage1 -Mag 2	
 
 	This example causes the Fibre Channel LEDs on the drive CageName cage1 to blink, Indicates the drive magazine by number 2.	
 .PARAMETER Time 
@@ -100,7 +102,7 @@ param(	[Parameter(ValueFromPipeline=$true)]				[String]	$Time,
 		[Parameter(ValueFromPipeline=$true)]				[String]	$PortName
 )		
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$cmd= "locatecage "	
@@ -161,15 +163,20 @@ Function Get-A9Cage_CLI
 {
 <#
 .SYNOPSIS
-	The Get-Cage command displays information about drive cages.
+	The command displays information about drive cages.
 .DESCRIPTION
-	The Get-Cage command displays information about drive cages.    
+	The command displays information about drive cages.    
 .EXAMPLE
-	Get-Cage	This examples display information for a single system’s drive cages.
+	PS:> Get-A9Cage_CLI	
+	
+	This examples display information for a single system’s drive cages.
 .EXAMPLE  
-	Get-Cage -D -CageName cage2	Specifies that more detailed information about the drive cage is displayed
+	PS:> Get-A9Cage_CLI	 -D -CageName cage2	
+	
+	Specifies that more detailed information about the drive cage is displayed
 .EXAMPLE  
-	Get-Cage -I -CageName cage2
+	PS:> Get-A9Cage_CLI	 -I -CageName cage2
+	
 	Specifies that inventory information about the drive cage is displayed. 
 .PARAMETER D
 	Specifies that more detailed information about the drive cage is displayed. If this option is not
@@ -204,7 +211,7 @@ param(	[Parameter()]	[Switch]	$D,
 		[Parameter()]	[String]	$CageName
 	)		
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$cmd= "showcage "
@@ -253,33 +260,33 @@ Function Show-A9PD_CLI
 {
 <#
 .SYNOPSIS
-	The Show-PD command displays configuration information about the physical disks (PDs) on a system. 
+	Displays configuration information about the physical disks (PDs) on a system. 
 .DESCRIPTION
-	The Show-PD command displays configuration information about the physical disks (PDs) on a system. 
+	Displays configuration information about the physical disks (PDs) on a system. 
 .EXAMPLE  
-	Show-PD
+	PS:> Show-A9PD_CLI
 
 	This example displays configuration information about all the physical disks (PDs) on a system. 
 .EXAMPLE  
-	Show-PD -PD_ID 5
+	PS:> Show-A9PD_CLI -PD_ID 5
 
 	This example displays configuration information about specific or given physical disks (PDs) on a system. 
 .EXAMPLE  
-	Show-PD -C 
+	PS:> Show-A9PD_CLI -C 
 
 	This example displays chunklet use information for all disks. 
 .EXAMPLE  
-	Show-PD -C -PD_ID 5
+	PS:> Show-A9PD_CLI -C -PD_ID 5
 
 	This example will display chunklet use information for all disks with the physical disk ID. 
 .EXAMPLE  
-	Show-PD -Node 0 -PD_ID 5
+	PS:> Show-A9PD_CLI -Node 0 -PD_ID 5
 .EXAMPLE  
-	Show-PD -I -Pattern -ND 1 -PD_ID 5
+	PS:> Show-A9PD_CLI -I -Pattern -ND 1 -PD_ID 5
 .EXAMPLE
-	Show-PD -C -Pattern -Devtype FC  	
+	PS:> Show-A9PD_CLI -C -Pattern -Devtype FC  	
 .EXAMPLE  
-	Show-PD -option p -pattern mg -patternValue 0
+	PS:> Show-A9PD_CLI -option p -pattern mg -patternValue 0
 
 	TThis example will display all the FC disks in magazine 0 of all cages.
 .PARAMETER Listcols
@@ -391,7 +398,7 @@ param(	[Parameter()]	[switch]	$I,
 		[Parameter(ValueFromPipeline=$true)]	[switch]	$Listcols 
 )		
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$cmd= "showpd "	
@@ -553,13 +560,13 @@ Function Remove-A9PD_CLI
 {
 <#
 .SYNOPSIS
-	Remove-PD - Remove a physical disk (PD) from system use.
+	Remove a physical disk (PD) from system use.
 .DESCRIPTION
-	The Remove-PD command removes PD definitions from system use.
+	The command removes PD definitions from system use.
 .EXAMPLE
 	The following example removes a PD with ID 1:
 
-	Remove-PD -PDID 1
+	PS:> Remove-A9PD_CLI -PDID 1
 .PARAMETER PDID
 	Specifies the PD(s), identified by integers, to be removed from system use.
 #>
@@ -567,7 +574,7 @@ Function Remove-A9PD_CLI
 param(	[Parameter(Mandatory=$True)]	[String]	$PDID
 )
 Begin	
-{   Test-A8CLIConnection
+{   Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " dismisspd "
@@ -585,10 +592,11 @@ Function Set-A9Cage_CLI
 .DESCRIPTION
 	The Set-Cage command enables service personnel to set or modify parameters for a drive cage.
 .EXAMPLE
-	Set-Cage -Position left -CageName cage1
+	PS:> Set-A9Cage_CLI -Position left -CageName cage1
+
 	This example demonstrates how to assign cage1 a position description of Side Left.
 .EXAMPLE
-	Set-Cage -Position left -PSModel 1 -CageName cage1
+	PS:> Set-A9Cage_CLI -Position left -PSModel 1 -CageName cage1
 
 	This  example demonstrates how to assign model names to the power supplies in cage1. Inthisexample, cage1 hastwopowersupplies(0 and 1).
 .PARAMETER Position  
@@ -604,7 +612,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Position,
 		[Parameter(ValueFromPipeline=$true)]	[String]	$CageName
 )	
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$cmd= "setcage "
@@ -641,15 +649,15 @@ Function Set-A9PD_CLI
 {
 <#
 .SYNOPSIS
-	The Set-PD command marks a Physical Disk (PD) as allocatable or non allocatable for Logical   Disks (LDs).
+	Marks a Physical Disk (PD) as allocatable or non allocatable for Logical   Disks (LDs).
 .DESCRIPTION
-	The Set-PD command marks a Physical Disk (PD) as allocatable or non allocatable for Logical   Disks (LDs).   
+	Marks a Physical Disk (PD) as allocatable or non allocatable for Logical   Disks (LDs).   
 .EXAMPLE
-	Set-PD -Ldalloc off -PD_ID 20	
+	PS:> Set-A9PD_CLI -Ldalloc off -PD_ID 20	
 	
 	displays PD 20 marked as non allocatable for LDs.
 .EXAMPLE  
-	Set-PD -Ldalloc on -PD_ID 25	
+	PS:> Set-A9PD_CLI -Ldalloc on -PD_ID 25	
 
 	displays PD 25 marked as allocatable for LDs.
 .PARAMETER ldalloc 
@@ -661,7 +669,7 @@ param(	[Parameter(Mandatory=$true)][ValidateSet('on','off')]	[String]	$Ldalloc,
 		[Parameter(Mandatory=$true)][ValidateRange(0,4096)]		[String]	$PD_ID
 )		
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$cmd= "setpd "	
@@ -680,11 +688,9 @@ Function Switch-A9PD_CLI
 {
 <#
 .SYNOPSIS
-	Switch-PD - Spin up or down a physical disk (PD).
+	Spin up or down a physical disk (PD).
 .DESCRIPTION
-	The Switch-PD command spins a PD up or down. This command is used when replacing a PD in a drive magazine.
-.EXAMPLE
-	The following example instigates the spin up of a PD identified by its WWN of 2000000087002078: Switch-PD -Spinup -WWN 2000000087002078
+	The command spins a PD up or down. This command is used when replacing a PD in a drive magazine.
 .PARAMETER Spinup
 	Specifies that the PD is to spin up. If this subcommand is not used, then the spindown subcommand must be used.
 .PARAMETER Spindown
@@ -695,13 +701,13 @@ Function Switch-A9PD_CLI
 	Specifies the World Wide Name of the PD. This specifier can be repeated to identify multiple PDs.
 #>
 [CmdletBinding()]
-param(	[Parameter(ParameterSetName='up',Mandatory=$true)]		[switch]	$Spinup,
+param(	[Parameter(ParameterSetName='up',  Mandatory=$true)]	[switch]	$Spinup,
 		[Parameter(ParameterSetName='down',Mandatory=$true)]	[switch]	$Spindown, 
 		[Parameter()]	[switch]	$Ovrd,	
 		[Parameter()]	[String]	$WWN
 )
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$Cmd = " controlpd "
@@ -718,26 +724,27 @@ Function Test-A9PD_CLI
 {
 <#
 .SYNOPSIS
-    The Test-PD command executes surface scans or diagnostics on physical disks.
+	Executes surface scans or diagnostics on physical disks.
 .DESCRIPTION
-    The Test-PD command executes surface scans or diagnostics on physical disks.	
+    Executes surface scans or diagnostics on physical disks.	
 .EXAMPLE
-	Test-PD -scrub -ch 500 -pd_ID 1
+	PS:> Test-A9PD_CLI -scrub -ch 500 -pd_ID 1
+
 	This example Test-PD chunklet 500 on physical disk 1 is scanned for media defects.
 .EXAMPLE  
-	Test-PD -scrub -count 150 -pd_ID 1
+	PS:> Test-A9PD_CLI -scrub -count 150 -pd_ID 1
 
 	This example scans a number of chunklets starting from -ch 150 on physical disk 1.
 .EXAMPLE  
-	Test-PD -diag -path a -pd_ID 5
+	PS:> Test-A9PD_CLI -diag -path a -pd_ID 5
 
 	This example Specifies a physical disk path as a,physical disk 5 is scanned for media defects.
 .EXAMPLE  	
-	Test-PD -diag -iosize 1s -pd_ID 3
+	PS:> Test-A9PD_CLI -diag -iosize 1s -pd_ID 3
 
 	This example Specifies I/O size 1s, physical disk 3 is scanned for media defects.
 .EXAMPLE  	
-	Test-PD -diag -range 5m  -pd_ID 3
+	PS:> Test-A9PD_CLI -diag -range 5m  -pd_ID 3
 
 	This example Limits diagnostic to range 5m [mb] physical disk 3 is scanned for media defects.
 .PARAMETER Diag	
@@ -785,7 +792,7 @@ param(	[Parameter(ParameterSetName='diag', Mandatory=$true, ValueFromPipeline=$t
 		[Parameter(ParameterSetName='diag', ValueFromPipeline=$true,Mandatory=$true)]	[String]	$pd_ID
 	)		
 Begin	
-{   Test-A9CLIConnection
+{   Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	if ( $scrub)

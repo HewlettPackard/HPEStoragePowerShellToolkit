@@ -6,7 +6,7 @@ Function Get-A9Inventory_CLI
 {
 <#
 .SYNOPSIS
-	Get-Inventory - show hardware inventory
+	show hardware inventory
 .DESCRIPTION
 	Shows information about all the hardware components in the system.
 .PARAMETER Svc
@@ -16,7 +16,7 @@ Function Get-A9Inventory_CLI
 param(	[Parameter()]	[switch]	$Svc
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " showinventory "

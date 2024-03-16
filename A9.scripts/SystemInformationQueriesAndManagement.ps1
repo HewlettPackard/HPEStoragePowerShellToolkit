@@ -18,7 +18,7 @@ Function Get-A9System
 [CmdletBinding()]
 Param()
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null	
@@ -101,7 +101,7 @@ Param(
 	[Parameter(ValueFromPipeline=$true)]	[boolean]	$ComplianceOfficerApproval
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -197,7 +197,7 @@ Function Get-A9Version
 [CmdletBinding()]
 Param()
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null	
@@ -253,7 +253,7 @@ Function Get-A9WSAPIConfigInfo
 [CmdletBinding()]
 Param()
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null	
@@ -293,7 +293,7 @@ Function Get-A9Task
 Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$TaskID
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
@@ -329,7 +329,7 @@ Function Stop-A9OngoingTask
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TaskID
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	

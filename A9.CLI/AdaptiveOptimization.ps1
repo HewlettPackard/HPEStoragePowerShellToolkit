@@ -8,7 +8,7 @@ Function Get-A9AOConfiguration_CLI
 .SYNOPSIS
 	Get-AOConfigurations - Show Adaptive Optimization configurations.
 .DESCRIPTION
-	The Get-AOConfigurations command shows Adaptive Optimization (AO) configurations in the system.
+	This command shows Adaptive Optimization (AO) configurations in the system.
 .PARAMETER Domain
 	Shows only AO configurations that are in domains with names matching one or more of the <domain_name_or_pattern> argument. This option
 	does not allow listing objects within a domain of which the user is not a member. Patterns are glob-style (shell-style) patterns (see help on sub,globpat)
@@ -19,7 +19,7 @@ param(	[Parameter()]	[String]	$Domain,
 		[Parameter()]	[String]	$AOConfigurationName
 )
 begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 process
 {	$Cmd = " showaocfg "
@@ -74,9 +74,9 @@ Function New-A9AOConfiguration_CLI
 {
 <#
 .SYNOPSIS
-	New-AOConfiguration - Create an Adaptive Optimization configuration.
+	Create an Adaptive Optimization configuration.
 .DESCRIPTION
-	The New-AOConfiguration command creates an Adaptive Optimization configuration.
+	This command creates an Adaptive Optimization configuration.
 .PARAMETER T0cpg
 	Specifies the Tier 0 CPG for this AO config.
 .PARAMETER T1cpg
@@ -133,7 +133,7 @@ param(	[Parameter()]	[String]	$T0cpg,
 		[Parameter(Mandatory=$True)]	[String]	$AOConfigurationName
 )
 begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 process
 {	$Cmd = " createaocfg "
@@ -157,9 +157,9 @@ Function Remove-A9AOConfiguration_CLI
 {
 <#
 .SYNOPSIS
-	Remove-AOConfiguration - Remove an Adaptive Optimization configuration.
+	Remove an Adaptive Optimization configuration.
 .DESCRIPTION
-	The Remove-AOConfiguration command removes specified Adaptive Optimization configurations from the system.
+	This command removes specified Adaptive Optimization configurations from the system.
 .PARAMETER Pattern
 	Specifies that specified patterns are treated as glob-style patterns and that all AO configurations matching the specified pattern are removed.
 .PARAMETER AOConfigurationName
@@ -170,7 +170,7 @@ param(	[Parameter()]	[String]	$Pattern,
 		[Parameter()]	[String]	$AOConfigurationName
 )
 begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 } 
 process
 {	$Cmd = " removeaocfg -f "
@@ -190,20 +190,20 @@ Function Start-A9AO_CLI
 {
 <#
 .SYNOPSIS
-	Start-AO - Start execution of an Adaptive Optimization configuration.
+	Start execution of an Adaptive Optimization configuration.
 .DESCRIPTION
-	The Start-AO command starts execution of an Adaptive Optimization (AO) configuration using data region level performance data collected for the
+	This command starts execution of an Adaptive Optimization (AO) configuration using data region level performance data collected for the
 	specified number of hours.
 .EXAMPLE
 	Start-AO -Btsecs 3h -AocfgName prodaocfg
 	
 	Start execution of AO config prodaocfg using data for the past 3 hours:
 .EXAMPLE	
-	Start-AO -Btsecs 12h -Etsecs 3h -Maxrunh 6 -AocfgName prodaocfg
+	PS:> Start-A9AO_CLI -Btsecs 12h -Etsecs 3h -Maxrunh 6 -AocfgName prodaocfg
 
 	Start execution of AO config prodaocfg using data from 12 hours ago until 3 hours ago, allowing up to 6 hours to complete:
 .EXAMPLE
-	Start-AO -Btsecs 3h -Vv "set:dbvvset" -AocfgName prodaocfg
+	PS:> Start-A9AO_CLI -Btsecs 3h -Vv "set:dbvvset" -AocfgName prodaocfg
 
 	Start execution of AO for the vvset dbvvset in AOCFG prodaocfg using data for the past 3 hours:	
 .PARAMETER Btsecs
@@ -306,7 +306,7 @@ param(
 	[Parameter()]	[String]	$AocfgName
 )
 begin 
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 process
 {	$Cmd = " startao "
@@ -334,9 +334,9 @@ Function Update-A9AOConfiguration_CLI
 {
 <#
 .SYNOPSIS
-	Update-AOConfiguration - Update an Adaptive Optimization configuration.
+	Update an Adaptive Optimization configuration.
 .DESCRIPTION
-	Update-AOConfiguration - Update an Adaptive Optimization configuration.
+	Update an Adaptive Optimization configuration.
 .PARAMETER T0cpg
 	Specifies the Tier 0 CPG for this AO config.
 .PARAMETER T1cpg
@@ -395,7 +395,7 @@ param(
 	[Parameter(Mandatory=$True)][String]	$AOConfigurationName
 )
 begin
-{	Test-A9CLIConnection_CLI
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 process 
 {	$Cmd = " setaocfg "

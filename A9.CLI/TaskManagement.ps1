@@ -3,43 +3,43 @@
 ##
 
 
-Function Get-Task
+Function Get-A9Task_CLI
 {
 <#
 .SYNOPSIS
-    Displays information about tasks.
+  Displays information about tasks.
 .DESCRIPTION
-	Displays information about tasks.
+  Displays information about tasks.
 .EXAMPLE
-  Get-Task 
+  PS:> Get-A9Task_CLI 
 	
   Display all tasks.
 .EXAMPLE
-  Get-Task -All
+  PS:> Get-A9Task_CLI -All
 	
   Display all tasks. Unless the -all option is specified, system tasks are not displayed.
 .EXAMPLE		
-	Get-Task -Done
+	PS:> Get-A9Task_CLI -Done
 	
   Display includes only tasks that are successfully completed
 .EXAMPLE
-	Get-Task -Failed
+	PS:> Get-A9Task_CLI -Failed
 
 	Display includes only tasks that are unsuccessfully completed.
 .EXAMPLE	
-	Get-Task -Active
+	PS:> Get-A9Task_CLI -Active
 	
   Display includes only tasks that are currently in progress.
 .EXAMPLE	
-	Get-Task -Hours 10
+	PS:> Get-A9Task_CLI -Hours 10
 	
   Show only tasks started within the past <hours>
 .EXAMPLE	
-	Get-Task -Task_type xyz
+	PS:> Get-A9Task_CLI -Task_type xyz
 	
   Specifies that specified patterns are treated as glob-style patterns and that all tasks whose types match the specified pattern are displayed
 .EXAMPLE	
-	Get-Task -taskID 4
+	PS:> Get-A9Task_CLI -taskID 4
 	
   Show detailed task status for specified task 4.
 .PARAMETER All	
@@ -66,7 +66,10 @@ param(	[Parameter()]	[String]	$TaskID,
         [Parameter()]	[Switch]	$Active,
         [Parameter()]	[String]	$Hours
 	)		
-process
+Begin
+{ Test-A9Connection -CLientType 'SshClient'
+}
+Process
 {	$taskcmd = "showtask "	
 	if($TaskID)		{		$taskcmd +=" -d $TaskID "	}
 	if($Task_type){		$taskcmd +=" -type $Task_type "	}	
@@ -98,7 +101,7 @@ process
 }
 }
 
-Function Remove-Task 
+Function Remove-A9Task_CLI 
 {
 <#
 .SYNOPSIS
@@ -120,7 +123,7 @@ Function Remove-Task
 .EXAMPLE
     Remove a task based on the task ID
 
-    Remove-Task 2
+    PS:> Remove-A9Task_CLI 2
 
     Remove the following tasks?
     2
@@ -129,11 +132,10 @@ Function Remove-Task
 .EXAMPLE
     Remove all tasks, including details
 
-    Remove-Task -A
+    PS:> Remove-A9Task_CLI -A
 
     Remove all tasks?
     select q=quit y=yes n=no: y
-  
 .NOTES
   With this command, the specified task ID and any information associated with it are removed from the system. However, task IDs are not recycled, so the
   next task started on the system uses the next whole integer that has not already been used. Task IDs roll over at 29999. The system stores
@@ -165,7 +167,7 @@ Function Stop-Task
 .SYNOPSIS
   Cancel one or more tasks
 .DESCRIPTION
-  The Stop-Task command cancels one or more tasks.
+  The Stop Task command cancels one or more tasks.
 .PARAMETER F
   Forces the command. The command completes the process without prompting for confirmation.
 .PARAMETER ALL
@@ -175,7 +177,7 @@ Function Stop-Task
 .EXAMPLE
   Cancel a task using the task ID
 
-  Stop-Task 1        
+  PS:> Stop-A9Task_CLI 1        
 .NOTES
   The Stop-Task command can return before a cancellation is completed. Thus, resources reserved for a task might not be immediately available. This can
   prevent actions like restarting the canceled task. Use the waittask command to ensure orderly completion of the cancellation before taking other
@@ -187,6 +189,9 @@ param(  [Parameter()] [String]  $TaskID,
         [Parameter()] [Switch]  $F,       
         [Parameter()] [String]  $ALL 
   )	
+Begin
+{ Test-A9Connection -ClientType 'SshClient'
+}
 process
 { $cmd = "canceltask "	
   if ($F) {  $cmd += " -f "		 }
@@ -198,13 +203,13 @@ process
 }
 }
 
-Function Wait-Task 
+Function Wait-A9Task_CLI 
 {
 <#
 .SYNOPSIS
   Wait for tasks to complete.
 .DESCRIPTION
-  The Wait-Task cmdlet asks the CLI to wait for a task to complete before proceeding. The cmdlet automatically notifies you when the specified task is finished.
+  The Wait Task cmdlet asks the CLI to wait for a task to complete before proceeding. The cmdlet automatically notifies you when the specified task is finished.
 .PARAMETER V
   Displays the detailed status of the task specified by <TaskID> as it executes. When the task completes, this command exits.
 .PARAMETER TaskID
@@ -214,7 +219,8 @@ Function Wait-Task
   Quiet; do not report the end state of the tasks, only wait for them to exit.
 .EXAMPLE
   The following example shows how to wait for a task using the task ID. When successful, the command returns only after the task completes.
-  Wait-Task 1  
+  
+  PS:> Wait-A9Task_CLI 1  
   Task 1 done      
 #>
 [CmdletBinding()]
@@ -222,6 +228,9 @@ param(  [Parameter()] [Switch]  $V,
         [Parameter()] [String]  $TaskID,
         [Parameter()] [Switch]  $Q
     )	
+Begin
+{ Test-A9Connection -ClientType 'SshClient'
+}
 process	
 { $cmd = "waittask "	
 	if ($V)     { $cmd += " -v "	}

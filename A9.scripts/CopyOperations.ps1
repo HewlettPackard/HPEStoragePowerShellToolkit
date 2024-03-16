@@ -68,7 +68,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeNam
 		[Parameter(ValueFromPipeline=$true)]					[String]	$AddToSet
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -149,7 +149,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeNam
 		[Parameter(ValueFromPipeline=$true)]					[String]	$AddToSet
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -282,7 +282,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeNam
 		[ValidateSet('HIGH','MED','LOW')]						[String]	$Priority
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -349,7 +349,7 @@ Function Reset-A9PhysicalCopy
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -387,7 +387,7 @@ Function Stop-A9PhysicalCopy
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]		[String]	$VolumeName
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -439,7 +439,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VirtualCo
 		[Parameter(ValueFromPipeline=$true)]					[Switch]	$AllowRemoteCopyParent
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -499,7 +499,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VVSetName
 		[Parameter(ValueFromPipeline=$true)]					[Switch]	$AllowRemoteCopyParent
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -567,7 +567,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeSet
 		[Parameter(ValueFromPipeline=$true)]					[String]	$AddToSet
 	)
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -622,7 +622,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeSet
 		[ValidateSet('HIGH','MED','LOW')]						[String]	$Priority
 )
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$body = @{}	
@@ -674,7 +674,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]     	[String]  	$Vo
 		[ValidateSet('HIGH','MED','LOW')]							[String]	$Priority
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -720,7 +720,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeSet
 		[ValidateSet('HIGH','MED','LOW')]						[String]	$Priority
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -770,7 +770,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String[]]	$VolumeS
 		[Parameter(ValueFromPipeline=$true)]					[boolean]	$ReadOnly
 )
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	

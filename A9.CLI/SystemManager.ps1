@@ -11,9 +11,9 @@ Function Get-A9Cert_CLI
 	customizable with the -showcols option. The second form provides detailed certificate information in either human readable format or in PEM (Privacy
 	Enhanced Mail) format. It can also save the certificates in a specified file.
 .EXAMPLE
-	Get-Cert -Service unified-server -Pem
+	Get-A9Cert_CLI -Service unified-server -Pem
 .EXAMPLE
-	Get-Cert -Service unified-server -Text
+	Get-A9Cert_CLI -Service unified-server -Text
 .PARAMETER Listcols
 	Displays the valid table columns.
 .PARAMETER Showcols
@@ -40,7 +40,7 @@ param(	[Parameter()]	[switch]	$Listcols,
 		[Parameter()]	[String]	$File
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$Cmd = " showcert "
@@ -91,7 +91,7 @@ Function Get-A9Encryption_CLI
 {
 <#
 .SYNOPSIS
-	Get-Encryption - Show Data Encryption information.
+	Show Data Encryption information.
 .DESCRIPTION
 	The Get-Encryption command shows Data Encryption information.
 .PARAMETER D
@@ -101,7 +101,7 @@ Function Get-A9Encryption_CLI
 param(	[Parameter()]	[switch]	$D
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$Cmd = " showencryption "
@@ -140,10 +140,10 @@ Function Get-A9SR_CLI
 .DESCRIPTION
     Displays the amount of space consumed by the various System Reporter databases on the System Reporter volume.
 .EXAMPLE
-    Get-SR 
+    Get-A9SR_CLI 
 	shows how to display the System Reporter status:
 .EXAMPLE
-    Get-SR -Btsecs 10
+    Get-A9SR_CLI -Btsecs 10
 .PARAMETER ldrg
 	Displays which LD region statistic samples are available.  This is used with the -btsecs and -etsecs options.
 .PARAMETER Btsecs
@@ -179,7 +179,7 @@ param(	[Parameter()]	[switch]	$ldrg,
 		[Parameter()]	[String]	$Etsecs
 	)
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$srinfocmd = "showsr "
@@ -195,12 +195,12 @@ Function Import-A9Cert_CLI
 {
 <#
 .SYNOPSIS
-	Import-Cert - imports a signed certificate and supporting certificate authorities (CAs) for the Storage System SSL services.
+	imports a signed certificate and supporting certificate authorities (CAs) for the Storage System SSL services.
 .DESCRIPTION
-	The Import-Cert command allows a user to import certificates for a given service. The user can import a CA bundle containing the intermediate and/or
+	The Import Cert command allows a user to import certificates for a given service. The user can import a CA bundle containing the intermediate and/or
 	root CAs prior to importing the service certificate. The CA bundle can also be imported alongside the service certificate.
 .EXAMPLE
-	Import-Cert -SSL_service wsapi -Service_cert  wsapi-service.pem
+	PS:> Import-Cert_CLI -SSL_service wsapi -Service_cert  wsapi-service.pem
 .PARAMETER SSL_service
 	Valid service names are cim, cli, ekm-client, ekm-server, ldap, syslog-gen-client, syslog-gen-server, syslog-sec-client, syslog-sec-server, wsapi, vasa, and unified-server.
 .PARAMETER CA_bundle
@@ -211,12 +211,12 @@ Function Import-A9Cert_CLI
 [CmdletBinding()]
 param(
 	[Parameter(Mandatory=$true)]	[String]	$SSL_service,	
-	[Parameter()]	[String]	$Service_cert, 
-	[Parameter()]	[String]	$CA_bundle,
-	[Parameter()]	[String]	$Ca
+	[Parameter()]					[String]	$Service_cert, 
+	[Parameter()]					[String]	$CA_bundle,
+	[Parameter()]					[String]	$Ca
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$Cmd = " importcert "
@@ -233,13 +233,13 @@ Function New-A9Cert_CLI
 {
 <#
 .SYNOPSIS
-	New-Cert - Create self-signed SSL certificate or a certificate signing request (CSR) for the Storage System SSL services.
+	Create self-signed SSL certificate or a certificate signing request (CSR) for the Storage System SSL services.
 .DESCRIPTION
-	The New-Cert command creates a self-signed certificate or a certificate signing request for a specified service.
+	The New Cert command creates a self-signed certificate or a certificate signing request for a specified service.
 .EXAMPLE
-	New-Cert -SSL_service unified-server -Selfsigned -Keysize 2048 -Days 365
+	PS:> New-A9Cert_CLI -SSL_service unified-server -Selfsigned -Keysize 2048 -Days 365
 .EXAMPLE
-	New-Cert -SSL_service wsapi -Selfsigned -Keysize 2048 -Days 365
+	PS:> New-A9Cert_CLI -SSL_service wsapi -Selfsigned -Keysize 2048 -Days 365
 .PARAMETER SSL_service
 	Valid service names are cim, cli, ekm-client, ekm-server, ldap, syslog-gen-client, syslog-gen-server, syslog-sec-client, syslog-sec-server, wsapi, vasa, and unified-server.
 .PARAMETER Csr
@@ -280,7 +280,7 @@ param(	[Parameter(Mandatory=$true)]						[String]	$SSL_service,
 		[Parameter()]	[String]	$SAN
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$Cmd = " createcert "
@@ -305,17 +305,17 @@ Function New-A9RCopyGroup_CLI
 {
 <#
 .SYNOPSIS
-	The New-RCopyGroup command creates a remote-copy volume group.
+	The New RCopyGroup command creates a remote-copy volume group.
 .DESCRIPTION
-    The New-RCopyGroup command creates a remote-copy volume group.   
+    The New RCopyGroup command creates a remote-copy volume group.   
 .EXAMPLE	
-	New-RCopyGroup -GroupName AS_TEST -TargetName CHIMERA03 -Mode sync
+	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST -TargetName CHIMERA03 -Mode sync
 .EXAMPLE
-	New-RCopyGroup -GroupName AS_TEST1 -TargetName CHIMERA03 -Mode async
+	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST1 -TargetName CHIMERA03 -Mode async
 .EXAMPLE
-	New-RCopyGroup -GroupName AS_TEST2 -TargetName CHIMERA03 -Mode periodic
+	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST2 -TargetName CHIMERA03 -Mode periodic
 .EXAMPLE
-	New-RCopyGroup -domain DEMO -GroupName AS_TEST3 -TargetName CHIMERA03 -Mode periodic     
+	PS:> New-A9RCopyGroup_CLI -domain DEMO -GroupName AS_TEST3 -TargetName CHIMERA03 -Mode periodic     
 .PARAMETER domain
 	Creates the remote-copy group in the specified domain.
 .PARAMETER Usr_Cpg_Name
@@ -347,7 +347,7 @@ param(	[Parameter(Mandatory=$true)]	[String]	$GroupName,
 		[Parameter()]	[String]	$Target_TargetSNP
 	)	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$cmd= "creatercopygroup"	
@@ -392,9 +392,9 @@ Function New-A9RCopyGroupCPG_CLI
 .DESCRIPTION
     The New-RCopyGroupCPG command creates a remote-copy volume group.   
 .EXAMPLE
-	New-RCopyGroupCPG -GroupName ABC -TargetName XYZ -Mode Sync	
+	New-A9RCopyGroupCPG_CLI -GroupName ABC -TargetName XYZ -Mode Sync	
 .EXAMPLE  
-	New-RCopyGroupCPG -UsrCpg -LocalUserCPG BB -UsrTargetName XYZ -TargetUserCPG CC -GroupName ABC -TargetName XYZ -Mode Sync
+	New-A9RCopyGroupCPG_CLI -UsrCpg -LocalUserCPG BB -UsrTargetName XYZ -TargetUserCPG CC -GroupName ABC -TargetName XYZ -Mode Sync
 .PARAMETER UsrCpg
 .PARAMETER SnpCpg
 .PARAMETER UsrTargetName
@@ -434,7 +434,7 @@ param(	[Parameter(Mandatory=$true)]	[String]	$GroupName,
 		[Parameter()]	[String]	$SnpTargetName
 	)		
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$cmd= "creatercopygroup"
@@ -465,23 +465,23 @@ Function New-A9RCopyTarge_CLI
 {
 <#
 .SYNOPSIS
-	The New-RCopyTarget command creates a remote-copy target definition.
+	The New RCopyTarget command creates a remote-copy target definition.
 .DESCRIPTION
-    The New-RCopyTarget command creates a remote-copy target definition.
+    The New RCopyTarget command creates a remote-copy target definition.
 .EXAMPLE  
-	New-RCopyTarget -TargetName demo1 -RCIP -NSP_IP 1:2:3:10.1.1.1
+	PS:> New-A9RCopyTarget_CLI -TargetName demo1 -RCIP -NSP_IP 1:2:3:10.1.1.1
 
 	This Example creates a remote-copy target, with option N_S_P_IP Node ,Slot ,Port and IP address. as 1:2:3:10.1.1.1 for Target Name demo1
 .EXAMPLE
-	New-RCopyTarget -TargetName demo1 -RCIP -NSP_IP "1:2:3:10.1.1.1,1:2:3:10.20.30.40"
+	PS:> New-A9RCopyTarget_CLI -TargetName demo1 -RCIP -NSP_IP "1:2:3:10.1.1.1,1:2:3:10.20.30.40"
 
 	This Example creates a remote-copy with multiple targets
 .EXAMPLE 
-	New-RCopyTarget -TargetName demo1 -RCFC -Node_WWN 1122112211221122 -NSP_WWN 1:2:3:1122112211221122
+	PS:> New-A9RCopyTarget_CLI -TargetName demo1 -RCFC -Node_WWN 1122112211221122 -NSP_WWN 1:2:3:1122112211221122
 
 	This Example creates a remote-copy target, with option NSP_WWN Node ,Slot ,Port and WWN as 1:2:3:1122112211221122 for Target Name demo1
 .EXAMPLE 
-	New-RCopyTarget -TargetName demo1 -RCFC -Node_WWN 1122112211221122 -NSP_WWN "1:2:3:1122112211221122,1:2:3:2244224422442244"
+	PS:> New-A9RCopyTarget_CLI -TargetName demo1 -RCFC -Node_WWN 1122112211221122 -NSP_WWN "1:2:3:1122112211221122,1:2:3:2244224422442244"
 
 	This Example creates a remote-copy of FC with multiple targets
 .PARAMETER TargetName
@@ -507,7 +507,7 @@ param(	[Parameter(ParameterSetName='IP', Mandatory=$true)]	[switch]	$RCIP,
 		[Parameter(ParameterSetName='FC', Mandatory=$true)]	[String]	$NSP_WWN
 )	
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$cmd= "creatercopytarget"
@@ -531,14 +531,14 @@ Function Remove-A9Cert_CLI
 {
 <#
 .SYNOPSIS
-	Remove-Cert - Removes SSL certificates from the Storage System.
+	Removes SSL certificates from the Storage System.
 .DESCRIPTION
-	The Remove-Cert command is used to remove certificates that are no longer trusted. In most cases it is better to overwrite the offending certificate
+	The Remove Cert command is used to remove certificates that are no longer trusted. In most cases it is better to overwrite the offending certificate
 	with importcert. The user specifies which service to have its certificates removed. The removal can be limited to a specific type.
 .EXAMPLE
-	Remove-Cert -SSL_Service_Name "xyz" -Type "xyz"
+	PS:> Remove-A9Cert_CLI -SSL_Service_Name "xyz" -Type "xyz"
 .EXAMPLE
-	Remove-Cert -SSL_Service_Name "all" -Type "xyz"
+	PS:> Remove-A9Cert_CLI -SSL_Service_Name "all" -Type "xyz"
 .PARAMETER SSL_Service_Name
 	Valid service names are cim, cli, ekm-client, ekm-server, ldap, syslog-gen-client, syslog-gen-server, syslog-sec-client,
 	syslog-sec-server, wsapi, vasa, and unified-server. The user may also specify all, which will remove certificates for all services.
@@ -554,7 +554,7 @@ param(	[Parameter(Mandatory=$true)]	[String]	$SSL_Service_Name,
 		[Parameter()][ValidateSet('csr', 'cert','intca','rootca')]	[String]	$Type
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType SshClient
 }
 Process	
 {	$Cmd = " removecert "
@@ -570,7 +570,7 @@ Function Measure-A9Upgrade_CLI
 {
 <#
 .SYNOPSIS
-	Measure-Upgrade - Determine if a system can do an online upgrade. (HIDDEN)
+	Determine if a system can do an online upgrade. (HIDDEN)
 .PARAMETER Allow_singlepathhost
 	Overrides the default behavior of preventing an online upgrade if a host is at risk of losing connectivity to the array due to only having a
 	single access path to the StoreServ. Use of this option will result in a loss of connectivity for the host when the path to the array disconnects
@@ -612,7 +612,7 @@ param(	[Parameter()]	[switch]	$Allow_singlepathhost,
 		[Parameter()]	[switch]	$Revertnode
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$Cmd = " checkupgrade "
@@ -636,9 +636,9 @@ Function Optimize-A9LD_CLI
 {
 <#
 .SYNOPSIS
-	Optimize-LD - Change the layout of a logical disk. (HIDDEN)
+	Change the layout of a logical disk. 
 .DESCRIPTION
-	(HIDDEN) The Optimize-LD command is used to make changes to a logical disk (LD) by creating a new LD and moving regions from the original LD to the new LD.
+	The Optimize command is used to make changes to a logical disk (LD) by creating a new LD and moving regions from the original LD to the new LD.
 	The new LD will always have the same space type (SA, SD, USR) as the original LD.
 
     If the original LD belongs to a CPG, the new LD inherits the characteristics of that CPG. SA and SD space LDs have
@@ -679,7 +679,7 @@ param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Waittask,
 		[Parameter(Mandatory=$true)]			[String]	$LD_name
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$Cmd = " tuneld -f "
@@ -700,9 +700,9 @@ Function Optimize-A9Nodech_CLI
 {
 <#
 .SYNOPSIS
-	Optimize-Nodech - Rebalance PD utilization on a node after upgrades. (HIDDEN)
+	Rebalance PD utilization on a node after upgrades. (HIDDEN)
 .DESCRIPTION 
-    The tunenodech command is used to analyze and detect poor layout and disk utilization across PDs with a specified node owner.
+    The command is used to analyze and detect poor layout and disk utilization across PDs with a specified node owner.
     Rebalancing is achieved using a combination of chunklet movement and re-laying out LDs associated with the node.
 .PARAMETER Node
 	The ID of the node to be tuned. <number> must be in the range 0-7. This parameter must be supplied.
@@ -734,7 +734,7 @@ param(
 	[Parameter(ValueFromPipeline=$true)]	[switch]	$DR
 )
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$Cmd = " tunenodech -f "
@@ -757,30 +757,26 @@ Function Start-A9SR_CLI
 .DESCRIPTION
     To start System reporter.
 .EXAMPLE
-    Start-SR 
+    Start-A9SR_CLI 
 
 	Starts System Reporter
 #>
 [CmdletBinding()]
 param()
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
 }
 Process	
 {	$srinfocmd = "startsr -f "
 	write-verbose "System reporter command => $srinfocmd"
-	$3parosver = Get-Version -S -SANConnection  $SANConnection 
-	if($3parosver -ge "3.1.2")
-		{	$Result = Invoke-CLICommand -cmds  $srinfocmd
-			if(-not $Result)	{	return "Success: Started System Reporter $Result"	}
-			elseif($Result -match "Cannot startsr, already started")	{	Return "Command Execute Successfully :- Cannot startsr, already started"	}
-			else	{	return $Result	}		
-		}
-	else{	return "Current version $3parosver does not support these cmdlet"	}
+	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	if(-not $Result)	{	return "Success: Started System Reporter $Result"	}
+	elseif($Result -match "Cannot startsr, already started")	{	Return "Command Execute Successfully :- Cannot startsr, already started"	}
+	else	{	return $Result	}		
 }
 }
 
-Function Stop-SR
+Function Stop-A9SR_CLI
 {
 <#
 .SYNOPSIS
@@ -788,24 +784,20 @@ Function Stop-SR
 .DESCRIPTION
     To stop System reporter.
 .EXAMPLE
-    Stop-SR 
+    Stop-A9SR_CLI 
 
 	Stop System Reporter
 #>
 [CmdletBinding()]
 param()
 Begin
-{	Test-A9CLIConnection
+{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
 }
 Process	
 {	$srinfocmd = "stopsr -f "
-	$3parosver = Get-Version -S -SANConnection  $SANConnection
 	write-verbose "System reporter command => $srinfocmd"
-	if($3parosver -ge "3.1.2")
-		{	$Result = Invoke-CLICommand -cmds  $srinfocmd
-			if(-not $Result)	{	return "Success: Stopped System Reporter $Result"	}
-			else				{	return $Result	}
-		}
-	else{	return "Current OS version $3parosver does not support these cmdlet"	}
+	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	if(-not $Result)	{	return "Success: Stopped System Reporter $Result"	}
+	else				{	return $Result	}
 }
 }

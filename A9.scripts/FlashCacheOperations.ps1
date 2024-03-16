@@ -27,7 +27,7 @@ Param(	[Parameter(ParameterSetName = "Enabled",  Mandatory=$true, ValueFromPipel
 )
 Begin 
 {	# Test if connection exist
-    Test-WSAPIConnection
+    Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
@@ -79,7 +79,7 @@ Param(	[Parameter(ValueFromPipeline=$true)]	[int]		$SizeGiB,
 		[Parameter(ValueFromPipeline=$true)]	[boolean]	$NoCheckSCMSize
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$body = @{}
@@ -118,7 +118,7 @@ Function Remove-A9FlashCache
 [CmdletBinding()]
 Param()
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = Invoke-WSAPI -uri '/flashcache' -type 'DELETE' 
@@ -149,7 +149,7 @@ Function Get-FlashCache_WSAPI
 [CmdletBinding()]
 Param()
 Begin 
-{	Test-WSAPIConnection
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
