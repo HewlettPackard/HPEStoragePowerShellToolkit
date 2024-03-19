@@ -101,7 +101,7 @@ Process
 }
 }
 
-Function Remove-A9Task_CLI 
+Function Remove-A9Task
 {
 <#
 .SYNOPSIS
@@ -123,7 +123,7 @@ Function Remove-A9Task_CLI
 .EXAMPLE
     Remove a task based on the task ID
 
-    PS:> Remove-A9Task_CLI 2
+    PS:> Remove-A9Task 2
 
     Remove the following tasks?
     2
@@ -132,7 +132,7 @@ Function Remove-A9Task_CLI
 .EXAMPLE
     Remove all tasks, including details
 
-    PS:> Remove-A9Task_CLI -A
+    PS:> Remove-A9Task -A
 
     Remove all tasks?
     select q=quit y=yes n=no: y
@@ -161,7 +161,7 @@ process
 }
 }
 
-Function Stop-Task 
+Function Stop-A9Task 
 {
 <#
 .SYNOPSIS
@@ -177,7 +177,7 @@ Function Stop-Task
 .EXAMPLE
   Cancel a task using the task ID
 
-  PS:> Stop-A9Task_CLI 1        
+  PS:> Stop-A9Task 1        
 .NOTES
   The Stop-Task command can return before a cancellation is completed. Thus, resources reserved for a task might not be immediately available. This can
   prevent actions like restarting the canceled task. Use the waittask command to ensure orderly completion of the cancellation before taking other
@@ -203,7 +203,7 @@ process
 }
 }
 
-Function Wait-A9Task_CLI 
+Function Wait-A9Task
 {
 <#
 .SYNOPSIS
@@ -220,7 +220,7 @@ Function Wait-A9Task_CLI
 .EXAMPLE
   The following example shows how to wait for a task using the task ID. When successful, the command returns only after the task completes.
   
-  PS:> Wait-A9Task_CLI 1  
+  PS:> Wait-A9Task 1  
   Task 1 done      
 #>
 [CmdletBinding()]

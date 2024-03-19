@@ -374,7 +374,7 @@ Function New-A9HostSet_CLI
 
 	PS:> New-A9HostSet_CLI -Comment "A host set" -HostSetName hostset -HostName hosta
 .EXAMPLE
-   PS:> New-A9HostSet_CLI -HostSetName xyz -Domain xyz
+	PS:> New-A9HostSet_CLI -HostSetName xyz -Domain xyz
 
 	Create the host set in the specified domain
 .EXAMPLE

@@ -1,7 +1,7 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
-Function Get-A9SRAlertCrit_CLI
+Function Get-A9SystemReportAlertCrit
 {
 <#
 .SYNOPSIS
@@ -9,15 +9,15 @@ Function Get-A9SRAlertCrit_CLI
 .DESCRIPTION
     Shows the criteria that System Reporter evaluates to determine if a performance alert should be generated.       
 .EXAMPLE
-    Get-A9SRAlertCrit_CLI 
+    PS:> Get-A9SystemReportAlertCrit 
 
 	shows the criteria that System Reporter evaluates to determine if a performance alert should be generated.
 .EXAMPLE
-    Get-A9SRAlertCrit_CLI -Daily
+    PS:> Get-A9SystemReportAlertCrit -Daily
 
 	Example displays all the criteria evaluated on an hourly basis:
 .EXAMPLE
-	Get-A9SRAlertCrit_CLI -Hires
+	PS:> Get-A9SystemReportAlertCrit -Hires
 .PARAMETER Daily
 	This criterion will be evaluated on a daily basis at midnight.
 .PARAMETER Hourly
@@ -82,7 +82,7 @@ Process
 }
 }
 
-Function Get-A9SRAOMoves_CLI
+Function Get-A9SystemReportAOMoves
 {
 <#
 .SYNOPSIS
@@ -90,15 +90,15 @@ Function Get-A9SRAOMoves_CLI
 .DESCRIPTION
     The command shows the space that AO has moved between tiers.
 .EXAMPLE
-	Get-A9SRAOMoves_CLI -btsecs 7200
+	PS:> Get-A9SystemReportAOMoves -btsecs 7200
 .EXAMPLE
-	Get-A9SRAOMoves_CLI -etsecs 7200
+	PS:> Get-A9SystemReportAOMoves -etsecs 7200
 .EXAMPLE
-	Get-A9SRAOMoves_CLI -oneline 
+	PS:> Get-A9SystemReportAOMoves -oneline 
 .EXAMPLE
-	Get-A9SRAOMoves_CLI -withvv 
+	PS:> Get-A9SystemReportAOMoves -withvv 
 .EXAMPLE
-	Get-A9SRAOMoves_CLI -VV_name XYZ
+	PS:> Get-A9SystemReportAOMoves -VV_name XYZ
 .PARAMETER btsecs 
 	Select the begin time in seconds for the report. The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
@@ -153,7 +153,7 @@ Process
 } 
 }
 
-Function Get-A9SRCpgSpace_CLI
+Function Get-A9SystemReportCpgSpace
 {
 <#
 .SYNOPSIS
@@ -161,11 +161,11 @@ Function Get-A9SRCpgSpace_CLI
 .DESCRIPTION
     Command displays historical space data reports for common provisioning groups (CPGs).	
 .EXAMPLE
-    PS:> Get-A9SRCpgSpace_CLI
+    PS:> Get-A9SystemReportCpgSpace
 
 	Command displays historical space data reports for common provisioning groups (CPGs).
 .EXAMPLE
-    PS:> Get-A9SRCpgSpace_CLI -Option hourly -btsecs -24h fc*
+    PS:> Get-A9SystemReportCpgSpace -Option hourly -btsecs -24h fc*
 
 	example displays aggregate hourly CPG space information for CPGs with names that match the pattern "fc*" beginning 24 hours ago:
 .PARAMETER attime
@@ -282,7 +282,7 @@ Process
 }
 }
 
-Function Get-A9SRHistLd_CLI
+Function Get-A9SystemReportHistogramLogicalDisk
 {
 <#
 .SYNOPSIS
@@ -291,15 +291,15 @@ Function Get-A9SRHistLd_CLI
 .DESCRIPTION
     Displays historical histogram performance data reports for logical disks.
 .EXAMPLE
-    PS:> Get-A9SRHistLd_CLI 
+    PS:> Get-A9SystemReportHistogramLogicalDisk
 
 	Displays historical histogram performance data reports for logical disks.
 .EXAMPLE
-    PS:> Get-A9SRHistLd_CLI -Hourly -btsecs -24h
+    PS:> Get-A9SystemReportHistogramLogicalDisk -Hourly -btsecs -24h
 
 	example displays aggregate hourly histogram performance statistics for all logical disks beginning 24 hours ago:
 .EXAMPLE
-    PS:> Get-A9SRHistLd_CLI -Metric Both
+    PS:> Get-A9SystemReportHistogramLogicalDisk -Metric Both
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
@@ -429,28 +429,26 @@ Process
 }
 }
 
-Function Get-A9SRHistPD_CLI
+Function Get-A9SystemReportRHistogramPhysicalDisk
 {
 <#
 .SYNOPSIS
     Command displays historical histogram performance data reports for physical disks. 
-	
 .DESCRIPTION
     Command displays historical histogram performance data reports for physical disks. 
-	
 .EXAMPLE
-    PS:> Get-A9SRHistPD_CLI 
-	Command displays historical histogram performance data reports for physical disks. 
-	
-.EXAMPLE
-    PS:> Get-A9SRHistPD_CLI -Hourly -btsecs -24h
-	Example displays aggregate hourly histogram performance statistics for all physical disks beginning 24 hours ago:
+    PS:> Get-A9SystemReportRHistogramPhysicalDisk
 
+	Command displays historical histogram performance data reports for physical disks. 
 .EXAMPLE
-    PS:> Get-A9SRHistPD_CLI -Groupby SPEED
+    PS:> Get-A9SystemReportRHistogramPhysicalDisk -Hourly -btsecs -24h
+
+	Example displays aggregate hourly histogram performance statistics for all physical disks beginning 24 hours ago:
+.EXAMPLE
+    PS:> Get-A9SystemReportRHistogramPhysicalDisk -Groupby SPEED
 	
 .EXAMPLE
-    PS:> Get-A9SRHistPD_CLI -Metric both 
+    PS:> Get-A9SystemReportRHistogramPhysicalDisk -Metric both 
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
@@ -586,7 +584,7 @@ Process
 }
 }
 
-Function Get-A9SRHistPort_CLI
+Function Get-A9SystemReportHistogramPort
 {
 <#
 .SYNOPSIS
@@ -594,15 +592,15 @@ Function Get-A9SRHistPort_CLI
 .DESCRIPTION
     Command displays historical histogram performance data reports for ports. 	
 .EXAMPLE
-    PS:> Get-A9SRHistPort_CLI 
+    PS:> Get-A9SystemReportHistogramPort 
 
 	Command displays historical histogram performance data reports for ports.	
 .EXAMPLE
-    PS:> Get-A9SRHistPort_CLI -Metric_Val size
+    PS:> Get-A9SystemReportHistogramPort -Metric_Val size
 .EXAMPLE
-    PS:> Get-A9SRHistPort_CLI -Groupby PORT_N	
+    PS:> Get-A9SystemReportHistogramPort -Groupby PORT_N	
 .EXAMPLE
-    PS:> Get-A9SRHistPort_CLI -Hurly -btsecs -24h -portType "host,disk" -port "0:*:* 1:*:*"
+    PS:> Get-A9SystemReportHistogramPort -Hurly -btsecs -24h -portType "host,disk" -port "0:*:* 1:*:*"
 	
 	example displays aggregate hourly histogram performance statistics for disk and host ports on nodes 0 and 1 beginning 24 hours ago:
 .PARAMETER attime
@@ -669,8 +667,10 @@ param(	[Parameter()]	[switch]	$attime,
 		[Parameter()]	[switch]    $Daily ,
 		[Parameter()]	[switch]    $Hires ,
 		[Parameter()]	[switch]	$rw,
-		[Parameter()]	[String]	$groupby,
-		[Parameter()]	[String]	$portType,
+		[Parameter()][ValidateSet('PORT_N','PORT_S','PORT_P','PORT_TYPE','GBITPS','TRANS_TYPE')]
+						[String[]]	$groupby,
+		[Parameter()][ValidateSet('disk','host','iscsi','free','fs','peer','rcip','rcfc')]
+						[String[]]	$portType,
 		[Parameter()]	[String]	$Port,
 		[Parameter()][ValidateSet('both','time','size' )]
 						[String]	$Metric_Val
@@ -682,29 +682,14 @@ Process
 {	$srinfocmd = "srhistport "
 	if($btsecs)		{	$srinfocmd += " -btsecs $btsecs"	}
 	if($etsecs)		{	$srinfocmd += " -etsecs $etsecs"	}
-	if($rw)			{	$srinfocmd +=  " -rw "	}
-	if($groupby)	{	$commarr =  "PORT_N","PORT_S","PORT_P","PORT_TYPE","GBITPS"
-						$lista = $groupby.split(",")
-						foreach($suba in $lista)
-							{	if(-not ($commarr -eq $suba.toUpper() ) )	{	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
-							}
-						$srinfocmd += " -groupby $groupby"
-					}		
-	if($Hourly)		{	$srinfocmd += " -hourly"	}
-	if($Daily)		{	$srinfocmd += " -daily"		}
-	if($Hires)		{	$srinfocmd += " -hires"		}
-	if($portType)	
-		{	$commarr = "disk","host","iscsi","free","fs","peer","rcip","rcfc"
-			$splitarr = $portType.split(",")
-			foreach ($s in $splitarr)
-				{	if( -not ($commarr -match $s.toLower() ) )
-						{	return "FAILURE: Invalid port type option it should be in ( $commarr )"
-						}
-				}
-			$srinfocmd += " -port_type $portType"	
-		}		
-	if($Port)		{	$srinfocmd += " $Port "	}
-	if($Metric_Val)	{	$srinfocmd += " -metric $Metric_Val"	}				
+	if($rw)			{	$srinfocmd +=  " -rw "				}
+	if($groupby)	{	$srinfocmd += " -groupby $groupby"	}		
+	if($Hourly)		{	$srinfocmd += " -hourly"			}
+	if($Daily)		{	$srinfocmd += " -daily"				}
+	if($Hires)		{	$srinfocmd += " -hires"				}
+	if($portType)	{	$srinfocmd += " -port_type $portType"}		
+	if($Port)		{	$srinfocmd += " $Port "				}
+	if($Metric_Val)	{	$srinfocmd += " -metric $Metric_Val"}				
 	$tempFile = [IO.Path]::GetTempFileName()
 	if($attime)
 		{	$srinfocmd += " -attime "
@@ -744,7 +729,7 @@ Process
 }
 }
 
-Function Get-A9SRHistVLun_CLI
+Function Get-A9SystemReportHistogramVLun
 {
 <#
 .SYNOPSIS
@@ -752,15 +737,15 @@ Function Get-A9SRHistVLun_CLI
 .DESCRIPTION
     Command displays historical histogram performance data reports for  VLUNs. 
 .EXAMPLE
-    PS:> Get-A9SRHistVLun_CLI 
+    PS:> Get-A9SystemReportHistogramVLun
 
 	Command displays historical histogram performance data reports for  VLUNs. 	
 .EXAMPLE
-    PS:> Get-A9SRHistVLun_CLI -Hourly -btsecs -24h
+    PS:> Get-A9SystemReportHistogramVLun -Hourly -btsecs -24h
 
 	example displays aggregate hourly histogram performance statistics for all VLUNs beginning 24 hours ago:
 .EXAMPLE
-    PS:> Get-A9SRHistVLun_CLI -btsecs -2h -host "set:hostset" -vv "set:vvset*"
+    PS:> Get-A9SystemReportHistogramVLun -btsecs -2h -host "set:hostset" -vv "set:vvset*"
 
 	VV or host sets can be specified with patterns:
 .PARAMETER attime
@@ -912,7 +897,7 @@ Process
 		}
 }
 
-Function Get-A9SRLDSpace_CLI
+Function Get-A9SystemReportLogicalDiskSpace
 {
 <#
 .SYNOPSIS
@@ -920,16 +905,16 @@ Function Get-A9SRLDSpace_CLI
 .DESCRIPTION
     Command displays historical space data reports for logical disks (LDs).
 .EXAMPLE
-    PS:> Get-A9SRLDSpace_CLI
+    PS:> Get-A9SystemReportLogicalDiskSpace
 .EXAMPLE
-    PS:> Get-A9SRLDSpace_CLI -groupby OWNER 
+    PS:> Get-A9SystemReportLogicalDiskSpace -groupby OWNER 
 
 	Command displays historical space data reports for logical disks (LDs).
 .EXAMPLE
-    PS:> Get-A9SRLDSpace_CLI -DiskType FC
+    PS:> Get-A9SystemReportLogicalDiskSpace -DiskType FC
 
 .EXAMPLE
-    PS:> Get-A9SRLDSpace_CLI -raidType 5 -Hourly -btsecs 24h -LDName fc*
+    PS:> Get-A9SystemReportLogicalDiskSpace -raidType 5 -Hourly -btsecs 24h -LDName fc*
 
 	Example displays aggregate hourly LD space information for all RAID 5 LDs with names that match either "fc*" patterns beginning 24 hours ago:
 .PARAMETER attime
@@ -946,7 +931,7 @@ Function Get-A9SRLDSpace_CLI
 		- For daily, the default begin time is 90 days ago (-btsecs -90d).
 	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
 	If -btsecs 0 is specified then the report begins at the earliest sample.
-	.PARAMETER etsecs
+.PARAMETER etsecs
     Select the end time in seconds for the report.  If -attime is   specified, select the time for the report. The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
 	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
@@ -1063,7 +1048,7 @@ Process
 }
 }
 
-Function Get-A9SRPDSpace_CLI
+Function Get-A9SRPhysicalDiskSpace
 {
 <#
 .SYNOPSIS
@@ -1071,15 +1056,15 @@ Function Get-A9SRPDSpace_CLI
 .DESCRIPTION
     Command displays historical space data reports for physical disks (PDs).
 .EXAMPLE
-    PS:> Get-A9SRPDSpace_CLI 
+    PS:> Get-A9SRPhysicalDiskSpace 
 
 	Command displays historical space data reports for physical disks (PDs).
 .EXAMPLE
-    PS:> Get-A9SRPDSpace_CLI -Hourly -btsecs -24h
+    PS:> Get-A9SRPhysicalDiskSpace -Hourly -btsecs -24h
 
 	Example displays aggregate hourly PD space information for all PDs beginning 24 hours ago:
 .EXAMPLE
-    PS:> Get-A9SRPDSpace_CLI -capacity -attime -diskType SSD
+    PS:> Get-A9SRPhysicalDiskSpace -capacity -attime -diskType SSD
 
 	Displays current system capacity values of SSD PDs:
 .PARAMETER attime
@@ -1202,7 +1187,7 @@ Process
 		}
 }
 
-Function Get-A9SRrgiodensity_CLI
+Function Get-A9SRrgiodensity
 {
 <#
 .SYNOPSIS
@@ -1284,7 +1269,7 @@ Process
 }
 }
 
-Function Get-A9SRStatCache_CLI
+Function Get-A9SystemReportStatCache
 {
 <#
 .SYNOPSIS
@@ -1292,15 +1277,15 @@ Function Get-A9SRStatCache_CLI
 .DESCRIPTION
     Command displays historical performance data reports for flash cache and data cache.
 .EXAMPLE
-    PS:> Get-A9SRStatCache_CLI 
+    PS:> Get-A9SystemReportStatCache
 
 	Command displays historical performance data reports for flash cache and data cache.
 .EXAMPLE
-    PS:> Get-A9SRStatCache_CLI -Hourly -btsecs -24h
+    PS:> Get-A9SystemReportStatCache -Hourly -btsecs -24h
 	
 	Example displays aggregate hourly performance statistics for flash cache and data cache beginning 24 hours ago:
 .EXAMPLE
-    PS:> Get-A9SRStatCache_CLI -Daily -attime -groupby node     
+    PS:> Get-A9SystemReportStatCache -Daily -attime -groupby node     
 
 	Example displays daily flash cache and data cache performance aggregated by nodes
 .PARAMETER attime
@@ -1421,7 +1406,7 @@ Process
 }
 }
 
-Function Get-A9SRStatCMP_CLI
+Function Get-A9SystemReporterStatCacheMemoryPages
 {
 <#
 .SYNOPSIS
@@ -1429,15 +1414,15 @@ Function Get-A9SRStatCMP_CLI
 .DESCRIPTION
     Command displays historical performance data reports for cache memory
 .EXAMPLE
-    PS:> Get-A9SRStatCMP_CLI 
+    PS:> Get-A9SystemReporterStatCacheMemoryPages
 
 	Command displays historical performance data reports for cache memory
 .EXAMPLE
-    PS:> Get-A9SRStatCMP_CLI -Hourly -btsecs -24h
+    PS:> Get-A9SystemReporterStatCacheMemoryPages -Hourly -btsecs -24h
 
 	Example displays aggregate hourly performance statisticsfor all node caches beginning 24 hours ago:
 .EXAMPLE
-    PS:> Get-A9SRStatCMP_CLI -Daily -attime -groupby node     
+    PS:> Get-A9SystemReporterStatCacheMemoryPages -Daily -attime -groupby node     
 
 	Example displays daily node cache performance aggregated by nodes
 .PARAMETER attime
@@ -1556,7 +1541,7 @@ Process
 }
 }
 
-Function Get-A9SRStatCPU_CLI
+Function Get-A9SRStatCPU
 {
 <#
 .SYNOPSIS
@@ -1682,7 +1667,7 @@ Process
 }
 }
 
-Function Get-A9SRStatfsav_CLI
+Function Get-A9SRStatfsav
 {
 <#
 .SYNOPSIS
@@ -1792,7 +1777,7 @@ Process
 }
 }
 
-Function Get-A9SRStatfsblock_CLI
+Function Get-A9SRStatfsblock
 {
 <#
 .SYNOPSIS
@@ -1909,7 +1894,7 @@ Process
 }
 }
 
-Function Get-A9SRStatfscpu_CLI
+Function Get-A9SRStatfscpu
 {
 <#
 .SYNOPSIS
@@ -2025,7 +2010,7 @@ Process
 }
 }
 
-Function Get-A9SRStatfsfpg_CLI
+Function Get-A9SRStatfsfpg
 {
 <#
 .SYNOPSIS
@@ -2138,7 +2123,7 @@ Process
 }
 }
 
-Function Get-A9SRStatfsmem_CLI
+Function Get-A9SRStatfsmem
 {
 <#
 .SYNOPSIS
@@ -2242,7 +2227,7 @@ Process
 }
 }
 
-Function Get-A9SRStatfsnet_CLI
+Function Get-A9SRStatfsnet
 {
 <#
 .SYNOPSIS
@@ -2353,7 +2338,7 @@ Process
 }
 }
 
-Function Get-A9SRStatfsnfs_CLI
+Function Get-A9SRStatfsnfs
 {
 <#
 .SYNOPSIS
@@ -2465,7 +2450,7 @@ Process
 }
 }
 
-Function Set-A9SRAlertCrit_CLI
+Function Set-A9SRAlertCrit
 {
 <#
 .SYNOPSIS
@@ -2473,13 +2458,13 @@ Function Set-A9SRAlertCrit_CLI
 .DESCRIPTION
     Command allows users to enable or disable a System Reporter alert criterion
 .EXAMPLE
-    PS:> Set-A9SRAlertCrit_CLI -Enable -NameOfTheCriterionToModify write_port_check
+    PS:> Set-A9SRAlertCrit -Enable -NameOfTheCriterionToModify write_port_check
 .EXAMPLE
-	PS:> Set-A9SRAlertCrit_CLI -Disable -NameOfTheCriterionToModify write_port_check
+	PS:> Set-A9SRAlertCrit -Disable -NameOfTheCriterionToModify write_port_check
 .EXAMPLE
-	PS:> Set-A9SRAlertCrit_CLI -Daily -NameOfTheCriterionToModify write_port_check
+	PS:> Set-A9SRAlertCrit -Daily -NameOfTheCriterionToModify write_port_check
 .EXAMPLE
-	PS:> Set-A9SRAlertCrit_CLI -Info -Name write_port_check
+	PS:> Set-A9SRAlertCrit -Info -Name write_port_check
 .PARAMETER Daily
 	This criterion will be evaluated on a daily basis at midnight.
 .PARAMETER Hourly
@@ -2570,7 +2555,7 @@ Process
 }
 }
 
-Function Remove-A9SRAlertCrit_CLI
+Function Remove-A9SRAlertCrit
 {
 <#
 .SYNOPSIS
@@ -2578,7 +2563,7 @@ Function Remove-A9SRAlertCrit_CLI
 .DESCRIPTION
     Command removes a criterion that System Reporter evaluates to determine if a performance alert should be generated.        
 .EXAMPLE
-    PS:> Remove-A9SRAlertCrit_CLI -force  -Name write_port_check 
+    PS:> Remove-A9SRAlertCrit -force  -Name write_port_check 
 
 	Example removes the criterion named write_port_check:
 .PARAMETER force
@@ -2608,7 +2593,7 @@ Process
 }
 }
 
-Function New-A9SRAlertCrit_CLI
+Function New-A9SRAlertCrit
 {
 <#
 .SYNOPSIS
@@ -2616,11 +2601,11 @@ Function New-A9SRAlertCrit_CLI
 .DESCRIPTION
     Creates a criterion that System Reporter evaluates to determine if a performance alert should be generated.
 .EXAMPLE
-    New-SRAlertCrit -Type port  -Condition "write_iops>50" -Name write_port_check
+    PS:> New-SRAlertCrit -Type port  -Condition "write_iops>50" -Name write_port_check
 
 	Example describes a criterion that generates an alert for each port that has more than 50 write IOPS in a high resolution sample:
 .EXAMPLE
-    PS:> New-A9SRAlertCrit_CLI -Type port  -PortType disk -Condition "write_iops>50" -Name write_port_check   
+    PS:> New-A9SRAlertCrit -Type port  -PortType disk -Condition "write_iops>50" -Name write_port_check   
 .PARAMETER Type
 	Type must be one of the following: port, vlun, pd, ld, cmp, cpu, link, qos, rcopy, rcvv, ldspace, pdspace, cpgspace, vvspace, sysspace.
 .PARAMETER Condition
@@ -2784,7 +2769,7 @@ Process
 }
 }
 
-Function Get-A9SRStatPort_CLI
+Function Get-A9SRStatPort
 {
 <#
 .SYNOPSIS
@@ -2792,18 +2777,18 @@ Function Get-A9SRStatPort_CLI
 .DESCRIPTION
 	System reporter performance reports for ports.	
 .EXAMPLE
-    PS:> Get-A9SRStatPort_CLI 
+    PS:> Get-A9SRStatPort
 
 	System reporter performance reports for ports.
 .EXAMPLE
-    PS:> Get-A9SRStatPort_CLI -portType "disk,host" -Hourly -btsecs -24h -port "0:*:* 1:*:*"
+    PS:> Get-A9SRStatPort -portType "disk,host" -Hourly -btsecs -24h -port "0:*:* 1:*:*"
 
 	Sexample displays aggregate hourly performance statistics for disk and host ports on nodes 0 and 1 beginning 24 hours ago:
 .EXAMPLE
-    PS:> Get-A9SRStatPort_CLI -Groupby PORT_N
+    PS:> Get-A9SRStatPort -Groupby PORT_N
 	
 .EXAMPLE
-    PS:> Get-A9SRStatPort_CLI -portType rcip
+    PS:> Get-A9SRStatPort -portType rcip
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
@@ -2927,7 +2912,7 @@ Process
 		}
 }
 
-Function Get-A9SRStatPD_CLI
+Function Get-A9SRStatPhysicalDisk
 {
 <#
 .SYNOPSIS
@@ -3061,7 +3046,7 @@ Process
 }
 }
 
-Function Get-A9SRStatfssmb_CLI
+Function Get-A9SRStatfssmb
 {
 <#
 .SYNOPSIS
@@ -3163,7 +3148,7 @@ Process
 }
 }
 
-Function Get-A9SRStatLD_CLI
+Function Get-A9SRStatLD
 {
 <#
 .SYNOPSIS
@@ -3171,15 +3156,15 @@ Function Get-A9SRStatLD_CLI
 .DESCRIPTION
     Command displays historical performance data reports for logical disks.
 .EXAMPLE
-    PS:> Get-A9SRStatLD_CLI 
+    PS:> Get-A9SRStatLD
 
 	Command displays historical performance data reports for logical disks.
 .EXAMPLE
-    PS:> Get-A9SRStatLD_CLI -Hourly -btsecs -24h
+    PS:> Get-A9SRStatLD -Hourly -btsecs -24h
 
 	example displays aggregate hourly performance statistics for all logical disks beginning 24 hours ago:
 .EXAMPLE
-    PS:> Get-A9SRStatLD_CLI -Groupby Node
+    PS:> Get-A9SRStatLD -Groupby Node
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
@@ -3296,7 +3281,7 @@ Process
 }
 }
 
-Function Get-A9SRStatfssnapshot_CLI
+Function Get-A9SRStatfssnapshot
 {
 <#
 .SYNOPSIS
@@ -3402,7 +3387,7 @@ Process
 }
 }
 
-Function Get-A9SRStatlink_CLI
+Function Get-A9SRStatlink
 {
 <#
 .SYNOPSIS
@@ -3509,7 +3494,7 @@ Process
 }
 }
 
-Function Get-A9SRStatqos_CLI
+Function Get-A9SRStatqos
 {
 <#
 .SYNOPSIS
@@ -3632,7 +3617,7 @@ Process
 } 
 }
 
-Function Get-A9SRStatrcvv_CLI
+Function Get-A9SRStatrcvv
 {
 <#
 .SYNOPSIS
@@ -3777,7 +3762,7 @@ Process
 }
 }
 
-Function Get-A9SRStatVLun_CLI
+Function Get-A9SRStatVLun
 {
 <#
 .SYNOPSIS
@@ -3785,15 +3770,15 @@ Function Get-A9SRStatVLun_CLI
 .DESCRIPTION
     Command displays historical performance data reports for VLUNs.
 .EXAMPLE
-    PS:> Get-A9SRStatVLun_CLI
+    PS:> Get-A9SRStatVLun
 
 	Command displays historical performance data reports for VLUNs.
 .EXAMPLE
-    PS:> Get-A9SRStatVLun_CLI -Hourly -btsecs -24h
+    PS:> Get-A9SRStatVLun -Hourly -btsecs -24h
 
 	Example displays aggregate hourly performance statistics for all VLUNs beginning 24 hours ago:
 .EXAMPLE
-    Get-SRStatVLun -btsecs -2h -host "set:hostset" -vv "set:vvset*"
+    PS:> Get-A9SRStatVLun -btsecs -2h -host "set:hostset" -vv "set:vvset*"
 	
 	VV or host sets can be specified with patterns:
 .PARAMETER attime
@@ -3957,7 +3942,7 @@ Process
 }
 }
 
-Function Get-A9SRVvSpace_CLI
+Function Get-A9SRVvSpace
 {
 <#
 .SYNOPSIS
@@ -3965,15 +3950,15 @@ Function Get-A9SRVvSpace_CLI
 .DESCRIPTION
     Command displays historical space data reports for virtual volumes (VVs).
 .EXAMPLE
-    PS:> Get-A9SRVvSpace_CLI 
+    PS:> Get-A9SRVvSpace
 
 	Command displays historical space data reports for virtual volumes (VVs).
 .EXAMPLE
-    PS:> Get-A9SRVvSpace_CLI  -Hourly -btsecs -24h -VVName dbvv*
+    PS:> Get-A9SRVvSpace  -Hourly -btsecs -24h -VVName dbvv*
 	
 	example displays aggregate hourly VV space information for VVs with names matching either "dbvv*"  patterns beginning 24 hours ago:
 .EXAMPLE
-    PS:> Get-A9SRVvSpace_CLI -Daily -attime -groupby vv_name -vvName tp*
+    PS:> Get-A9SRVvSpace -Daily -attime -groupby vv_name -vvName tp*
 
 	Example displays VV space information for the most recent daily sample aggregated by the VV name for VVs with names that match the pattern "tp*".
 .PARAMETER attime
@@ -4131,7 +4116,7 @@ Process
 }
 }
 
-Function Show-A9SrStatIscsi_CLI
+Function Show-A9SrStatIscsi
 {
 <#
 .SYNOPSIS   
@@ -4139,17 +4124,17 @@ Function Show-A9SrStatIscsi_CLI
 .DESCRIPTION  
 	The command displays historical performance data reports for iSCSI ports.
 .EXAMPLE	
-	PS:> Show-A9SrStatIscsi_CLI	
+	PS:> Show-A9SrStatIscsi
 .EXAMPLE
-	PS:> Show-A9SrStatIscsi_CLI -Attime
+	PS:> Show-A9SrStatIscsi -Attime
 .EXAMPLE
-	PS:> Show-A9SrStatIscsi_CLI -Summary min/max/aug/detail
+	PS:> Show-A9SrStatIscsi -Summary min/max/aug/detail
 .EXAMPLE
-	PS:> Show-A9SrStatIscsi_CLI -BTSecs 1
+	PS:> Show-A9SrStatIscsi -BTSecs 1
 .EXAMPLE
-	PS:> Show-A9SrStatIscsi_CLI -ETSecs 1
+	PS:> Show-A9SrStatIscsi -ETSecs 1
 .EXAMPLE
-	PS:> Show-A9SrStatIscsi_CLI -Groupby PORT_N
+	PS:> Show-A9SrStatIscsi -Groupby PORT_N
 .PARAMETER Attime
     Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object group described by the
 	-groupby option. Without this option performance is shown versus time, with a row per time interval.
@@ -4305,7 +4290,7 @@ Process
 }
 }
 
-Function Show-A9SrStatIscsiSession_CLI
+Function Show-A9SrStatIscsiSession
 {
 <#
 .SYNOPSIS   
@@ -4315,19 +4300,19 @@ Function Show-A9SrStatIscsiSession_CLI
 .EXAMPLE	
 	Show-SrStatIscsiSession
 .EXAMPLE
-	PS:> Show-A9SrStatIscsiSession_CLI -Attime
+	PS:> Show-A9SrStatIscsiSession -Attime
 .EXAMPLE
-	PS:> Show-A9SrStatIscsiSession_CLI -Attime -NSP 0:2:1
+	PS:> Show-A9SrStatIscsiSession -Attime -NSP 0:2:1
 .EXAMPLE
-	PS:> Show-A9SrStatIscsiSession_CLI -Summary min -NSP 0:2:1
+	PS:> Show-A9SrStatIscsiSession -Summary min -NSP 0:2:1
 .EXAMPLE
-	PS:> Show-A9SrStatIscsiSession_CLI -Btsecs 1 -NSP 0:2:1
+	PS:> Show-A9SrStatIscsiSession -Btsecs 1 -NSP 0:2:1
 .EXAMPLE
-	PS:> Show-A9SrStatIscsiSession_CLI -Hourly -NSP 0:2:1
+	PS:> Show-A9SrStatIscsiSession -Hourly -NSP 0:2:1
 .EXAMPLE
-	PS:> Show-A9SrStatIscsiSession_CLI -Daily
+	PS:> Show-A9SrStatIscsiSession -Daily
 .EXAMPLE
-	PS:> Show-A9SrStatIscsiSession_CLI -Groupby PORT_N
+	PS:> Show-A9SrStatIscsiSession -Groupby PORT_N
 .PARAMETER Attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object group described by the
 	-groupby option. Without this option performance is shown versus time, with a row per time interval.

@@ -2,7 +2,7 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Get-A9Inventory_CLI
+Function Get-A9Inventory
 {
 <#
 .SYNOPSIS

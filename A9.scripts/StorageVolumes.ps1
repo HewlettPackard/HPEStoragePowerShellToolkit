@@ -321,9 +321,11 @@ Function Get-A9VvSpaceDistribution
 	Display volume space distribution for all and for a specific virtual volumes among CPGs.
 .EXAMPLE    
 	Get-A9VvSpaceDistribution
+
 	Display volume space distribution for all virtual volumes among CPGs.
 .EXAMPLE    
 	PS:> Get-A9VvSpaceDistribution	-VVName XYZ
+
 	Display space distribution for a specific virtual volume or a volume set.
 .PARAMETER VVName 
 	Either a single virtual volume name or a volume set name (start with set: to use a 	volume set name o, for example set:vvset1). 
@@ -509,30 +511,39 @@ Function Get-A9Vv
 	Get Single or list of virtual volumes.
 .EXAMPLE
 	PS:> Get-A9Vv
+
 	Get the list of virtual volumes
 .EXAMPLE
 	PS:> Get-A9Vv -VVName MyVV
+
 	Get the detail of given VV	
 .EXAMPLE
 	PS:> Get-A9Vv -WWN XYZ
+
 	Querying volumes with single WWN
 .EXAMPLE
 	PS:> Get-A9Vv -WWN "XYZ,XYZ1,XYZ2,XYZ3"
+
 	Querying volumes with multiple WWNs
 .EXAMPLE
 	PS:> Get-A9Vv -WWN "XYZ,XYZ1,XYZ2,XYZ3" -UserCPG ABC 
+
 	Querying volumes with multiple filters
 .EXAMPLE
 	PS:> Get-A9Vv -WWN "XYZ" -SnapCPG ABC 
+
 	Querying volumes with multiple filters
 .EXAMPLE
 	PS:> Get-A9Vv -WWN "XYZ" -CopyOf MyVV 
+
 	Querying volumes with multiple filters
 .EXAMPLE
 	PS:> Get-A9Vv -ProvisioningType FULL  
+
 	Querying volumes with Provisioning Type FULL
 .EXAMPLE
 	PS:> Get-A9Vv -ProvisioningType TPVV  
+	
 	Querying volumes with Provisioning Type TPVV
 .PARAMETER VVName
 	Specify name of the volume.

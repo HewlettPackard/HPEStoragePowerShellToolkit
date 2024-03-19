@@ -2,7 +2,7 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Get-A9Alert_CLI
+Function Get-A9Alert
 {
 <#
 .SYNOPSIS
@@ -10,11 +10,11 @@ Function Get-A9Alert_CLI
 .DESCRIPTION
 	The command displays the status of system alerts. When issued without options, all new customer alerts are displayed.
 .EXAMPLE
-	PS:> Get-A9Alert_CLI -N
+	PS:> Get-A9Alert -N
 .EXAMPLE
-	PS:> Get-A9Alert_CLI -F
+	PS:> Get-A9Alert -F
 .EXAMPLE
-	PS:> Get-A9Alert_CLI -All
+	PS:> Get-A9Alert -All
 .PARAMETER N
 	Specifies that only new customer alerts are displayed. This is the default.
 .PARAMETER A
@@ -169,7 +169,7 @@ Process
 }
 }
 
-Function Get-A9Health_CLI
+Function Get-A9Health
 {
 <#
 .SYNOPSIS
@@ -217,7 +217,7 @@ Return $Result
 }
 }
 
-Function Remove-A9Alerts_CLI
+Function Remove-A9Alerts
 {
 <#
 .SYNOPSIS
@@ -250,7 +250,7 @@ Process
 }
 }
 
-Function Set-A9Alert_CLI
+Function Set-A9Alert
 {
 <#
 .SYNOPSIS

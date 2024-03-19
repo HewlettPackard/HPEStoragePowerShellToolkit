@@ -1,7 +1,7 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
-Function Get-A9Maint_CLI
+Function Get-A9Maintenance
 {
 <#
 .SYNOPSIS
@@ -9,9 +9,9 @@ Function Get-A9Maint_CLI
 .DESCRIPTION
 	The command displays maintenance window records.
 .EXAMPLE
-	Get-A9Maint_CLI
+	PS:> Get-A9Maintenance
 .EXAMPLE
-	Get-A9Maint_CLI -All 
+	PS:> Get-A9Maintenance -All 
 .PARAMETER All
 	Display all maintenance window records, including active and expired ones. If this option is not specified, only active window records will be displayed.
 .PARAMETER Sortcol
@@ -54,7 +54,7 @@ Process
 } 
 }
 
-Function New-A9Maint_CLI
+Function New-A9Maintenance
 {
 <#
 .SYNOPSIS
@@ -62,7 +62,7 @@ Function New-A9Maint_CLI
 .DESCRIPTION
 	The command creates a maintenance window record with the specified options and maintenance type.
 .EXAMPLE
-	PS:> New-A9Maint_CLI -Duration 1m -MaintType Node
+	PS:> New-A9Maintenance -Duration 1m -MaintType Node
 .PARAMETER Comment
 	Specifies any comment or additional information for the maintenance window record. The comment can be up to 255 characters long. Unprintable
 	characters are not allowed.
@@ -72,8 +72,8 @@ Function New-A9Maint_CLI
 	Specify the maintenance type. Maintenance type can be Other, Node, Restart, Disk, Cage, Cabling, Upgrade, DiskFirmware, or CageFirmware.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$Comment,
-		[Parameter()]	[String]	$Duration,
+param(	[Parameter()]					[String]	$Comment,
+		[Parameter()]					[String]	$Duration,
 		[Parameter(Mandatory=$true)]	[String]	$MaintType
 )
 Begin
@@ -89,7 +89,7 @@ Process
 }
 }
 
-Function Set-A9Maint_CLI
+Function Set-A9Maintenance
 {
 <#
 .SYNOPSIS

@@ -38,7 +38,7 @@ Function New-A9HostSet
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$HostSetName,	  
-		[Parameter(ValueFromPipeline=$true)]		[String]	$Comment,	
+		[Parameter(ValueFromPipeline=$true)]					[String]	$Comment,	
 		[Parameter(ValueFromPipeline=$true)]					[String]	$Domain, 
 		[Parameter(ValueFromPipeline=$true)]					[String[]]	$SetMembers
 )
@@ -506,7 +506,7 @@ Process
 			else
 				{	return Get-A9VvSet -VVSetName $VVSetName
 				}
-			Write-DebugLog "End: Update-A9VvSet" $Debug
+			Write-Verbose "End: Update-A9VvSet"
 		}
 	else
 	{	Write-Error "Failure:  While Updating virtual volume Set: $VVSetName " 
@@ -670,7 +670,7 @@ Function Set-A9VvSetFlashCachePolicy
 .DESCRIPTION	
     Setting a VV-set Flash Cache policy.
 .EXAMPLE	
-	Set-A9VvSetFlashCachePolicy
+	PS:> Set-A9VvSetFlashCachePolicy
 .PARAMETER VvSet
 	Name Of the VV-set to Set Flash Cache policy.
 .PARAMETER Enable

@@ -836,7 +836,7 @@ Process
 	if($PoliciesBody.Count -gt 0)	{	$body["policies"] = $PoliciesBody 	}
     $Result = $null
 	$uri = '/remotecopytargets/'+ $TargetName
-	Write-DebugLog "Request: Request to Update-RCopyTarget_WSAPI (Invoke-WSAPI)." $Debug
+	Write-Verbose "Request: Request to Update-RCopyTarget_WSAPI (Invoke-WSAPI)." 
     $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -1220,7 +1220,7 @@ Function Get-A9RCopyGroupVv
 .DESCRIPTION
 	Get all or single Remote Copy Group volume
 .EXAMPLE
-	Get-RCopyGroupVv_WSAPI -GroupName asRCgroup
+	PS:> Get-RCopyGroupVv_WSAPI -GroupName asRCgroup
 .EXAMPLE
 	PS:> Get-A9RCopyGroupVv_WSAPI -GroupName asRCgroup -VolumeName Test
 .PARAMETER GroupName	

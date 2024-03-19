@@ -1,7 +1,7 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
-Function Join-A9Federation_CLI
+Function Join-A9Federation
 {
 <#
 .SYNOPSIS  
@@ -9,15 +9,15 @@ Function Join-A9Federation_CLI
 .DESCRIPTION
 	The Join-Federation command makes the StoreServ system a member of the Federation identified by the specified name and UUID.
 .EXAMPLE
-	PS:> Join-A9Federation_CLI -FedName test -UUID 12345
+	PS:> Join-A9Federation -FedName test -UUID 12345
 .EXAMPLE
-	PS:> Join-A9Federation_CLI -Comment hello -UUID 12345
+	PS:> Join-A9Federation -Comment hello -UUID 12345
 .EXAMPLE
-	PS:> Join-A9Federation_CLI -Comment hello -UUID 12345 -FedName test
+	PS:> Join-A9Federation -Comment hello -UUID 12345 -FedName test
 .EXAMPLE
-	PS:> Join-A9Federation_CLI -Setkv 10 -UUID 12345 -FedName test
+	PS:> Join-A9Federation -Setkv 10 -UUID 12345 -FedName test
 .EXAMPLE
-	PS:> Join-A9Federation_CLI -Setkvifnotset 20  -UUID 12345 -FedName test
+	PS:> Join-A9Federation -Setkvifnotset 20  -UUID 12345 -FedName test
 .PARAMETER Force
 	If the StoreServ system is already a member of a Federation, the option forcefully removes the system from the current Federation and makes it a
 	member of the new Federation identified by the specified name and UUID.
@@ -62,7 +62,7 @@ Process
 }
 }
 
-Function New-A9Federation_CLI
+Function New-A9Federation
 {
 <#
 .SYNOPSIS
@@ -70,13 +70,13 @@ Function New-A9Federation_CLI
 .DESCRIPTION
 	The New-Federation command generates a UUID for the named Federation and makes the StoreServ system a member of that Federation.
 .EXAMPLE
-	PS:> New-A9Federation_CLI -Fedname XYZ
+	PS:> New-A9Federation -Fedname XYZ
 .EXAMPLE
-	PS:> New-A9Federation_CLI –CommentString XYZ -Fedname XYZ
+	PS:> New-A9Federation –CommentString XYZ -Fedname XYZ
 .EXAMPLE
-	PS:> New-A9Federation_CLI -Setkv TETS -Fedname XYZ
+	PS:> New-A9Federation -Setkv TETS -Fedname XYZ
 .EXAMPLE
-	PS:> New-A9Federation_CLI -Setkvifnotset TETS -Fedname XYZ
+	PS:> New-A9Federation -Setkvifnotset TETS -Fedname XYZ
 .PARAMETER comment
 	Specifies any additional textual information.
 .PARAMETER Setkv 
@@ -107,7 +107,7 @@ Process
 }
 }
 
-Function Set-A9Federation_CLI
+Function Set-A9Federation
 {
 <#
 .SYNOPSIS
@@ -115,13 +115,13 @@ Function Set-A9Federation_CLI
 .DESCRIPTION 
 	The command modifies name, comment, or key/value attributes of the Federation of which the StoreServ system is member.
 .EXAMPLE
-	PS:> Set-A9Federation_CLI -FedName test
+	PS:> Set-A9Federation -FedName test
 .EXAMPLE
-	PS:> Set-A9Federation_CLI -Comment hello
+	PS:> Set-A9Federation -Comment hello
 .EXAMPLE
-	PS:> Set-A9Federation_CLI -ClrAllKeys
+	PS:> Set-A9Federation -ClrAllKeys
 .EXAMPLE
-	PS:> Set-A9Federation_CLI -Setkv 1
+	PS:> Set-A9Federation -Setkv 1
 .PARAMETER Comment
 	Specifies any additional textual information.
 .PARAMETER Setkv
@@ -169,15 +169,15 @@ Process
 }
 }
 
-Function Remove-A9Federation_CLI
+Function Remove-A9Federation
 {
 <#
 .SYNOPSIS
-	The Remove-Federation command removes the StoreServ system from Federation membership.
+	The command removes the StoreServ system from Federation membership.
 .DESCRIPTION 
-	The Remove-Federation command removes the StoreServ system from Federation membership.
+	The command removes the StoreServ system from Federation membership.
 .EXAMPLE	
-	PS:> Remove-A9Federation_CLI	
+	PS:> Remove-A9Federation	
 #>
 [CmdletBinding()]
 param()		
@@ -191,7 +191,7 @@ Process
 }
 }
 
-Function Show-A9Federation_CLI
+Function Show-A9Federation
 {
 <#
 .SYNOPSIS 
@@ -200,7 +200,7 @@ Function Show-A9Federation_CLI
 	The Show Federation command displays the name, UUID, and comment
 	of the Federation of which the StoreServ system is member.
 .EXAMPLE	
-	PS:> Show-A9Federation_CLI	
+	PS:> Show-A9Federation
 #>
 [CmdletBinding()]
 param()		

@@ -83,8 +83,7 @@ Function New-A9Cpg
 [CmdletBinding()]
 Param(
 	[Parameter(Mandatory = $true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True)]
-    [String]	$CPGName,
-
+						[String]	$CPGName,
 	[Parameter()]		[String]	$Domain = $null,
 	[Parameter()]		[String]	$Template = $null,
 	[Parameter()]		[Int]		$GrowthIncrementMiB = $null,
@@ -463,6 +462,7 @@ Function Remove-A9Cpg
     This operation requires access to all domains, as well as Super, or Edit roles, or any role granted cpg_remove permission.    
 .EXAMPLE    
 	PS:> Remove-A9Cpg -CPGName MyCPG
+	
 	Removes a Common Provision Group(CPG) "MyCPG".
 .PARAMETER CPGName 
     Specify name of the CPG.

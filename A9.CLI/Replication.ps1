@@ -1341,7 +1341,7 @@ Process
 } 
 }
 
-Function Remove-A9RCopyVvFromGroup_CLI
+Function Remove-A9RCopyVvFromGroup
 {
 <#
 .SYNOPSIS
@@ -1349,19 +1349,19 @@ Function Remove-A9RCopyVvFromGroup_CLI
 .DESCRIPTION
 	The command removes a virtual volume from a remote-copy volume group.
 .EXAMPLE
-	ps:> Remove-a9RCopyVvFromGroup_CLI -VV_name vv1 -group_name Group1
+	ps:> Remove-a9RCopyVvFromGroup -VV_name vv1 -group_name Group1
 
 	dismisses virtual volume vv1 from Group1:
 .EXAMPLE  
-	ps:> Remove-a9RCopyVvFromGroup_CLI -Pat -VV_name testvv* -group_name Group1
+	ps:> Remove-a9RCopyVvFromGroup -Pat -VV_name testvv* -group_name Group1
 
 	dismisses all virtual volumes that start with the name testvv from Group1:
 .EXAMPLE  
-	ps:> Remove-a9RCopyVvFromGroup_CLI -KeepSnap -VV_name vv1 -group_name Group1
+	ps:> Remove-a9RCopyVvFromGroup -KeepSnap -VV_name vv1 -group_name Group1
 
 	dismisses volume vv1 from Group1 and removes the corresponding volumes of vv1 on all the target systems of Group1.
 .EXAMPLE 
-	ps:> Remove-a9RCopyVvFromGroup_CLI -RemoveVV -VV_name vv2 -group_name Group1
+	ps:> Remove-a9RCopyVvFromGroup -RemoveVV -VV_name vv2 -group_name Group1
 
 	dismisses volume vv2 from Group2 and retains the resync snapshot associated with vv2 for this group.
 .PARAMETER Pat
@@ -1400,7 +1400,7 @@ Process
 }	
 }
 
-Function Sync-A9RecoverDRRcopyGroup_CLI
+Function Sync-A9RecoverDRRcopyGroup
 {
 <#
 .SYNOPSIS
@@ -1412,21 +1412,21 @@ Function Sync-A9RecoverDRRcopyGroup_CLI
     Performs data synchronization from primary remote copy volume groups to secondary remote copy volume groups.
     Performs the complete recovery operation (synchronization and storage failover operation which performs role reversal to make secondary volumes as primary which becomes read-write) for the remote copy volume group in both planned migration and disaster scenarios.
 .EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand sync -Target_name test -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand sync -Target_name test -Group_name Grp1
 .EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand recovery -Target_name test -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand recovery -Target_name test -Group_name Grp1
 .EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand sync -Force -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand sync -Force -Group_name Grp1
 .EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand sync -Nowaitonsync -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand sync -Nowaitonsync -Group_name Grp1
 .EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand sync -Nosyncbeforerecovery -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand sync -Nosyncbeforerecovery -Group_name Grp1
 .EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand sync -Nofailoveronlinkdown -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand sync -Nofailoveronlinkdown -Group_name Grp1
 .EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand sync -Forceassecondary -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand sync -Forceassecondary -Group_name Grp1
 .EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup_CLI -Subcommand sync -Waittime 60 -Group_name Grp1
+	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand sync -Waittime 60 -Group_name Grp1
 .PARAMETER Subcommand
 	sync
 	Performs the data synchronization from primary remote copy volume group to secondary remote copy volume group.
@@ -1497,7 +1497,7 @@ Process
 }
 }
 
-Function Set-A9AdmitRCopyHost_CLI 
+Function Set-A9AdmitRCopyHost
 {
 <#
 .SYNOPSIS
@@ -1515,7 +1515,7 @@ Function Set-A9AdmitRCopyHost_CLI
     The host name, as specified with New-Host cmldet.
 .EXAMPLE
     The following example adds host1 to group1 with Proximity primary:
-    PS:> Get-A9HostSet_CLI -proximity primary group1 host1
+    PS:> Get-A9HostSet -proximity primary group1 host1
 
     The following example shows the Active/Active groups with different proximities set:
     PS:> Get-A9HostSet_CLI -summary
@@ -1548,7 +1548,7 @@ Process
 }
 }
 
-Function Remove-A9RCopyHost_CLI 
+Function Remove-A9RCopyHost
 {
 <#
 .SYNOPSIS
@@ -1564,7 +1564,7 @@ Function Remove-A9RCopyHost_CLI
 .EXAMPLE
     The following example removes host1 from group1:
 
-	PS:> Remove-A9RCopyHost_CLI group1 host1
+	PS:> Remove-A9RCopyHost group1 host1
 .NOTES
 	SUPPORTED ARRAY VERSIONS HPE Primera OS 4.3 onwards, HPE Alletra OS 9.3 onwards
     This command is only supported for groups for which the active_active policy is set.

@@ -356,7 +356,7 @@ Function Set-A9ISCSIPort
 .DESCRIPTION
 	Configure iSCSI ports
 .EXAMPLE    
-	Set-A9ISCSIPort -NSP 1:2:3 -IPAdr 1.1.1.1 -Netmask xxx -Gateway xxx -MTU xx -ISNSPort xxx -ISNSAddr xxx
+	PS:> Set-A9ISCSIPort -NSP 1:2:3 -IPAdr 1.1.1.1 -Netmask xxx -Gateway xxx -MTU xx -ISNSPort xxx -ISNSAddr xxx
 	
 	Configure iSCSI ports for given NSP
 .PARAMETER NSP 

@@ -134,7 +134,7 @@ Process
 }
 }
 
-Function Get-FlashCache_WSAPI 
+Function Get-FlashCache
 {
 <#
 .SYNOPSIS	

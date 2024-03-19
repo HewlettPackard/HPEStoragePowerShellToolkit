@@ -2,22 +2,23 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Add-A9Vv_CLI
+Function Add-A9Vv
 {
 <#
 .SYNOPSIS
-	The Add-Vv command creates and admits remotely exported virtual volume definitions to enable the migration of these volumes. The newly created
+	The command creates and admits remotely exported virtual volume definitions to enable the migration of these volumes. The newly created
 	volume will have the WWN of the underlying remote volume.
 .DESCRIPTION
-	The Add-Vv command creates and admits remotely exported virtual volume definitions to enable the migration of these volumes. The newly created
+	The command creates and admits remotely exported virtual volume definitions to enable the migration of these volumes. The newly created
 	volume will have the WWN of the underlying remote volume.
 .EXAMPLE
-	Add-Vv -VV_WWN  migvv.0:50002AC00037001A
+	PS:> Add-Vv -VV_WWN  migvv.0:50002AC00037001A
+
 	Specifies the local name that should be given to the volume being admitted and Specifies the World Wide Name (WWN) of the remote volumes to be admitted.
 .EXAMPLE
-	PS:> Add-A9Vv_CLI -VV_WWN  "migvv.0:50002AC00037001A migvv.1:50002AC00047001A"
+	PS:> Add-A9Vv -VV_WWN  "migvv.0:50002AC00037001A migvv.1:50002AC00047001A"
 .EXAMPLE
-	PS:> Add-A9Vv_CLI -DomainName XYZ -VV_WWN X:Y
+	PS:> Add-A9Vv -DomainName XYZ -VV_WWN X:Y
 
 	Create the admitted volume in the specified domain. The default is to create it in the current domain, or no domain if the current domain is not set.
 .PARAMETER DomainName
@@ -34,7 +35,7 @@ param(	[Parameter(ParameterSetName="wwn")]
 		[Parameter(Mandatory=$true, ParameterSetName="New")]	[String] 	$VV_WWN_NewWWN
 	)	
 Begin
-{	Test-A9Connection -ClientType SshClient
+{	Test-A9Connection -ClientType 'SshClient'
 }	
 process	
 {	if($VV_WWN -Or $VV_WWN_NewWWN)
@@ -54,7 +55,7 @@ process
 } 
 }
 
-Function Compress-A9LD_CLI
+Function Compress-A9LogicalDisk
 {
 <#
 .SYNOPSIS
@@ -102,7 +103,7 @@ PROCESS
 } 
 }
 
-Function Find-A9LD_CLI
+Function Find-A9LogicalDisk
 {
 <#
 .SYNOPSIS
@@ -154,11 +155,11 @@ PROCESS
 }
 }
 
-Function Get-A9LD_CLI
+Function Get-A9LogicalDisk
 {
 <#
 .SYNOPSIS
-	Get-LD - Show information about logical disks (LDs) in the system.
+	Show information about logical disks (LDs) in the system.
 .DESCRIPTION
 	The Get-LD command displays configuration information about the system's LDs.
 .PARAMETER Cpg
@@ -239,7 +240,7 @@ process
 }
 } 
 
-Function Get-A9LDChunklet_CLI
+Function Get-A9LogicalDiskChunklet
 {
 <#
 .SYNOPSIS
@@ -298,7 +299,7 @@ process
 }
 }
 
-Function Get-A9Space_CLI
+Function Get-A9Space
 {
 <#
 .SYNOPSIS
@@ -306,10 +307,11 @@ Function Get-A9Space_CLI
 .DESCRIPTION
     Displays estimated free space for logical disk creation.
 .EXAMPLE
-    PS:> Get-A9Space_CLI 
+    PS:> Get-A9Space
+
 	Displays estimated free space for logical disk creation.
 .EXAMPLE
-    PS:> Get-A9Space_CLI -RaidType r1
+    PS:> Get-A9Space -RaidType r1
 		
 	Example displays the estimated free space for a RAID-1 logical disk:
 .PARAMETER cpgName
@@ -916,7 +918,7 @@ process
 }
 }
 
-Function Import-A9Vv_CLI
+Function Import-A9Vv
 {
 <#
 .SYNOPSIS
@@ -924,17 +926,17 @@ Function Import-A9Vv_CLI
 .DESCRIPTION  
 	The Import Vv command starts migrating the data from a remote LUN to the local Storage System. The remote LUN should have been prepared using the admitvv command.
 .EXAMPLE
-	PS:> Import-A9Vv_CLI -Usrcpg asCpg
+	PS:> Import-A9Vv -Usrcpg asCpg
 .EXAMPLE
-	PS:> Import-A9Vv_CLI -Usrcpg asCpg -VVName as4
+	PS:> Import-A9Vv -Usrcpg asCpg -VVName as4
 .EXAMPLE
-	PS:> Import-A9Vv_CLI -Usrcpg asCpg -Snapname asTest -VVName as4
+	PS:> Import-A9Vv -Usrcpg asCpg -Snapname asTest -VVName as4
 .EXAMPLE
-	PS:> Import-A9Vv_CLI -Usrcpg asCpg -Snp_cpg asCpg -VVName as4
+	PS:> Import-A9Vv -Usrcpg asCpg -Snp_cpg asCpg -VVName as4
 .EXAMPLE
-	PS:> Import-A9Vv_CLI -Usrcpg asCpg -Priority high -VVName as4
+	PS:> Import-A9Vv -Usrcpg asCpg -Priority high -VVName as4
 .EXAMPLE
-	PS:> Import-A9Vv_CLI -Usrcpg asCpg -NoTask -VVName as4
+	PS:> Import-A9Vv -Usrcpg asCpg -NoTask -VVName as4
 .PARAMETER NoCons
 	Any VV sets specified will not be imported as consistent groups. Allows multiple VV sets to be specified.
 	If the VV set contains any VV members that in a previous import attempt were imported consistently, they will continue to get imported consistently.
@@ -1301,7 +1303,7 @@ process
 }
 }
 
-Function Remove-A9LD_CLI
+Function Remove-A9LogicalDisk
 {
 <#
 .SYNOPSIS
@@ -1309,7 +1311,7 @@ Function Remove-A9LD_CLI
 .DESCRIPTION
 	The Remove-LD command removes a specified LD from the system service group.
 .EXAMPLE
-	PS:> Remove-A9LD_CLI -LD_Name xxx
+	PS:> Remove-A9LogicalDisk -LD_Name xxx
 .PARAMETER Pat
 	Specifies glob-style patterns. All LDs matching the specified pattern are removed. By default, confirmation is required to proceed
 	with the command unless the -f option is specified. This option must be	used if the pattern specifier is used.
@@ -1434,7 +1436,7 @@ process
 }
 }
 
-Function Remove-A9Vv_Ld_Cpg_Templates_CLI
+Function Remove-A9VvLogicalDiskCpgTemplates
 {
 <#
 .SYNOPSIS
@@ -1909,7 +1911,7 @@ process
 {	$Cmd = " showvvmap "
 	if($VV_Name)	{	$Cmd += " $VV_Name "}
 	$Result = Invoke-CLICommand -cmds  $Cmd
-	Write-DebugLog "Executing function : Show-VvMapping command -->" INFO: 
+	Write-Verbose "Executing function : Show-VvMapping command -->" 
 	if($Result.count -gt 1)
 		{	if($Result -match "SYNTAX" )	{	Return $Result	}
 			$tempFile = [IO.Path]::GetTempFileName()

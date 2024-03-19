@@ -31,7 +31,7 @@
 #####################################################################################
 
 # Generic connection object 
-
+<#
 add-type @" 
 
 public struct _Connection{
@@ -166,25 +166,7 @@ public string Key;
 
 "@
 
-$global:LogInfo = $true
-$global:DisplayInfo = $true
-
-$global:SANConnection = $null #set in HPE3PARPSToolkit.psm1 
-$global:WsapiConnection = $null
-$global:ArrayType = $null
-$global:ArrayName = $null
-$global:ConnectionType = $null
-
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-if (!$global:VSVersion) {
-	$global:VSVersion = "v3.0"
-}
-
-if (!$global:ConfigDir) {
-	$global:ConfigDir = $null 
-}
-
+#>
 
 Function Invoke-CLICommand 
 {
@@ -226,39 +208,6 @@ Param(	# [Parameter(Mandatory = $true)]	$Connection,
 
 }
 
-Function Set-DebugLog 
-{
-<#
-.SYNOPSIS
-    Enables creating debug logs.
-.DESCRIPTION
-	Creates Log folder and debug log files in the directory structure where the current modules are running.
-.EXAMPLE
-    Set-DebugLog -LogDebugInfo $true -Display $true
-	Set-DEbugLog -LogDebugInfo $true -Display $false
-.PARAMETER LogDebugInfo 
-    Specify the LogDebugInfo value to $true to see the debug log files to be created or $false if no debug log files are needed.
-.PARAMETER Display 
-    Specify the value to $true. This will enable seeing messages on the PS console. This switch is set to true by default. Turn it off by setting it to $false. Look at examples.
-.Notes
-    NAME:  Set-DebugLog
-    LASTEDIT: 04/18/2012
-    KEYWORDS: DebugLog
-#>
-[CmdletBinding()]
-	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Boolean]
-		$LogDebugInfo = $false,		
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Boolean]
-		$Display = $true
-	)
-
-	$global:LogInfo = $LogDebugInfo
-	$global:DisplayInfo = $Display	
-	Write-Verbose  "Exiting function call Set-DebugLog. The value of logging debug information is set to $global:LogInfo and the value of Display on console is $global:DisplayInfo" 
-}
 
 Function Invoke-CLI 
 {
@@ -326,25 +275,12 @@ process
 		}
 	catch{	$msg = "Calling function Invoke-CLI -->Exception Occured. "
 			$msg += $_.Exception.ToString()			
-			Write-Exception $msg -error
 			Throw $msg
 		}	
 	Write-Verbose  "End:Invoke-CLI called. If no errors reported on the console, the HP3par cli with the cmd = $cmd for user $username completed Successfully"
 }
 }
 
-Function Test-WSAPIConnection 
-{
-[CmdletBinding()]
-Param(	[Parameter()]	$WsapiConnection = $global:WsapiConnection
-	)
-	if (($null -eq $WsapiConnection) -or (-not ($WsapiConnection.IPAddress)) -or (-not ($WsapiConnection.Key))) 
-		{	Write-warning "Stop: No active WSAPI connection to an HPE Alletra 9000 or Primera or 3PAR storage system or the current session key is expired. Use New-WSAPIConnection cmdlet to connect back." -foreground yellow
-			throw 
-		}
-	$Validate = "Success"	
-	return
-}
 
 function Invoke-WSAPI 
 {
@@ -390,7 +326,7 @@ Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex.
 							}
 						return $data
 					}
-			Catch 	{	Show-RequestException -Exception $_
+			Catch 	{	$_
 						return
 					}
 		}
@@ -405,7 +341,7 @@ Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex.
 					return $data
 				}
 			Catch 	
-				{	Show-RequestException -Exception $_
+				{	$_
 					return
 				}
 		}
@@ -418,201 +354,10 @@ Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex.
 					return $data
 				}
 			Catch 
-				{	Show-RequestException -Exception $_
+				{	$_
 					return
 				}
 		}
 }
 
 
-Function Show-RequestException 
-{
-[CmdletBinding()]
-Param(	[parameter(Mandatory = $true)]	$Exception
-	)
-process
-{	If ($Exception.Exception.InnerException) 
-		{	Write-warning "Please verify the connectivity with the array. Retry with the parameter -Verbose for more informations"
-			Write-warning "Status: $($Exception.Exception.Status)" 
-			Write-warning "Error code: $($Exception.Exception.Response.StatusCode.value__)"
-			Write-warning "Message: $($Exception.Exception.InnerException.Message)"
-			Return $Exception.Exception.Status
-		}
-	If ($_.Exception.Response) 
-		{	$result = ConvertFrom-Json -InputObject $Exception.ErrorDetails.Message
-			Write-warning "The array sends an error message: $($result.desc)." 
-			Write-warning "Status: $($Exception.Exception.Status)"
-			Write-warning "Error code: $($result.code)"
-			Write-warning "HTTP Error code: $($Exception.Exception.Response.StatusCode.value__)"
-			Write-warning "Message: $($result.desc)"
-			Return $result.code
-		}
-}
-}
-
-Function Test-FilePath
-{
-<#
-.SYNOPSIS
-    Validate an array of file paths. For Internal Use only.
-.DESCRIPTION
-	Validates if a path specified in the array is valid.
-.EXAMPLE
-    Test-FilePath -ConfigFiles
-.PARAMETER -ConfigFiles 
-    Specify an array of config files which need to be validated.
-.Notes
-    NAME:  Test-FilePath
-    LASTEDIT: 05/30/2012
-    KEYWORDS: Test-FilePath
-#>
-Param([String[]]$ConfigFiles)
-process 
-{	Write-Verbose  "Start: Entering function Test-FilePath." 
-	$Validate = @()	
-	if (-not ($global:ConfigDir)) 
-		{	Write-warning  "STOP: Configuration Directory path is not set. Run scripts Init-PS-Session.ps1 OR import module VS-Functions.psm1 and run cmdlet Set-ConfigDirectory" 
-			$Validate = @("Configuration Directory path is not set. Run scripts Init-PS-Session.ps1 OR import module VS-Functions.psm1 and run cmdlet Set-ConfigDirectory.")
-			return $Validate
-		}
-	foreach ($argConfigFile in $ConfigFiles) 
-		{	if (-not (Test-Path -Path $argConfigFile )) 
-				{	$FullPathConfigFile = $global:ConfigDir + $argConfigFile
-					if (-not (Test-Path -Path $FullPathConfigFile)) 
-						{	$Validate = $Validate + @(, "Path $FullPathConfigFile not found.")					
-						}				
-				}
-		}	
-	return $Validate
-}
-}
-
-Function Test-A9CLi 
-{
-<#
-.SYNOPSIS
-    Test-PARCli object path
-.EXAMPLE
-    Test-PARCli
-#> 
-[CmdletBinding()]
-param ()
-process
-{	if 		($SANConnection.CliType -eq "3parcli") 		{	Test-PARCliTest	}
-	elseif 	($SANConnection.CliType -eq "SshClient") 	{	Test-SSHSession	}
-	else 												{	write-warning "Unable to execute the cmdlet since no active storage connection session exists. `nUse Connect-A9SSH to start a new storage connection session." 
-															return $false	
-														}	
-	return $true
-}
-}
-
-
-Function Test-PARCLi 
-{
-<#
-.SYNOPSIS
-    Test-PARCli object path
-.EXAMPLE
-    Test-PARCli
-#> 
-[CmdletBinding()]
-param ()
-	$SANCOB = $SANConnection 
-	$clittype = $SANCOB.CliType
-	Write-Verbose  "Start : in Test-PARCli function " 
-	if 		($clittype -eq "3parcli") 		{	Test-PARCliTest	}
-	elseif 	($clittype -eq "SshClient") 	{	Test-SSHSession	}
-	else 									{	return "FAILURE : Invalid cli type"	}	
-
-}
-
-Function Test-SSHSession 
-{
-<#
-.SYNOPSIS
-    Test-SSHSession   
-.PARAMETER pathFolder
-    Test-SSHSession
-.EXAMPLE
-    Test-SSHSession 
-#> 
-[CmdletBinding()]
-param()
-process
-{	$Result = Get-SSHSession | format-list
-	if (-not ($Result.count -gt 1 ) ) 	{	return "`nFAILURE : FATAL ERROR : Please check your connection and try again"	}
-	RETURN
-}	
-}
-
-Function Test-PARCliTest 
-{
-<#
-.SYNOPSIS
-    Test-PARCli pathFolder
-.PARAMETER pathFolder
-    Specify the names of the HP3par cli path
-.EXAMPLE
-    Test-PARCli path -pathFolder c:\test
-#> 
-[CmdletBinding()]
-param (	[Parameter()]	[String]
-		$pathFolder = "C:\Program Files (x86)\Hewlett Packard Enterprise\HPE 3PAR CLI\bin",
-		[Parameter(ValueFromPipeline = $true)]
-		$SANConnection = $global:SANConnection 
-	)
-	$SANCOB = $SANConnection 
-	$DeviceIPAddress = $SANCOB.IPAddress
-	Write-Verbose  "Start : in Test-PARCli function " 
-	$CLIDir = $pathFolder
-	if (Test-Path -Path $CLIDir) {
-		$clitestfile = $CLIDir + "\cli.exe"
-		if ( -not (Test-Path $clitestfile)) {					
-			return "FAILURE : HP3PAR cli.exe file was not found. Make sure you have cli.exe file under $CLIDir "
-		}
-		$pwfile = $SANCOB.epwdFile
-		$cmd2 = "help.bat"
-		& $cmd2 -sys $DeviceIPAddress -pwf $pwfile
-		if (!($?)) {
-			return "`nFAILURE : FATAL ERROR"
-		}
-	}
-	else {
-		$SANCObj = $SANConnection
-		$CLIDir = $SANCObj.CLIDir	
-		$clitestfile = $CLIDir + "\cli.exe"
-		if (-not (Test-Path $clitestfile )) {					
-			return "FAILURE : HP3PAR cli.exe was not found. Make sure you have cli.exe file under $CLIDir "
-		}
-		$pwfile = $SANCObj.epwdFile
-		$cmd2 = "help.bat"
-		& $cmd2 -sys $DeviceIPAddress -pwf $pwfile
-		if (!($?)) {
-			return "`nFAILURE : FATAL ERROR"
-		}
-	}
-}
-
-Function Test-CLIConnection  
-{
-<#
-.SYNOPSIS
-    Validate CLI connection object. For Internal Use only.
-.DESCRIPTION
-	Validates if CLI connection object for VC and OA are null/empty
-.EXAMPLE
-    Test-CLIConnection -SANConnection
-.PARAMETER -SANConnection 
-    Specify the VC or OA connection object. Ideally VC or Oa connection object is obtained by executing New-VCConnection or New-OAConnection.
-#>
-param(	[Parameter()]	$sanconnection = $Global:sanConnection )
-process	
-{	$Validate = "Success"
-	if (($null -eq $SANConnection) -or (-not ($SANConnection.AdminName)) -or (-not ($SANConnection.Password)) -or (-not ($SANConnection.IPAddress)) -or (-not ($SANConnection.SSHDir))) 
-		{	Write-Verbose "Connection object is null/empty or username, password,IP address are null/empty. Create a valid connection object and retry"
-			$Validate = "Failed"		
-		}
-	return $Validate
-}
-}

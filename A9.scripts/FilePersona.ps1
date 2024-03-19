@@ -1128,11 +1128,11 @@ Function Get-A9FileShare
 .DESCRIPTION
 	Get all or single File Shares.
 .EXAMPLE
-	Get-A9FileShare
+	PS:> Get-A9FileShare
 
 	Get List of File Shares.
 .EXAMPLE
-	Get-A9FileShare -ID xxx
+	PS:> Get-A9FileShare -ID xxx
 
 	Get Single File Shares.
 .PARAMETER ID	
@@ -1232,7 +1232,7 @@ Function Get-A9DirPermission
 .DESCRIPTION
 	Get directory permission properties.
 .EXAMPLE
-	Get-DirPermission_WSAPI -ID 12
+	PS:> Get-DirPermission -ID 12
 .PARAMETER ID	
     File Share ID contains the unique identifier of the File Share you want to Query.
 #>

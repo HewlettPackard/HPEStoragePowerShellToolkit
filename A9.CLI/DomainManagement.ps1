@@ -1,7 +1,7 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
-Function Get-A9Domain_CLI
+Function Get-A9Domain
 {
 <#
 .SYNOPSIS
@@ -42,7 +42,7 @@ Process
 }
 }
 
-Function Get-A9DomainSet_CLI
+Function Get-A9DomainSet
 {
 <#
 .SYNOPSIS
@@ -50,7 +50,7 @@ Function Get-A9DomainSet_CLI
 .DESCRIPTION
 	Lists the domain sets defined on the system and their members.
 .EXAMPLE
-	PS:> Get-A9DomainSet_CLI -D
+	PS:> Get-A9DomainSet -D
 .PARAMETER D
 	Show a more detailed listing of each set.
 .PARAMETER DomainShow 
@@ -77,7 +77,7 @@ Process
 }
 }
 
-Function Move-A9Domain_CLI
+Function Move-A9Domain
 {
 <#
 .SYNOPSIS
@@ -136,7 +136,7 @@ Process
 }
 }
 
-Function New-A9Domain_CLI
+Function New-A9Domain
 {
 <#
 .SYNOPSIS
@@ -146,7 +146,7 @@ Function New-A9Domain_CLI
 .EXAMPLE
 	Domain_name xxx
 .EXAMPLE
-	PS:> New-A9Domain_CLI -Domain_name xxx -Comment "Hello"
+	PS:> New-A9Domain -Domain_name xxx -Comment "Hello"
 .PARAMETER Domain_name
 	Specifies the name of the domain you are creating. The domain name can be no more than 31 characters. The name "all" is reserved.
 .PARAMETER Comment
@@ -178,7 +178,7 @@ Process
 }
 }
 
-Function New-A9DomainSet_CLI
+Function New-A9DomainSet
 {
 <#
 .SYNOPSIS
@@ -187,7 +187,7 @@ Function New-A9DomainSet_CLI
 	The command defines a new set of domains and provides the option of assigning one or more existing domains to that set. 
 	The command also allows the addition of domains to an existing set by use of the -add option.
 .EXAMPLE
-	New-A9DomainSet_CLI -SetName xyz 
+	New-A9DomainSet -SetName xyz 
 .PARAMETER SetName
 	Specifies the name of the domain set to create or add to, using up to 27 characters in length.
 .PARAMETER Add
@@ -213,7 +213,7 @@ Process
 }
 }
 
-Function Remove-A9Domain_CLI
+Function Remove-A9Domain
 {
 <#
 .SYNOPSIS
@@ -221,7 +221,7 @@ Function Remove-A9Domain_CLI
 .DESCRIPTION
 	The command removes an existing domain from the system.
 .EXAMPLE
-	Remove-A9Domain_CLI -DomainName xyz
+	Remove-A9Domain -DomainName xyz
 .PARAMETER DomainName
 	Specifies the domain that is removed. If the -pat option is specified the DomainName will be treated as a glob-style pattern, and multiple domains will be considered.
 .PARAMETER Pat
@@ -243,7 +243,7 @@ Process
 }
 }
 
-Function Remove-A9DomainSet_CLI
+Function Remove-A9DomainSet
 {
 <#
 .SYNOPSIS
@@ -251,7 +251,7 @@ Function Remove-A9DomainSet_CLI
 .DESCRIPTION
 	The command removes a domain set or removes domains from an existing set.
 .EXAMPLE
-	PS:> Remove-A9DomainSet_CLI -SetName xyz
+	PS:> Remove-A9DomainSet -SetName xyz
 .PARAMETER SetName
 	Specifies the name of the domain set. If the -pat option is specified the setname will be treated as a glob-style pattern, and multiple domain sets will be considered.
 .PARAMETER Domain
@@ -282,7 +282,7 @@ Process
 } 
 }
 
-Function Set-A9Domain_CLI
+Function Set-A9Domain
 {
 <#
 .SYNOPSIS
@@ -290,9 +290,9 @@ Function Set-A9Domain_CLI
 .DESCRIPTION
 	The command changes the current domain CLI environment parameter.
 .EXAMPLE
-	PS:> Set-A9Domain_CLI
+	PS:> Set-A9Domain
 .EXAMPLE
-	PS:> Set-Domain -Domain "XXX"
+	PS:> Set-A9Domain -Domain "XXX"
 .PARAMETER Domain
 	Name of the domain to be set as the working domain for the current CLI session. If the <domain> parameter is not present or is equal to -unset then the working domain is set to no current domain.
 #>
@@ -319,7 +319,7 @@ Process
 }
 }
 
-Function Update-A9Domain_CLI
+Function Update-A9Domain
 {
 <#
 .SYNOPSIS
@@ -327,7 +327,7 @@ Function Update-A9Domain_CLI
 .DESCRIPTION
 	The command sets the parameters and modifies the properties of a domain.
 .EXAMPLE
-	Update-A9Domain_CLI -DomainName xyz
+	Update-A9Domain -DomainName xyz
 .PARAMETER DomainName
 	Indicates the name of the domain.(Existing Domain Name)
 .PARAMETER NewName
@@ -361,7 +361,7 @@ Process
 }
 }
 
-Function Update-A9DomainSet_CLI
+Function Update-A9DomainSet
 {
 <#
 .SYNOPSIS
@@ -369,7 +369,7 @@ Function Update-A9DomainSet_CLI
 .DESCRIPTION
 	The command sets the parameters and modifies the properties of a domain set.
 .EXAMPLE
-	Update-A9DomainSet_CLI -DomainSetName xyz
+	Update-A9DomainSet -DomainSetName xyz
 .PARAMETER DomainSetName
 	Specifies the name of the domain set to modify.
 .PARAMETER Comment

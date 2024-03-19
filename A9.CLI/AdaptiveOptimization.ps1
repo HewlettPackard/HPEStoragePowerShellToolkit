@@ -2,13 +2,13 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Get-A9AOConfiguration_CLI
+Function Get-A9AdaptiveOptimizationConfig
 {
 <#
 .SYNOPSIS
-	Get-AOConfigurations - Show Adaptive Optimization configurations.
+	Show Adaptive Optimization configurations.
 .DESCRIPTION
-	This command shows Adaptive Optimization (AO) configurations in the system.
+	This command shows Adaptive Optimization configurations in the system.
 .PARAMETER Domain
 	Shows only AO configurations that are in domains with names matching one or more of the <domain_name_or_pattern> argument. This option
 	does not allow listing objects within a domain of which the user is not a member. Patterns are glob-style (shell-style) patterns (see help on sub,globpat)
@@ -16,7 +16,7 @@ Function Get-A9AOConfiguration_CLI
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Domain,
-		[Parameter()]	[String]	$AOConfigurationName
+		[Parameter()]	[String]	$ConfigName
 )
 begin
 {	Test-A9Connection -ClientType 'SshClient' 
@@ -24,7 +24,7 @@ begin
 process
 {	$Cmd = " showaocfg "
 	if($Domain)	{	$Cmd += " -domain $Domain "	}
-	if($AOConfigurationName)	{	$Cmd += " $AOConfigurationName " }
+	if($ConfigName)	{	$Cmd += " $ConfigName " }
 	$Result = Invoke-CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -70,7 +70,7 @@ process
 }
 }
 
-Function New-A9AOConfiguration_CLI
+Function New-A9AdaptiveOptimizationConfig
 {
 <#
 .SYNOPSIS
@@ -123,7 +123,8 @@ Function New-A9AOConfiguration_CLI
 param(	[Parameter()]	[String]	$T0cpg,
 		[Parameter()]	[String]	$T1cpg,
 		[Parameter()]	[String]	$T2cpg,
-		[Parameter()]	[String]	$Mode,
+		[Parameter()]	[ValidateSet('Performance','Balanced','Cost')]
+						[String]	$Mode,
 		[Parameter()]	[String]	$T0min,
 		[Parameter()]	[String]	$T1min,
 		[Parameter()]	[String]	$T2min,
@@ -153,7 +154,7 @@ process
 } 
 }
 
-Function Remove-A9AOConfiguration_CLI
+Function Remove-A9AdaptiveOptimizationConfig
 {
 <#
 .SYNOPSIS
@@ -186,7 +187,7 @@ process
 } 
 }
 
-Function Start-A9AO_CLI
+Function Start-A9AdaptiveOptimizationConfig
 {
 <#
 .SYNOPSIS
@@ -195,15 +196,15 @@ Function Start-A9AO_CLI
 	This command starts execution of an Adaptive Optimization (AO) configuration using data region level performance data collected for the
 	specified number of hours.
 .EXAMPLE
-	Start-AO -Btsecs 3h -AocfgName prodaocfg
+	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 3h -AocfgName prodaocfg
 	
 	Start execution of AO config prodaocfg using data for the past 3 hours:
 .EXAMPLE	
-	PS:> Start-A9AO_CLI -Btsecs 12h -Etsecs 3h -Maxrunh 6 -AocfgName prodaocfg
+	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 12h -Etsecs 3h -Maxrunh 6 -AocfgName prodaocfg
 
 	Start execution of AO config prodaocfg using data from 12 hours ago until 3 hours ago, allowing up to 6 hours to complete:
 .EXAMPLE
-	PS:> Start-A9AO_CLI -Btsecs 3h -Vv "set:dbvvset" -AocfgName prodaocfg
+	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 3h -Vv "set:dbvvset" -AocfgName prodaocfg
 
 	Start execution of AO for the vvset dbvvset in AOCFG prodaocfg using data for the past 3 hours:	
 .PARAMETER Btsecs
@@ -291,11 +292,13 @@ Function Start-A9AO_CLI
 param(
 	[Parameter()]	[String]	$Btsecs,
 	[Parameter()]	[String]	$Etsecs,
-	[Parameter()]	[String]	$Compact,
+	[Parameter()]	[ValidateSet('auto','trimonly','no')]
+					[String]	$Compact,
 	[Parameter()]	[switch]	$Dryrun,
 	[Parameter()]	[String]	$Maxrunh,
 	[Parameter()]	[String]	$Min_iops,
-	[Parameter()]	[String]	$Mode,
+	[Parameter()]	[ValidateSet('Performance','Balanced','Cost')]
+					[String]	$Mode,
 	[Parameter()]	[String]	$Vv,
 	[Parameter()]	[String]	$T0min,
 	[Parameter()]	[String]	$T1min,
@@ -330,7 +333,7 @@ process
 } 
 }
 
-Function Update-A9AOConfiguration_CLI
+Function Update-A9AdaptiveOptimizationConfig
 {
 <#
 .SYNOPSIS
@@ -384,7 +387,8 @@ param(
 	[Parameter()]	[String]	$T0cpg,
 	[Parameter()]	[String]	$T1cpg,
 	[Parameter()]	[String]	$T2cpg,
-	[Parameter()]	[String]	$Mode,
+	[Parameter()]	[ValidateSet('Performance','Balanced','Cost')]
+					[String]	$Mode,
 	[Parameter()]	[String]	$T0min,
 	[Parameter()]	[String]	$T1min,
 	[Parameter()]	[String]	$T2min,

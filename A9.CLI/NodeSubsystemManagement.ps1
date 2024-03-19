@@ -2,7 +2,7 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Find-A9Node_CLI
+Function Find-A9Node
 {
 <#
 .SYNOPSIS
@@ -54,7 +54,7 @@ process
 }
 }
 
-Function Find-A9System_CLI
+Function Find-A9System
 {
 <#
 .SYNOPSIS
@@ -221,7 +221,7 @@ process
 }
 }
 
-Function Ping-A9RCIPPorts_CLI
+Function Ping-A9RCIPPorts
 {
 <#
 .SYNOPSIS
@@ -229,15 +229,15 @@ Function Ping-A9RCIPPorts_CLI
 .DESCRIPTION
 	Verifying That the Servers Are Connected.
 .EXAMPLE	
-	PS:> Ping-A9RCIPPorts_CLI -IP_address 192.168.245.5 -NSP 0:3:1
+	PS:> Ping-A9RCIPPorts -IP_address 192.168.245.5 -NSP 0:3:1
 .EXAMPLE
-	PS:> Ping-A9RCIPPorts_CLI -count 2 -IP_address 192.168.245.5 -NSP 0:3:1
+	PS:> Ping-A9RCIPPorts -count 2 -IP_address 192.168.245.5 -NSP 0:3:1
 .EXAMPLE
-	PS:> Ping-A9RCIPPorts_CLI -wait 2 -IP_address 192.168.245.5 -NSP 0:3:1
+	PS:> Ping-A9RCIPPorts -wait 2 -IP_address 192.168.245.5 -NSP 0:3:1
 .EXAMPLE
-	PS:> Ping-A9RCIPPorts_CLI -size 2 -IP_address 192.168.245.5 -NSP 0:3:1
+	PS:> Ping-A9RCIPPorts -size 2 -IP_address 192.168.245.5 -NSP 0:3:1
 .EXAMPLE
-	PS:> Ping-A9RCIPPorts_CLI -PF -IP_address 192.168.245.5 -NSP 0:3:1
+	PS:> Ping-A9RCIPPorts -PF -IP_address 192.168.245.5 -NSP 0:3:1
 .PARAMETER IP_address
 	IP address on the secondary system to ping
 .PARAMETER NSP
@@ -255,7 +255,6 @@ Function Ping-A9RCIPPorts_CLI
 .PARAMETER count
 	Specifies the number of replies accepted by the system before
 	terminating the command. The default is 1; the maximum value is 25.
-#Requires HPE 3par cli.exe
 #>
 [CmdletBinding()]
 Param(		[Parameter(Mandatory=$true)]	[System.IPAddress]	$IP_address,
@@ -281,7 +280,7 @@ process
 }
 }
 
-Function Set-A9Battery_CLI
+Function Set-A9Battery
 {
 <#
 .SYNOPSIS
@@ -294,7 +293,7 @@ Function Set-A9Battery_CLI
 	for a newly installed battery on node 2, power supply 1, and battery 0, with
 	an expiration date of July 4, 2006:
 	
-	PS:> Set-A9Battery_CLI -X " 07/04/2006" -Node_ID 2 -Powersupply_ID 1 -Battery_ID 0	
+	PS:> Set-A9Battery -X " 07/04/2006" -Node_ID 2 -Powersupply_ID 1 -Battery_ID 0	
 .PARAMETER S
 	Specifies the serial number of the battery using a limit of 31 alphanumeric characters.
 	This option is not supported on HPE 3PAR 10000 and 20000 systems.
@@ -338,7 +337,7 @@ process
 } 
 }
 
-Function Set-A9FCPorts_CLI
+Function Set-A9FCPorts
 {
 <#
 .SYNOPSIS
@@ -350,20 +349,21 @@ Function Set-A9FCPorts_CLI
 .PARAMETER DirectConnect
 	If present, configure port for a direct connection to a host By default, the port is configured as fabric attached
 .EXAMPLE
-	PS:> Set-A9FCPorts_CLI -Ports 1:2:1
+	PS:> Set-A9FCPorts -Ports 1:2:1
 	
 	Configure port 1:2:1 as Fibre Channel connected to a fabric
 .EXAMPLE
-	PS:> Set-A9FCPorts_CLI -Ports 1:2:1 -DirectConnect
+	PS:> Set-A9FCPorts -Ports 1:2:1 -DirectConnect
 	
 	Configure port 1:2:1 as Fibre Channel connected to host ( no SAN fabric)
 .EXAMPLE		
-	PS:> Set-A9FCPorts_CLI -Ports 1:2:1,1:2:2 
+	PS:> Set-A9FCPorts -Ports 1:2:1,1:2:2 
 	
 	Configure ports 1:2:1 and 1:2:2 as Fibre Channel connected to a fabric 
 #>
 [CmdletBinding()]
-Param(	[Parameter()]	[String]	$Ports,
+Param(	[Parameter()][ValidatePattern("^\d:\d:\d")]	
+						[String[]]	$Ports,
 		[Parameter()]	[Switch]	$DirectConnect,
 		[Parameter()]	[Switch]	$Demo
 	)
@@ -371,35 +371,29 @@ Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
-{	$Port_Pattern = "(\d):(\d):(\d)"	
-	foreach ($P in $Ports)
-		{	if ( $p -match $Port_Pattern)
-				{	Write-Verbose  "Set port $p offline " 
-					$Cmds = "controlport offline -f $p"
-					Invoke-CLICommand -cmds $Cmds
-					$PortConfig = "point"
-					$PortMsg    = "Fabric ( Point mode)"
-					if ($DirectConnect)
-						{	$PortConfig = "loop"
-							$PortMsg    = "Direct connection ( loop mode)"
-						}
-					Write-Verbose  "Configuring port $p as $PortMsg " 
-					$Cmds= "controlport config host -ct $PortConfig -f $p"
-					Invoke-CLICommand -cmds $Cmds
-					Write-Verbose  "Resetting port $p " 
-					$Cmds="controlport rst -f $p"
-					Invoke-CLICommand -cmds $Cmds	
-					Write-Verbose  "FC port $P is configured" 
-					return 
+{	foreach ($P in $Ports)
+		{	Write-Verbose  "Set port $p offline " 
+			$Cmds = "controlport offline -f $p"
+			Invoke-CLICommand -cmds $Cmds
+			$PortConfig = "point"
+			$PortMsg    = "Fabric ( Point mode)"
+			if ($DirectConnect)
+				{	$PortConfig = "loop"
+					$PortMsg    = "Direct connection ( loop mode)"
 				}
-			else
-				{	return "FAILURE : Port $p is not in correct format N:S:P. No action is taken"
-				}	
+			Write-Verbose  "Configuring port $p as $PortMsg " 
+			$Cmds= "controlport config host -ct $PortConfig -f $p"
+			Invoke-CLICommand -cmds $Cmds
+			Write-Verbose  "Resetting port $p " 
+			$Cmds="controlport rst -f $p"
+			Invoke-CLICommand -cmds $Cmds	
+			Write-Verbose  "FC port $P is configured" 
+			return 
 		}
 }
 } 
 
-Function Set-A9HostPorts_CLI
+Function Set-A9HostPorts
 {
 <#
 .SYNOPSIS
@@ -407,25 +401,25 @@ Function Set-A9HostPorts_CLI
 .DESCRIPTION
 	Configures with settings specified in the text file
 .EXAMPLE
-	PS:> Set-A9HostPorts_CLI -FCConfigFile FC-Nodes.CSV
+	PS:> Set-A9HostPorts -FCConfigFile FC-Nodes.CSV
 
 	Configures all FC host controllers on array
 .EXAMPLE	
-	PS:> Set-A9HostPorts_CLI -iSCSIConfigFile iSCSI-Nodes.CSV
+	PS:> Set-A9HostPorts -iSCSIConfigFile iSCSI-Nodes.CSV
 
 	Configures all iSCSI host controllers on array
 .EXAMPLE
-	PS:> Set-A9HostPorts_CLI -LDConfigFile LogicalDisks.CSV
+	PS:> Set-A9HostPorts -LDConfigFile LogicalDisks.CSV
 
 	Configures logical disks on array
 .EXAMPLE	
-	PS:> Set-A9HostPorts_CLI -FCConfigFile FC-Nodes.CSV -iSCSIConfigFile iSCSI-Nodes.CSV -LDConfigFile LogicalDisks.CSV
+	PS:> Set-A9HostPorts -FCConfigFile FC-Nodes.CSV -iSCSIConfigFile iSCSI-Nodes.CSV -LDConfigFile LogicalDisks.CSV
 
 	Configures FC, iSCSI host controllers and logical disks on array
 .EXAMPLE	
-	PS:> Set-A9HostPorts_CLI -RCIPConfiguration -Port_IP 0.0.0.0 -NetMask xyz -NSP 1:2:3> for rcip port
+	PS:> Set-A9HostPorts -RCIPConfiguration -Port_IP 0.0.0.0 -NetMask xyz -NSP 1:2:3> for rcip port
 .EXAMPLE	
-	PS:> Set-A9HostPorts_CLI -RCFCConfiguration -NSP 1:2:3>
+	PS:> Set-A9HostPorts -RCFCConfiguration -NSP 1:2:3>
 	
 	For RCFC port  
 .PARAMETER FCConfigFile
@@ -540,15 +534,15 @@ process
 } 
 }
 
-Function Set-A9NodeProperties_CLI
+Function Set-A9NodeProperties
 {
 <#
 .SYNOPSIS
-	Set-NodeProperties - set the properties of the node components.
+	set the properties of the node components.
 .DESCRIPTION
-	The Set-NodeProperties command sets properties of the node components such as serial number of the power supply.
+	The command sets properties of the node components such as serial number of the power supply.
 .EXAMPLE
-	PS:> Set-A9NodeProperties_CLI -PS_ID 1 -S xxx -Node_ID 1
+	PS:> Set-A9NodeProperties -PS_ID 1 -S xxx -Node_ID 1
 .PARAMETER S
 	Specify the serial number. It is up to 8 characters in length.
 .PARAMETER PS_ID
@@ -574,7 +568,7 @@ process
 }
 }
 
-Function Set-A9NodesDate_CLI
+Function Set-A9NodesDate
 {
 <#
 .SYNOPSIS
@@ -584,15 +578,15 @@ Function Set-A9NodesDate_CLI
 .EXAMPLE
 	The following example displays the timezones with the -tzlist option:
 	
-	PS:> Set-A9NodesDate_CLI -Tzlist
+	PS:> Set-A9NodesDate -Tzlist
 .EXAMPLE
 	The following example narrows down the list to the required timezone of Etc:
 
-	PS:> Set-A9NodesDate_CLI -Tzlist -TzGroup Etc
+	PS:> Set-A9NodesDate -Tzlist -TzGroup Etc
 .EXAMPLE
 	The following example shows the timezone being set:
 
-	PS:> Set-A9NodesDate_CLI  -Tzlist -TzGroup "Etc/GMT"
+	PS:> Set-A9NodesDate  -Tzlist -TzGroup "Etc/GMT"
 .PARAMETER Tzlist
 	Displays a timezone within a group, if a group is specified. If a group is not specified, displays a list of valid groups.
 .PARAMETER TzGroup
@@ -616,7 +610,7 @@ process
 } 
 }
 
-Function Set-A9SysMgr_CLI
+Function Set-A9SysMgr
 {
 <#
 .SYNOPSIS
@@ -671,7 +665,7 @@ process
 }
 }
 
-Function Show-A9Battery_CLI
+Function Show-A9Battery
 {
 <#
 .SYNOPSIS
@@ -754,7 +748,7 @@ process
 }
 }
 
-Function Show-A9EEProm_CLI
+Function Show-A9EEProm
 {
 <#
 .SYNOPSIS
@@ -763,13 +757,13 @@ Function Show-A9EEProm_CLI
 	The command displays node EEPROM log information.
 .EXAMPLE
 	The following example displays the EEPROM log for all nodes:
-	PS:> Show-A9EEProm_CLI
+	PS:> Show-A9EEProm
 .EXAMPLE
-	PS:> Show-A9EEProm_CLI -Node_ID 0
+	PS:> Show-A9EEProm -Node_ID 0
 .EXAMPLE
-	PS:> Show-A9EEProm_CLI -Dead 
+	PS:> Show-A9EEProm -Dead 
 .EXAMPLE
-	PS:> Show-A9EEProm_CLI -Dead -Node_ID 0
+	PS:> Show-A9EEProm -Dead -Node_ID 0
 .PARAMETER Dead
 	Specifies that an EEPROM log for a node that has not started or successfully joined the cluster be displayed. If this option is used, it must be followed by a non empty list of nodes.
 .PARAMETER Node_ID
@@ -792,7 +786,7 @@ process
 }
 }
 
-Function Get-A9SystemInformation_CLI
+Function Get-A9SystemInformation
 {
 <#
 .SYNOPSIS
@@ -800,11 +794,11 @@ Function Get-A9SystemInformation_CLI
 .DESCRIPTION
     Command displays the Storage system information.
 .EXAMPLE
-    PS:> Get-A9SystemInformation_CLI 
+    PS:> Get-A9SystemInformation 
 
 	Command displays the Storage system information.such as system name, model, serial number, and system capacity information.
 .EXAMPLE
-    PS:> Get-A9SystemInformation_CLI -Option space
+    PS:> Get-A9SystemInformation -Option space
 
 	Lists Storage system space information in MB(1024^2 bytes).PARAMETER Option
 	space 
@@ -870,7 +864,7 @@ process
 }
 }
 
-Function Show-A9FCOEStatistics_CLI
+Function Show-A9FCOEStatistics
 {
 <#
 .SYNOPSIS
@@ -930,7 +924,7 @@ Process
 }
 }
 
-Function Show-A9Firmwaredb_CLI
+Function Show-A9Firmwaredb
 {
 <#
 .SYNOPSIS
@@ -938,13 +932,13 @@ Function Show-A9Firmwaredb_CLI
 .DESCRIPTION
 	Displays the current database of firmware levels for possible upgrade. If issued without any options, the firmware for all vendors is displayed.
 .EXAMPLE
-	PS:> Show-A9Firmwaredb_CLI 
+	PS:> Show-A9Firmwaredb
 .EXAMPLE
-	PS:> Show-A9Firmwaredb_CLI -VendorName xxx
+	PS:> Show-A9Firmwaredb -VendorName xxx
 .EXAMPLE
-	PS:> Show-A9Firmwaredb_CLI -All
+	PS:> Show-A9Firmwaredb -All
 .EXAMPLE
-	PS:> Show-A9Firmwaredb_CLI -L
+	PS:> Show-A9Firmwaredb -L
 .PARAMETER VendorName
 	Specifies that the firmware vendor from the SCSI database file is displayed.
 .PARAMETER L
@@ -970,7 +964,7 @@ Process
 }
 }
 
-Function Show-A9TOCGen_CLI
+Function Show-A9TOCGen
 {
 <#
 .SYNOPSIS
@@ -990,7 +984,7 @@ process
 }
 }
 
-Function Show-A9iSCSISessionStatistics_CLI
+Function Show-A9iSCSISessionStatistics
 {
 <#
 .SYNOPSIS  
@@ -998,19 +992,19 @@ Function Show-A9iSCSISessionStatistics_CLI
 .DESCRIPTION  
 	The Show-iSCSISessionStatistics command displays the iSCSI session statistics.
 .EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics_CLI
+	PS:> Show-A9iSCSISessionStatistics
 .EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics_CLI -Iterations 1
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1
 .EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics_CLI -Iterations 1 -Delay 2
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -Delay 2
 .EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics_CLI -Iterations 1 -NodeList 1
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -NodeList 1
 .EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics_CLI -Iterations 1 -SlotList 1
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -SlotList 1
 .EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics_CLI -Iterations 1 -PortList 1
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -PortList 1
 .EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics_CLI -Iterations 1 -Prev
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -Prev
 .PARAMETER Iterations 
 	The command stops after a user-defined <number> of iterations.
 .PARAMETER Delay
@@ -1116,31 +1110,31 @@ process
 }
 }
 
-Function Show-A9iSCSIStatistics_CLI
+Function Show-A9iSCSIStatistics
 {
 <#
 .SYNOPSIS  
-	The Show-iSCSIStatistics command displays the iSCSI statistics.
+	The command displays the iSCSI statistics.
 .DESCRIPTION  
-	The Show-iSCSIStatistics command displays the iSCSI statistics.
+	The command displays the iSCSI statistics.
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics_CLI
+	PS:> Show-A9iSCSIStatistics
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1
+	PS:> Show-A9iSCSIStatistics -Iterations 1
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1 -Delay 2
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -Delay 2
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1 -NodeList 1
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -NodeList 1
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1 -SlotList 1
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -SlotList 1
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1 -PortList 1
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -PortList 1
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1 -Fullcounts
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -Fullcounts
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1 -Prev
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -Prev
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics_CLI -Iterations 1 -Begin
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -Begin
 .PARAMETER Iterations 
 	The command stops after a user-defined <number> of iterations.
 .PARAMETER Delay
@@ -1239,7 +1233,7 @@ process
 } 
 }
 
-Function Show-A9NetworkDetail_CLI
+Function Show-A9NetworkDetail
 {
 <#
 .SYNOPSIS
@@ -1248,7 +1242,7 @@ Function Show-A9NetworkDetail_CLI
 	The command displays the configuration and status of the administration network interfaces, including the configured gateway and network time protocol (NTP) server.
 .EXAMPLE 
 	The following example displays the status of the system administration network interfaces:
-	PS:> Show-A9NetworkDetail_CLI -D
+	PS:> Show-A9NetworkDetail -D
 .PARAMETER D
 	Show detailed information.
 #>
@@ -1266,18 +1260,18 @@ process
 }
 }
 
-Function Show-A9NodeEnvironmentStatus_CLI
+Function Show-A9NodeEnvironmentStatus
 {
 <#
 .SYNOPSIS
-	Show-NodeEnvironmentStatus - Show node environmental status (voltages, temperatures).
+	Show node environmental status (voltages, temperatures).
 .DESCRIPTION
-	The Show-NodeEnvironmentStatus command displays the node operating environment status, including voltages and temperatures.
+	The command displays the node operating environment status, including voltages and temperatures.
 .EXAMPLE
 	The following example displays the operating environment status for all nodes
 	in the system:
 
-	PS:> Show-A9NodeEnvironmentStatus_CLI
+	PS:> Show-A9NodeEnvironmentStatus
 .PARAMETER Node_ID
 	Specifies the ID of the node whose environment status is displayed. Multiple node IDs can be specified as a series of integers separated by
 	a space (1 2 3). If no option is used, then the environment status of all nodes is displayed.
@@ -1296,7 +1290,7 @@ process
 }
 }
 
-Function Show-A9iSCSISession_CLI
+Function Show-A9iSCSISession
 {
 <#
 .SYNOPSIS
@@ -1304,11 +1298,11 @@ Function Show-A9iSCSISession_CLI
 .DESCRIPTION  
 	The command shows the iSCSI sessions.
 .EXAMPLE
-	PS:> Show-A9iSCSISession_CLI
+	PS:> Show-A9iSCSISession
 .EXAMPLE
-	PS:> Show-A9iSCSISession_CLI -NSP 1:2:1
+	PS:> Show-A9iSCSISession -NSP 1:2:1
 .EXAMPLE
-	PS:> Show-A9iSCSISession_CLI -Detailed -NSP 1:2:1
+	PS:> Show-A9iSCSISession -Detailed -NSP 1:2:1
 .PARAMETER Detailed
     Specifies that more detailed information about the iSCSI session is displayed. If this option is not used, then only summary information
     about the iSCSI session is displayed.
@@ -1352,7 +1346,7 @@ process
 }
 }
 
-Function Show-A9NodeProperties_CLI
+Function Show-A9NodeProperties
 {
 <#
 .SYNOPSIS
@@ -1364,13 +1358,13 @@ Function Show-A9NodeProperties_CLI
 	The following example displays the operating environment status for all
 	nodes in the system:
 	
-	PS:> Show-A9NodeProperties_CLI
+	PS:> Show-A9NodeProperties
 .EXAMPLE
 	The following examples display detailed information (-d option) for the nodes including their components in a table format. The shownode -d command
 	can be used to display the tail information of the nodes including their components in name and value pairs.
 
-	PS:> Show-A9NodeProperties_CLI - Mem
-	PS:> Show-A9NodeProperties_CLI - Mem -Node_ID 1	
+	PS:> Show-A9NodeProperties - Mem
+	PS:> Show-A9NodeProperties - Mem -Node_ID 1	
     
 	The following options are for node summary and inventory information:
 .PARAMETER Listcols
@@ -1516,13 +1510,13 @@ process
 } 
 }
 
-Function Show-A9Portdev_CLI
+Function Show-A9Portdevices_CLI
 {
 <#
 .SYNOPSIS
-	Show-Portdev - Show detailed information about devices on a port.
+	Show detailed information about devices on a port.
 .DESCRIPTION
-	The Show-Portdev command displays detailed information about devices on a specified port.
+	The command displays detailed information about devices on a specified port.
 .PARAMETER Loop
 	Specifies that information is returned for arbitrated loop devices that are attached to the specified port. This subcommand is only
 	for use with Fibre Channel arbitrated loop ports.
@@ -1636,17 +1630,17 @@ process
 } 
 }
 
-Function Show-A9PortISNS_CLI
+Function Show-A9PortISNS
 {
 <#
 .SYNOPSIS   
-	The Show-PortISNS command shows iSNS host information for iSCSI ports in the system.
+	The command shows iSNS host information for iSCSI ports in the system.
 .DESCRIPTION 
-	The Show-PortISNS command shows iSNS host information for iSCSI ports in the system.
+	The command shows iSNS host information for iSCSI ports in the system.
 .EXAMPLE	
-	Show-PortISNS
+	PS:> Show-PortISNS
 .EXAMPLE	
-	Show-PortISNS -NSP 1:2:3
+	PS:> Show-PortISNS -NSP 1:2:3
 .PARAMETER NSP
 	Specifies the port for which information about devices on that port are displayed.
 #>
@@ -1679,7 +1673,7 @@ process
 }	
 } 
 
-Function Show-A9SysMgrCLI
+Function Show-A9SystemManager
 {
 <#
 .SYNOPSIS
@@ -1707,7 +1701,7 @@ process
 }
 }
 
-Function Show-A9SystemResourcesSummary_CLI
+Function Show-A9SystemResourcesSummary
 {
 <#
 .SYNOPSIS
@@ -1727,7 +1721,7 @@ process
 }
 } 
 
-Function Start-A9NodeRescue_CLI
+Function Start-A9NodeRescue
 {
 <#
 .SYNOPSIS
@@ -1735,7 +1729,7 @@ Function Start-A9NodeRescue_CLI
 .DESCRIPTION
 	Initiates a node rescue, which initializes the internal node disk of the specified node to match the contents of the other node disks. Progress is reported as a task.
 .EXAMPLE
-	Start-A9NodeRescue_CLI -Node 0
+	Start-A9NodeRescue -Node 0
 .PARAMETER Node
 	Specifies the node to be rescued.  This node must be physically present in the system and powered on, but not part of the cluster.
 #>
@@ -1897,7 +1891,7 @@ process
 }
 }
 
-Function Get-A9Node_CLI
+Function Get-A9Node
 {
 <#
 .SYNOPSIS
@@ -2056,25 +2050,25 @@ process
 }
 }
 
-Function Get-A9Target_CLI
+Function Get-A9Target
 {
 <#
 .SYNOPSIS
-	Get-Target - Show information about unrecognized targets.
+	Show information about unrecognized targets.
 .DESCRIPTION
-	The Get-Target command displays information about unrecognized targets.
+	The command displays information about unrecognized targets.
 .EXAMPLE
-	PS:> Get-A9Target_CLI  
+	PS:> Get-A9Target 
 .EXAMPLE 
-	PS:> Get-A9Target_CLI -Lun -Node_WWN 2FF70002AC00001F
+	PS:> Get-A9Target -Lun -Node_WWN 2FF70002AC00001F
 .EXAMPLE 
-	PS:> Get-A9Target_CLI -Lun -All
+	PS:> Get-A9Target -Lun -All
 .EXAMPLE 	
-	PS:> Get-A9Target_CLI -Inq -Page 0 -LUN_WWN  50002AC00001001F
+	PS:> Get-A9Target -Inq -Page 0 -LUN_WWN  50002AC00001001F
 .EXAMPLE 
-	PS:> Get-A9Target_CLI -Inq -Page 0 -D -LUN_WWN  50002AC00001001F
+	PS:> Get-A9Target -Inq -Page 0 -D -LUN_WWN  50002AC00001001F
 .EXAMPLE 	
-	PS:> Get-A9Target_CLI -Mode -Page 0x3 -D -LUN_WWN  50002AC00001001F 
+	PS:> Get-A9Target -Mode -Page 0x3 -D -LUN_WWN  50002AC00001001F 
 .PARAMETER Lun
 	Displays the exported Logical Unit Numbers (LUNs) from the unknown
 	targets. Use the "all" specifier to display the exported LUNs from all
@@ -2128,7 +2122,7 @@ process
 } 
 }
 
-Function Show-A9PortARP_CLI
+Function Show-A9PortARP
 {
 <#
 .SYNOPSIS   
@@ -2136,9 +2130,9 @@ Function Show-A9PortARP_CLI
 .DESCRIPTION  
 	The command shows the ARP table for iSCSI ports in the system.
 .EXAMPLE
-	PS:> Show-A9PortARP_CLI 
+	PS:> Show-A9PortARP
 .EXAMPLE
-	PS:> Show-A9PortARP_CLI -NSP 1:2:3
+	PS:> Show-A9PortARP -NSP 1:2:3
 .PARAMETER NSP
 	Specifies the port for which information about devices on that port are displayed.
 #>
@@ -2171,13 +2165,13 @@ Process
 } 
 }
 
-Function Show-A9UnrecognizedTargetsInfo_CLI
+Function Show-A9UnrecognizedTargetsInfo
 {
 <#
 .SYNOPSIS
-	Show-UnrecognizedTargetsInfo - Show information about unrecognized targets.
+	Show information about unrecognized targets.
 .DESCRIPTION
-	The Show-UnrecognizedTargetsInfo command displays information about unrecognized targets.
+	The command displays information about unrecognized targets.
 .PARAMETER Lun
 	Displays the exported Logical Unit Numbers (LUNs) from the unknown targets. Use the "all" specifier to display the exported LUNs from all of the unknown targets.
 .PARAMETER Inq
@@ -2245,13 +2239,11 @@ Process
 }
 }
 
-Function Test-A9Por_CLI
+Function Test-A9FCLoopback
 {
 <#
 .SYNOPSIS
     Perform loopback tests on Fibre Channel ports.
-.SYNTAX
-    checkport [options <arg>] <node:slot:port>
 .DESCRIPTION
     The checkport command performs loopback tests on Fibre Channel ports.
 .PARAMETER Time <seconds_to_run>
@@ -2269,16 +2261,15 @@ Function Test-A9Por_CLI
 .EXAMPLE
     Test-Port test is performed on port 0:0:1 a total of five times:
 
-    PS:> Test-A9Port_CLI -iter 5 0:0:1
+    PS:> Test-A9FCLoopback -iter 5 0:0:1
+
     Starting loopback test on port 0:0:1
     Port 0:0:1 completed 5 loopback frames in 0 seconds Passed
 .NOTES
     Access to all domains is required to run this command.
 
-    When both the -time and -iter options are specified, the first limit
-    reached terminates the program. If neither are specified, the default is
-    1,000 iterations. The total run time is always limited to 300 seconds even
-    when not specified.
+    When both the -time and -iter options are specified, the first limit reached terminates the program. If neither are specified, the default is
+    1,000 iterations. The total run time is always limited to 300 seconds even when not specified.
     The default loopback is an ELS-ECHO sent to the HBA itself.
 #>
 [CmdletBinding()]

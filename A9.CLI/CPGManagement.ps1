@@ -577,7 +577,7 @@ Process
 }		
 }
 
-Function Set-A9CPG_CLI
+Function Set-A9CPG
 {
 <#
 .SYNOPSIS
@@ -762,7 +762,7 @@ Process
 }
 }
 
-Function Compress-A9CPG_CLI
+Function Compress-A9CPG
 {
 <#
 .SYNOPSIS
@@ -771,9 +771,9 @@ Function Compress-A9CPG_CLI
 	The command consolidates logical disk space in Common Provisioning Groups (CPGs) into as few logical disks as possible, allowing
 	unused logical disks to be removed and their space reclaimed.
 .EXAMPLE
-	PS:> Compress-A9CPG_CLI -CPG_name xxx 
+	PS:> Compress-A9CPG -CPG_name xxx 
 .EXAMPLE
-	PS:> Compress-A9CPG_CLI -CPG_name tstCPG
+	PS:> Compress-A9CPG -CPG_name tstCPG
 .PARAMETER Pat
 	Compacts CPGs that match any of the specified patterns. This option must be used if the pattern specifier is used.
 .PARAMETER Waittask

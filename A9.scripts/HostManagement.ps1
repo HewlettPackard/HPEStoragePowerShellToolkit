@@ -19,15 +19,15 @@ Function New-A9Host
 	New-A9Host -HostName MyHost -Domain MyDoamin -FCWWN XYZ
 	Create the host MyHost in the specified domain MyDoamin with WWN XYZ
 .EXAMPLE
-	New-A9Host -HostName MyHost -Domain MyDoamin -FCWWN XYZ -Persona GENERIC_ALUA
+	PS:> New-A9Host -HostName MyHost -Domain MyDoamin -FCWWN XYZ -Persona GENERIC_ALUA
 .EXAMPLE	
-	New-A9Host -HostName MyHost -Domain MyDoamin -Persona GENERIC
+	PS:> New-A9Host -HostName MyHost -Domain MyDoamin -Persona GENERIC
 .EXAMPLE	
-	New-A9Host -HostName MyHost -Location 1
+	PS:> New-A9Host -HostName MyHost -Location 1
 .EXAMPLE
-	New-A9Host -HostName MyHost -IPAddr 1.0.1.0
+	PS:> New-A9Host -HostName MyHost -IPAddr 1.0.1.0
 .EXAMPLE	
-	New-A9Host -HostName $hostName -Port 1:0:1
+	PS:> New-A9Host -HostName $hostName -Port 1:0:1
 .PARAMETER HostName
 	Specifies the host name. Required for creating a host.
 .PARAMETER Domain
@@ -118,7 +118,7 @@ Process
 }
 }
 
-Function Add-A9RemoveHostWWN
+Function Set-A9HostTargetZoneingWWN
 {
 <#
 .SYNOPSIS
@@ -127,9 +127,9 @@ Function Add-A9RemoveHostWWN
 	Add a host WWN from target-driven zoning.
     Any user with Super or Edit role, or any role granted host_create permission, can perform this operation. Requires access to all domains.    
 .EXAMPLE
-	Add-A9RemoveHostWWN -HostName MyHost -FCWWNs "$wwn" -AddWwnToHost
+	PS:> Add-A9RemoveHostWWN -HostName MyHost -FCWWNs "$wwn" -AddWwnToHost
 .EXAMPLE	
-	Add-A9RemoveHostWWN -HostName MyHost -FCWWNs "$wwn" -RemoveWwnFromHost
+	PS:> Add-A9RemoveHostWWN -HostName MyHost -FCWWNs "$wwn" -RemoveWwnFromHost
 .PARAMETER HostName
 	Host Name.
 .PARAMETER FCWWNs
@@ -193,11 +193,11 @@ Function Update-A9Host
 .DESCRIPTION	    
     Update Host.
 .EXAMPLE	
-	Update-A9Host -HostName MyHost
+	PS:> Update-A9Host -HostName MyHost
 .EXAMPLE	
-	Update-A9Host -HostName MyHost -ChapName TestHostAS	
+	PS:> Update-A9Host -HostName MyHost -ChapName TestHostAS	
 .EXAMPLE	
-	Update-A9Host -HostName MyHost -ChapOperationMode 1 
+	PS:> Update-A9Host -HostName MyHost -ChapOperationMode 1 
 .PARAMETER HostName
 	Neme of the Host to Update.
 .PARAMETER ChapName
@@ -310,7 +310,7 @@ Function Remove-A9Host
 .DESCRIPTION
 	Remove a Host. Any user with Super or Edit role, or any role granted host_remove permission, can perform this operation. Requires access to all domains.
 .EXAMPLE    
-	Remove-Host_WSAPI -HostName MyHost
+	PS:> Remove-Host_WSAPI -HostName MyHost
 .PARAMETER HostName 
 	Specify the name of Host to be removed.
 #>
@@ -344,11 +344,11 @@ Function Get-A9Host
 .DESCRIPTION
 	Get Single or list of Hotes.
 .EXAMPLE
-	Get-A9Host
+	PS:> Get-A9Host
 
 	Display a list of host.
 .EXAMPLE
-	Get-A9Host -HostName MyHost
+	PS:> Get-A9Host -HostName MyHost
 
 	Get the information of given host.
 .PARAMETER HostName
@@ -500,19 +500,19 @@ Function Get-A9HostPersona
 
 	Display a list of host persona.
 .EXAMPLE
-	Get-A9HostPersona -Id 10
+	PS:> Get-A9HostPersona -Id 10
 
 	Display a host persona of given id.
 .EXAMPLE
-	Get-A9HostPersona -WsapiAssignedId 100
+	PS:> Get-A9HostPersona -WsapiAssignedId 100
 
 	Display a host persona of given Wsapi Assigned Id.
 .EXAMPLE
-	Get-A9HostPersona -Id 10
+	PS:> Get-A9HostPersona -Id 10
 
 	Get the information of given host persona.
 .EXAMPLE	
-	Get-A9HostPersona -WsapiAssignedId "1,2,3"
+	PS:> Get-A9HostPersona -WsapiAssignedId "1,2,3"
 
 	Multiple Host.
 .PARAMETER Id

@@ -145,7 +145,7 @@ process
 }
 }
 
-Function Set-A9VVolSC_CLI
+Function Set-A9VVolStorageContainer
 {
 <#
 .SYNOPSIS
@@ -159,9 +159,9 @@ Function Set-A9VVolSC_CLI
     VVols are managed by the vSphere environment, and storage containers are used to maintain a logical collection of them. No physical space is
     pre-allocated for a storage container. The special VV sets (see showvvset) are used to manage VVol storage containers.
 .EXAMPLE
-	PS:> Set-A9VVolSC_CLI -vvset XYZ (Note: set: already include in code please dont add with vvset)
+	PS:> Set-A9VVolStorageContainer -vvset XYZ (Note: set: already include in code please dont add with vvset)
 .EXAMPLE
-	PS:> Set-A9VVolSC_CLI -Create -vvset XYZ
+	PS:> Set-A9VVolStorageContainer -Create -vvset XYZ
 .PARAMETER Create
 	An empty existing <vvset> not already marked as a VVol Storage Container will be updated. The VV set should not contain any
 	existing volumes (see -keep option below), must not be already marked as a storage container, nor may it be in use for other

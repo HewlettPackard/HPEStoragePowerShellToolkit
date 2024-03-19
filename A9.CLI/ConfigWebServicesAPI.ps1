@@ -2,7 +2,7 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Get-A9Wsapi_CLI
+Function Get-A9Wsapi
 {
 <#
   .SYNOPSIS
@@ -12,7 +12,7 @@ Function Get-A9Wsapi_CLI
   status as Active, Inactive or Error. It also displays the current status of the HTTP and HTTPS ports and their port numbers. WSAPI server URL is
   also displayed.
 .EXAMPLE
-    Get-A9Wsapi_CLI -D
+    PS:> Get-A9Wsapi -D
 .PARAMETER D
     Shows WSAPI information in table format.
 #>
@@ -43,16 +43,16 @@ Process
 }
 }
 
-Function Get-A9WsapiSession_CLI
+Function Get-A9WsapiSession
 {
 <#
 .SYNOPSIS
-  Get-A9WsapiSession_CLI - Show the Web Services API server sessions information.
+  Show the Web Services API server sessions information.
 .DESCRIPTION
-  The Get-WsapiSession command displays the WSAPI server sessions connection information, including the id, node, username, role, hostname,
+  The command displays the WSAPI server sessions connection information, including the id, node, username, role, hostname,
   and IP Address of the connecting client. It also displays the session creation time and session type.
 .EXAMPLE
-	Get-A9WsapiSession_CLI
+	PS:> Get-A9WsapiSession
 #>
 [CmdletBinding()]
 param()
@@ -81,7 +81,7 @@ Process
 }
 }
 
-Function Remove-A9WsapiSession_CLI
+Function Remove-A9WsapiSession
 {
 <#
 .SYNOPSIS
@@ -89,7 +89,7 @@ Function Remove-A9WsapiSession_CLI
 .DESCRIPTION
   The command removes the WSAPI user connections from the current system.
 .EXAMPLE
-	Remove-A9WsapiSession_CLI -Id "1537246327049685" -User_name 3parxyz -IP_address "10.10.10.10"
+	PS:> Remove-A9WsapiSession -Id "1537246327049685" -User_name 3parxyz -IP_address "10.10.10.10"
 .PARAMETER Pat
   Specifies that the <id>, <user_name> and <IP_address> specifiers are treated as glob-style (shell-style) patterns and all WSAPI user
   connections matching those patterns are removed. By default, confirmation is required to proceed with removing each connection
@@ -130,7 +130,7 @@ Process
 }
 
 
-Function Set-A9Wsapi_CLI
+Function Set-A9Wsapi
 {
 <#
 .SYNOPSIS
@@ -138,7 +138,7 @@ Function Set-A9Wsapi_CLI
 .DESCRIPTION
   The command sets properties of the Web Services API server, including options to enable or disable the HTTP and HTTPS ports.
 .EXAMPLE
-	Set-A9Wsapi_CLI -Force -Enable_Http
+	PS:> Set-A9Wsapi -Force -Enable_Http
 .PARAMETER Force
   Forces the operation of the setwsapi command, bypassing the typical confirmation message. At least one of the following options are required:
 .PARAMETER Pol
@@ -154,7 +154,8 @@ Function Set-A9Wsapi_CLI
 #>
 [CmdletBinding()]
 param(  [Parameter()]   [switch]	$Force,
-        [Parameter()] 	[String]	$Pol,
+        [Parameter()] 	[ValidateSet('tls_strict','no_tls_strict')]
+                        [String]	$Pol,
         [Parameter()] 	[String]	$Timeout,
         [Parameter()] 	[String]	$Evtstream
 )
@@ -172,7 +173,7 @@ Process
 }
 }
 
-Function Start-A9Wsapi_CLI
+Function Start-A9Wsapi
 {
 <#
 .SYNOPSIS
@@ -181,7 +182,7 @@ Function Start-A9Wsapi_CLI
   The command starts the Web Services API server to service HTTP and HTTPS requests.
   By default, the Web Services API server is not started until this command is issued.
 .EXAMPLE
-  Start-A9Wsapi_CLI
+  PS:> Start-A9Wsapi
 #>
 [CmdletBinding()]
 param()
@@ -195,7 +196,7 @@ Process
 }
 }
 
-Function Stop-A9Wsapi_CLI
+Function Stop-A9Wsapi
 {
 <#
 .SYNOPSIS

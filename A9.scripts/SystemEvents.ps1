@@ -9,7 +9,7 @@ Function Open-A9SSE
 .DESCRIPTION
 	Establishing a communication channel for Server-Sent Event (SSE) 
 .EXAMPLE
-	PS:> Open-SSE
+	PS:> Open-A9SSE
 #>
 [CmdletBinding()]
 Param()

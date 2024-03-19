@@ -2,7 +2,7 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Set-A9AdmitsPD_CLI
+Function Set-A9AdmitPhysicalDisk
 {
 <#
 .SYNOPSIS
@@ -10,19 +10,19 @@ Function Set-A9AdmitsPD_CLI
 .DESCRIPTION
     The command creates and admits physical disk definitions to enable the use of those disks.
 .EXAMPLE
-	PS:> Set-A9AdmitsPD_CLI 
+	PS:> Set-A9AdmitPhysicalDisk
 	
 	This example admits physical disks.
 .EXAMPLE
-	PS:> Set-A9AdmitsPD_CLI -Nold
+	PS:> Set-A9AdmitPhysicalDisk -Nold
 	
 	Do not use the PD (as identified by the <world_wide_name> specifier) For logical disk allocation.
 .EXAMPLE
-	PS:> Set-A9AdmitsPD_CLI -NoPatch
+	PS:> Set-A9AdmitPhysicalDisk -NoPatch
 	
 	Suppresses the check for drive table update packages for new hardware enablement.
 .EXAMPLE  	
-	PS:> Set-A9AdmitsPD_CLI -Nold -wwn xyz
+	PS:> Set-A9AdmitPhysicalDisk -Nold -wwn xyz
 
 	Do not use the PD (as identified by the <world_wide_name> specifier) For logical disk allocation.
 .PARAMETER Nold
@@ -50,7 +50,7 @@ Process
 } 
 }
 
-Function Find-A9Cage_CLI
+Function Find-A9Cage
 {
 <#
 .SYNOPSIS
@@ -58,19 +58,19 @@ Function Find-A9Cage_CLI
 .DESCRIPTION
 	The command allows system administrators to locate a drive cage, drive magazine, or port in the system using the devices’ blinking LEDs. 
 .EXAMPLE
-	PS:> Find-A9Cage_CLI -Time 30 -CageName cage0	
+	PS:> Find-A9Cage -Time 30 -CageName cage0	
 	
 	This example causes the Fibre Channel LEDs on the drive CageName cage0 to blink for 30 seconds.
 .EXAMPLE  
-	PS:> Find-A9Cage_CLI -Time 30 -CageName cage0 -mag 3	
+	PS:> Find-A9Cage -Time 30 -CageName cage0 -mag 3	
 
 	This example causes the Fibre Channel LEDs on the drive CageName cage0 to blink for 30 seconds,Indicates the drive magazine by number 3.
 .EXAMPLE  
-	PS:> Find-A9Cage_CLI -Time 30 -CageName cage0 -PortName demo1
+	PS:> Find-A9Cage -Time 30 -CageName cage0 -PortName demo1
 
 	This example causes the Fibre Channel LEDs on the drive CageName cage0 to blink for 30 seconds, If a port is specified, the port LED will oscillate between green and off.
 .EXAMPLE  	
-	PS:> Find-A9Cage_CLI -CageName cage1 -Mag 2	
+	PS:> Find-A9Cage -CageName cage1 -Mag 2	
 
 	This example causes the Fibre Channel LEDs on the drive CageName cage1 to blink, Indicates the drive magazine by number 2.	
 .PARAMETER Time 
@@ -159,7 +159,7 @@ Process
 }
 }
 
-Function Get-A9Cage_CLI
+Function Get-A9Cage
 {
 <#
 .SYNOPSIS
@@ -167,15 +167,15 @@ Function Get-A9Cage_CLI
 .DESCRIPTION
 	The command displays information about drive cages.    
 .EXAMPLE
-	PS:> Get-A9Cage_CLI	
+	PS:> Get-A9Cage
 	
 	This examples display information for a single system’s drive cages.
 .EXAMPLE  
-	PS:> Get-A9Cage_CLI	 -D -CageName cage2	
+	PS:> Get-A9Cage -D -CageName cage2	
 	
 	Specifies that more detailed information about the drive cage is displayed
 .EXAMPLE  
-	PS:> Get-A9Cage_CLI	 -I -CageName cage2
+	PS:> Get-A9Cage -I -CageName cage2
 	
 	Specifies that inventory information about the drive cage is displayed. 
 .PARAMETER D
@@ -256,7 +256,7 @@ Process
 }
 }
 
-Function Show-A9PD_CLI
+Function Show-A9PhysicalDisk
 {
 <#
 .SYNOPSIS
@@ -264,29 +264,29 @@ Function Show-A9PD_CLI
 .DESCRIPTION
 	Displays configuration information about the physical disks (PDs) on a system. 
 .EXAMPLE  
-	PS:> Show-A9PD_CLI
+	PS:> Show-A9PhysicalDisk
 
 	This example displays configuration information about all the physical disks (PDs) on a system. 
 .EXAMPLE  
-	PS:> Show-A9PD_CLI -PD_ID 5
+	PS:> Show-A9PhysicalDisk -PD_ID 5
 
 	This example displays configuration information about specific or given physical disks (PDs) on a system. 
 .EXAMPLE  
-	PS:> Show-A9PD_CLI -C 
+	PS:> Show-A9PhysicalDisk -C 
 
 	This example displays chunklet use information for all disks. 
 .EXAMPLE  
-	PS:> Show-A9PD_CLI -C -PD_ID 5
+	PS:> Show-A9PhysicalDisk -C -PD_ID 5
 
 	This example will display chunklet use information for all disks with the physical disk ID. 
 .EXAMPLE  
-	PS:> Show-A9PD_CLI -Node 0 -PD_ID 5
+	PS:> Show-A9PhysicalDisk -Node 0 -PD_ID 5
 .EXAMPLE  
-	PS:> Show-A9PD_CLI -I -Pattern -ND 1 -PD_ID 5
+	PS:> Show-A9PhysicalDisk -I -Pattern -ND 1 -PD_ID 5
 .EXAMPLE
-	PS:> Show-A9PD_CLI -C -Pattern -Devtype FC  	
+	PS:> Show-A9PhysicalDisk -C -Pattern -Devtype FC  	
 .EXAMPLE  
-	PS:> Show-A9PD_CLI -option p -pattern mg -patternValue 0
+	PS:> Show-A9PhysicalDisk -option p -pattern mg -patternValue 0
 
 	TThis example will display all the FC disks in magazine 0 of all cages.
 .PARAMETER Listcols
@@ -556,7 +556,7 @@ Process
 }
 }
 
-Function Remove-A9PD_CLI
+Function Remove-A9PhysicalDisk
 {
 <#
 .SYNOPSIS
@@ -566,7 +566,7 @@ Function Remove-A9PD_CLI
 .EXAMPLE
 	The following example removes a PD with ID 1:
 
-	PS:> Remove-A9PD_CLI -PDID 1
+	PS:> Remove-A9PhysicalDisk -PDID 1
 .PARAMETER PDID
 	Specifies the PD(s), identified by integers, to be removed from system use.
 #>
@@ -584,7 +584,7 @@ Process
 }
 }
 
-Function Set-A9Cage_CLI
+Function Set-A9Cage
 {
 <#
 .SYNOPSIS
@@ -592,11 +592,11 @@ Function Set-A9Cage_CLI
 .DESCRIPTION
 	The Set-Cage command enables service personnel to set or modify parameters for a drive cage.
 .EXAMPLE
-	PS:> Set-A9Cage_CLI -Position left -CageName cage1
+	PS:> Set-A9Cage -Position left -CageName cage1
 
 	This example demonstrates how to assign cage1 a position description of Side Left.
 .EXAMPLE
-	PS:> Set-A9Cage_CLI -Position left -PSModel 1 -CageName cage1
+	PS:> Set-A9Cage -Position left -PSModel 1 -CageName cage1
 
 	This  example demonstrates how to assign model names to the power supplies in cage1. Inthisexample, cage1 hastwopowersupplies(0 and 1).
 .PARAMETER Position  
@@ -645,7 +645,7 @@ Process
 }
 }
 
-Function Set-A9PD_CLI
+Function Set-A9PhysicalDisk
 {
 <#
 .SYNOPSIS
@@ -653,11 +653,11 @@ Function Set-A9PD_CLI
 .DESCRIPTION
 	Marks a Physical Disk (PD) as allocatable or non allocatable for Logical   Disks (LDs).   
 .EXAMPLE
-	PS:> Set-A9PD_CLI -Ldalloc off -PD_ID 20	
+	PS:> Set-A9PhysicalDisk -Ldalloc off -PD_ID 20	
 	
 	displays PD 20 marked as non allocatable for LDs.
 .EXAMPLE  
-	PS:> Set-A9PD_CLI -Ldalloc on -PD_ID 25	
+	PS:> Set-A9PhysicalDisk -Ldalloc on -PD_ID 25	
 
 	displays PD 25 marked as allocatable for LDs.
 .PARAMETER ldalloc 
@@ -684,7 +684,7 @@ Process
 } 
 }
 
-Function Switch-A9PD_CLI
+Function Switch-A9PhysicalDisk
 {
 <#
 .SYNOPSIS
@@ -720,7 +720,7 @@ Process
 } 
 }	
 
-Function Test-A9PD_CLI
+Function Test-A9PhysicalDisk
 {
 <#
 .SYNOPSIS
@@ -728,23 +728,23 @@ Function Test-A9PD_CLI
 .DESCRIPTION
     Executes surface scans or diagnostics on physical disks.	
 .EXAMPLE
-	PS:> Test-A9PD_CLI -scrub -ch 500 -pd_ID 1
+	PS:> Test-A9PhysicalDisk -scrub -ch 500 -pd_ID 1
 
 	This example Test-PD chunklet 500 on physical disk 1 is scanned for media defects.
 .EXAMPLE  
-	PS:> Test-A9PD_CLI -scrub -count 150 -pd_ID 1
+	PS:> Test-A9PhysicalDisk -scrub -count 150 -pd_ID 1
 
 	This example scans a number of chunklets starting from -ch 150 on physical disk 1.
 .EXAMPLE  
-	PS:> Test-A9PD_CLI -diag -path a -pd_ID 5
+	PS:> Test-A9PhysicalDisk -diag -path a -pd_ID 5
 
 	This example Specifies a physical disk path as a,physical disk 5 is scanned for media defects.
 .EXAMPLE  	
-	PS:> Test-A9PD_CLI -diag -iosize 1s -pd_ID 3
+	PS:> Test-A9PhysicalDisk -diag -iosize 1s -pd_ID 3
 
 	This example Specifies I/O size 1s, physical disk 3 is scanned for media defects.
 .EXAMPLE  	
-	PS:> Test-A9PD_CLI -diag -range 5m  -pd_ID 3
+	PS:> Test-A9PhysicalDisk -diag -range 5m  -pd_ID 3
 
 	This example Limits diagnostic to range 5m [mb] physical disk 3 is scanned for media defects.
 .PARAMETER Diag	

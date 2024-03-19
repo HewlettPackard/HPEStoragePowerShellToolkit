@@ -100,7 +100,7 @@ Begin
 {	Test-A9Connection -ClientType 'API' 
 }
 Process 
-{   Write-DebugLog "Running: Building uri to Remove-vLun_WSAPI  ." $Debug
+{   Write-Verbose "Running: Building uri to Remove-vLun_WSAPI  ."
 	$uri = "/vluns/"+$VolumeName+","+$LUNID+","+$HostName
 	if($NSP)
 		{	$uri = $uri+","+$NSP

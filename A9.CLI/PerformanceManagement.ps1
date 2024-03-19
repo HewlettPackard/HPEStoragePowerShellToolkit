@@ -115,7 +115,7 @@ Process
 }
 }
 
-Function Get-A9HistChunklet_CLI  
+Function Get-A9HistogramChunklet
 {
 <#
 .SYNOPSIS
@@ -123,15 +123,15 @@ Function Get-A9HistChunklet_CLI
 .DESCRIPTION
 	The Get-HistChunklet command displays a histogram of service times in a timed loop for individual chunklets
 .EXAMPLE
-    PS:> Get-A9HistChunklet_CLI -Iteration 1 
+    PS:> Get-A9HistogramChunklet -Iteration 1 
 
 	This example displays one iteration of a histogram of service
 .EXAMPLE
-    PS:> Get-A9HistChunklet_CLI –LDname dildil -Iteration 1 
+    PS:> Get-A9HistogramChunklet –LDname dildil -Iteration 1 
 
 	identified by name, from which chunklet statistics are sampled.
 .EXAMPLE
-	PS:> Get-A9HistChunklet_CLI -Iteration 1 -Previous
+	PS:> Get-A9HistogramChunklet -Iteration 1 -Previous
 .PARAMETER Chunklet_num
 	Specifies that statistics are limited to only the specified chunklet, identified
 	by number.
@@ -221,7 +221,7 @@ Process
 }
 }
 
-Function Get-A9HistL_CLI
+Function Get-A9HistogramLogicalDisk
 {
 <#
 .SYNOPSIS
@@ -229,23 +229,23 @@ Function Get-A9HistL_CLI
 .DESCRIPTION
 	The Get-HistLD command displays a histogram of service times for Logical Disks (LDs) in a timed loop.
 .EXAMPLE
-    PS:> Get-A9HistLD_CLI -Iteration 1
+    PS:> Get-A9HistogramLogicalDisk -Iteration 1
 
 	displays a histogram of service Iteration number of times
 .EXAMPLE
-	PS:> Get-A9HistLD_CLI -LdName abcd -Iteration 1
+	PS:> Get-A9HistogramLogicalDisk -LdName abcd -Iteration 1
 
 	displays a histogram of service linked with LD_NAME on  Iteration number of times
 .EXAMPLE
-	PS:> Get-A9HistLD_CLI -Iteration 1 -VV_Name ZXZX
+	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -VV_Name ZXZX
 
 	Shows only logical disks that are mapped to virtual volumes with names matching any of the names or patterns specified.
 .EXAMPLE
-	PS:> Get-A9HistLD_CLI -Iteration 1 -Domain ZXZX
+	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -Domain ZXZX
 
 	Shows only logical disks that are in domains with names matching any of the names or patterns specified.
 .EXAMPLE
-	PS:> Get-A9HistLD_CLI -Iteration 1 -Percentage Shows the access count in each bucket as a percentage.
+	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -Percentage Shows the access count in each bucket as a percentage.
 .PARAMETER Timecols
 	For the I/O time histogram, shows the columns from the first column <fcol> through last column <lcol>. The available columns range from 0 through 31.
 
@@ -372,7 +372,7 @@ Process
 } 
 }
 
-Function Get-A9HistPD_CLI
+Function Get-A9HistogramPhysicalDisk
 {
 <#
 .SYNOPSIS
@@ -380,19 +380,19 @@ Function Get-A9HistPD_CLI
 .DESCRIPTION
     The Get-HistPD command displays a histogram of service times for Physical Disks (PDs).
 .EXAMPLE
-    PS:> Get-A9HistPD_CLI -iteration 1 -WWN abcd
+    PS:> Get-A9HistogramPhysicalDisk -iteration 1 -WWN abcd
 
 	Specifies the world wide name of the PD for which service times are displayed.
 .EXAMPLE
-	PS:> Get-A9HistPD_CLI -iteration 1
+	PS:> Get-A9HistogramPhysicalDisk -iteration 1
 
 	The Get-HistPD displays a histogram of service iteration number of times Histogram displays data from when the system was last started (–begin).
 .EXAMPLE	
-	PS:> Get-A9HistPD_CLI -iteration 1 -Devinfo
+	PS:> Get-A9HistogramPhysicalDisk -iteration 1 -Devinfo
 
 	Indicates the device disk type and speed.
 .EXAMPLE	
-	PS:> Get-A9HistPD_CLI -iteration 1 -Metric both
+	PS:> Get-A9HistogramPhysicalDisk -iteration 1 -Metric both
 
 	(Default)Display both I/O time and I/O size histograms
 .PARAMETER WWN
@@ -516,7 +516,7 @@ Process
 }
 }
 
-Function Get-A9HistPort_CLI
+Function Get-A9HistogramPort
 {
 <#
 .SYNOPSIS
@@ -524,19 +524,19 @@ Function Get-A9HistPort_CLI
 .DESCRIPTION
 	The command displays a histogram of service times for ports within the system.
 .EXAMPLE
-    PS:> Get-A9HistPort_CLI -iteration 1
+    PS:> Get-A9HistogramPort -iteration 1
 
 	displays a histogram of service times with option it can be one of these [both|ctrl|data].
 .EXAMPLE
-	PS:> Get-A9HistPort_CLI -iteration 1 -Both
+	PS:> Get-A9HistogramPort -iteration 1 -Both
 
 	Specifies that both control and data transfers are displayed(-both)
 .EXAMPLE
-	PS:> Get-A9HistPort_CLI -iteration 1 -Nodes nodesxyz
+	PS:> Get-A9HistogramPort -iteration 1 -Nodes nodesxyz
 
 	Specifies that the display is limited to specified nodes and physical disks connected to those nodes.
 .EXAMPLE	
-	PS:> Get-A9HistPort_CLI –Metric both -iteration 1
+	PS:> Get-A9HistogramPort –Metric both -iteration 1
 
 	displays a histogram of service times with -metric option. metric can be one of these –metric [both|time|size]
 .PARAMETER Both 
@@ -666,35 +666,35 @@ Process
 }
 }
 
-Function Get-A9HistRCopyVv_CLI
+Function Get-A9HistogramRemoteCopyVv
 {
 <#
 .SYNOPSIS
-	The Get-HistRCopyVv command shows a histogram of total remote-copy service times and backup system remote-copy service times in a timed loop.
+	The command shows a histogram of total remote-copy service times and backup system remote-copy service times in a timed loop.
 .DESCRIPTION
-	The Get-HistRCopyVv command shows a histogram of total remote-copy service times and backup system 	remote-copy service times in a timed loop        
+	Thecommand shows a histogram of total remote-copy service times and backup system 	remote-copy service times in a timed loop        
 .EXAMPLE
-	Get-HistRCopyVv -iteration 1
+	PS:> Get-A9HistogramRemoteCopyVv -iteration 1
 
-	The Get-HistRCopyVv command shows a histogram of total remote-copy service iteration number of times
+	The command shows a histogram of total remote-copy service iteration number of times
 .EXAMPLE
-    Get-HistRCopyVv -iteration 1 -Sync
+    PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -Sync
 
-	The Get-HistRCopyVv command shows a histogram of total remote-copy service iteration number of times with option sync
+	The command shows a histogram of total remote-copy service iteration number of times with option sync
 .EXAMPLE	
-	Get-HistRCopyVv -group groupvv_1 -iteration
+	PS:> Get-A9HistogramRemoteCopyVv -group groupvv_1 -iteration
 .EXAMPLE	
-	Get-HistRCopyVv -iteration 1 -Periodic
+	PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -Periodic
 .EXAMPLE	
-	Get-HistRCopyVv -iteration 1 -PortSum
+	PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -PortSum
 .EXAMPLE	
-	Get-HistRCopyVv -target name_vv1 -iteration 1
+	PS:> Get-A9HistogramRemoteCopyVv -target name_vv1 -iteration 1
 
-	The Get-HistRCopyVv command shows a histogram of total remote-copy service with specified target name.
+	The command shows a histogram of total remote-copy service with specified target name.
 .EXAMPLE	
-	Get-HistRCopyVv -group groupvv_1 -iteration   
+	PS:> Get-A9HistogramRemoteCopyVv -group groupvv_1 -iteration   
 
-	The Get-HistRCopyVv command shows a histogram of total remote-copy service with specified Group name.
+	The command shows a histogram of total remote-copy service with specified Group name.
 .PARAMETER Async
 	Show only volumes which are being copied in asynchronous mode.
 .PARAMETER sync
@@ -812,26 +812,27 @@ Process
 }
 }
 
-Function Get-A9HistVLun_CLI
+Function Get-A9HistogramVLun
 {
 <#
 .SYNOPSIS
-	The Get-HistVLun command displays Virtual Volume Logical Unit Number (VLUN) service time histograms.
+	The command displays Virtual Volume Logical Unit Number (VLUN) service time histograms.
 .DESCRIPTION
-    The Get-HistVLun command displays Virtual Volume Logical Unit Number (VLUN) service time histograms.
+    The command displays Virtual Volume Logical Unit Number (VLUN) service time histograms.
 .EXAMPLE
-    Get-HistVLun -iteration 1
+	PS:> Get-A9HistogramVLun -iteration 1
 
 	This example displays two iterations of a histogram of service times for all VLUNs.	
 .EXAMPLE	
-	Get-HistVLun -iteration 1 -nodes 1
+	PS:> Get-A9HistogramVLun -iteration 1 -nodes 1
 
 	This example displays two iterations of a histogram only exports from the specified nodes.	
 .EXAMPLE	
-	Get-HistVLun -iteration 1 -domain DomainName
+	PS:> Get-A9HistogramVLun -iteration 1 -domain DomainName
 	Shows only VLUNs whose Virtual Volumes (VVs) are in domains with names that match one or more of the specified domain names or patterns.
 .EXAMPLE	
-	Get-HistVLun -iteration 1 -Percentage
+	PS:> Get-A9HistogramVLun -iteration 1 -Percentage
+
 	Shows the access count in each bucket as a percentage.	 
 .PARAMETER domain
 	Shows only VLUNs whose Virtual Volumes (VVs) are in domains with names that match one or more of the specified domain names or patterns. Multiple domain names or patterns can be
@@ -957,29 +958,29 @@ Process
 }
 }
 
-Function Get-A9HistVv_CLI
+Function Get-A9HistogramVv
 {
 <#
 .SYNOPSIS
-	The Get-HistVv command displays Virtual Volume (VV) service time histograms in a timed loop.
+	The Get-A9HistogramVv command displays Virtual Volume (VV) service time histograms in a timed loop.
 .DESCRIPTION
-	The Get-HistVv command displays Virtual Volume (VV) service time histograms in a timed loop.
+	The Get-A9HistogramVv command displays Virtual Volume (VV) service time histograms in a timed loop.
 .EXAMPLE
-    Get-HistVv -iteration 1
+    PS:> Get-A9HistogramVv -iteration 1
 
 	This Example displays Virtual Volume (VV) service time histograms service iteration number of times.
 .EXAMPLE
-	Get-HistVv  -iteration 1 -domain domain.com
+	PS:> Get-A9HistogramVv -iteration 1 -domain domain.com
 	This Example Shows only the VVs that are in domains with names that match the specified domain name(s)
 .EXAMPLE	
-	Get-HistVv  -iteration 1 –Metric both
+	PS:> Get-A9HistogramVv -iteration 1 –Metric both
 	This Example Selects which Metric to display.
 .EXAMPLE
-	Get-HistVv -iteration 1 -Timecols "1 2"
+	PS:> Get-A9HistogramVv -iteration 1 -Timecols "1 2"
 .EXAMPLE
-	Get-HistVv -iteration 1 -Sizecols "1 2"
+	PS:> Get-A9HistogramVv -iteration 1 -Sizecols "1 2"
 .EXAMPLE	
-	Get-HistVv –Metric both -VVname demoVV1 -iteration 1
+	PS:> Get-A9HistogramVv –Metric both -VVname demoVV1 -iteration 1
 
 	This Example Selects which Metric to display. associated with Virtual Volume name.
 .PARAMETER domain
@@ -1115,23 +1116,23 @@ Process
 }
 }
 
-Function Get-A9StatChunklet_CLI
+Function Get-A9StatisticsChunklet
 {
 <#
 .SYNOPSIS
-	The Get-StatChunklet command displays chunklet statistics in a timed loop.
+	The command displays chunklet statistics in a timed loop.
 .DESCRIPTION
-	The Get-StatChunklet command displays chunklet statistics in a timed loop. 
+	The command displays chunklet statistics in a timed loop. 
 .EXAMPLE
-	Get-StatChunklet -Iterration 1
+	PS:> Get-A9StatisticsChunklet -Iterration 1
 
 	This example displays chunklet statistics in a timed loop.
 .EXAMPLE
-	Get-StatChunklet -RW -Iteration 1
+	PS:>Get-A9StatisticsChunklet -RW -Iteration 1
 
 	This example Specifies that reads and writes are displayed separately.while displays chunklet statistics in a timed loop.  
 .EXAMPLE  
-	Get-StatChunklet -LDname demo1 -CHnum 5 -Iterration 1 
+	PS:> Get-A9StatisticsChunklet -LDname demo1 -CHnum 5 -Iterration 1 
 	
 	This example Specifies particular chunklet number & logical disk.
 .PARAMETER RW	
@@ -1213,19 +1214,19 @@ Process
 }
 }
 
-Function Get-A9StatCMP_CLI
+Function Get-A9StatCacheMemoryPages
 {
 <#
 .SYNOPSIS
-	The Get-StatCMP command displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
+	The command displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
 .DESCRIPTION
-	The Get-StatCMP command displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
+	The command displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
 .EXAMPLE
-	Get-StatCMP -Iteration 1
+	PS:> Get-A9StatCacheMemoryPages -Iteration 1
 
 	This Example displays Cache Memory Page (CMP).
 .EXAMPLE
-	Get-StatCMP -VVname Demo1 -Iteration 1
+	PS:> Get-A9StatCacheMemoryPages -VVname Demo1 -Iteration 1
 
 	This Example displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
 .PARAMETER VVname   
@@ -1233,11 +1234,9 @@ Function Get-A9StatCMP_CLI
 .PARAMETER Domian 
 	Shows VVs that are in domains with names that match one or more of the specified domains or patterns.
 .PARAMETER Delay  
-	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through
-	2147483.
+	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
 .PARAMETER NI
-	Specifies that statistics for only non-idle VVs are displayed.
-	This option is valid only if -v is also specified.
+	Specifies that statistics for only non-idle VVs are displayed. This option is valid only if -v is also specified.
 .PARAMETER Iteration 
 	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
 #>
@@ -1292,19 +1291,19 @@ Process
 }
 }
 
-Function Get-A9StatCPU_CLI
+Function Get-A9CPUStatisticalDataReports_CLI
 {
 <#
 .SYNOPSIS
-	The Get-StatCPU command displays CPU statistics for all nodes.
+	The command displays CPU statistics for all nodes.
 .DESCRIPTION
-	The Get-StatCPU command displays CPU statistics for all nodes.
+	The command displays CPU statistics for all nodes.
 .EXAMPLE
-	Get-StatCPU -iteration 1	
+	PS:> Get-A9CPUStatisticalDataReports_CLI -iteration 1	
 	
 	This Example Displays CPU statistics for all nodes.
 .EXAMPLE  
-	Get-StatCPU -delay 2  -total -iteration 1	
+	PS:> Get-A9CPUStatisticalDataReports_CLI -delay 2  -total -iteration 1	
 
 	This Example Show only the totals for all the CPUs on each node.
 .PARAMETER delay    
@@ -1363,31 +1362,31 @@ Process
 } 
 }
 
-Function Get-A9StatLD_CLI
+Function Get-A9LogicalDiskStatisticsReports_CLI
 {
 <#
 .SYNOPSIS
-	The Get-StatLD command displays read/write (I/O) statistics about Logical Disks (LDs) in a timed loop.
+	The command displays read/write (I/O) statistics about Logical Disks (LDs) in a timed loop.
 .DESCRIPTION
-	The Get-StatLD command displays read/write (I/O) statistics about Logical Disks (LDs) in a timed loop.
+	The command displays read/write (I/O) statistics about Logical Disks (LDs) in a timed loop.
 .EXAMPLE
-	Get-StatLD -Iteration 1
+	PS:> Get-A9LogicalDiskStatisticsReports_CLI -Iteration 1
 	
 	This example displays read/write (I/O) statistics about Logical Disks (LDs).
 .EXAMPLE
-	Get-StatLD -rw -Iteration 1	
+	PS:> Get-A9LogicalDiskStatisticsReports_CLI -rw -Iteration 1	
 	
 	This example displays statistics about Logical Disks (LDs).with Specification read/write
 .EXAMPLE  
-	Get-StatLD -Begin -delay 2 -Iteration 1
+	PS:> Get-StatLD -Begin -delay 2 -Iteration 1
 
 	This example displays statistics about Logical Disks (LDs).with Specification begin & delay in execution of 2 sec.	
 .EXAMPLE  
-	Get-StatLD -Begin -VVname demo1 -Delay 2 -Iteration 1
+	PS:> Get-A9LogicalDiskStatisticsReports_CLI -Begin -VVname demo1 -Delay 2 -Iteration 1
 
 	This example displays statistics about Logical Disks (LDs) Show only LDs that are mapped to Virtual Volumes (VVs)	
 .EXAMPLE  
-	Get-StatLD -begin -LDname demoLD1 -delay 2 -Iteration 1
+	PS:> Get-A9LogicalDiskStatisticsReports_CLI -begin -LDname demoLD1 -delay 2 -Iteration 1
 
 	This example displays statistics about Logical Disks (LDs).With Only statistics are displayed for the specified LD
 .PARAMETER RW		
@@ -1476,29 +1475,28 @@ Process
 } 
 }
 
-Function Get-A9StatLink_CLI
+Function Get-A9StatisticLinkUtilization
 {
 <#
 .SYNOPSIS
 	The Get-StatLink command displays statistics for link utilization for all nodes in a timed loop.
-	.DESCRIPTION
+.DESCRIPTION
 	The Get-StatLink command displays statistics for link utilization for all nodes in a timed loop.
 
 .EXAMPLE
-	Get-StatLink -Iteration 1
+	PS:> Get-A9StatisticLinkUtilization -Iteration 1
 
 	This Example displays statistics for link utilization for all nodes in a timed loop.
 .EXAMPLE
-	Get-StatLink -Interval 3 -Iteration 1 
+	PS:> Get-A9StatisticLinkUtilization -Interval 3 -Iteration 1 
 	
 	This Example displays statistics for link utilization for all nodes in a timed loop, with a delay of 3 sec.
 .EXAMPLE
-	Get-StatLink -Detail -Iteration 1
+	PS:> Get-A9StatisticLinkUtilization -Detail -Iteration 1
 .PARAMETER Detail
 	Displays detailed information regarding the Queue statistics.	 
 .PARAMETER Interval
 	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
-
 .PARAMETER Iteration 
 	Specifies that I/O statistics are displayed a specified number of times as indicated by the number argument using an integer from 1 through 2147483647.
 #>
@@ -1551,8 +1549,7 @@ Process
 } 
 }
 
-
-Function Get-A9StatPD_CLI
+Function Get-APhysicalDiskStatisticsReports_CLI
 {
 <#
 .SYNOPSIS
@@ -1560,15 +1557,15 @@ Function Get-A9StatPD_CLI
 .DESCRIPTION
     The Get-StatPD command displays the read/write (I/O) statistics for physical disks in a timed loop.   
 .EXAMPLE
-	Get-StatPD -RW –Iteration 1
+	PS:> Get-APhysicalDiskStatisticsReports_CLI -RW –Iteration 1
 	
 	This example displays one iteration of I/O statistics for all PDs.
 .EXAMPLE  
-	Get-StatPD -IDLEP –nodes 2 –Iteration 1
+	PS:> Get-APhysicalDiskStatisticsReports_CLI -IDLEP –nodes 2 –Iteration 1
 
 	This example displays one iteration of I/O statistics for all PDs with the specification idlep preference of node 2.
 .EXAMPLE  
-	Get-StatPD -NI -wwn 1122112211221122 –nodes 2 –Iteration 1
+	PS:> Get-APhysicalDiskStatisticsReports_CLI -NI -wwn 1122112211221122 –nodes 2 –Iteration 1
 
 	This Example Specifies that statistics for a particular Physical Disk (PD) identified by World Wide Names (WWNs) and nodes
 .PARAMETER Devinfo
@@ -1650,22 +1647,21 @@ Process
 }
 }
 
-
-Function Get-A9StatPort_CLI
+Function Get-A9PortStatisticsReports_CLI
 {
 <#
 .SYNOPSIS
-	The Get-StatPort command displays read/write (I/O) statistics for ports.
+	The command displays read/write (I/O) statistics for ports.
 .DESCRIPTION
-	The Get-StatPort command displays read/write (I/O) statistics for ports.
+	The command displays read/write (I/O) statistics for ports.
 .EXAMPLE
-	Get-StatPort -Iteration 1
+	PS:> Get-A9PortStatisticsReports_CLI -Iteration 1
 	This example displays one iteration of I/O statistics for all ports.
 .EXAMPLE  
-	Get-StatPort -Both -Iteration 1
+	PS:> Get-A9PortStatisticsReports_CLI -Both -Iteration 1
 	This example displays one iteration of I/O statistics for all ports,Show data transfers only. 
 .EXAMPLE  
-	Get-StatPort -Host -nodes 2 -Iteration 1
+	Get-A9PortStatisticsReports_CLI -Host -nodes 2 -Iteration 1
 	This example displays I/O statistics for all ports associated with node 2.
 .PARAMETER Both
 	Show data transfers only.
@@ -1785,29 +1781,31 @@ Process
 }
 }
 
-Function Get-A9StatRcVv_CLI
+Function Get-A9RCopyStatisticalReports_CLI
 {
 <#
 .SYNOPSIS
-	The Get-StatRcVv command displays statistics for remote-copy volumes in a timed loop.
+	The command displays statistics for remote-copy volumes in a timed loop.
 .DESCRIPTION
-    The Get-StatRcVv command displays statistics for remote-copy volumes in a timed loop.
+    The command displays statistics for remote-copy volumes in a timed loop.
 .EXAMPLE
-	Get-StatRcVv -Iteration 1
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1
 	This Example displays statistics for remote-copy volumes in a timed loop.
 .EXAMPLE
-	Get-StatRcVv -Iteration 1 -ASync
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -ASync
 .EXAMPLE
-	Get-StatRcVv -Iteration 1 -Sync -VVname $VV
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -Sync -VVname $VV
 .EXAMPLE
-	Get-StatRcVv -Iteration 1 -TargetSum
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -TargetSum
 .EXAMPLE
-	Get-StatRcVv -Iteration 1 -VVSum   
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -VVSum   
 .EXAMPLE  
-	Get-StatRcVv -Iteration 1 -periodic 
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -periodic 
+
 	This Example displays statistics for remote-copy volumes in a timed loop and show only volumes that are being copied in asynchronous periodic mode	
 .EXAMPLE  
-	Get-StatRcVv -target demotarget1  -Iteration 1
+	PS:> Get-A9RCopyStatisticalReports_CLI -target demotarget1  -Iteration 1
+
 	This Example displays statistics for remote-copy volumes in a timed loop and Show only volumes whose group is copied to the specified target name.
 .PARAMETER Async     
 	Show only volumes which are being copied in asynchronous mode.
@@ -1934,27 +1932,27 @@ Process
 	}
 }
 }
-Function Get-A9StatVLun_CLI
+Function Get-A9vLunStatisticsReports_CLI
 {
 <#
 .SYNOPSIS
-	The Get-StatVLun command displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
+	The command displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
 .DESCRIPTION
 	The Get-StatVLun command displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
 .EXAMPLE
-	Get-StatVLun -Iteration 1
+	PS:> Get-A9vLunStatisticsReports_CLI -Iteration 1
 
 	This example displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
 .EXAMPLE  
-	Get-StatVLun -vvSum -Iteration 1
+	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -Iteration 1
 
 	This example displays statistics for Virtual Volumes (VVs) and Specifies that sums for VLUNs of the same VV are displayed.
 .EXAMPLE  
-	Get-StatVLun -vvSum -RW -Iteration 1
+	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -RW -Iteration 1
 .EXAMPLE  
-	Get-StatVLun -vvSum -RW -VVname xxx -Iteration 1
+	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -RW -VVname xxx -Iteration 1
 .EXAMPLE  
-	Get-StatVLun -VVname demovv1 -Iteration 1
+	PS:> Get-A9vLunStatisticsReports_CLI -VVname demovv1 -Iteration 1
 
 	This example displays statistics for Virtual Volumes (VVs) and only Logical Disks (LDs) mapped to VVs that match any of the specified names to be displayed.
 .PARAMETER LW  
@@ -2067,27 +2065,27 @@ Process
 }
 } 
 
-Function Get-A9StatVv_CLI
+Function Get-A9VvStatisticsReports
 {
 <#
 .SYNOPSIS
-	The Get-StatVv command displays statistics for Virtual Volumes (VVs) in a timed loop.
+	The command displays statistics for Virtual Volumes (VVs) in a timed loop.
 .DESCRIPTION
-	The Get-StatVv command displays statistics for Virtual Volumes (VVs) in a timed loop.
+	The command displays statistics for Virtual Volumes (VVs) in a timed loop.
 .EXAMPLE
-	Get-StatVv -Iteration 1
+	PS:> Get-A9VvStatisticsReports -Iteration 1
 	
 	This Example displays statistics for Virtual Volumes (VVs) in a timed loop.
 .EXAMPLE  
-	Get-StatVv -RW -Iteration 1
+	PS:> Get-A9VvStatisticsReports  -RW -Iteration 1
 
 	This Example displays statistics for Virtual Volumes (VVs) with specification of read/write option.
 .EXAMPLE  
-	Get-StatVv -Delay -Seconds 2 -Iteration 1
+	PS:> Get-A9VvStatisticsReports -Delay -Seconds 2 -Iteration 1
 
 	Specifies the interval in seconds that statistics are sampled from using an integer from 1 through 2147483.
 .EXAMPLE  
-	Get-StatVv -RW -domain ZZZ -VVname demovv1 -Iteration 1
+	PS:> Get-A9VvStatisticsReports -RW -domain ZZZ -VVname demovv1 -Iteration 1
 	This Example displays statistics for Virtual Volumes (VVs) with Only statistics are displayed for the specified VVname.			
 .PARAMETER RW
 	Specifies reads and writes to be displayed separately.
@@ -2155,7 +2153,7 @@ Process
 }
 }
 
-Function Set-A9Statch_CLI
+Function Set-A9StatisticsInUseChunklets
 {
 <#
 .SYNOPSIS
@@ -2163,7 +2161,7 @@ Function Set-A9Statch_CLI
 .DESCRIPTION
 	The Set-Statch command sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD).
 .EXAMPLE 
-	Set-Statch -Start -LDname test1 -CLnum 1  
+	PS:> Set-A9StatisticsInUseChunklets -Start -LDname test1 -CLnum 1  
 	
 	This example starts and stops the statistics collection mode for chunklets.with the LD name test1.
 .PARAMETER Start  
@@ -2203,15 +2201,15 @@ Process
 } 
 }
 
-Function Set-A9StatPdch_CLI
+Function Set-A9StatisticsCollectionPhysicalDiskChunklets
 {
 <#
 .SYNOPSIS
-    The Set-StatPdch command starts and stops the statistics collection mode for chunklets.
+    The command starts and stops the statistics collection mode for chunklets.
 .DESCRIPTION
-    The Set-StatPdch command starts and stops the statistics collection mode for chunklets.
+    The command starts and stops the statistics collection mode for chunklets.
 .EXAMPLE
-	Set-StatPdch -Start -PD_ID 2
+	PS:> Set-A9StatisticsCollectionPhysicalDiskChunklets -Start -PD_ID 2
 	
 	This Example sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD) 2.
 .PARAMETER Start  
@@ -2249,11 +2247,11 @@ Process
 }
 }
 
-Function Measure-A9SYS_CLI
+Function Measure-A9System
 {
 <#
 .SYNOPSIS
-	Measure-SYS - Change the layout of a storage system.
+	Change the layout of a storage system.
 .DESCRIPTION
 	The Measure-SYS command is used to analyze and detect poor layout and disk utilization across an entire storage system. The
 	command runs a series of low level operations to re-balance resources on the system.
@@ -2361,13 +2359,13 @@ Process
 	Return $Result
 }
 }
-Function Optimize-A9PD_CLI
+Function Optimize-A9PhysicalDisk
 {
 <#
 .SYNOPSIS
-	Optimize-PD - show physical disks with high service times and optionally perform load balancing.
+	show physical disks with high service times and optionally perform load balancing.
 .DESCRIPTION
-	The Optimize-PD command identifies physical disks with high service times and optionally executes load balancing.
+	The command identifies physical disks with high service times and optionally executes load balancing.
 .PARAMETER MaxSvct
 	Specifies that either the maximum service time threshold (<msecs>) that is used to discover over-utilized physical disks, or the physical disks
 	that have the highest maximum service times (highest). If a threshold is specified, then any disk whose maximum service time exceeds the

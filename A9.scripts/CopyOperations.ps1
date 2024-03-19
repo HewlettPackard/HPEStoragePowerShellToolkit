@@ -415,13 +415,13 @@ Function Move-A9VirtualCopy
 .DESCRIPTION
 	To promote the changes from a virtual copy back onto the base volume, thereby overwriting the base volume with the virtual copy.
 .EXAMPLE
-	Move-VirtualCopy_WSAPI -VirtualCopyName xyz
+	PS:> Move-A9VirtualCopy -VirtualCopyName xyz
 .EXAMPLE	
-	Move-VirtualCopy_WSAPI -VirtualCopyName xyz -Online
+	PS:> Move-A9VirtualCopy -VirtualCopyName xyz -Online
 .EXAMPLE	
-	Move-VirtualCopy_WSAPI -VirtualCopyName xyz -Priority HIGH
+	PS:> Move-A9VirtualCopy -VirtualCopyName xyz -Priority HIGH
 .EXAMPLE	
-	Move-VirtualCopy_WSAPI -VirtualCopyName xyz -AllowRemoteCopyParent
+	PS:> Move-A9VirtualCopy -VirtualCopyName xyz -AllowRemoteCopyParent
 .PARAMETER VirtualCopyName 
 	The <virtual_copy_name> parameter specifies the name of the virtual copy to be promoted.
 .PARAMETER Online	
@@ -666,7 +666,7 @@ Function Reset-A9VvSetPhysicalCopy
 .EXAMPLE
     PS:> Reset-A9VvSetPhysicalCopy -VolumeSetName xyz
 .EXAMPLE 
-	Reset-A9VvSetPhysicalCopy -VolumeSetName xxx -Priority HIGH
+	PS:> Reset-A9VvSetPhysicalCopy -VolumeSetName xxx -Priority HIGH
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]     	[String]  	$VolumeSetName,

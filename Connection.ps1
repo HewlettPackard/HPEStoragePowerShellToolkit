@@ -110,7 +110,6 @@ param(	[Parameter(ValueFromPipeline = $true)]	[String]	$DeviceIPAddress = $null,
 	)
 process
 {	#write-host  "Password in Invoke-CLI = ",$password	
-	Write-DebugLog "start:In function Invoke-CLI. Validating PUTTY path." $Debug
 	if (Test-Path -Path $CLIDir) 
 		{	$clifile = $CLIDir + "\cli.exe"
 			if ( -not (Test-Path $clifile)) 
@@ -126,7 +125,7 @@ process
 		{	Write-error "Stop: HP3PAR cli.exe not found. Make sure the HP3PAR CLI installed" 			
 			return 
 		}	
-	Write-DebugLog "Running: Calling function Invoke-CLI. Calling Test Network with IP Address $DeviceIPAddress" $Debug	
+	Write-Verbose "Running: Calling function Invoke-CLI. Calling Test Network with IP Address $DeviceIPAddress" 
 	try 	{	$Ping = new-object System.Net.NetworkInformation.Ping
 				$result = $ping.Send($DeviceIPAddress)
 				$Status = $result.Status.ToString()
@@ -160,186 +159,10 @@ process
 			Write-Error $msg 
 			Throw $msg
 		}	
-	Write-DebugLog "End:Invoke-CLI called. If no errors reported on the console, the HP3par cli with the cmd = $cmd for user $username completed Successfully" $Debug
 }
 }
 
-function Invoke-WSAPI 
-{
-[CmdletBinding()]
-Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex. /volumes)")]
-		[ValidateScript( { if ($_.startswith('/')) { $true } else { throw "-URI must begin with a '/' (eg. /volumes) in its value. Correct the value and try again." } })]
-		[string]	$uri,
-		
-		[parameter(Mandatory = $true, HelpMessage = "Enter request type (GET POST DELETE)")]
-		[string]	$type,
-		
-		[parameter(HelpMessage = "Body of the message")]
-		[array]		$body,
-		
-		[Parameter(ValueFromPipeline = $true)]
-					$WsapiConnection = $global:WsapiConnection
-	)
-Process
-{	Write-verbose "Invoke-WSAPI: Request: Request Invoke-WSAPI URL : $uri TYPE : $type "   
-	$ip = $WsapiConnection.IPAddress
-	$key = $WsapiConnection.Key
-	if 		($ArrayType -eq "3par") 		{	$APIurl = 'https://' + $ip + ':8080/api/v1' }
-	Elseif (($ArrayType -eq "Primera") -or ($ArrayType -eq "Alletra9000")) 
-			{	$APIurl = 'https://' + $ip + ':443/api/v1'
-			}
-	else {	return "Invoke-WSAPI: Array type is Null."	}
-	$url = $APIurl + $uri
-	Write-verbose "Running: Constructing header." 
-	$headers = @{}
-	$headers["Accept"] = "application/json"
-	$headers["Accept-Language"] = "en"
-	$headers["Content-Type"] = "application/json"
-	$headers["X-HP3PAR-WSAPI-SessionKey"] = $key
-	$data = $null
-	If ($type -eq 'GET') 
-		{	Try 	{	Write-verbose "Invoke-WSAPI: Request: Invoke-WebRequest for Data, Request Type : $type" 
-						if ($PSEdition -eq 'Core') 	{	$data = Invoke-WebRequest -Uri "$url" -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck } 
-						else 						{  	$data = Invoke-WebRequest -Uri "$url" -Headers $headers -Method $type -UseBasicParsing 	}
-						return $data
-					}
-			Catch 	{	Write-verbose "Invoke-WSAPI: Stop: Exception Occurs" 
-						return
-					}
-		}
-	If (($type -eq 'POST') -or ($type -eq 'PUT')) 
-		{	Try		{	Write-verbose "Invoke-WSAPI: Request: Invoke-WebRequest for Data, Request Type : $type" 
-						$json = $body | ConvertTo-Json  -Compress -Depth 10	
-						if ($PSEdition -eq 'Core') 	{	$data = Invoke-WebRequest -Uri "$url" -Body $json -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck } 
-						else 						{	$data = Invoke-WebRequest -Uri "$url" -Body $json -Headers $headers -Method $type -UseBasicParsing }
-						return $data
-					}
-			Catch 	{	Write-error "Invoke-WSAPI: Stop: Exception Occurs" 
-						return $_
-					}
-		}
-	If ($type -eq 'DELETE') 
-		{	Try {	Write-verbose "Invoke-WSAPI: Request: Invoke-WebRequest for Data, Request Type : $type" 
-					if 	($PSEdition -eq 'Core') {	$data = Invoke-WebRequest -Uri "$url" -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck } 
-					else 						{  	$data = Invoke-WebRequest -Uri "$url" -Headers $headers -Method $type -UseBasicParsing 	}
-					return $data
-				}
-			Catch 
-				{	Write-error "Invoke-WSAPI: Stop: Exception Occurs" 
-					return $_
-				}
-		}
-	Write-verbose "End: Invoke-WSAPI" 
-}
-}
 
-Function Test-PARCLi 
-{
-<#
-.SYNOPSIS
-    Test-PARCli object path
-.EXAMPLE
-    PS:> Test-PARCli 
-#> 
-[CmdletBinding()]
-param (	[Parameter(ValueFromPipeline = $true)]	$SANConnection 
-	)
-Process
-{	$SANCOB = $SANConnection 
-	$clittype = $SANCOB.CliType
-	Write-DebugLog "Start : in Test-PARCli function "
-	if 		($clittype -eq "3parcli") 	{	Test-PARCliTest 	}
-	elseif ($clittype -eq "SshClient") 	{	Test-SSHSession 	}
-	else 								{	return "FAILURE : Invalid cli type"				}	
-}
-}
-
-Function Test-SSHSession 
-{
-<#
-.SYNOPSIS
-    Test-SSHSession   
-.PARAMETER pathFolder
-    Test-SSHSession
-.EXAMPLE
-    PS:> Test-SSHSession
-#> 
-[CmdletBinding()]
-param(	[Parameter()]	$SANConnection 
-	)
-process
-{	$Result = Get-SSHSession | format-list	
-	if (-not ($Result.count -gt 1) ) 
-		{	write-error	"`nFAILURE : FATAL ERROR : Please check your connection and try again"
-			return 
-		}
-}
-}
-
-Function Test-PARCliTest 
-{
-<#
-.SYNOPSIS
-    Test-PARCli pathFolder
-.PARAMETER pathFolder
-    Specify the names of the HP3par cli path
-.EXAMPLE
-    PS:> Test-PARCli path -pathFolder c:\test
-#> 
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$pathFolder = "C:\Program Files (x86)\Hewlett Packard Enterprise\HPE 3PAR CLI\bin",
-		[Parameter()]				$SANConnection 
-	)
-process
-{	$SANCOB = $SANConnection 
-	$DeviceIPAddress = $SANCOB.IPAddress
-	$CLIDir = $pathFolder
-	if (Test-Path -Path $CLIDir) 
-		{	$clitestfile = $CLIDir + "\cli.exe"
-			if ( -not (Test-Path $clitestfile)) 
-				{	write-error "FAILURE : HP3PAR cli.exe file was not found. Make sure you have cli.exe file under $CLIDir " 				
-					return 
-				}
-			$pwfile = $SANCOB.epwdFile
-			$cmd2 = "help.bat"
-			& $cmd2 -sys $DeviceIPAddress -pwf $pwfile
-			if (!($?)) 
-				{	write-error "`nFAILURE : FATAL ERROR" 
-					return 
-				}
-		}
-	else 
-		{	$SANCObj = $SANConnection
-			$CLIDir = $SANCObj.CLIDir	
-			$clitestfile = $CLIDir + "\cli.exe"
-			if (-not (Test-Path $clitestfile )) {	return "FAILURE : HP3PAR cli.exe was not found. Make sure you have cli.exe file under $CLIDir "	}
-			$pwfile = $SANCObj.epwdFile
-			$cmd2 = "help.bat"
-			& $cmd2 -sys $DeviceIPAddress -pwf $pwfile
-			if (!($?))	{	Write-error "`nFAILURE : FATAL ERROR" 	
-							return 
-						}
-		}
-}
-}
-
-Function Test-A9CLIConnection 
-{
-<#
-.SYNOPSIS
-    Validate CLI connection object. For Internal Use only.
-.DESCRIPTION
-	Validates if CLI connection object for VC and OA are null/empty
-.EXAMPLE
-    Test-CLIConnection -SANConnection
-.Notes
-#>
-	if ( $null -eq $SANConnection 		 )			{	Throw "Connection object is null/empty. Create a valid connection object and retry"				}
-	if ( -not ($SANConnection.UserName)  ) 			{	Throw "Connection object usernameis null or empty. Create a valid connection object and retry"	}
-	if ( -not ($SANConnection.IPAddress) ) 			{	Throw "Connection IP address is null/empty. Create a valid connection object and retry"			}
-	if ( $SANConnection.CLIType -ne 'SshClient' ) 	{	Throw "Connection Client Type is wrong. Create a valid SSH connection object and retry"			}
-	return
-}
 
 Function Test-A9Connection 
 {
@@ -349,11 +172,11 @@ Function Test-A9Connection
 .DESCRIPTION
 	Validates if CLI connection object for VC and OA are null/empty
 .EXAMPLE
-    Test-CLIConnection -ClientType SshClient -MinimumVersion 3.2.1
+    Test-Connection -ClientType SshClient -MinimumVersion 3.2.1
 .EXAMPLE
-    Test-CLIConnection -ClientType SshClient 
+    Test-Connection -ClientType SshClient 
 .EXAMPLE
-    Test-CLIConnection -ClientType API
+    Test-Connection -ClientType API
 	
 .Notes
 #>
@@ -363,21 +186,26 @@ Param(	[ValidateSet('SshClient','API')]	[String]	$ClientType,
 	)
 Process
 {	If ( $ClientType -eq 'SshClient')
-	{	if ( $null -eq $SANConnection 		 )			{	Throw "Connection object is null/empty. Create a valid connection object and retry"				}
-		if ( -not ($SANConnection.UserName)  ) 			{	Throw "Connection object usernameis null or empty. Create a valid connection object and retry"	}
-		if ( -not ($SANConnection.IPAddress) ) 			{	Throw "Connection IP address is null/empty. Create a valid connection object and retry"			}
-		if ( $SANConnection.CLIType -ne 'SshClient' ) 	{	Throw "Connection Client Type is wrong. Create a valid SSH connection object and retry"			}
-		If ( $ClientType -eq 'SshClient'	)			
-			{ 	if ($MinimumVersion)	
-					{	[Version]$DetectedVersion = ( Get-A9Version_CLI -S ) 
-						if ( -not ($DetectedVersion -ge $MinimumVersion) )
-							{	Throw "The Detecte Array Version OS is less than the required version need to run this command. `nThe detected version is $DetectedVersion but the required version is $MinimumVersion."
-							}
-					}
-
-			}
-		return
-	}
+		{	if ( $null -eq $SANConnection 		 )			{	Throw "Connection object is null/empty. Create a valid connection object and retry"				}
+			if ( -not ($SANConnection.UserName)  ) 			{	Throw "Connection object usernameis null or empty. Create a valid connection object and retry"	}
+			if ( -not ($SANConnection.IPAddress) ) 			{	Throw "Connection IP address is null/empty. Create a valid connection object and retry"			}
+			if ( $SANConnection.CLIType -ne 'SshClient' ) 	{	Throw "Connection Client Type is wrong. Create a valid SSH connection object and retry"			}
+			If ( $ClientType -eq 'SshClient'	)			
+				{ 	if ($MinimumVersion)	
+						{	[Version]$DetectedVersion = ( Get-A9Version_CLI -S ) 
+							if ( -not ($DetectedVersion -ge $MinimumVersion) )
+								{	Throw "The Detecte Array Version OS is less than the required version need to run this command. `nThe detected version is $DetectedVersion but the required version is $MinimumVersion."
+								}
+						}
+				}
+			return
+		}
+	elseif ($ClientType -eq 'API')
+		{	if ( $null -eq $WsapiConnection)				{	Throw "Connection object is null/empty. Create a valid connection object and retry"				}
+			if (-not ($WsapiConnection.IPAddress) )			{	Throw "Connection IP address is null/empty. Create a valid connection object and retry"			}
+			if (-not ($WsapiConnection.Key))				{	Throw "Connection object Key null or empty. Create a valid connection object and retry"			}	
+			return
+		}
 }
 }
 
@@ -463,7 +291,6 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 			write-verbose "Body = $postParams"
 			write-verbose "ContentType = application/json"
 			write-verbose "headers = $headers"
-			
 			if ($PSEdition -eq 'Core')
 				{	write-verbose "Executing invoke-WebRequest for Core"
 					$credentialdata = Invoke-WebRequest -Uri "$APIurl/credentials" -Body $postParams -ContentType "application/json" -Headers $headers -Method POST -UseBasicParsing -SkipCertificateCheck
@@ -503,7 +330,7 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 				if ($PSEdition -eq 'Core') 	{	$Result = Invoke-WebRequest -Uri "$url" -Headers $headers -Method 'GET' -UseBasicParsing -SkipCertificateCheck } 
 				else 						{  	$Result = Invoke-WebRequest -Uri "$url" -Headers $headers -Method 'GET' -UseBasicParsing 	}
 			}
-	Catch 	{	Write-error "Error occured trying to make the API call to retrieve array details witht the new key." 
+	Catch 	{	Write-error "Error occured trying to make the API call to retrieve array details witht the new key." 	
 			}
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = $Result.content | ConvertFrom-Json
@@ -531,42 +358,48 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 	$global:WsapiConnection = $SANZ	
 	$global:ArrayName = $Result.name
 	Write-verbose "End: If there are no errors reported on the console then the SAN connection object is set and ready to be used" 
-	Write-Verbose "You are now connected to the HPE Storage system $WSAPIConnection and $ArrayName"
+	Write-Host "You are now connected to the HPE Storage system $ArrayName" -ForegroundColor green
+	write-host "Attempting to load the HPE 3Par / Primera / Alletra9000 PowerShell Commands that support the WSAPI. " -ForegroundColor green
+	import-module .\HPEAlletra9000andPrimeraand3Par_API.psd1 -scope global -force
 	return $SANZ
 }
 }
 
-Function Disconnect-A9
+Function Close-A9Connection
 {
 <#
 .SYNOPSIS
-	Delete an active Storage session and remove the key.
+	Delete a CLI SSH Connection and WSAPI session key if they exist.
 .DESCRIPTION
-	When finishes making requests to the server it should delete the session keys it created.
+	When finishes making requests to the server it should delete the session keys it created .
 	Unused session keys expire automatically after the configured session times out.
 .EXAMPLE
-    Close-A9Connection
+    PS:> Close-A9Connection
+
+	Delete a WSAPI session key and a CLI Connection if one exists.
 #>
 [CmdletBinding()]
 Param()
 Begin 
-{	if (($null -eq $WsapiConnection) -or (-not ($WsapiConnection.IPAddress)) -or (-not ($WsapiConnection.Key))) 
-	{	Write-Warning "Close-A9Connection: No active connection to an HPE Alletra 9000 or Primera or 3PAR storage system or the current session key is expired."
-	}
+{
 }
 Process 
-{	$key = $WsapiConnection.Key
-	Write-verbose "Running: Building uri to close wsapi connection cmdlet." 
-	$uri = '/credentials/'+$key
-	$data = $null
-	Write-verbose "Request: Request to close wsapi connection (Invoke-WSAPI)."
-	$data = Invoke-WSAPI -uri $uri -type 'DELETE'
-
-	# ---------------------------------------------------------------
-
-	# ---------------------------------------------------------------
-	$global:WsapiConnection = $null
-	return $data
+{	# Close any CLI Connection 
+	if ($SANConnection)	
+		{	$global:SANConnection = $null
+		}
+	# Close any WSAPI connection
+	if (($global:WsapiConnection) -or ($global:ConnectionType -eq "WSAPI"))
+		{	$key = $WsapiConnection.Key
+			$uri = '/credentials/'+$key
+			$data = $null
+			Write-Verbose "Request: Request to close wsapi connection (Invoke-WSAPI)." 
+			$data = Invoke-WSAPI -uri $uri -type 'DELETE' 
+			$global:WsapiConnection = $null
+			If ($3parkey) 	{	Remove-Variable -name 3parKey -scope global	}
+			If ($3parArray)	{	Remove-Variable -name 3parArray -scope global }
+			return $data
+		}
 }
 }
 
@@ -603,6 +436,7 @@ Process
 		{	Write-Warning "The Neccessary PowerShell SSH Module was not found, To use this command you must install this module"
 			Write-Warning "This SSH Module can be found at the following location"
 			write-warning "https://gist.github.com/darkoperator/6152630/raw/c67de4f7cd780ba367cccbc2593f38d18ce6df89/instposhsshdev"
+			return
 		}
 	try		{	$tempstring  = convertto-securestring $SANPassword -asplaintext -force				
 				$mycreds = New-Object System.Management.Automation.PSCredential ($SANUserName, $tempstring)									
@@ -611,7 +445,7 @@ Process
 						}
 				catch 	{	$msg = "In function New-PoshSshConnection. "
 							$msg+= $_.Exception.ToString()	
-							Write-warning $msg		
+							Write-warning $msg	
 							return 
 						}
 				Write-Verbose "Running: Executed . Check on PS console if there are any errors reported" 
@@ -619,7 +453,7 @@ Process
 			}
 	catch 	{	$msg = "In function New-PoshSshConnection. "
 				$msg+= $_.Exception.ToString()	
-				Write-warning $msg 		
+				Write-warning $msg 	
 				return 
 			}					
 	$global:SANObjArr += @()
@@ -633,7 +467,9 @@ Process
 			}
 	$global:SANConnection = $SANC
 	#-- Obtain more Details by retrieving System Details via a CLI call --
-	$Result3 = Invoke-A9CLICommand -Connection $SANC -cmds "showsys "	
+	# $Result3 = Invoke-A9CLICommand -Connection $SANC -cmds "showsys "	
+	$R1 = Invoke-SSHCommand -Command "showsys " -SessionId $SANC.SessionId
+	if ($R1.ExitStatus -eq 0) 	{	$Result3 = $R1.Output	}
 	$FirstCnt = 1
 	$rCount = $Result3.Count
 	$noOfColumns = 0        
@@ -675,6 +511,8 @@ Process
 	$global:ConnectionType = "CLI"
 	Write-verbose "End: If there are no errors reported on the console then the SAN connection object is set and ready to be used. $ArrayName and $Connectiontype"		
 	$global:SANConnection = $SANC
+	write-host "Attempting to load the HPE 3Par / Primera / Alletra9000 PowerShell Commands that support SSH connectivity. " -ForegroundColor green
+	import-module .\HPEAlletra9000andPrimeraand3Par_CLI.psd1 -scope global -force
 	return $SANConnection
 }
 }
@@ -700,11 +538,23 @@ Function Connect-HPESAN
 	and passsowrd. If you do not fill in this value, the command will ask you for your credentials.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]    $ArrayNameOrIPAddress,
-		[Parameter(Mandatory=$true)]	[String]    $ArrayType,
-		[Parameter(Mandatory=$true)]	[String]	$Credential
+param(	[Parameter(Mandatory=$true)]												[String]    $ArrayNameOrIPAddress,
+		[Parameter(Mandatory=$true)]
+		[ValidateSet('Alletra9000','Primera',',3PAR','Nimble','Alletra6000','MSA')]	[String]    $ArrayType,
+		[Parameter(Mandatory=$true)]												[System.Management.Automation.PSCredential] $Credential
 		)
 Process
-{	
-}
+{	if ($ArrayType -eq 'Alletra9000' -or $ArrayType -eq 'Primera' -or $ArrayType -eq '3Par')
+			{	write-Verbose "You will be connected to a $ArrayType at the location $ArrayNameOrIPAddress"
+				$pass = $Credential.GetNetworkCredential().password 
+				$user = $Credential.GetNetworkCredential().username
+				write-Verbose "You will be using Username $user and Password $pass"
+				connect-A9SSH -ArrayNameOrIPAddress $ArrayNameOrIPAddress -SANUserName $user -SANPassword $pass -AcceptKey
+				connect-A9API -ArrayFQDNorIPAddress $ArrayNameOrIPAddress -SANUserName $user -SANPassword $pass -ArrayType $ArrayType
+			}	
+	elseif ( $ArrayType -eq 'Nimble' -or $ArrayType -eq'Alletra6000')	
+			{	write-host 'Nimble'	}
+	elseif	($ArrayType -eq 'MSA')	
+			{	write-host "msa"	}
+	}
 }

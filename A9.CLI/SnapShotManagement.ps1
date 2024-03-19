@@ -453,7 +453,7 @@ Process
 }
 }
 
-Function Push-A9GroupSnapVolume_CLI
+Function Push-A9GroupSnapVolume
 {
 <#
 .SYNOPSIS
@@ -461,25 +461,25 @@ Function Push-A9GroupSnapVolume_CLI
 .DESCRIPTION
 	Copies the differences of snapshots back to their base volumes.
 .EXAMPLE
-    PS:> Push-A9GroupSnapVolume_CLI
+    PS:> Push-A9GroupSnapVolume
 .EXAMPLE
-	PS:> Push-A9GroupSnapVolume_CLI -VVNames WSDS_compr02F
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr02F
 .EXAMPLE
-	PS:> Push-A9GroupSnapVolume_CLI -VVNames "WSDS_compr02F"
+	PS:> Push-A9GroupSnapVolume -VVNames "WSDS_compr02F"
 .EXAMPLE
-	PS:> Push-A9GroupSnapVolume_CLI -VVNames "tesWSDS_compr01t_lun"
+	PS:> Push-A9GroupSnapVolume -VVNames "tesWSDS_compr01t_lun"
 .EXAMPLE
-	PS:> Push-A9GroupSnapVolume_CLI -VVNames WSDS_compr01 -RCP
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -RCP
 .EXAMPLE
-	PS:> Push-A9GroupSnapVolume_CLI -VVNames WSDS_compr01 -Halt
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -Halt
 .EXAMPLE
-	PS:> Push-A9GroupSnapVolume_CLI -VVNames WSDS_compr01 -PRI high
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -PRI high
 .EXAMPLE
-	PS:> Push-A9GroupSnapVolume_CLI -VVNames WSDS_compr01 -Online
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -Online
 .EXAMPLE
-	PS:> Push-A9GroupSnapVolume_CLI -VVNames WSDS_compr01 -TargetVV at
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -TargetVV at
 .EXAMPLE
-	PS:> Push-A9GroupSnapVolume_CLI -VVNames WSDS_compr01 -TargetVV y
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -TargetVV y
 .PARAMETER VVNames 
     Specify virtual copy name of the Snap shot
 .PARAMETER TargetVV 
@@ -539,7 +539,7 @@ Process
 }	
 }
 
-Function Push-A9SnapVolume_CLI
+Function Push-A9SnapVolume
 {
 <#
 .SYNOPSIS
@@ -547,11 +547,11 @@ Function Push-A9SnapVolume_CLI
 .DESCRIPTION
 	This command copies the differences of a snapshot back to its base volume, allowing you to revert the base volume to an earlier point in time.
 .EXAMPLE
-	PS:> Push-A9SnapVolume_CLI -name vv1 
+	PS:> Push-A9SnapVolume -name vv1 
 	
 	copies the differences of a snapshot back to its base volume "vv1"
 .EXAMPLE
-	PS:> Push-A9SnapVolume_CLI -target vv23 -name vv1 
+	PS:> Push-A9SnapVolume -target vv23 -name vv1 
 	
 	copies the differences of a snapshot back to target volume "vv23" of volume "vv1"
 .PARAMETER name 
@@ -615,7 +615,7 @@ Process
 }
 }
 
-Function Push-A9VvCopy_CLI
+Function Push-A9VvCopy
 {
 <#
 .SYNOPSIS
@@ -623,7 +623,7 @@ Function Push-A9VvCopy_CLI
 .DESCRIPTION
 	Promotes a physical copy back to a regular base volume
 .EXAMPLE
-    PS:> Push-A9VvCopy_CLI –physicalCopyName volume1
+    PS:> Push-A9VvCopy –physicalCopyName volume1
 	
 	Promotes virtual volume "volume1" to a base volume
 .PARAMETER physicalCopyName 

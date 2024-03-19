@@ -2,7 +2,7 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Get-Spare
+Function Get-A9Spare
 {
 <#
 .SYNOPSIS
@@ -10,7 +10,8 @@ Function Get-Spare
 .DESCRIPTION
     Displays information about chunklets in the system that are reserved for spares and previously free chunklets selected for spares by the system. 
 .EXAMPLE
-    Get-Spare 
+    PS:> Get-A9Spare 
+	
 	Displays information about chunklets in the system that are reserved for spares
 .PARAMETER used 
     Display only used spare chunklets
@@ -19,7 +20,7 @@ Function Get-Spare
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$used,	
-		[Parameter()]			[Switch]	$count
+		[Parameter()]							[Switch]	$count
 )
 process
 {	if ( -not $(Test-A9CLI) ) 	{	return }
@@ -57,7 +58,7 @@ process
 }
 }
 
-Function New-Spare
+Function New-A9Spare
 {
 <#
 .SYNOPSIS
@@ -65,10 +66,11 @@ Function New-Spare
 .DESCRIPTION
     Allocates chunklet resources as spares. Chunklets marked as spare are not used for logical disk creation and are reserved explicitly for spares, thereby guaranteeing a minimum amount of spare space. 
 .EXAMPLE
-    New-Spare -Pdid_chunkNumber "15:1"
+    PS:> New-A9Spare -Pdid_chunkNumber "15:1"
 	This example marks chunklet 1 as spare for physical disk 15
 .EXAMPLE
-	New-Spare –pos "1:0.2:3:121"
+	PS:> New-A9Spare –pos "1:0.2:3:121"
+	
 	This example specifies the position in a drive cage, drive magazine, physical disk,and chunklet number. –pos 1:0.2:3:121, where 1 is the drive cage, 0.2 is the drive magazine, 3 is the physical disk, and 121 is the chunklet number.
 .PARAMETER Pdid_chunkNumber
     Specifies the identification of the physical disk and the chunklet number on the disk.
@@ -101,7 +103,7 @@ process
 }
 }
 
-Function Move-Chunklet
+Function Move-A9Chunklet
 {
 <#
 .SYNOPSIS
@@ -109,7 +111,8 @@ Function Move-Chunklet
 .DESCRIPTION
 	Moves a list of chunklets from one physical disk to another.
 .EXAMPLE
-    Move-Chunklet -SourcePD_Id 24 -SourceChunk_Position 0  -TargetPD_Id	64 -TargetChunk_Position 50 
+    PS:> Move-A9Chunklet -SourcePD_Id 24 -SourceChunk_Position 0  -TargetPD_Id	64 -TargetChunk_Position 50 
+
 	This example moves the chunklet in position 0 on disk 24, to position 50 on disk 64 and chunklet in position 0 on disk 25, to position 1 on disk 27
 .PARAMETER SourcePD_Id
     Specifies that the chunklet located at the specified PD
@@ -178,7 +181,7 @@ process
 }
 }
 
-Function Move-ChunkletToSpare
+Function Move-A9ChunkletToSpare
 {
 <#
 .SYNOPSIS
@@ -189,11 +192,11 @@ Function Move-ChunkletToSpare
     Move-ChunkletToSpare -SourcePD_Id 66 -SourceChunk_Position 0  -force 
 	Examples shows chunklet 0 from physical disk 66 is moved to spare
 .EXAMPLE	
-	Move-ChunkletToSpare -SourcePD_Id 3 -SourceChunk_Position 0
+	PS:> Move-A9ChunkletToSpare -SourcePD_Id 3 -SourceChunk_Position 0
 .EXAMPLE	
-	Move-ChunkletToSpare -SourcePD_Id 4 -SourceChunk_Position 0 -nowait
+	PS:> Move-A9ChunkletToSpare -SourcePD_Id 4 -SourceChunk_Position 0 -nowait
 .EXAMPLE
-    Move-ChunkletToSpare -SourcePD_Id 5 -SourceChunk_Position 0 -Devtype
+    PS:> Move-A9ChunkletToSpare -SourcePD_Id 5 -SourceChunk_Position 0 -Devtype
 .PARAMETER SourcePD_Id
     Indicates that the move takes place from the specified PD
 .PARAMETER SourceChunk_Position
@@ -246,7 +249,7 @@ process
 }
 }
 
-Function Move-PD
+Function Move-A9PhyscialDisk
 {
 <#
 .SYNOPSIS
@@ -254,10 +257,10 @@ Function Move-PD
 .DESCRIPTION
 	Moves data from specified Physical Disks (PDs) to a temporary location selected by the system
 .EXAMPLE
-    Move-PD -PD_Id 0 -force
+    PS:> Move-A9PhyscialDisk -PD_Id 0 -force
 	Example shows moves data from Physical Disks 0  to a temporary location
 .EXAMPLE	
-	Move-PD -PD_Id 0  
+	PS:> Move-A9PhyscialDisk -PD_Id 0  
 	Example displays a dry run of moving the data on physical disk 0 to free or sparespace
 .PARAMETER PD_Id
     Specifies the physical disk ID. This specifier can be repeated to move multiple physical disks.
@@ -274,26 +277,16 @@ Function Move-PD
 	Makes the moves permanent, removes source tags after relocation
 #>
 [CmdletBinding()]
-param(		
-		[Parameter()]
-		[Switch]
-		$DryRun,
-				
-		[Parameter()]
-		[Switch]
-		$nowait,
-		
-		[Parameter()]
-		[Switch]
-		$Devtype,
-		
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-		[String]
-		$PD_Id
+param(	[Parameter()]	[Switch]	$DryRun,
+		[Parameter()]	[Switch]	$nowait,
+		[Parameter()]	[Switch]	$Devtype,
+		[Parameter(Mandatory=$true)]	[String]	$PD_Id
 	)
+Begin
+{	Test-A9Connection -Clienttype 'SshClient'
+}
 process	
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$movechcmd = "movepd -f"
+{	$movechcmd = "movepd -f"
 	if($DryRun)	{	$movechcmd += " -dr "	}
 	if($nowait)	{	$movechcmd += " -nowait "	}
 	if($Devtype){	$movechcmd += " -devtype "	}
@@ -322,7 +315,7 @@ process
 }
 }
 
-Function Move-A9PDToSpare_CLI
+Function Move-A9PhysicalDiskToSpare
 {
 <#
 .SYNOPSIS
@@ -330,19 +323,19 @@ Function Move-A9PDToSpare_CLI
 .DESCRIPTION
 	Moves data from specified Physical Disks (PDs) to a temporary location selected by the system.
 .EXAMPLE
-    PS:> Move-A9PDToSpare_CLI -PD_Id 0 -force  
+    PS:> Move-A9PhysicalDiskToSpare -PD_Id 0 -force  
 
 	Displays  moving the data on PD 0 to free or spare space
 .EXAMPLE
-    PS:> Move-A9PDToSpare_CLI -PD_Id 0 
+    PS:> Move-A9PhysicalDiskToSpare -PD_Id 0 
 
 	Displays a dry run of moving the data on PD 0 to free or spare space
 .EXAMPLE
-    PS:> Move-A9PDToSpare_CLI -PD_Id 0 -DryRun
+    PS:> Move-A9PhysicalDiskToSpare -PD_Id 0 -DryRun
 .EXAMPLE
-    PS:> Move-A9PDToSpare_CLI -PD_Id 0 -Vacate
+    PS:> Move-A9PhysicalDiskToSpare -PD_Id 0 -Vacate
 .EXAMPLE
-    PS:> Move-A9PDToSpare_CLI -PD_Id 0 -Permanent
+    PS:> Move-A9PhysicalDiskToSpare -PD_Id 0 -Permanent
 .PARAMETER PD_Id
     Specifies the physical disk ID.
 .PARAMETER force
@@ -408,7 +401,7 @@ process
 }
 }
 
-Function Move-A9RelocPD_CLI
+Function Move-A9RelocPhysicalDisk
 {
 <#
 .SYNOPSIS
@@ -416,7 +409,7 @@ Function Move-A9RelocPD_CLI
 .DESCRIPTION
 	Command moves chunklets that were on a physical disk to the target of relocation.
 .EXAMPLE
-    PS:> Move-A9RelocPD_CLI -diskID 8 -DryRun
+    PS:> Move-A9RelocPhysicalDisk -diskID 8 -DryRun
 	moves chunklets that were on physical disk 8 that were relocated to another position, back to physical disk 8
 .PARAMETER diskID    
 	Specifies that the chunklets that were relocated from specified disk (<fd>), are moved to the specified destination disk (<td>). If destination disk (<td>) is not specified then the chunklets are moved back
@@ -467,7 +460,7 @@ process
 }
 }
 
-Function Remove-A9Spare_CLI
+Function Remove-A9Spare
 {
 <#
 .SYNOPSIS
@@ -479,7 +472,7 @@ Function Remove-A9Spare_CLI
 	
 	Example removes a spare chunklet from position 3 on physical disk 1:
 .EXAMPLE
-	PS:> Remove-A9Spare_CLI –pos "1:0.2:3:121"
+	PS:> Remove-A9Spare –pos "1:0.2:3:121"
 	
 	Example removes a spare chuklet from  the position in a drive cage, drive magazine, physical disk,and chunklet number. –pos 1:0.2:3:121, where 1 is the drive cage, 0.2 is the drive magazine, 3 is the physical disk, and 121 is the chunklet number. 	
 .PARAMETER Pdid_chunkNumber

@@ -12,15 +12,15 @@ Function Get-A9AOConfiguration
 .PARAMETER AOconfigName
 	AO configuration name.
 .EXAMPLE
-	Get-A9AOConfiguration
+	PS:> Get-A9AOConfiguration
 .EXAMPLE
-	Get-A9AOConfiguration -AOconfigName XYZ
+	PS:> Get-A9AOConfiguration -AOconfigName XYZ
 #>
 [CmdletBinding()]
 Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$AOconfigName
 	)
 Begin 
-{	Test-WSAPIConnection 
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$Result = $null

@@ -1,19 +1,19 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
-Function Get-A9Cert_CLI
+Function Get-A9Cert
 {
 <#
 .SYNOPSIS
-	Get-Cert - Show information about SSL certificates of the Storage System.
+	Show information about SSL certificates of the Storage System.
 .DESCRIPTION
-	The Get-Cert command has two forms. The first is a table with a high level overview of the certificates used by the SSL Services. This table is
+	The command has two forms. The first is a table with a high level overview of the certificates used by the SSL Services. This table is
 	customizable with the -showcols option. The second form provides detailed certificate information in either human readable format or in PEM (Privacy
 	Enhanced Mail) format. It can also save the certificates in a specified file.
 .EXAMPLE
-	Get-A9Cert_CLI -Service unified-server -Pem
+	PS:> Get-A9Cert -Service unified-server -Pem
 .EXAMPLE
-	Get-A9Cert_CLI -Service unified-server -Text
+	PS:> Get-A9Cert -Service unified-server -Text
 .PARAMETER Listcols
 	Displays the valid table columns.
 .PARAMETER Showcols
@@ -57,7 +57,7 @@ Process
 		}
 	else
 		{	$Result = Invoke-CLICommand -cmds  $Cmd
-			Write-DebugLog "Executing Function : Get-Cert Command -->" INFO: 
+			Write-Verbose "Executing Function : Get-Cert Command -->" 
 			if($Result.count -gt 1)
 				{	$tempFile = [IO.Path]::GetTempFileName()
 					$LastItem = $Result.Count 
@@ -87,7 +87,7 @@ Process
 }
 }
 
-Function Get-A9Encryption_CLI
+Function Get-A9Encryption
 {
 <#
 .SYNOPSIS
@@ -132,7 +132,7 @@ Process
 }
 }
 
-Function Get-A9SR_CLI
+Function Get-A9SystemReporter
 {
 <#
 .SYNOPSIS
@@ -191,7 +191,7 @@ Process
 }
 }
 
-Function Import-A9Cert_CLI
+Function Import-A9Cert
 {
 <#
 .SYNOPSIS
@@ -200,7 +200,7 @@ Function Import-A9Cert_CLI
 	The Import Cert command allows a user to import certificates for a given service. The user can import a CA bundle containing the intermediate and/or
 	root CAs prior to importing the service certificate. The CA bundle can also be imported alongside the service certificate.
 .EXAMPLE
-	PS:> Import-Cert_CLI -SSL_service wsapi -Service_cert  wsapi-service.pem
+	PS:> Import-Cert -SSL_service wsapi -Service_cert  wsapi-service.pem
 .PARAMETER SSL_service
 	Valid service names are cim, cli, ekm-client, ekm-server, ldap, syslog-gen-client, syslog-gen-server, syslog-sec-client, syslog-sec-server, wsapi, vasa, and unified-server.
 .PARAMETER CA_bundle
@@ -229,7 +229,7 @@ Process
 }
 }
 
-Function New-A9Cert_CLI
+Function New-A9Cert
 {
 <#
 .SYNOPSIS
@@ -237,9 +237,9 @@ Function New-A9Cert_CLI
 .DESCRIPTION
 	The New Cert command creates a self-signed certificate or a certificate signing request for a specified service.
 .EXAMPLE
-	PS:> New-A9Cert_CLI -SSL_service unified-server -Selfsigned -Keysize 2048 -Days 365
+	PS:> New-A9Cert -SSL_service unified-server -Selfsigned -Keysize 2048 -Days 365
 .EXAMPLE
-	PS:> New-A9Cert_CLI -SSL_service wsapi -Selfsigned -Keysize 2048 -Days 365
+	PS:> New-A9Cert -SSL_service wsapi -Selfsigned -Keysize 2048 -Days 365
 .PARAMETER SSL_service
 	Valid service names are cim, cli, ekm-client, ekm-server, ldap, syslog-gen-client, syslog-gen-server, syslog-sec-client, syslog-sec-server, wsapi, vasa, and unified-server.
 .PARAMETER Csr
@@ -527,7 +527,7 @@ Process
 }
 }
 
-Function Remove-A9Cert_CLI
+Function Remove-A9Cert
 {
 <#
 .SYNOPSIS
@@ -536,9 +536,9 @@ Function Remove-A9Cert_CLI
 	The Remove Cert command is used to remove certificates that are no longer trusted. In most cases it is better to overwrite the offending certificate
 	with importcert. The user specifies which service to have its certificates removed. The removal can be limited to a specific type.
 .EXAMPLE
-	PS:> Remove-A9Cert_CLI -SSL_Service_Name "xyz" -Type "xyz"
+	PS:> Remove-A9Cert -SSL_Service_Name "xyz" -Type "xyz"
 .EXAMPLE
-	PS:> Remove-A9Cert_CLI -SSL_Service_Name "all" -Type "xyz"
+	PS:> Remove-A9Cert -SSL_Service_Name "all" -Type "xyz"
 .PARAMETER SSL_Service_Name
 	Valid service names are cim, cli, ekm-client, ekm-server, ldap, syslog-gen-client, syslog-gen-server, syslog-sec-client,
 	syslog-sec-server, wsapi, vasa, and unified-server. The user may also specify all, which will remove certificates for all services.
@@ -566,7 +566,7 @@ Process
 } 
 }
 
-Function Measure-A9Upgrade_CLI
+Function Measure-A9Upgrade
 {
 <#
 .SYNOPSIS
@@ -632,7 +632,7 @@ Return $Result
 }
 }
 
-Function Optimize-A9LD_CLI
+Function Optimize-A9LogicalDisk
 {
 <#
 .SYNOPSIS
@@ -696,7 +696,7 @@ Return $Result
 }
 }
 
-Function Optimize-A9Nodech_CLI
+Function Optimize-A9Node
 {
 <#
 .SYNOPSIS
@@ -749,7 +749,7 @@ Process
 }
 }
 
-Function Start-A9SR_CLI
+Function Start-A9SystemTeporter
 {
 <#
 .SYNOPSIS
@@ -757,7 +757,7 @@ Function Start-A9SR_CLI
 .DESCRIPTION
     To start System reporter.
 .EXAMPLE
-    Start-A9SR_CLI 
+    PS:> Start-A9SystemTeporter
 
 	Starts System Reporter
 #>
@@ -776,7 +776,7 @@ Process
 }
 }
 
-Function Stop-A9SR_CLI
+Function Stop-A9SSystemReporter
 {
 <#
 .SYNOPSIS
@@ -784,7 +784,7 @@ Function Stop-A9SR_CLI
 .DESCRIPTION
     To stop System reporter.
 .EXAMPLE
-    Stop-A9SR_CLI 
+    PS:> Stop-A9SSystemReporter
 
 	Stop System Reporter
 #>

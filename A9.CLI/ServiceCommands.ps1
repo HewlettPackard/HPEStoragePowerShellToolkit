@@ -1,13 +1,13 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
-Function Add-A9Hardware_CLI
+Function Add-A9Hardware
 {
 <#
 .SYNOPSIS
-	Add-Hardware - Admit new hardware into the system.
+	Admit new hardware into the system.
 .DESCRIPTION
-	The Add-Hardware command admits new hardware into the system. If new disks are discovered on any two-node HPE StoreServ system, tunesys will be
+	The command admits new hardware into the system. If new disks are discovered on any two-node HPE StoreServ system, tunesys will be
 	started automatically to redistribute existing volumes to use the new capacity. This facility can be disabled using either the -notune
 	option or setting the AutoAdmitTune system parameter to "no". On systems with more than two nodes, tunesys must always be run manually after disk installation.
 .PARAMETER Checkonly
@@ -43,17 +43,17 @@ Process
 }
 }
 
-Function Get-A9SystemPatch_CLI
+Function Get-A9SystemPatch
 {
 <#
 .SYNOPSIS
-	Get-SystemPatch - Show what patches have been applied to the system.
+	Show what patches have been applied to the system.
 .DESCRIPTION
-	The Get-SystemPatch command displays patches applied to a system.
+	The command displays patches applied to a system.
 .EXAMPLE
-	PS:> Get-A9SystemPatch_CLI
+	PS:> Get-A9SystemPatch
 .EXAMPLE
-	PS:> Get-A9SystemPatch_CLI -Hist
+	PS:> Get-A9SystemPatch -Hist
 .PARAMETER Hist
 	Provides an audit log of all patches and updates that have been applied to the system.
 .PARAMETER D
@@ -76,7 +76,7 @@ Process
 }
 }
 
-Function Get-A9Version__CLI 
+Function Get-A9Version 
 {	
 <#
 .SYNOPSIS
@@ -84,15 +84,15 @@ Function Get-A9Version__CLI
 .DESCRIPTION
     Get list of Storage system software version information
 .EXAMPLE
-    PS:> Get-A9Version_CLI	
+    PS:> Get-A9Version
 
 	Get list of Storage system software version information
 .EXAMPLE
-    PS:> Get-A9Version_CLI -S	
+    PS:> Get-A9Version -S	
 
 	Get list of Storage system release version number only
 .EXAMPLE
-    PS:> Get-A9Version_CLI -B	
+    PS:> Get-A9Version -B	
 
 	Get list of Storage system build levels
 .PARAMETER A
@@ -120,7 +120,7 @@ Process
 }
 }
 
-Function Update-A9Cage_CLI
+Function Update-A9Cage
 {
 <#
 .SYNOPSIS
@@ -178,7 +178,7 @@ Process
 }
 }
 
-Function Reset-A9SystemNode_CLI
+Function Reset-A9SystemNode
 {
 <#
 .SYNOPSIS
@@ -186,7 +186,7 @@ Function Reset-A9SystemNode_CLI
 .DESCRIPTION
 	The command shuts down a system node.
 .EXAMPLE
-	PS:> Reset-A9SystemNode_CLI -Halt -Node_ID 0.
+	PS:> Reset-A9SystemNode -Halt -Node_ID 0.
 .PARAMETER Node_ID
 	Specifies the node, identified by its ID, to be shut down.
 .PARAMETER Halt
@@ -221,7 +221,7 @@ Process
 } 
 }
 
-Function Set-A9Magazines_CLI
+Function Set-A9Magazines
 {
 <#
 .SYNOPSIS
@@ -230,9 +230,9 @@ Function Set-A9Magazines_CLI
 	The command takes drive magazines, or disk drives within a magazine, either on-loop or off-loop. Use this command when replacing a
 	drive magazine or disk drive within a drive magazine.
 .EXAMPLE
-	PS:> Set-A9Magazines_CLI -Offloop -Cage_name "xxx" -Magazine "xxx"
+	PS:> Set-A9Magazines -Offloop -Cage_name "xxx" -Magazine "xxx"
 .EXAMPLE
-	PS:> Set-A9Magazines_CLI -Offloop -Port "Both" -Cage_name "xxx" -Magazine "xxx"
+	PS:> Set-A9Magazines -Offloop -Port "Both" -Cage_name "xxx" -Magazine "xxx"
 .PARAMETER Offloop
 	Specifies that the specified drive magazine or disk drive is either taken off-loop or brought back on-loop.
 .PARAMETER Onloop
@@ -281,7 +281,7 @@ Process
 }
 }
 
-Function Set-A9ServiceCage_CLI
+Function Set-A9ServiceCage
 {
 <#
 .SYNOPSIS
@@ -369,17 +369,17 @@ Process
 } 
 }
 
-Function Set-A9ServiceNodes_CLI
+Function Set-A9ServiceNodes
 {
 <#
 .SYNOPSIS
 	Prepare a node for service.
 .DESCRIPTION
-	The Set-ServiceNodes command informs the system that a certain component will be replaced, and will cause the system to indicate the physical location of that component.
+	The command informs the system that a certain component will be replaced, and will cause the system to indicate the physical location of that component.
 .EXAMPLE
-	Set-A9ServiceNodes_CLI -Start -Nodeid 0
+	Set-A9ServiceNodes -Start -Nodeid 0
 .EXAMPLE
-	Set-A9ServiceNodes_CLI -Start -Pci 3 -Nodeid 0
+	Set-A9ServiceNodes -Start -Pci 3 -Nodeid 0
 .PARAMETER Start
 	Specifies the start of service on a node. If shutting down the node is required to start the service, the command will prompt for confirmation before proceeding further.
 .PARAMETER Status
@@ -402,7 +402,7 @@ Function Set-A9ServiceNodes_CLI
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$True)] 	[String] 	$Nodeid,
 		[Parameter(ParameterSetName='Start', Mandatory=$true)]	[switch]	$Start,
-		[Parameter(ParameterSetName='Satus', Mandatory=$true)]	[switch]	$Status,
+		[Parameter(ParameterSetName='Status', Mandatory=$true)]	[switch]	$Status,
 		[Parameter(ParameterSetName='end',   Mandatory=$true)]	[switch]	$End,
 		[Parameter()]					[String]	$Ps,
 		[Parameter()]					[String]	$Pci,
@@ -427,7 +427,7 @@ Process
 }
 }
 
-Function Reset-A9System_CLI
+Function Reset-A9System
 {
 <#
 .SYNOPSIS
@@ -435,7 +435,7 @@ Function Reset-A9System_CLI
 .DESCRIPTION
 	The command shuts down an entire system.
 .EXAMPLE
-	PS:> Reset-A9System_CLI -Halt
+	PS:> Reset-A9System -Halt
 .PARAMETER Halt
 	Specifies that the system should be halted after shutdown. If this subcommand is not specified, the reboot or restart subcommand must be used.
 .PARAMETER Reboot
@@ -461,7 +461,7 @@ Process
 }
 }
 
-Function Update-A9PdFirmware_CLI
+Function Update-A9PdFirmware
 {
 <#
 .SYNOPSIS
@@ -504,7 +504,7 @@ Process
 }
 }
 
-Function Search-A9ServiceNode_CLI
+Function Search-A9ServiceNode
 {
 <#
 .SYNOPSIS
@@ -560,7 +560,7 @@ Process
 }
 }
 
-Function Get-A9ResetReason_CLI 
+Function Get-A9ResetReason
 {
 <#
 .SYNOPSIS
@@ -574,11 +574,11 @@ Function Get-A9ResetReason_CLI
 .EXAMPLE
 	To display reset reason in table format:
 
-	PS:> Get-A9ResetReason_CLI
+	PS:> Get-A9ResetReason
 .EXAMPLE
 	To display reset reason in more detail (-d option):
 	
-	PS:> Get-A9ResetReason_CLI -d
+	PS:> Get-A9ResetReason -d
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$D
@@ -594,7 +594,7 @@ Process
 }
 }
 
-Function Set-A9Security_CLI
+Function Set-A9Security
 {
 <#
 .SYNOPSIS
@@ -616,7 +616,7 @@ Function Set-A9Security_CLI
 .EXAMPLE
     Enables fips mode
 
-    PS:> Set-A9Security_CLI -fipsenable
+    PS:> Set-A9Security -fipsenable
 
     Warning: Enabling FIPS mode requires restarting all system management interfaces,  which will terminate ALL existing connections including this one.
     When that happens, you must reconnect to continue.
@@ -624,7 +624,7 @@ Function Set-A9Security_CLI
 .EXAMPLE
     Disables fips mode
 
-    PS:> Set-A9Security_CLI -fipsdisable
+    PS:> Set-A9Security -fipsdisable
 
     Warning: Disabling FIPS mode requires restarting all system management interfaces,
     which will terminate ALL existing connections including this one. When that happens, you must reconnect to continue.
@@ -632,21 +632,21 @@ Function Set-A9Security_CLI
 .EXAMPLE
     Restarts services which are not currently enabled
     
-    PS:> Set-A9Security_CLI -fipsrestart
+    PS:> Set-A9Security -fipsrestart
     
     Warning: Will restart all services that are not enabled, which may terminate ALL existing connections including this one. When that happens, you must reconnect to continue.
     Continue restarting (yes/no)?
 .EXAMPLE
     Regenerates the SSH host keys and distributes them to the other nodes
 
-    PS:> Set-A9Security_CLI -ssh-keysgenerate
+    PS:> Set-A9Security -ssh-keysgenerate
 
     Warning: This action will restart the ssh service, which may terminate ALL existing connections including this one. When that happens, you must reconnect to continue.
     Continue restarting (yes/no)?
 .EXAMPLE
     Syncs the SSH host keys from the current node to all other nodes
 
-    PS:> Set-A9Security_CLI -ssh-keyssync
+    PS:> Set-A9Security -ssh-keyssync
 
     Warning: This action will restart the ssh service, which may terminate ALL existing connections including this one. When that happens, you must reconnect to continue.
     Continue restarting (yes/no)?
@@ -675,7 +675,7 @@ Process
 }
 }
 
-Function Get-A9Security_CLI
+Function Get-A9Security
 {    
 <#
 .SYNOPSIS
@@ -687,7 +687,7 @@ Function Get-A9Security_CLI
 .EXAMPLE
     Shows the current mode of FIPS and status of services
 
-    PS:> Get-A9Security_CLI -fipsstatus
+    PS:> Get-A9Security -fipsstatus
 
     FIPS mode: Enabled
 

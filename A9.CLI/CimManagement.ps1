@@ -1,7 +1,7 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
-Function Show-A9CIM_CLI 
+Function Show-A9CIM
 {
 <#
 .SYNOPSIS
@@ -15,7 +15,7 @@ Function Show-A9CIM_CLI
 .EXAMPLE
     The following example shows the current CIM status:
 
-        PS:> Show-A9CIM_CLI
+        PS:> Show-A9CIM
 
         -Service- -State-- --SLP-- SLPPort -HTTP-- HTTPPort -HTTPS- HTTPSPort PGVer  CIMVer
         Enabled   Active   Enabled     427 Enabled     5988 Enabled      5989 2.14.1 3.3.1
@@ -23,7 +23,7 @@ Function Show-A9CIM_CLI
 .EXAMPLE
     The following example shows the current CIM policy:
 
-        PS:> Show-A9CIM_CLI -Pol
+        PS:> Show-A9CIM -Pol
 
         --------------Policy---------------
         replica_entity,one_hwid_per_view,use_pegasus_interop_namespace,no_tls_strict
@@ -45,7 +45,7 @@ process
 }
 }
 
-Function Start-A9CIM_CLI 
+Function Start-A9CIM
 {
 <#
 .SYNOPSIS
@@ -55,7 +55,8 @@ Function Start-A9CIM_CLI
 .EXAMPLE
     The following example starts the CIM server:
 
-    Start-A9CIM_CLI
+    PS:> Start-A9CIM
+
     CIM server will start shortly.
 #>
 [CmdletBinding()]
@@ -71,7 +72,7 @@ process
 }
 }
 
-Function Set-A9CIM_CLI
+Function Set-A9CIM
 {
 <#
 .SYNOPSIS
@@ -103,23 +104,23 @@ Function Set-A9CIM_CLI
 .EXAMPLE
     To disable the HTTPS ports:
 
-    PS:> Set-A9CIM_CLI -F -Https Disable
+    PS:> Set-A9CIM -F -Https Disable
 .EXAMPLE
     To enable the HTTPS port:
 
-    PS:> Set-A9CIM_CLI -F -Https Enable
+    PS:> Set-A9CIM -F -Https Enable
 .EXAMPLE
     To disable the HTTP port and enable the HTTPS port:
 
-    PS:> Set-A9CIM_CLI -F -Http Disable -Https Enable
+    PS:> Set-A9CIM -F -Http Disable -Https Enable
 .EXAMPLE
     To set the no_use_pegasus_interop_namespace policy:
 
-    PS:> Set-A9CIM_CLI -F -Pol no_use_pegasus_interop_namespace
+    PS:> Set-A9CIM -F -Pol no_use_pegasus_interop_namespace
 .EXAMPLE
     To set the replica_entity policy:
 
-    PS:> Set-A9CIM_CLI -F -Pol replica_entity
+    PS:> Set-A9CIM -F -Pol replica_entity
 .NOTES
     Access to all domains is required to run this command.    You cannot disable both of the HTTP and HTTPS ports.
 
@@ -127,21 +128,15 @@ Function Set-A9CIM_CLI
     continue or not. The -F option forces the action without a warning message.
 #>
 [CmdletBinding()]
-param(  [Parameter(HelpMessage = "To forces the operation")]
-                                                [Switch]    $F,
-
-        [Parameter(HelpMessage = "To enables or disables the SLP port 427")]
-        [ValidateSet("enable", "disable")]      [String]    $Slp,
-
-        [Parameter(HelpMessage = "To enables or disables the HTTP port 5988")]
-        [ValidateSet("enable", "disable")]      [String]    $Http,
-
-        [Parameter(HelpMessage = "To enables or disables the HTTPS port 5989")]
-        [ValidateSet("enable", "disable")]      [String]    $Https,
-
-        [Parameter(HelpMessage = "To sets the cim server policy")]
-        [ValidateSet("replica_entity", "no_replica_entity", "one_hwid_per_view", "no_one_hwid_per_view", "use_pegasus_interop_namespace", "no_use_pegasus_interop_namespace", "tls_strict", "no_tls_strict")]
-                                                [String]    $Pol
+param(  [Parameter()]   [Switch]    $F,
+        [Parameter()]   [ValidateSet("enable", "disable")]     
+                        [String]    $Slp,
+        [Parameter()]   [ValidateSet("enable", "disable")]      
+                        [String]    $Http,
+        [Parameter()]   [ValidateSet("enable", "disable")]
+                        [String]    $Https,
+        [Parameter()]   [ValidateSet("replica_entity", "no_replica_entity", "one_hwid_per_view", "no_one_hwid_per_view", "use_pegasus_interop_namespace", "no_use_pegasus_interop_namespace", "tls_strict", "no_tls_strict")]
+                        [String]    $Pol
 )	
 Begin	
 {   Test-A9Connection -ClientType 'SshClient'
@@ -163,7 +158,7 @@ Process
 }
 }
 
-Function Stop-A9CIM_CLI 
+Function Stop-A9CIM
 {
 <#
 .SYNOPSIS
@@ -178,11 +173,11 @@ Function Stop-A9CIM_CLI
 .EXAMPLE
     The following example stops the CIM server without confirmation
 
-    Stop-A9CIM_CLI -F        
+    PS:> Stop-A9CIM -F        
 
     The following example stops the CIM server immediately without graceful shutdown notice and confirmation:
 
-    Stop-A9CIM_CLI -F -X        
+    PS:> Stop-A9CIM -F -X        
 #>
 [CmdletBinding()]
 param(  [Parameter()]

@@ -2,7 +2,7 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Start-A9FSNDMP_CLI
+Function Start-A9FSNDMP
 {
 <#
 .SYNOPSIS   
@@ -10,7 +10,7 @@ Function Start-A9FSNDMP_CLI
 .DESCRIPTION  
 	The command is used to start both NDMP service and ISCSI service.
 .EXAMPLE	
-	Start-A9FSNDMP_CLI
+	PS:> Start-A9FSNDMP
 #>
 [CmdletBinding()]
 param()		
@@ -24,7 +24,7 @@ Process
 }
 }
 
-Function Stop-A9FSNDMP_CLI
+Function Stop-A9FSNDMP
 {
 <#
 .SYNOPSIS   
@@ -32,7 +32,7 @@ Function Stop-A9FSNDMP_CLI
 .DESCRIPTION  
 	The command is used to stop both NDMP service and ISCSI service.
 .EXAMPLE	
-	PS:> Stop-A9FSNDMP_CLI	
+	PS:> Stop-A9FSNDMP	
 #>
 [CmdletBinding()]
 param()		
