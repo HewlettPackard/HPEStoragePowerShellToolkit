@@ -1,21 +1,43 @@
 # HPEStoragePowerShellToolkit
-This is actually a pair of PowerShell Toolkits combined into a single Download Package.
+This is actually a Set of Toolkits combined into a single Download Package.
 The HPEStorage PowerShell Toolkit (version 3.5) and the HPE Alletra6K Nimble Storage PowerShell Toolkit (version 3.5)
 Since these toolkits contain no conflicting file names, they can both co-exist in the same folder structure. 
 
-To load the Toolkit that supports the Alletra 9000, Primera and 3PAR type devices, import the module called HPEAlletra9000andPrimeraand3Par 
-To load the Toolkit that supports the Alletra 6000, and Nimble Storage devices, import the module called HPEALLETRA6000AndNimbleStorage
-To load the Toolkit that supports the MSA devices, import the module called HPEMSA
+When you load the HPEStorage Toolkit, it will contain a command called 'Connect-HPEStorage'. You can run this command as follows
+<code>PS:> Connect-HPEStorage -ArrayNameOrIPAddress 1.2.3.4 -credential (Get-Credential) -ArrayType {3Par | Primera | Alletra9000 | Nimble | Alletra6000 | MSA}</code>
+    
+This command will connect to the array type and then load the commands specific to that type of array. 
+- If the Array type is 3Par/Primera/Alletra9000 the command will load additional commands from the HPEAlletra9000andPrimeraand3Par_* modules.
+- If the Array type is Nimble/Alletra6000 the command will load the additional commands from the HPEALLETRA6000AndNimbleStorage module.
+- If the Array type is MSA the command will load the additional commands from the HPEMSA module.
+
+Additionally, to get the command list for each array type run the following commands
+
+Once connected to a Alletra9000/Primera/3Par type array, run the following command
+<code>PS:> Get-Command -Module (Get-Module HPEAlletra9000andPrimeraand3Par_*) </code>
+
+Once connected to a Alletra6000/Nimble type array, run the following command
+<code>PS:> Get-Command -Module (Get-Module HPEAlletra6000andNimbleStorage) </code>
+
+Once connected to a Alletra6000/Nimble type array, run the following command
+<code>PS:> Get-Command -Module (Get-Module HPEMSA) </code>
 
 Each of these toolkit is being upgraded to remove duplicate or depreciated commands, fix bugs, and streamline operations. These new versions are called out below;
-HPEStorage version 3.5
+HPEStorage version 3.5. These changes to the existing toolkits are outlined in the called Changes with the prefix depending on the class of array;
+- For the Changes to the Alletra9000/Primera/3PAR class of array is the file called 'Changes_A9.md'
+- For the Changes to the Alletra6000/Nimble class of array is the file called 'Changes_A6.md'
+- For the Changes to the MSA class of array is the file called 'Changes_MSA.md'
+
+These commands were tested against PowerShell version 7.x. If you run into problems, please consider downloading 
+PowerShell 7.x and run the commands in that version. To obtain PowerShell 7.x please use the following PowerShell Command.
+<code>PS:> iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI" </code>
 
 TODO: 
-1. Once these toolkits are updated, they will be combined into a single Toolkit Loader which will simply be called HPEStorage.
-This single loader will also combine the connectivity commands such that a single Connect command will be able to connect to any of these devices
-types and the proper commands will be accessable.
+1. Additionaly documentation will be added to a number commands that have no command examples.
+2. Once the Beta peroiod has expired and the fixes applied and tested, the module will be signed and posted to PSGallery
 
-2. Once you have successfully connected to a specific device type such as NimbleStorage; the toolkit will use parameter sets so allow a single Command
-to create volumes, or alter hosts initiator groups, etc. 
+Note that this toolkit is in Beta. Please download and test this toolkit (on non-production systems), and post any bugs found to this Guthub Site for final fix before the toolkit is finalized and digitally signed.
 
-Note that this toolkit is still under development. This readme file will be updated to reflect when this toolkit is ready to be used.
+Future:
+1. The next version of the Toolkit will include support for the AlletraMP
+2. The next version of the Toolkit will include a suite of Pester Tests to enhance toolkit testing

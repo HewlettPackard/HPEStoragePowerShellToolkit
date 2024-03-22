@@ -2,17 +2,6 @@
 ## 	© 2024 Hewlett Packard Enterprise Development LP
 ##	Description: 	Common Module functions.
 ##		
-##	Pre-requisites: Needs HPE 3PAR cli.exe for New-CLIConnection
-##					Needs POSH SSH Module for New-PoshSshConnection
-##					WSAPI uses HPE 3PAR CLI commands to start, configure, and modify the WSAPI server.
-##					For more information about using the CLI, see:
-##					• HPE 3PAR Command Line Interface Administrator Guide
-##					• HPE 3PAR Command Line Interface Reference
-##
-##					Starting the WSAPI server    : The WSAPI server does not start automatically.
-##					Using the CLI, enter startwsapi to manually start the WSAPI server.
-## 					Configuring the WSAPI server: To configure WSAPI, enter setwsapi in the CLI.
-##
 
 $global:SANConnection = $null 
 $global:WsapiConnection = $null
@@ -20,149 +9,7 @@ $global:ArrayType = $null
 $global:ArrayName = $null
 $global:ConnectionType = $null
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-if (!$global:VSVersion) {	$global:VSVersion = "v3.5"	}
-if (!$global:ConfigDir) {	$global:ConfigDir = $null }
-
-Function Invoke-A9CLICommand 
-{
-<#
-.SYNOPSIS
-		Execute a command against a device using HP3PAR CLI
-.DESCRIPTION
-		Execute a command against a device using HP3PAR CLI
-.PARAMETER Connection
-		Pointer to an object that contains passwordfile, HP3parCLI installed path and IP address
-.PARAMETER Cmds
-		Command to be executed
-.EXAMPLE		
-		Invoke-CLICommand -Connection $global:SANConnection -Cmds "showsysmgr"
-		The command queries a array to get the system information
-		$global:SANConnection is created wiith the cmdlet New-CLIConnection or New-PoshSshConnection
-#>
-[CmdletBinding()]
-Param(	[Parameter(Mandatory = $true)]			$Connection,
-		[Parameter(Mandatory = $true)]	[string]$Cmds  
-	)
-
-Process{
-	Write-verbose "Start: In Invoke-CLICommand - validating input values" 
-	#check if connection object contents are null/empty
-	if (!$Connection) 
-		{	$connection = [_Connection]$Connection	
-			#check if connection object contents are null/empty
-			$Validate1 = Test-CLIConnection $Connection
-			if ($Validate1 -eq "Failed") 
-				{	Write-verbose "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-*Connection and pass it as parameter"
-					Write-error "Stop: Exiting Invoke-CLICommand since connection object values are null/empty" 
-					return
-				}
-		}
-	#check if cmd is null/empty
-	if (!$Cmds) 
-		{	Write-verbose "No command is passed to the Invoke-CLICommand." 
-			Write-error "Stop: Exiting Invoke-CLICommand since command parameter is null/empty null/empty" 
-			return
-		}
-	$clittype = $Connection.cliType
-	if ($clittype -eq "3parcli") 
-		{	write-warning "In Invoke-CLICommand -> entered in clitype $clittype"
-			Invoke-CLI  -DeviceIPAddress  $Connection.IPAddress -epwdFile $Connection.epwdFile -CLIDir $Connection.CLIDir -cmd $Cmds
-		}
-	elseif ($clittype -eq "SshClient") 
-		{	$Result = Invoke-SSHCommand -Command $Cmds -SessionId $Connection.SessionId
-			if ($Result.ExitStatus -eq 0) 
-				{	return $Result.Output
-				}
-			else 
-				{	$ErrorString = "Error :-" + $Result.Error + $Result.Output			    
-					return $ErrorString
-				}		
-		}
-	else 
-		{	return "FAILURE : Invalid cliType option selected/chosen"
-		}
-}
-}
-
-Function Invoke-CLI 
-{
-<#
-.SYNOPSIS
-    This is private method not to be used. For internal use only.
-.DESCRIPTION
-    Executes 3par cli command with the specified paramaeters to get data from the specified virtual Connect IP Address 
-.EXAMPLE
-    Invoke-CLI -DeviceIPAddress "DeviceIPAddress" -CLIDir "Full Installed Path of cli.exe" -epwdFile "C:\loginencryptddetails.txt"  -cmd "show server $serverID"
-.PARAMETER DeviceIPAddress 
-    Specify the IP address for Virtual Connect(VC) or Onboard Administrator(OA) or Storage or any other device
-.PARAMETER CLIDir 
-    Specify the absolute path of HP3PAR CLI's cli.exe
-.PARAMETER epwdFIle 
-    Specify the encrypted password file location
-.PARAMETER cmd 
-    Specify the command to be run for Virtual Connect
-#>
-[CmdletBinding()]
-param(	[Parameter(ValueFromPipeline = $true)]	[String]	$DeviceIPAddress = $null,
-		[Parameter(Position = 1)]								[String]	$CLIDir = "C:\Program Files (x86)\Hewlett Packard Enterprise\HPE 3PAR CLI\bin",
-		[Parameter(Position = 2)]								[String]	$epwdFile = "C:\HP3PARepwdlogin.txt",
-		[Parameter(Position = 3)]								[String]	$cmd = "show -help"
-	)
-process
-{	#write-host  "Password in Invoke-CLI = ",$password	
-	if (Test-Path -Path $CLIDir) 
-		{	$clifile = $CLIDir + "\cli.exe"
-			if ( -not (Test-Path $clifile)) 
-				{	Write-error "Stop: HP3PAR cli.exe file not found. Make sure the cli.exe file present in $CLIDir." 			
-					return 
-				}
-		}
-	else 
-		{	$SANCObj = $global:SANConnection
-			$CLIDir = $SANCObj.CLIDir
-		}
-	if (-not (Test-Path -Path $CLIDir )) 
-		{	Write-error "Stop: HP3PAR cli.exe not found. Make sure the HP3PAR CLI installed" 			
-			return 
-		}	
-	Write-Verbose "Running: Calling function Invoke-CLI. Calling Test Network with IP Address $DeviceIPAddress" 
-	try 	{	$Ping = new-object System.Net.NetworkInformation.Ping
-				$result = $ping.Send($DeviceIPAddress)
-				$Status = $result.Status.ToString()
-			}
-	catch [Exception] {	$Status = "Failed"	}           
-	if ($null -eq $Status) 
-		{	Write-error "Stop: Calling function Invoke-CLI. Invalid IP Address"  
-			Throw "Invalid IP Address"	
-		}
-	if ($Status -eq "Failed") 
-		{	Write-error "Stop:Calling function Invoke-CLI. Unable to ping the device with IP $DeviceIPAddress. Check the IP address and try again."
-			Throw "Unable to ping the device with IP $DeviceIPAddress. Check the IP address and try again."
-		}
-	Write-warning "Running: Calling function Invoke-CLI. Check the Test Network with IP Address = $DeviceIPAddress. Invoking the HP3par cli...." 
-	try {	$pwfile = $epwdFile
-			$test = $cmd.split(" ")
-			$fcmd = $test[0].trim()
-			$count = $test.count
-			$fcmd1 = $test[1..$count]
-			$CLIDir = "$CLIDir\cli.exe"
-			$path = "$CLIDir\$fcmd"
-			& $CLIDir -sys $DeviceIPAddress -pwf $pwfile $fcmd $fcmd1
-			if (!($?	)) 
-				{	write-error "FAILURE : FATAL ERROR"
-					return 
-				}			
-		}
-	catch 
-		{	$msg = "Calling function Invoke-CLI -->Exception Occured. "
-			$msg += $_.Exception.ToString()			
-			Write-Error $msg 
-			Throw $msg
-		}	
-}
-}
-
-
+$Global:CurrentModulePath = (Get-Module HPEStorage).path
 
 Function Test-A9Connection 
 {
@@ -360,7 +207,7 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 	Write-verbose "End: If there are no errors reported on the console then the SAN connection object is set and ready to be used" 
 	Write-Host "You are now connected to the HPE Storage system $ArrayName" -ForegroundColor green
 	write-host "Attempting to load the HPE 3Par / Primera / Alletra9000 PowerShell Commands that support the WSAPI. " -ForegroundColor green
-	import-module .\HPEAlletra9000andPrimeraand3Par_API.psd1 -scope global -force
+	import-module $CurrentModulePath+'\HPEAlletra9000andPrimeraand3Par_API.psd1' -scope global -force
 	return $SANZ
 }
 }
@@ -512,7 +359,7 @@ Process
 	Write-verbose "End: If there are no errors reported on the console then the SAN connection object is set and ready to be used. $ArrayName and $Connectiontype"		
 	$global:SANConnection = $SANC
 	write-host "Attempting to load the HPE 3Par / Primera / Alletra9000 PowerShell Commands that support SSH connectivity. " -ForegroundColor green
-	import-module .\HPEAlletra9000andPrimeraand3Par_CLI.psd1 -scope global -force
+	import-module $CurrentModulePath+'\HPEAlletra9000andPrimeraand3Par_CLI.psd1' -scope global -force
 	return $SANConnection
 }
 }
@@ -551,10 +398,24 @@ Process
 				write-Verbose "You will be using Username $user and Password $pass"
 				connect-A9SSH -ArrayNameOrIPAddress $ArrayNameOrIPAddress -SANUserName $user -SANPassword $pass -AcceptKey
 				connect-A9API -ArrayFQDNorIPAddress $ArrayNameOrIPAddress -SANUserName $user -SANPassword $pass -ArrayType $ArrayType
+				Write-host "To View the list of commands available to you that utilize the API please use 'Get-Command -module HPEAlletra9000AndPrimeraAnd3Par_API'." -ForegroundColor Green
+				Write-host "To View the list of commands available to you that utilize the CLI please use 'Get-Command -module HPEAlletra9000AndPrimeraAnd3Par_CLI'." -ForegroundColor Green
+
 			}	
 	elseif ( $ArrayType -eq 'Nimble' -or $ArrayType -eq'Alletra6000')	
-			{	write-host 'Nimble'	}
+			{	Import-Module $CurrentModulePath+'\HPEAlletra6000andNimbleStorage.psd1' -force -scope Global
+				Connect-NSGroup -group $ArrayNameOrIPAddress -credential $Credential 
+				Write-host "To View the list of commands available to you please use 'Get-Command -module HPEMSA'." -ForegroundColor Green
+				
+			}
 	elseif	($ArrayType -eq 'MSA')	
-			{	write-host "msa"	}
+			{	Import-Module $CurrentModulePath+'\HPEMSA.psd' -force -scope global
+				$pass = $Credential.GetNetworkCredential().password 
+				$user = $Credential.GetNetworkCredential().username
+				write-Verbose "You will be using Username $user and Password $pass"
+				Connect-MSAGroup -FQDNorIP $ArrayNameOrIPAddress -Username $user -Password $pass
+				Write-host "To View the list of commands available to you please use 'Get-Command -module HPEAlletra6000AndNimbleStorage'." -ForegroundColor Green
+
 	}
+}
 }

@@ -16,18 +16,15 @@
     VariablesToExport = '*'
     AliasesToExport = '*'
     PrivateData = @{
-        PSData = @{
-            # Tags applied to this module. These help with module discovery in online galleries.
+        PSData = @{     # Tags applied to this module. These help with module discovery in online galleries.
             Tags = @('Alletra' , 'Primera' , '3PAR' , 'Nimble', 'MSA') 
             LicenseUri = 'https://github.com/HewlettPackard/HPEStoragePowerShellToolkit/blob/main/BSD-3License.txt'
             ProjectUri = 'https://github.com/HewlettPackard/HPEStoragePowerShellToolkit/'
-            # A URL to an icon representing this module.
+
             # IconUri = ''
-            # ReleaseNotes of this module
-            # ReleaseNotes = ''
-        } # End of PSData hashtable
-    } # End of PrivateData hashtable
-    # Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
+            ReleaseNotes = 'Please see the ReadMe.MD and the Changes_*.MD in this modules root directory.'
+        } 
+    } 
     # DefaultCommandPrefix = ''
 }
 

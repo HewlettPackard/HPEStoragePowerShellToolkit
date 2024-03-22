@@ -97,7 +97,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        # ReleaseNotes = ''
+        ReleaseNotes = 'Please see the ReadMe.MD and the Changes_*.MD in this modules root directory.'
 
     } # End of PSData hashtable
 
