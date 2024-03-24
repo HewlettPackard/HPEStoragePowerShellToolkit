@@ -124,7 +124,7 @@ Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]					[String]	$HostS
 		[Parameter(ValueFromPipeline=$true)]									[String]	$NewName,
 		[Parameter(ValueFromPipeline=$true)]									[String]	$Comment,
 		[Parameter(ValueFromPipeline=$true)]									[String[]]	$Members,
-		[Parameter(lse, ValueFromPipeline=$true)]	
+		[Parameter(ValueFromPipeline=$true)]	
 		[ValidateSet('high','medium','low')]									[String]	$Priority
 )
 Begin 
@@ -460,7 +460,7 @@ Param(
 	[Parameter(ValueFromPipeline=$true)]	[String]	$NewName,	
 	[Parameter(ValueFromPipeline=$true)]	[String]	$Comment,
 	[Parameter(ValueFromPipeline=$true)]	[String[]]	$Members,
-	[Parameter(lse, ValueFromPipeline=$true)]
+	[Parameter(ValueFromPipeline=$true)]
 	[ValidateSet('high','medium','low')]	[String]	$Priority
 )
 Begin 

@@ -497,7 +497,7 @@ Param(
 	[Parameter(ValueFromPipeline=$true)]								[int]		$AutoRecover,
 	[Parameter(ValueFromPipeline=$true)]								[int]		$OverPeriodAlert,
 	[Parameter(ValueFromPipeline=$true)]								[int]		$AutoFailover,
-	[Parameter(lse, ValueFromPipeline=$true)]							[int]		$PathManagement,
+	[Parameter(ValueFromPipeline=$true)]							[int]		$PathManagement,
 	[Parameter(ValueFromPipeline=$true)]								[int]		$MultiTargetPeerPersistence
 )
 Begin 
