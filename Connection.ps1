@@ -9,7 +9,6 @@ $global:ArrayType = $null
 $global:ArrayName = $null
 $global:ConnectionType = $null
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$Global:CurrentModulePath = (Get-Module HPEStorage).path
 
 Function Test-A9Connection 
 {
@@ -29,29 +28,31 @@ Function Test-A9Connection
 #>
 [CmdletBinding()]
 Param(	[ValidateSet('SshClient','API')]	[String]	$ClientType,
-											[Version]	$MinimumVersion
+											[Version]	$MinimumVersion,
+											[switch]	$ReturnBoolean
 	)
 Process
 {	If ( $ClientType -eq 'SshClient')
-		{	if ( $null -eq $SANConnection 		 )			{	Throw "Connection object is null/empty. Create a valid connection object and retry"				}
-			if ( -not ($SANConnection.UserName)  ) 			{	Throw "Connection object usernameis null or empty. Create a valid connection object and retry"	}
-			if ( -not ($SANConnection.IPAddress) ) 			{	Throw "Connection IP address is null/empty. Create a valid connection object and retry"			}
-			if ( $SANConnection.CLIType -ne 'SshClient' ) 	{	Throw "Connection Client Type is wrong. Create a valid SSH connection object and retry"			}
+		{	if ( $null -eq $SANConnection 		 )			{	if ($ReturnBoolean) { return $false} else { Throw "Connection object is null/empty. Create a valid connection object and retry"				}}
+			if ( -not ($SANConnection.UserName)  ) 			{	if ($ReturnBoolean) { return $false} else { Throw "Connection object usernameis null or empty. Create a valid connection object and retry"	}}
+			if ( -not ($SANConnection.IPAddress) ) 			{ 	if ($ReturnBoolean) { return $false} else { Throw "Connection IP address is null/empty. Create a valid connection object and retry"			}}
+			if ( $SANConnection.CLIType -ne 'SshClient' ) 	{	if ($ReturnBoolean) { return $false} else { Throw "Connection Client Type is wrong. Create a valid SSH connection object and retry"			}}
 			If ( $ClientType -eq 'SshClient'	)			
 				{ 	if ($MinimumVersion)	
 						{	[Version]$DetectedVersion = ( Get-A9Version_CLI -S ) 
 							if ( -not ($DetectedVersion -ge $MinimumVersion) )
-								{	Throw "The Detecte Array Version OS is less than the required version need to run this command. `nThe detected version is $DetectedVersion but the required version is $MinimumVersion."
+								{	if ($ReturnBoolean) { return $false} 
+									else { Throw "The Detecte Array Version OS is less than the required version need to run this command. `nThe detected version is $DetectedVersion but the required version is $MinimumVersion."}
 								}
 						}
 				}
-			return
+			if ($ReturnBoolean) { return $true} else { return }
 		}
 	elseif ($ClientType -eq 'API')
-		{	if ( $null -eq $WsapiConnection)				{	Throw "Connection object is null/empty. Create a valid connection object and retry"				}
-			if (-not ($WsapiConnection.IPAddress) )			{	Throw "Connection IP address is null/empty. Create a valid connection object and retry"			}
-			if (-not ($WsapiConnection.Key))				{	Throw "Connection object Key null or empty. Create a valid connection object and retry"			}	
-			return
+		{	if ( $null -eq $WsapiConnection)				{	if ($ReturnBoolean) { return $false} else { Throw "Connection object is null/empty. Create a valid connection object and retry"				}}
+			if (-not ($WsapiConnection.IPAddress) )			{	if ($ReturnBoolean) { return $false} else { Throw "Connection IP address is null/empty. Create a valid connection object and retry"			}}
+			if (-not ($WsapiConnection.Key))				{	if ($ReturnBoolean) { return $false} else { Throw "Connection object Key null or empty. Create a valid connection object and retry"			}}	
+			if ($ReturnBoolean) { return $true } else { return }
 		}
 }
 }
@@ -207,7 +208,11 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 	Write-verbose "End: If there are no errors reported on the console then the SAN connection object is set and ready to be used" 
 	Write-Host "You are now connected to the HPE Storage system $ArrayName" -ForegroundColor green
 	write-host "Attempting to load the HPE 3Par / Primera / Alletra9000 PowerShell Commands that support the WSAPI. " -ForegroundColor green
-	import-module $CurrentModulePath+'\HPEAlletra9000andPrimeraand3Par_API.psd1' -scope global -force
+	$CurrentModulePath = (Get-Module HPEStorage).path
+	[string]$CurrentModulePath = Split-Path $CurrentModulePath -Parent
+	$ModPath = $CurrentModulePath + '\HPEAlletra9000andPrimeraand3Par_API.psd1'	
+	write-host "The path to the module is $ModPath" -ForegroundColor green
+	import-module $ModPath -scope global -force
 	return $SANZ
 }
 }
@@ -279,7 +284,9 @@ param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]    $ArrayN
 		[Parameter(ValueFromPipeline=$true)]					[switch]	$AcceptKey
 		)
 Process
-{	if ( -not (Get-Module -ListAvailable -Name Posh-SSH) -and -not(Get-Module -Name Posh-SSH) ) 
+{	$CurrentModulePath = (Get-Module HPEStorage).path
+	$Global:CurrentModulePath = Split-Path $CurrentModulePath -Parent	
+	if ( -not (Get-Module -ListAvailable -Name Posh-SSH) -and -not(Get-Module -Name Posh-SSH) ) 
 		{	Write-Warning "The Neccessary PowerShell SSH Module was not found, To use this command you must install this module"
 			Write-Warning "This SSH Module can be found at the following location"
 			write-warning "https://gist.github.com/darkoperator/6152630/raw/c67de4f7cd780ba367cccbc2593f38d18ce6df89/instposhsshdev"
@@ -359,7 +366,11 @@ Process
 	Write-verbose "End: If there are no errors reported on the console then the SAN connection object is set and ready to be used. $ArrayName and $Connectiontype"		
 	$global:SANConnection = $SANC
 	write-host "Attempting to load the HPE 3Par / Primera / Alletra9000 PowerShell Commands that support SSH connectivity. " -ForegroundColor green
-	import-module $CurrentModulePath+'\HPEAlletra9000andPrimeraand3Par_CLI.psd1' -scope global -force
+	$CurrentModulePath = (Get-Module HPEStorage).path
+	[string]$CurrentModulePath = Split-Path $CurrentModulePath -Parent
+	$ModPath = $CurrentModulePath + '\HPEAlletra9000andPrimeraand3Par_CLI.psd1'	
+	write-host "The path to the module is $ModPath" -ForegroundColor green
+	import-module $ModPath -scope global -force
 	return $SANConnection
 }
 }
@@ -391,7 +402,9 @@ param(	[Parameter(Mandatory=$true)]												[String]    $ArrayNameOrIPAddress
 		[Parameter(Mandatory=$true)]												[System.Management.Automation.PSCredential] $Credential
 		)
 Process
-{	if ($ArrayType -eq 'Alletra9000' -or $ArrayType -eq 'Primera' -or $ArrayType -eq '3Par')
+{	$CurrentModulePath = (Get-Module HPEStorage).path
+	$Global:CurrentModulePath = Split-Path $CurrentModulePath -Parent	
+	if ($ArrayType -eq 'Alletra9000' -or $ArrayType -eq 'Primera' -or $ArrayType -eq '3Par')
 			{	write-Verbose "You will be connected to a $ArrayType at the location $ArrayNameOrIPAddress"
 				$pass = $Credential.GetNetworkCredential().password 
 				$user = $Credential.GetNetworkCredential().username

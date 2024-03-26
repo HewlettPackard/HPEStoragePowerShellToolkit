@@ -1,5 +1,7 @@
 
 . $PSScriptRoot\A9.GLOBAL\VS-Functions.ps1
+. $PSScriptRoot\A9.GLOBAL\VVCommands.ps1
+
 . $PSScriptRoot\A9.scripts\AoConfigurationInformation.ps1 
 . $PSScriptRoot\A9.scripts\AvailableSpace.ps1 
 . $PSScriptRoot\A9.scripts\CopyOperations.ps1 

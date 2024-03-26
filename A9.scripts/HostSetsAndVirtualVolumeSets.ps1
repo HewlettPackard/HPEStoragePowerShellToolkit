@@ -515,43 +515,6 @@ Process
 }
 }
 
-Function Remove-A9VvSet
-{
-<#
-.SYNOPSIS
-	Remove a virtual volume Set.
-.DESCRIPTION
-	Remove a virtual volume Set.
-	Any user with Super or Edit role, or any role granted host_remove permission, can perform this operation. Requires access to all domains.
-.EXAMPLE    
-	Remove-A9VvSet -VVSetName MyvvSet
-.PARAMETER VVSetName 
-	Specify the name of virtual volume Set to be removed.
-#>
-[CmdletBinding()]
-Param(
-		[Parameter(Mandatory = $true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True)]
-		[String]	$VVSetName
-	)
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$uri = '/volumesets/'+$VVSetName
-	$Result = $null
-	$Result = Invoke-WSAPI -uri $uri -type 'DELETE'
-	$status = $Result.StatusCode
-	if($status -eq 200)
-	{	write-host "Cmdlet executed successfully" -foreground green
-		return
-	}
-	else
-	{	Write-Error "Failure:  While Removing virtual volume Set:$VVSetName " 
-		return $Result.StatusDescription
-	}    
-} 
-}
-
 
 Function Get-A9VvSet 
 {

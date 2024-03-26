@@ -1,5 +1,7 @@
 
 . $PSScriptRoot\A9.GLOBAL\VS-Functions.ps1
+. $PSScriptRoot\A9.GLOBAL\VVCommands.ps1
+
 . $PSScriptRoot\A9.CLI\AdaptiveOptimization.ps1
 . $PSScriptRoot\A9.CLI\ConfigWebServicesAPI.ps1
 . $PSScriptRoot\A9.CLI\CPGManagement.ps1

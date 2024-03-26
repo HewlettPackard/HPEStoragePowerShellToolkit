@@ -25,7 +25,7 @@ Major Command Changes
 	Debug Level
 	Credential Usage
 	Saved Password Files
-	
+	Codebase Refactoring
 ===============================================================================================
 
 ===============================================================================================
@@ -126,7 +126,7 @@ Supported firmware for HPE 3PAR
 	PRE-REQUISITES FOR HPE Alletra 9000 AND Primera AND 3PAR POWERSHELL TOOLKIT 3.5
 ===============================================================================================
 Toolkit needs PowerShell 5.0 or  
-Toolkit needs PowerShell 7.x and .NET Core 2.1 or above. 
+Toolkit needs PowerShell 7.x and .NET Core 2.1 or above. (recommended) 
 
 Establish Secure Shell connections
 -----------------------------------------------------------------------------------------------
@@ -151,7 +151,7 @@ For more information about using the CLI, see:
 	  
 Starting the WSAPI server
 -----------------------------------------------------------------------------------------------
-The WSAPI server does not start automatically. Using the CLI, enter startwsapi to manually start the WSAPI server.
+The WSAPI server does not start automatically. Using the CLI, enter start-wsapi to manually start the WSAPI server.
 
 Configuring the WSAPI server
 -----------------------------------------------------------------------------------------------
@@ -162,12 +162,12 @@ The HPE Alletra 9000 and Primera and 3PAR PowerShell Toolkit also provides cmdle
 So users have a choice to start and configure the WSAPI server either from CLI or from PowerShell Toolkit.
 
 The HPE Alletra 9000 and Primera and 3PAR PowerShell Toolkit Cmdlets for starting and configuring the WSAPI server:
-	Stop-Wsapi  
-	Start-Wsapi  
-	Get-Wsapi
-	Get-WsapiSession
-	Set-Wsapi
-	Remove-WsapiSession
+	Stop-A9Wsapi  
+	Start-A9Wsapi  
+	Get-A9Wsapi
+	Get-A9WsapiSession
+	Set-A9Wsapi
+	Remove-A9WsapiSession
 	
 ========================================================================================================================
 	INSTALLING HPE Alletra 9000 AND Primera AND 3PAR POWERSHELL TOOLKIT 3.1 from GitHub or My HPE Software License Page
@@ -331,6 +331,9 @@ Major Design Changes
 	Note that in this case the credential file is encrypted using the windows default API, and as such it tied to the user and the machine. If this file is moved to another user or machine, it will no longer
 	be decryptable, preserving security. 
 
+- Codebase Refactoring
+	The previous version of the toolkit was 75,967 lines of code. The new code base has been reduced to 32,167 lines by utilizing PowerShell best practices such as using parameter sets instead of complex
+	test conditions inside of functions as well as refactoring to relocate commonalities into common internal functions among other changes. 
 
 
 
