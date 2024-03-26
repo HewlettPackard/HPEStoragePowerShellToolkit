@@ -2,9 +2,6 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-
 Function Get-A9FcPorts
 {
 <#

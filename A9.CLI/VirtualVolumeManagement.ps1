@@ -188,6 +188,24 @@ Function Get-A9LogicalDisk
 	Requests that policy information about the LD is displayed.
 .PARAMETER State
 	Requests that the detailed state information is displayed.	This is the same as s.
+.EXAMPLE
+	PS:> Get-A9LogicalDisk | format-table *
+
+	Id  Name            RAID Detailed_State Own SizeMB UsedMB Use Lgct LgId WThru MapV
+	--  ----            ---- -------------- --- ------ ------ --- ---- ---- ----- ----
+	4   .mgmtdata.usr.0 6    normal         0/1 264192 262144 V   0         N     Y
+	5   .mgmtdata.usr.1 6    normal         1/0 264192 262144 V   0         N     Y
+	2   .srdata.usr.0   6    normal         0/1 55296  51200  V   0         N     Y
+	3   .srdata.usr.1   6    normal         1/0 55296  51200  V   0         N     Y
+	0   admin.usr.0     1    normal         0/1 5120   5120   V   0         N     Y
+	1   admin.usr.1     1    normal         1/0 5120   5120   V   0         N     Y
+	6   log0.0          1    normal         0/  20480  0      log 0         Y     N
+	7   log1.0          1    normal         1/  20480  0      log 0         Y     N
+	8   pdsld0.0        1    normal         0/1 1024   0      P   F    0          Y
+	9   pdsld0.1        6    normal         0/1 57216  0      P   0         Y     N
+	10  pdsld0.2        6    normal         1/0 53120  0      P   0         Y     N
+	163 tp0sa0.3        1    normal         1/0 5120   4224   C   SA   0          N
+	158 tp0sa0.5        1    normal         0/1 16384  13056  C   SA   0          N
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Cpg,
@@ -215,7 +233,7 @@ process
 	if($Ck)		{	$Cmd += " -ck " }
 	if($P)		{	$Cmd += " -p "	}
 	if($State) 	{	$Cmd += " -state " }
-	if($LD_Name)	{ 	$Cmd += " $LD_Name " }
+	if($LD_Name){ 	$Cmd += " $LD_Name " }
 	$Result = Invoke-CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($Cpg)	{	Return  $Result	}
@@ -232,11 +250,12 @@ process
 				$s= $s.Trim()			
 				Add-Content -Path $tempfile -Value $s				
 			}
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			Remove-Item $tempFile
+			return $Result
 		}
 		}
-	else{	Return  $Result}
+	Return  $Result
 }
 } 
 
@@ -261,12 +280,27 @@ Function Get-A9LogicalDiskChunklet
 		pdid  - Shows the physical disk ID.
 		pdch  - Shows the physical disk chunklet.
 	If multiple <info> fields are specified, each corresponding field will be shown separately by a dash (-).
+.Example
+	PS:> Get-A9LogicalDiskChunklet -LD_Name 'log0.0'  | format-table
+
+	Ldch Row Set PdPos Pdid Pdch State  Usage Media Sp From To
+	---- --- --- ----- ---- ---- -----  ----- ----- -- ---- --
+	0    0   0   0:6:0 6    3467 normal ld    valid N  ---  ---
+	1    0   0   0:7:0 7    3467 normal ld    valid N  ---  ---
+	2    0   0   0:2:0 2    3466 normal ld    valid N  ---  ---
+	3    0   1   0:4:0 4    3466 normal ld    valid N  ---  ---
+	4    0   1   0:0:0 0    3466 normal ld    valid N  ---  ---
+	5    0   1   0:3:0 3    3466 normal ld    valid N  ---  ---
+	6    1   0   0:5:0 5    3466 normal ld    valid N  ---  ---
+	7    1   0   0:1:0 1    3466 normal ld    valid N  ---  ---
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Degraded,
 		[Parameter()]	[String]	$Lformat,
 		[Parameter()]	[String]	$Linfo,
-		[Parameter()]	[String]	$LD_Name
+		[Parameter()]	[String]	$LD_Name,
+		[Parameter()]	[Switch]	$WhatIf
+
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -277,6 +311,7 @@ process
 	if($Lformat)	{	$Cmd += " -lformat $Lformat " }
 	if($Linfo)		{	$Cmd += " -linfo $Linfo " }
 	if($LD_Name)	{	$Cmd += " $LD_Name " }
+	if($WhatIf)		{ 	write-host "Command to be sent via CLI`n $Cmd"; return }
 	$Result = Invoke-CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -292,10 +327,10 @@ process
 				$s= $s.Trim()			
 				Add-Content -Path $tempfile -Value $s				
 			}
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			Remove-Item $tempFile	
 		}
-	else{	Return  $Result }
+	Return $Result 
 }
 }
 
@@ -336,8 +371,24 @@ Function Get-A9Space
 	Specifies the set size in terms of chunklets.
 .PARAMETER SANConnection 
     Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
+.EXAMPLE
+	PS:> Get-A9Space -cpgName 'rancher2023'
+
+	Name         : rancher2023
+	RawFree(MiB) : 13759040
+	LDFree(MiB)  : 11007232
+	OPFree(MiB)  : -
+	Base(MiB)    : 374784
+	Snp(MiB)     : 5120
+	Free(MiB)    : 13056
+	Total(MiB)   : 392960
+	Compact      : 7.64
+	Dedup        : -
+	Compress     : -
+	DataReduce   : -
+	Overprov     : 0.23
 #>
-[CmdletBinding(DefaultParameterSet='None')]
+[CmdletBinding(DefaultParameterSetName='CPGName')]
 param(	[Parameter(ValueFromPipeline=$true,parametersetname='CPGName')]	[String]	$cpgName,
 		[Parameter(ValueFromPipeline=$true,parametersetname='RaidType')]
 		[ValidateSet('r0','r1','r5','r6')]								[String]	$RaidType,
@@ -360,7 +411,7 @@ process
 			if( $Result -match "There is no free space information")	{	return "FAILURE : There is no free space information"		}
 			if( $Result.Count -lt 4 )		{	return "$Result"	}
 			$tempFile = [IO.Path]::GetTempFileName()
-			$3parosver = Get-Version -S 
+			$3parosver = Get-A9Version -S 
 			$incre = "true" 
 			foreach ($s in  $Result[2..$Result.Count] )
 				{	$s= [regex]::Replace($s,"^ +","")
@@ -467,60 +518,6 @@ process
 }
 }
 
-Function Get-A9Vv_CLI
-{
-<#
-.SYNOPSIS
-    Get list of virtual volumes per Domain and CPG
-.DESCRIPTION
-    Get list of virtual volumes per Domain and CPG
-.EXAMPLE
-    PS:> Get-A9Vv_CLI
-
-	List all virtual volumes
-.EXAMPLE	
-	PS:> Get-A9Vv_CLI -vvName PassThru-Disk 
-
-	List virtual volume PassThru-Disk
-.EXAMPLE	
-	PS:> Get-A9Vv_CLI -vvName PassThru-Disk -Domain mydom
-
-	List volumes in the domain specified DomainName	
-.PARAMETER vvName 
-    Specify name of the volume. 
-	If prefixed with 'set:', the name is a volume set name.	
-.PARAMETER DomainName 
-    Queries volumes in the domain specified DomainName.
-.PARAMETER CPGName
-    Queries volumes that belongs to a given CPG.	
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$vvName,
-		[Parameter()]	[String[]]	$DomainName,	
-		[Parameter()]	[String[]]	$CPGName
-	)		
-process
-{	$GetvVolumeCmd = "showvvcpg"
-	if ($DomainName)	{	$GetvVolumeCmd += " -domain $DomainName"	}	
-	if ($vvName)		{	$GetvVolumeCmd += " $vvName"	}
-	$Result = Invoke-CLICommand -cmds $GetvVolumeCmd
-	if($Result -match "no vv listed")	{	return "FAILURE: No vv $vvName found"	}
-	$Result = $Result | where-object 	{ ($_ -notlike '*total*') -and ($_ -notlike '*---*')} ## Eliminate summary lines
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count -2  
-			foreach ($s in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
-					$s= $s.Trim() -replace ',Adm,Snp,Usr,Adm,Snp,Usr',',Adm(MB),Snp(MB),Usr(MB),New_Adm(MB),New_Snp(MB),New_Usr(MB)' 	
-					Add-Content -Path $tempFile -Value $s
-				}
-			if($CPGName) { Import-Csv $tempFile | where-object {$_.CPG -like $CPGName} }
-			else { Import-Csv $tempFile }
-			Remove-Item $tempFile
-		}	
-	else{	return "FAILURE: No vv $vvName found error:$result "	}	
-}
-}
 
 Function Get-A9VvList_CLI
 {
@@ -645,6 +642,22 @@ Function Get-A9VvList_CLI
         Explicitly select the columns to be shown using a comma-separated list of column names.  For this option the full column names are shown in the header.
         Run 'showvv -listcols' to list the available columns.
         Run 'clihelp -col showvv' for a description of each column.
+.EXAMPLE
+	PS:> Get-A9VvList_CLI | format-table
+
+	Id    Name                            Prov Compr Dedup Type  CopyOf                          BsId  Rd -Detailed_State-
+	--    ----                            ---- ----- ----- ----  ------                          ----  -- ----------------
+	2     .mgmtdata                       full NA    NA    base  -                               2     RW normal
+	419   .shared.SSD_r6_0                dds  NA    NA    base  -                               419   RW normal
+	420   tmaas_cluster1_veeam12_vol.0    tdvv v1    Yes   base  -                               420   RW normal
+	421   tmaas_cluster1_veeam12_vol.1    tdvv v1    Yes   base  -                               421   RW normal
+	424   vsa-ds1                         tdvv v1    Yes   base  -                               424   RW normal
+	425   vsa-ds2                         tdvv v1    Yes   base  -                               425   RW normal
+	606   BackupVol                       tdvv v1    Yes   base  -                               606   RW normal
+	613   BackupVol1                      tdvv v1    Yes   base  -                               613   RW normal
+	652   virt-Alletra9050-orai1db1-v.0   tdvv v1    Yes   base  -                               652   RW normal
+	653   virt-Alletra9050-orai1db1-v.1   tdvv v1    Yes   base  -                               653   RW normal
+	660   virt-alletra9k-orai1db1-arc.0   tdvv v1    Yes   base  -                               660   RW normal
 #>
 [CmdletBinding()]
 	param(
@@ -857,20 +870,6 @@ Function Get-A9VvSet_CLI
     Get list of Virtual Volume(VV) sets defined on the storage system and their members
 .DESCRIPTION
     Get lists of Virtual Volume(VV) sets defined on the storage system and their members
-.EXAMPLE
-    PS:> Get-A9VvSet_CLI
-
-	List all virtual volume set(s)
-.EXAMPLE  
-	PS:> Get-A9VvSet_CLI -vvSetName "MyVVSet" 
-
-	List Specific VVSet name "MyVVSet"
-.EXAMPLE  
-	PS:> Get-A9VvSet_CLI -vvName "MyVV" 
-
-	List VV sets containing VVs matching vvname "MyVV"
-.EXAMPLE	
-	PS:> Get-A9VvSet_CLI -VV -vvName AIX_PERF_VV_SET
 .PARAMETER vvSetName 
     Specify name of the vvset to be listed.
 .PARAMETER Detailed
@@ -881,6 +880,15 @@ Function Get-A9VvSet_CLI
 	Shows VV sets with summarized output with VV sets names and number of VVs in those sets
 .PARAMETER vvName 
     Specifies that the sets containing virtual volumes	
+.EXAMPLE
+	PS:> Get-A9VvSet | format-table
+	Cmdlet executed successfully
+
+	id uuid                                 name              setmembers                                          count vvolStorageContainerEnabled qosEnabled
+	-- ----                                 ----              ----------                                          ----- --------------------------- ----------
+	1 51d61280-2ef2-4fdc-88a5-9e1b4b0d97a7 vvset_dscc-test    {dscc-test}                                          1                       False      False
+	5 2f00cefc-b14d-4098-a9c9-d4cd6cbcb044 vvset_Oradata1     {MySQLData}                                          1                       False      False
+	7 b8f1a3e6-81ff-47da-887f-5fd529427789 AppSet_SAP_HANA    {HANA_data, HANA_log, HANA_shared, Veeam_datastore}  4                       False      False
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Detailed,
@@ -1323,6 +1331,7 @@ Function Remove-A9LogicalDisk
 	Specifies that system resource LDs such as logging LDs and preserved data LDs are removed.
 .PARAMETER Unused
 	Specifies the command to remove non-system LDs. This option cannot be used with the  -rmsys option.
+	
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Pat,
@@ -1346,95 +1355,6 @@ process
 }
 }
 
-Function Remove-A9Vv_CLI
-{
-<#
-.SYNOPSIS
-    Delete virtual volumes 
-.DESCRIPTION
-	Delete virtual volumes         
-.EXAMPLE	
-	PS:> Remove-A9Vv_CLI -vvName PassThru-Disk -whatif
-
-	Dry-run of deleted operation on vVolume named PassThru-Disk
-.EXAMPLE	
-	PS:> Remove-A9Vv_CLI -vvName VV1 -force -Snaponly
-.EXAMPLE	
-	PS:> Remove-A9Vv_CLI -vvName VV1 -force -Expired
-.EXAMPLE		
-	PS:> Remove-A9Vv_CLI -vvName PassThru-Disk -force
-
-	Forcibly deletes vVolume named PassThru-Disk 
-.PARAMETER vvName 
-    Specify name of the volume to be removed. 
-.PARAMETER whatif
-    If present, perform a dry run of the operation and no VLUN is removed	
-.PARAMETER force
-	If present, perform forcible delete operation
-.PARAMETER Pat
-    Specifies that specified patterns are treated as glob-style patterns and that all VVs matching the specified pattern are removed.
-.PARAMETER Stale
-	Specifies that all stale VVs can be removed.       
-.PARAMETER  Expired
-	Remove specified expired volumes.
-.PARAMETER  Snaponly
-	Remove the snapshot copies only.
-.PARAMETER Cascade
-	Remove specified volumes and their descendent volumes as long as none has an active VLUN. 
-.PARAMETER Nowait
-	Prevents command blocking that is normally in effect until the vv is removed. 
-#>
-[CmdletBinding()]
-	param(
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)][String]	$vvName,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$whatif, 
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$force, 
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Pat, 
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Stale, 
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Expired, 
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Snaponly, 
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Cascade, 
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Nowait
-	)		
-Begin
-{	Test-A9Connection -Clienttype 'SshClient'
-}	
-process	
-{	if (!(($force) -or ($whatif)))
-		{	return "FAILURE : Specify -force or -whatif options to delete or delete dryrun of a virtual volume"
-		}
-	$ListofLuns = Get-VvList -vvName $vvName -SANConnection $SANConnection
-	if($ListofLuns -match "FAILURE")	{	return "FAILURE : No vv $vvName found"	}
-	$ActionCmd = "removevv "
-	if ($Nowait)	{	$ActionCmd += "-nowait "	}
-	if ($Cascade)	{	$ActionCmd += "-cascade "	}
-	if ($Snaponly)	{	$ActionCmd += "-snaponly "	}
-	if ($Expired)	{	$ActionCmd += "-expired "	}
-	if ($Stale)		{	$ActionCmd += "-stale "		}
-	if ($Pat)		{	$ActionCmd += "-pat "		}
-	if ($whatif)	{	$ActionCmd += "-dr "		}
-	else			{	$ActionCmd += "-f "			}
-	$successmsglist = @()
-	if ($ListofLuns)
-		{	foreach ($vVolume in $ListofLuns)
-				{	$vName = $vVolume.Name
-					if ($vName)
-						{	$RemoveCmds = $ActionCmd + " $vName $($vVolume.Lun)"
-							$Result1 = Invoke-CLICommand -cmds  $removeCmds
-							if( ! (Test-CLIObject -objectType "vv" -objectName $vName -SANConnection $SANConnection))
-								{	$successmsglist += "Success : Removing vv $vName"
-								}
-							else
-								{	$successmsglist += "FAILURE : $Result1"
-								}
-							write-verbose "Removing Virtual Volumes with command $removeCmds" 
-						}
-				}
-			return $successmsglist		
-		}	
-	else{	return "FAILURE : No vv $vvName found"	}
-}
-}
 
 Function Remove-A9VvLogicalDiskCpgTemplates
 {
@@ -1467,64 +1387,6 @@ process
 }
 }
 
-Function Remove-A9VvSet_CLI
-{
-<#
-.SYNOPSIS
-    Remove a Virtual Volume set or remove VVs from an existing set
-.DESCRIPTION
-	Removes a VV set or removes VVs from an existing set.
-.EXAMPLE
-    PS:> Remove-A9VvSet_CLI -vvsetName "MyVVSet"  -force
-
-	Remove a VV set "MyVVSet"
-.EXAMPLE
-	PS:> Remove-A9VvSet_CLI -vvsetName "MyVVSet" -vvName "MyVV" -force
-
-	Remove a single VV "MyVV" from a vvset "MyVVSet"
-.PARAMETER vvsetName 
-    Specify name of the vvsetName
-.PARAMETER vvName 
-    Specify name of  a vv to remove from vvset
-.PARAMETER force
-	If present, perform forcible delete operation	
-.PARAMETER pat
-	Specifies that both the set name and VVs will be treated as glob-style patterns.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$vvsetName,
-		[Parameter()]					[String]	$vvName,
-		[Parameter()]					[switch]	$force,
-		[Parameter()]					[switch]	$Pat
-	)	
-Begin	
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	if (!($force))
-		{	return "FAILURE : no -force option is selected to remove vvset"		}
-	$objType = "vvset"
-	$objMsg  = "vv set"
-	if ( -not ( Test-CLIObject -objectType $objType -objectName $vvsetName -objectMsg $objMsg -SANConnection $SANConnection)) 
-		{	return "FAILURE : No vvset $vvSetName found"
-		}
-	else
-		{	$RemovevvsetCmd ="removevvset "					
-			if($force)	{	$RemovevvsetCmd += " -f "	}
-			if($Pat)	{	$RemovevvsetCmd += " -pat "	}
-			$RemovevvsetCmd += " $vvsetName "
-			if($vvName)	{	$RemovevvsetCmd +=" $vvName"	}		
-			$Result1 = Invoke-CLICommand -cmds  $RemovevvsetCmd
-			if([string]::IsNullOrEmpty($Result1))
-				{	if($vvName)	{	return  "Success : Removed vv $vvName from vvset $vvSetName"	}
-					return  "Success : Removed vvset $vvSetName"
-				}
-			else
-				{	return "FAILURE : While removing vvset $vvSetName $Result1"
-				}
-		}
-}
-}
 
 Function Set-A9Template_CLI
 {

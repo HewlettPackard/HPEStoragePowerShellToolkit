@@ -1127,7 +1127,7 @@ param(	[Parameter(ValueFromPipeline=$true)]		[switch]	$attime,
 		[Parameter(ValueFromPipeline=$true)]		[switch]	$capacity,
 		[Parameter(ValueFromPipeline=$true)]
 		[ValidateSet("7","10","15","100","150")]	[String]	$rpmspeed,
-		[Parameter(lse, ValueFromPipeline=$true)]	[String]	$PDID
+		[Parameter(ValueFromPipeline=$true)]	[String]	$PDID
 	)
 Begin
 {	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'

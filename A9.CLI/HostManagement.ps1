@@ -144,12 +144,6 @@ Process
 									$address = $sTemp[3]
 									$Port = $sTemp[4] # [regex]::Replace($sTemp[4] , "-+" , ""  )  # Replace '----'  with ""
 								}
-							$vHost = New-Object -TypeName _vHost 
-							$vHost.ID = $CurrentId
-							$vHost.Persona = $currentPersona
-							$vHost.Name = $CurrentName
-							$vHost.Address = $address
-							$vHost.Port= $port
 						}			
 					else{	$s = $s.trim()
 							$s= [regex]::Replace($s, " +" , "," )								
@@ -165,13 +159,14 @@ Process
 									$address = $sTemp[3]
 									$Port = $sTemp[4] # [regex]::Replace($sTemp[4] , "-+" , ""  )  # Replace '----'  with ""
 								}
-							$vHost = New-Object -TypeName _vHost 
-							$vHost.ID = $CurrentId
-							$vHost.Persona = $currentPersona
-							$vHost.Name = $CurrentName
-							$vHost.Address = $address
-							$vHost.Port= $port
+							
 						}
+					$vHost= @{	ID 		= $CurrentId
+								Persona = $currentPersona
+								Name = $CurrentName
+								Address = $address
+								Port= $port
+							} 
 					$ListofvHosts += $vHost		
 				}	
 		}	

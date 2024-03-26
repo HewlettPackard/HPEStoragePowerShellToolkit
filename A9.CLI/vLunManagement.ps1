@@ -42,10 +42,11 @@ process
 				$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
 				$sTemp = $s.Split(',')
 				$vLUN = New-Object -TypeName _vLUN
-				$vLUN.Name = $sTemp[0]
-				$vLUN.LunID = $sTemp[1]
-				$vLUN.PresentTo = $sTemp[2]
-				$vLUN.vvWWN = $sTemp[3]
+				$vLUN = @{	Name = $sTemp[0]
+							LunID = $sTemp[1]
+							PresentTo = $sTemp[2]
+							vvWWN = $sTemp[3]
+						}
 				$ListofvLUNs += $vLUN			
 			}
 		}
