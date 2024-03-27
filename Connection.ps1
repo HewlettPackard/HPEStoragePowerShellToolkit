@@ -398,12 +398,13 @@ Function Connect-HPESAN
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]												[String]    $ArrayNameOrIPAddress,
 		[Parameter(Mandatory=$true)]
-		[ValidateSet('Alletra9000','Primera',',3PAR','Nimble','Alletra6000','MSA')]	[String]    $ArrayType,
+		[ValidateSet('Alletra9000','Primera','3PAR','Nimble','Alletra6000','MSA')]	[String]    $ArrayType,
 		[Parameter(Mandatory=$true)]												[System.Management.Automation.PSCredential] $Credential
 		)
 Process
 {	$CurrentModulePath = (Get-Module HPEStorage).path
-	$Global:CurrentModulePath = Split-Path $CurrentModulePath -Parent	
+	[string]$CurrentModulePath = Split-Path $CurrentModulePath -Parent
+	$ModPath = $CurrentModulePath	
 	if ($ArrayType -eq 'Alletra9000' -or $ArrayType -eq 'Primera' -or $ArrayType -eq '3Par')
 			{	write-Verbose "You will be connected to a $ArrayType at the location $ArrayNameOrIPAddress"
 				$pass = $Credential.GetNetworkCredential().password 
@@ -413,22 +414,32 @@ Process
 				connect-A9API -ArrayFQDNorIPAddress $ArrayNameOrIPAddress -SANUserName $user -SANPassword $pass -ArrayType $ArrayType
 				Write-host "To View the list of commands available to you that utilize the API please use 'Get-Command -module HPEAlletra9000AndPrimeraAnd3Par_API'." -ForegroundColor Green
 				Write-host "To View the list of commands available to you that utilize the CLI please use 'Get-Command -module HPEAlletra9000AndPrimeraAnd3Par_CLI'." -ForegroundColor Green
-
+				write-verbose 'Removing non-used modules'
+				if ( [boolean](get-module -name HPEAlletra6000andNimbleStorage) )	{ remove-module -name HPEAlletra6000andNimbleStorage }
+				if ( [boolean](get-module -name HPEMSA) 						)	{ remove-module -name HPEAlletra6000andNimbleStorage }
 			}	
 	elseif ( $ArrayType -eq 'Nimble' -or $ArrayType -eq'Alletra6000')	
-			{	Import-Module $CurrentModulePath+'\HPEAlletra6000andNimbleStorage.psd1' -force -scope Global
+			{	$ModPath = $ModPath + '\HPEAlletra6000andNimbleStorage.psd1'
+				Import-Module $ModPath -force -scope Global
 				Connect-NSGroup -group $ArrayNameOrIPAddress -credential $Credential 
 				Write-host "To View the list of commands available to you please use 'Get-Command -module HPEMSA'." -ForegroundColor Green
-				
+				write-verbose 'Removing non-used modules'
+				if ( [boolean](get-module -name HPEAlletra9000andPrimeraand3Par_API ) )	{ remove-module -name HPEAlletra9000andPrimeraand3Par_API }
+				if ( [boolean](get-module -name HPEAlletra9000andPrimeraand3Par_CLI ) )	{ remove-module -name HPEAlletra9000andPrimeraand3Par_API }
+				if ( [boolean](get-module -name HPEMSA )  							)	{ remove-module -name HPEMSA }				
 			}
 	elseif	($ArrayType -eq 'MSA')	
-			{	Import-Module $CurrentModulePath+'\HPEMSA.psd' -force -scope global
+			{	$ModPath = $ModPath + '\HPEMSA.psd1'
+				Import-Module $ModPath -force -scope Global
 				$pass = $Credential.GetNetworkCredential().password 
 				$user = $Credential.GetNetworkCredential().username
 				write-Verbose "You will be using Username $user and Password $pass"
 				Connect-MSAGroup -FQDNorIP $ArrayNameOrIPAddress -Username $user -Password $pass
 				Write-host "To View the list of commands available to you please use 'Get-Command -module HPEAlletra6000AndNimbleStorage'." -ForegroundColor Green
-
+				write-verbose 'Removing non-used modules'
+				if ( [boolean](get-module -name HPEAlletra9000andPrimeraand3Par_API ) )	{ remove-module -name HPEAlletra9000andPrimeraand3Par_API }
+				if ( [boolean](get-module -name HPEAlletra9000andPrimeraand3Par_CLI ) )	{ remove-module -name HPEAlletra9000andPrimeraand3Par_API }
+				if ( [boolean](get-module -name HPEAlletra6000andNimbleStorage ) 	  )	{ remove-module -name HPEAlletra6000andNimbleStorage }				
 	}
 }
 }

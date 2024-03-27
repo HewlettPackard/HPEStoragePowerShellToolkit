@@ -269,13 +269,13 @@ Begin
 		{	if ( Test-A9Connection -CLientType 'API' -returnBoolean )
 				{	$PSetName = 'API'
 				}
-			else{	if ( Test-A9Connection -ClientType 'SSH' -returnBoolean )
+			else{	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
 						{	$PSetName = 'SSH'
 						}
 				}
 		}
 	elseif ( $PSCmdlet.ParameterSetName -eq 'SSH' )	
-		{	if ( Test-A9COnnection -ClientType 'SSH' -returnBoolean )
+		{	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
 				{	$PSetName = 'SSH'
 				}
 			else{	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
@@ -430,6 +430,554 @@ process
 								}
 						}
 			}
+	}
+}
+}
+
+
+Function Update-A9Vv
+{
+<#
+.SYNOPSIS
+	Update a vitual volume.
+.DESCRIPTION
+	Update an existing vitual volume. This command incorporates both the API method as well as the CLI method of removing a Vv. If the only argument used is the VVName, the command will attempt to use the API
+	to accomplish the task, if the API is unavalable or other parameters are used, the command will attempt to fail back to a SSH type connection to accomplish the goal.
+.EXAMPLE 
+	PS:> Update-A9Vv -VVName xxx -NewName zzz
+.EXAMPLE 
+	PS:> Update-A9Vv -VVName xxx -ExpirationHours 2
+.EXAMPLE 
+	PS:> Update-A9Vv -VVName xxx -OneHost $true
+.EXAMPLE 
+	PS:> Update-A9Vv -VVName xxx -SnapCPG xxx
+.PARAMETER VVName
+	Name of the volume being modified. The VVName is required and used in both the API version and SSH version of this command.
+.PARAMETER Size
+	Specifies the size in MB to be added to the volume user space. The size must be an integer in the range from 1 to 16T. This option uses the API, and no other options do.
+.PARAMETER NewName
+	New Volume Name. This parameter requires the use of the SSH type connection.
+.PARAMETER Comment
+	Additional informations about the volume. This parameter requires the use of the SSH type connection.
+.PARAMETER WWN
+	Specifies changing the WWN of the virtual volume a new WWN. This parameter requires the use of the SSH type connection.
+	If the value of WWN is auto, the system automatically chooses the WWN based on the system serial number, the volume ID, and the wrap counter.
+.PARAMETER UserCPG
+	User CPG Name. This parameter requires the use of the SSH type connection.
+.PARAMETER StaleSS
+	True—Stale snapshots. If there is no space for a copyon- write operation, the snapshot can go stale but the host write proceeds without an error. 
+	false—No stale snapshots. If there is no space for a copy-on-write operation, the host write fails. This parameter requires the use of the SSH type connection.
+.PARAMETER OneHost
+	True—Indicates a volume is constrained to export to one host or one host cluster. 
+	false—Indicates a volume exported to multiple hosts for use by a cluster-aware application, or when port presents VLUNs are used. This parameter requires the use of the SSH type connection.
+.PARAMETER ZeroDetect
+	True—Indicates that the storage system scans for zeros in the incoming write data. 
+	false—Indicates that the storage system does not scan for zeros in the incoming write data. This parameter requires the use of the SSH type connection.
+.PARAMETER System
+	True— Special volume used by the system. false—Normal user volume. This parameter requires the use of the SSH type connection.
+.PARAMETER Caching
+	This is a read-only policy and cannot be set. true—Indicates that the storage system is enabled for write caching, read caching, and read ahead for the volume. 
+	false—Indicates that the storage system is disabled for write caching, read caching, and read ahead for the volume. This parameter requires the use of the SSH type connection.
+.PARAMETER Fsvc
+	This is a read-only policy and cannot be set. true —Indicates that File Services uses this volume. false —Indicates that File Services does not use this volume. This parameter requires the use of the SSH type connection.
+.PARAMETER HostDIF
+	Type of host-based DIF policy, 3PAR_HOST_DIF is for 3PAR host-based DIF supported, 
+	STD_HOST_DIF is for Standard SCSI host-based DIF supported and NO_HOST_DIF is for Volume does not support host-based DIF. This parameter requires the use of the SSH type connection.
+.PARAMETER SnapCPG
+	Specifies the name of the CPG from which the snapshot space will be allocated. This parameter requires the use of the SSH type connection.
+.PARAMETER SsSpcAllocWarningPct
+	Enables a snapshot space allocation warning. A warning alert is generated when the reserved snapshot space of the volume exceeds 
+	the indicated percentage of the volume size. This parameter requires the use of the SSH type connection.
+.PARAMETER SsSpcAllocLimitPct
+	Sets a snapshot space allocation limit. The snapshot space of the volume is prevented from growing beyond the indicated percentage of the volume size. This parameter requires the use of the SSH type connection.
+.PARAMETER tpvv
+	Create thin volume. This parameter requires the use of the SSH type connection.
+.PARAMETER tdvv
+.PARAMETER UsrSpcAllocWarningPct
+	Create fully provisionned volume. This parameter requires the use of the SSH type connection.
+.PARAMETER UsrSpcAllocLimitPct
+	Space allocation limit. This parameter requires the use of the SSH type connection.
+.PARAMETER ExpirationHours
+	Specifies the relative time (from the current time) that the volume expires. Value is a positive integer with a range of 1–43,800 hours (1825 days). This parameter requires the use of the SSH type connection.
+.PARAMETER RetentionHours
+	Specifies the amount of time relative to the current time that the volume is retained. Value is a positive integer with a range of 1– 43,800 hours (1825 days). This parameter requires the use of the SSH type connection.
+.PARAMETER Compression   
+	Enables (true) or disables (false) creating thin provisioned volumes with compression. Defaults to false (create volume without compression). This parameter requires the use of the SSH type connection.
+.PARAMETER RmSsSpcAllocWarning
+	Enables (false) or disables (true) removing the snapshot space allocation warning. 
+	If false, and warning value is a positive number, then set. This parameter requires the use of the SSH type connection.
+.PARAMETER RmUsrSpcAllocWarning
+	Enables (false) or disables (true) removing the user space allocation warning. If false, and warning value is a posi' This parameter requires the use of the SSH type connection.
+.PARAMETER RmExpTime
+	Enables (false) or disables (true) resetting the expiration time. If false, and expiration time value is a positive number, then set. This parameter requires the use of the SSH type connection.
+.PARAMETER RmSsSpcAllocLimit
+	Enables (false) or disables (true) removing the snapshot space allocation limit. If false, and limit value is 0, setting ignored. If false, and limit value is a positive number, then set. This parameter requires the use of the SSH type connection. 
+.PARAMETER RmUsrSpcAllocLimit
+	Enables (false) or disables (true)false) the allocation limit. If false, and limit value is a positive number, then set. This parameter requires the use of the SSH type connection.
+#>
+[CmdletBinding(DefaultParameterSetName='API')]
+Param(
+	[Parameter(Mandatory=$true, ParameterSetName='API')]
+	[Parameter(Mandatory=$true, ParameterSetName='SSH')]
+															[String]	$VVname ,		
+	[Parameter(Mandatory=$true, ParameterSetName='API')]		
+										[String]	$Size ,
+	[Parameter(ParameterSetName='SSH')]	[String]	$NewName,
+	[Parameter(ParameterSetName='SSH')]	[String]	$Comment,
+	[Parameter(ParameterSetName='SSH')]	[String]	$WWN,
+	[Parameter(ParameterSetName='SSH')]	[int]		$ExpirationHours,
+	[Parameter(ParameterSetName='SSH')]	[int]		$RetentionHours,
+	[Parameter(ParameterSetName='SSH')]	[boolean]	$StaleSS ,
+	[Parameter(ParameterSetName='SSH')]	[boolean]	$OneHost,
+	[Parameter(ParameterSetName='SSH')]	[boolean]	$ZeroDetect,
+	[Parameter(ParameterSetName='SSH')]	[boolean]	$System ,
+	[Parameter(ParameterSetName='SSH')]	[boolean]	$Caching ,
+	[Parameter(ParameterSetName='SSH')]	[boolean]	$Fsvc ,
+	[Parameter(ParameterSetName='SSH')]	[ValidateSet('3PAR_HOST_DIF','STD_HOST_DIF','NO_HOST_DIF')]
+										[string]	$HostDIF ,
+	[Parameter(ParameterSetName='SSH')]	[String]	$SnapCPG,
+	[Parameter(ParameterSetName='SSH')]	[int]		$SsSpcAllocWarningPct ,
+	[Parameter(ParameterSetName='SSH')]	[int]		$SsSpcAllocLimitPct ,
+	[Parameter(ParameterSetName='SSH')]	[String]	$UserCPG,
+	[Parameter(ParameterSetName='SSH')]	[int]		$UsrSpcAllocWarningPct,
+	[Parameter(ParameterSetName='SSH')]	[int]		$UsrSpcAllocLimitPct,
+	[Parameter(ParameterSetName='SSH')]	[Boolean]	$RmSsSpcAllocWarning ,
+	[Parameter(ParameterSetName='SSH')]	[Boolean]	$RmUsrSpcAllocWarning ,
+	[Parameter(ParameterSetName='SSH')]	[Boolean]	$RmExpTime,
+	[Parameter(ParameterSetName='SSH')]	[Boolean]	$RmSsSpcAllocLimit,
+	[Parameter(ParameterSetName='SSH')]	[Boolean]	$RmUsrSpcAllocLimit
+)
+Begin 
+{	if ( $PSCmdlet.ParameterSetName -eq 'API')
+		{	if (	Test-A9Connection -ClientType 'API' -returnBoolean) 
+				{	$PSSetName='API'	}
+			else{	Test-A9COnnection -ClientType 'SshClient'
+					$PSSetName='SSH'	
+				}
+		}
+	else{	Test-A9COnnection -ClientType 'SshClient'
+			$PSSetName = 'SSH'
+		}
+}
+Process 
+{	Switch($PSSetName)
+	{	'API'	{	$cmd= "growvv -f "
+					if ($VVname)	{	$cmd+=" $VVname "	}
+					if ($Size)		{	$demo=$Size[-1]
+										$de=" g | G | t | T "
+										if($de -match $demo)	{	$cmd+=" $Size "	}
+										else					{	return "Error: -Size $Size is Invalid Try eg: 2G  "	}
+									}
+					$Result = Invoke-CLICommand -cmds  $cmd
+					return  $Result
+				}
+		'SSH'	
+				{	$body = @{}
+					If ($NewName) 			{ 	$body["newName"] 	= "$($NewName)" }
+					If ($Comment) 			{  	$body["comment"] 	= "$($Comment)" }
+					If ($WWN) 				{ 	$body["WWN"] 		= "$($WWN)"		}
+					If ($ExpirationHours) 	{ 	$body["expirationHours"] = $ExpirationHours}
+					If ($RetentionHours) 	{	$body["retentionHours"] = $RetentionHours}
+					$VvPolicies = @{}
+					If ($StaleSS) 			{	$VvPolicies["staleSS"] 	= $true		}
+					If ($StaleSS -eq $false){	$VvPolicies["staleSS"] 	= $false    }	
+					If ($OneHost) 			{	$VvPolicies["oneHost"] 	= $true    	}
+					If ($OneHost -eq $false){	$VvPolicies["oneHost"] 	= $false   	}
+					If ($ZeroDetect) 		{	$VvPolicies["zeroDetect"]=$true		}	
+					If ($ZeroDetect -eq $false){$VvPolicies["zeroDetect"]=$false 	}
+					If ($System) 			{	$VvPolicies["system"] 	= $true    	} 
+					If ($System -eq $false) {	$VvPolicies["system"] 	= $false    }
+					If ($Caching) 			{	$VvPolicies["caching"] 	= $true    	}	
+					If ($Caching -eq $false){	$VvPolicies["caching"] 	= $false    }
+					If ($Fsvc) 				{	$VvPolicies["fsvc"] 	= $true    	}
+					If ($Fsvc -eq $false) 	{	$VvPolicies["fsvc"] 	= $false	}
+					If ($HostDIF) 
+						{	if($HostDIF -eq "3PAR_HOST_DIF")	{	$VvPolicies["hostDIF"] = 1	}
+							elseif($HostDIF -eq "STD_HOST_DIF")	{	$VvPolicies["hostDIF"] = 2	}
+							elseif($HostDIF -eq "NO_HOST_DIF")	{	$VvPolicies["hostDIF"] = 3	}
+						} 	   
+					If ($SnapCPG) 				{ 	$body["snapCPG"] 				= "$($SnapCPG)" 		}
+					If ($SsSpcAllocWarningPct) 	{ 	$body["ssSpcAllocWarningPct"] 	= $SsSpcAllocWarningPct }
+					If ($SsSpcAllocLimitPct) 	{  	$body["ssSpcAllocLimitPct"] 	= $SsSpcAllocLimitPct 	}	
+					If ($UserCPG) 				{	$body["userCPG"] 				= "$($UserCPG)"			}
+					If ($UsrSpcAllocWarningPct) {	$body["usrSpcAllocWarningPct"] 	= $UsrSpcAllocWarningPct }
+					If ($UsrSpcAllocLimitPct) 	{	$body["usrSpcAllocLimitPct"] 	= $UsrSpcAllocLimitPct	}	
+					If ($RmSsSpcAllocWarning) 	{	$body["rmSsSpcAllocWarning"] 	= $true    				}
+					If ($RmUsrSpcAllocWarning) 	{	$body["rmUsrSpcAllocWarning"] 	= $true					} 
+					If ($RmExpTime) 			{	$body["rmExpTime"] 				= $true 				} 
+					If ($RmSsSpcAllocLimit) 	{	$body["rmSsSpcAllocLimit"] 		= $true 				}
+					If ($RmUsrSpcAllocLimit) 	{	$body["rmUsrSpcAllocLimit"] 	= $true 				}
+					if($VvPolicies.Count -gt 0)	{	$body["policies"] 				= $VvPolicies 			}
+					$Result = $null
+					$uri = '/volumes/'+$VVName 
+					$Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+					if($Result.StatusCode -eq 200)
+						{	write-host "Cmdlet executed successfully" -foreground green
+							if($NewName)	{	return Get-Vv_WSAPI -VVName $NewName	}
+							else			{	return Get-Vv_WSAPI -VVName $VVName		}
+						}
+					else
+						{	Write-Error "Failure:  While Updating Volumes: $VVName " 
+							return $Result.StatusDescription
+						}
+				}
+	}
+}
+}
+
+
+Function Get-A9vLun 
+{
+<#
+.SYNOPSIS
+	Get Single or list of VLun.
+.DESCRIPTION
+	Get Single or list of VLun.  This command incorporates both the API method as well as the CLI method of removing a Vv. 
+	If the only argument used is the VVName, the command will attempt to use the API to accomplish the task, if the API is unavalable or other parameters 
+	are used, the command will attempt to fail back to a SSH type connection to accomplish the goal. 
+.PARAMETER VolumeName
+	Name of the volume to filter the results. if used with the -UseSSH option, may be prefixed with 'set:', the name is a volume set name. Displays only VLUNs of virtual volumes that match <VV_name> or 
+	glob-style patterns, or to the vv sets that match <VV-set> or glob-style patterns (see help on sub,globpat). The VV set name must start with "set:". Multiple volume names, vv sets or patterns can be
+	repeated using a comma-separated list (for example -v <VV_name>, <VV_name>...).
+.PARAMETER LUNID
+	The LUN ID of the volume to filter the results
+.PARAMETER HostName
+	Name of the host to which the volume is to be exported. If used with the -UseSSH option, Displays only VLUNs exported to hosts that match <hostname> or glob-style patterns, or to the host sets that match <hostset> or
+	glob-style patterns(see help on sub,globpat). The host set name must start with "set:". Multiple host names, host sets or patterns can
+	be repeated using a comma-separated list.
+.PARAMETER VolumeWWN
+	The Volume WWN of the volume to filter the results
+.PARAMETER RemoteName
+	The RemoteName of the volume to filter the results
+.PARAMETER Serial
+	The Serial of the volume to filter the results
+.PARAMETER NSP
+	The <n:s:p> variable identifies the node, slot, and port of the device. The format of this should be a three numbers seperated by colons. i.e. '1:3:4'
+.PARAMETER Listcols
+	List the columns available to be shown in the -showcols option described below (see 'clihelp -col showvlun' for help on each column).
+.PARAMETER Showcols
+	Explicitly select the columns to be shown using a comma-separated list of column names.  For this option the full column names are shown in
+	the header. Run 'showvlun -listcols' to list the available columns. Run 'clihelp -col showvlun' for a description of each column.
+.PARAMETER ShowWWN
+	Shows the WWN of the virtual volume associated with the VLUN.
+.PARAMETER ShowsPathSummary
+	Shows path summary information for active VLUNs
+.PARAMETER Hostsum
+	Shows mount point, Bytes per cluster, capacity information from Host Explorer and user reserved space, VV size from showvv.
+.PARAMETER ShowsActiveVLUNs
+	Shows only active VLUNs.
+.PARAMETER ShowsVLUNTemplates
+	Shows only VLUN templates.
+.PARAMETER LUN
+	Specifies that only exports to the specified LUN are displayed. This specifier can be repeated to display information for multiple LUNs.
+.PARAMETER Nodelist
+	Requests that only VLUNs for specific nodes are displayed. The node list is specified as a series of integers separated by commas (for example
+	0,1,2). The list can also consist of a single integer (for example 1).
+.PARAMETER Slotlist
+	Requests that only VLUNs for specific slots are displayed. The slot list is specified as a series of integers separated by commas (for example
+	0,1,2). The list can also consist of a single integer (for example 1).
+.PARAMETER Portlist
+	Requests that only VLUNs for specific ports are displayed. The port list is specified as a series of integers separated by commas ((for example
+	1,2). The list can also consist of a single integer (for example 1).
+.PARAMETER Domain_name  
+	Shows only the VLUNs whose virtual volumes are in domains with names that match one or more of the <domainname_or_pattern> options. This
+	option does not allow listing objects within a domain of which the user is not a member. Multiple domain names or patterns can be repeated using
+	a comma-separated list.
+.EXAMPLE
+	PS:> Get-A9vLun | format-table
+	Cmdlet executed successfully
+
+	lun volumeName     hostname remoteName       portPos                       type volumeWWN                        multipathing failedPathPol failedPathInterval active Subsystem_NQN
+	--- ----------     -------- ----------       -------                       ---- ---------                        ------------ ------------- ------------------ ------ -------------
+	1 dpesxicluvol.1 dpesxi03 51402EC001C82752 @{node=0; slot=3; cardPort=4}    5 60002AC000000000000034470007EB2E            1             1                  0   True nqn.2020-07.com.hpe:72391dbc…
+	1 dpesxicluvol.1 dpesxi03 51402EC001C82750 @{node=0; slot=3; cardPort=1}    5 60002AC000000000000034470007EB2E            1             1                  0   True nqn.2020-07.com.hpe:72391dbc…
+	1 dpesxicluvol.1 dpesxi03 51402EC001C82752 @{node=1; slot=3; cardPort=4}    5 60002AC000000000000034470007EB2E            1             1                  0   True nqn.2020-07.com.hpe:72391dbc…
+.EXAMPLE 
+	PS:> Get-A9vLun -LUNID 1 -VolumeName dpesxicluvol.1 -nsp '1:3:4'-HostName dpesxi03 | format-table
+	Cmdlet executed successfully
+
+	lun volumeName     hostname remoteName       portPos                       type volumeWWN                        multipathing failedPathPol failedPathInterval active Subsystem_NQN
+	--- ----------     -------- ----------       -------                       ---- ---------                        ------------ ------------- ------------------ ------ -------------
+	1 dpesxicluvol.1 dpesxi03 51402EC001C82752 @{node=1; slot=3; cardPort=4}    5 60002AC000000000000034470007EB2E            1             1                  0   True nqn.2020-07.com.hpe:72391dbc…
+.EXAMPLE	
+	PS:> Show-A9vLun_CLI -vvName XYZ 
+
+	List LUN number and hosts/host sets of LUN XYZ
+.EXAMPLE	
+	PS:> Show-A9vLun_CLI -Listcols
+.EXAMPLE	
+	PS:> Show-A9vLun_CLI -Nodelist 1
+.EXAMPLE	
+	PS:> Show-A9vLun_CLI -DomainName Aslam_D	
+
+#>
+[CmdletBinding(DefaultParameterSetName='API')]
+Param(	
+		[Parameter(ParameterSetName='API')]
+		[Parameter(ParameterSetName='SSH')]	[String]	$VolumeName,
+		[Parameter(ParameterSetName='API')]	[int]		$LUNID,
+		[Parameter(ParameterSetName='SSH')]
+		[Parameter(ParameterSetName='API')]	[String]	$HostName,
+		[Parameter(ParameterSetName='API')]	[String]	$RemoteName,
+		[Parameter(ParameterSetName='API')]	[String]	$VolumeWWN,
+		[Parameter(ParameterSetName='API')]	[String]	$Serial,		
+		[Parameter(ParameterSetName='API')]	
+		[ValidatePattern("[0-9]:[0-9]:[0-9]")][String]	$NSP,
+
+		[Parameter(ParameterSetName='SSH')]	[switch]	$Listcols,
+		[Parameter(ParameterSetName='SSH')]	[String]	$Showcols, 
+		[Parameter(ParameterSetName='SSH')]	[switch]	$ShowsWWN,
+		[Parameter(ParameterSetName='SSH')]	[switch]	$ShowsPathSummary,
+		[Parameter(ParameterSetName='SSH')]	[switch]	$Hostsum,
+		[Parameter(ParameterSetName='SSH')]	[switch]	$ShowsActiveVLUNs,
+		[Parameter(ParameterSetName='SSH')]	[switch]	$ShowsVLUNTemplates,
+		[Parameter(ParameterSetName='SSH')]	[String]	$LUN,
+		[Parameter(ParameterSetName='SSH')]	[String]	$Nodelist,
+		[Parameter(ParameterSetName='SSH')]	[String]	$Slotlist,
+		[Parameter(ParameterSetName='SSH')]	[String]	$Portlist,
+		[Parameter(ParameterSetName='SSH')]	[String]	$DomainName,
+		[Parameter(ParameterSetName='SSH')] [switch]	$UseSSH	
+	)
+Begin 
+{	if ( $PSCmdlet.ParameterSetName -eq 'API' )
+		{	if ( Test-A9Connection -CLientType 'API' -returnBoolean -and -not $UseSSH )
+				{	$PSetName = 'API'
+				}
+			else{	if ( Test-A9Connection -ClientType 'SSH' -returnBoolean )
+						{	$PSetName = 'SSH'
+						}
+				}
+		}
+		elseif ( $PSCmdlet.ParameterSetName -eq 'SSH' )	
+		{	if ( Test-A9COnnection -ClientType 'SSH' -returnBoolean )
+				{	$PSetName = 'SSH'
+				}
+			else{	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
+					return
+				}
+		}
+}
+Process 
+{	switch( $PsetName )
+	{	
+		'API'	{
+					Write-Verbose "Request: Request to Get-vLun_WSAPI [ VolumeName : $VolumeName | LUNID : $LUNID | HostName : $HostName | NSP : $NSP] (Invoke-WSAPI)."
+					$Result = $null
+					$dataPS = $null		
+					write-verbose "Making URL call to /vluns"
+					$Result = Invoke-WSAPI -uri '/vluns' -type 'GET' 
+					If($Result.StatusCode -eq 200)
+						{	$dataPS = ($Result.content | ConvertFrom-Json).members			
+						}		
+					If($Result.StatusCode -eq 200)
+						{	if ( $VolumeName )	{	$dataPS = $dataPS | where-object {$_.volumeName -like $VolumeName }		}
+							if ( $LUNID )		{	$dataPS = $dataPS | where-object {$_.lun -like $LUNID }					}
+							if ( $RemoteName )	{	$dataPS = $dataPS | where-object {$_.remoteName -like $RemoteName }		}
+							if ( $VolumeWWN )	{	$dataPS = $dataPS | where-object {$_.volumeWWN -like $VolumeWWN }		}
+							if ( $Serial )		{	$dataPS = $dataPS | where-object {$_.serial -like $Serial }				}
+							if ( $HostName )	{	$dataPS = $dataPS | where-object {$_.hostname -like $HostName }			}
+							if ( $NSP )			{	$dataPS = $dataPS | where-object {($_.portPos).node 	-like $NSP.split(':')[0] }
+													$dataPS = $dataPS | where-object {($_.portPos).slot 	-like $NSP.split(':')[1] }
+													$dataPS = $dataPS | where-object {($_.portPos).cardPort -like $NSP.split(':')[2] }
+												}
+							if($dataPS.Count -gt 0)
+									{	write-host "Cmdlet executed successfully" -foreground green
+										return $dataPS
+									}
+								else
+									{	write-verbose "No data Found."
+										return 
+									}
+						}
+					else
+						{	write-error "While Executing Get-A9vLun."
+							return $Result.StatusDescription
+						}
+				}
+		'SSH'	{
+					$cmd = "showvlun "
+					if($Listcols)		{	$cmd += " -listcols " 	}
+					if($Showcols)		{	$cmd += " -showcols $Showcols" }
+					if($ShowsWWN)		{	$cmd += " -lvw " 	}
+					if($ShowsPathSummary){	$cmd += " -pathsum " 	}
+					if($Hostsum)		{	$cmd += " -hostsum " 	}
+					if($ShowsActiveVLUNs){	$cmd += " -a " 	}
+					if($ShowsVLUNTemplates){$cmd += " -t " 	}
+					if($Hostname)		{	$cmd += " -host $Hostname" 	}
+					if($VolumeName)		{	$cmd += " -v $VolumeName" 	}
+					if($LUN)			{	$cmd += " -l $LUN" 	}
+					if($Nodelist)		{	$cmd += " -nodes $Nodelist" 	}
+					if($Slotlist)		{	$cmd += " -slots $Slotlist" 	}
+					if($Portlist)		{	$cmd += " -ports $Portlist" 	}
+					if($DomainName)		{	$cmd += " -domain $DomainName" 	}
+					$Result = Invoke-CLICommand -cmds  $cmd
+					return $Result
+				}
+	}
+}
+}
+
+Function Remove-A9vLun
+{
+<#
+.SYNOPSIS
+	Removing a VLUN.
+.DESCRIPTION
+	Removing a VLUN. Any user with the Super or Edit role, or any role granted with the vlun_remove right, can perform this operation.    
+.PARAMETER VolumeName
+	Name of the volume or VV set to be exported.
+	The VV set should be in set:<volumeset_name> format.
+.PARAMETER LUNID
+	Lun Id
+.PARAMETER HostName
+	Name of the host or host set to which the volume or VV set is to be exported. For VLUN of port type, the value is empty.
+	The host set should be in set:<hostset_name> format.required if volume is exported to host or host set,or to both the host or host set and port
+.PARAMETER NSP
+	Specifies the system port of the VLUN export. It includes the system node number, PCI bus slot number, and card port number on the FC card in the format:<node>:<slot>:<port>
+	required if volume is exported to port, or to both host and port .Notes NAME : Remove-A9vLun 
+.PARAMETER whatif
+    If present, perform a dry run of the operation and no VLUN is removed. You must select either WhatIf or Force. 
+.PARAMETER force
+	If present, perform forcible delete operation. This option is required unless you are running the WhatIf Option
+.PARAMETER Novcn
+	Specifies that a VLUN Change Notification (VCN) not be issued after removal of the VLUN.
+	.PARAMETER Pat
+	Specifies that the <VV_name>, <LUN>, <node:slot:port>, and <host_name> specifiers are treated as glob-style patterns and that all VLUNs matching the specified pattern are removed.
+.PARAMETER Remove_All
+	It removes all vluns associated with a VVOL Container.
+.EXAMPLE    
+	Remove-vLun_WSAPI -VolumeName xxx -LUNID xx -HostName xxx
+.EXAMPLE    
+	Remove-vLun_WSAPI -VolumeName xxx -LUNID xx -HostName xxx -NSP x:x:x	
+.EXAMPLE
+	PS:> Remove-A9vLun_CLI -volumeName PassThru-Disk -force
+
+	Unpresent the virtual volume PassThru-Disk to all hosts
+.EXAMPLE	
+	PS:> Remove-A9vLun_CLI -volumeName PassThru-Disk -whatif 
+
+	Dry-run of deleted operation on vVolume named PassThru-Disk
+.EXAMPLE		
+	PS:> Remove-A9vLun_CLI -volumeName PassThru-Disk -PresentTo INF01  -force
+
+	Unpresent the virtual volume PassThru-Disk only to host INF01.	all other presentations of PassThru-Disk remain intact.
+.EXAMPLE	
+	PS:> Remove-A9vLun_CLI -hostname INF01 -force
+
+	Remove all LUNS presented to host INF01
+.EXAMPLE	
+	PS:> Remove-A9vLun_CLI -volumeName CSV* -hostname INF01 -force
+
+	Remove all LUNS started with CSV* and presented to host INF01
+.EXAMPLE
+	PS:> Remove-A9vLun_CLI -volumeName vol2 -force -Novcn
+.EXAMPLE
+	PS:> Remove-A9vLun_CLI -volumeName vol2 -force -Pat
+.EXAMPLE
+	PS:> Remove-A9vLun_CLI -volumeName vol2 -force -Remove_All   
+
+	It removes all vluns associated with a VVOL Container.
+
+#>
+[CmdletBinding(DefaultParameterSetName='API')]
+
+Param(	[Parameter(Mandatory=$true, ParameterSetName='SSHF')]
+		[Parameter(Mandatory=$true, ParameterSetName='SSHW')]
+		[Parameter(Mandatory=$true, ParameterSetName='API')]	[String]	$VolumeName,
+		[Parameter(Mandatory=$true, ParameterSetName='API')]	[int]		$LUNID,
+		[Parameter(Mandatory=$true, ParameterSetName='API')]
+		[Parameter(Mandatory=$true, ParameterSetName='SSHF')]
+		[Parameter(Mandatory=$true, ParameterSetName='SSHW')]	[String]	$HostName,
+		[Parameter(ParameterSetName='API')]						[String]	$NSP,
+
+		[Parameter(ParameterSetName='SSHF',Mandatory=$true)]	[Switch]	$force, 
+		[Parameter(ParameterSetName='SSHW',Mandatory=$true)]	[Switch]	$whatif, 		
+
+																[String]	$vvName,		
+		[Parameter(ParameterSetName='SSHF')]
+		[Parameter(ParameterSetName='SSHW')]					[Switch]	$Novcn,
+		[Parameter(ParameterSetName='SSHF')]
+		[Parameter(ParameterSetName='SSHW')]					[Switch]	$Pat,
+		[Parameter(ParameterSetName='SSHF')]
+		[Parameter(ParameterSetName='SSHW')]					[Switch]	$Remove_All,	
+		[Parameter(ParameterSetName='SSHF')]
+		[Parameter(ParameterSetName='SSHW')]					[switch]	$UseSSH
+	)
+Begin 
+{	if ( $PSCmdlet.ParameterSetName -eq 'API' )
+{	if ( Test-A9Connection -CLientType 'API' -returnBoolean -and -not $UseSSH )
+		{	$PSetName = 'API'
+		}
+	else{	if ( Test-A9Connection -ClientType 'SSHClient' -returnBoolean )
+				{	$PSetName = 'SSH'
+				}
+		}
+}
+elseif ( $PSCmdlet.ParameterSetName -like "SSH*" )	
+{	if ( Test-A9COnnection -ClientType 'SSHClient' -returnBoolean )
+		{	$PSetName = 'SSH'
+		}
+	else{	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
+			return
+		}
+}
+}
+Process 
+{   switch ( $PSetName )
+	{	'API'	{
+					Write-Verbose "Running: Building uri to Remove-vLun_WSAPI  ."
+					$uri = "/vluns/"+$VolumeName+","+$LUNID+","+$HostName
+					if($NSP)
+						{	$uri = $uri+","+$NSP
+						}	
+					$Result = $null
+					Write-verbose "Request: Request to Remove-vLun_WSAPI : $CPGName (Invoke-WSAPI)." 
+					$Result = Invoke-WSAPI -uri $uri -type 'DELETE'
+					$status = $Result.StatusCode
+					if($status -eq 200)
+						{	write-host "Cmdlet executed successfully" -foreground green
+							Write-verbose "SUCCESS: VLUN Successfully removed with Given Values [ VolumeName : $VolumeName | LUNID : $LUNID | HostName : $HostName | NSP : $NSP ]." $Info
+							return $Result		
+						}
+					else
+						{	write-error "While Removing VLUN with Given Values [ VolumeName : $VolumeName | LUNID : $LUNID | HostName : $HostName | NSP : $NSP ]. "
+							return $Result.StatusDescription
+						}    	
+				}
+		'SSH'	{
+					if($HostName)	{	$ListofvLuns = Get-A9vLun -vvName $VolumeName -Hostname $HostName }
+					else			{	$ListofvLuns = Get-A9vLun -vvName $VolumeName 	}
+					if($ListofvLuns -match "FAILURE")	{	return "FAILURE : No vLUN $VolumeName found"	}
+					$ActionCmd = "removevlun "
+					if ($whatif)	{	$ActionCmd += "-dr "	}
+					if($force)		{	$ActionCmd += "-f "		} 
+					if ($Novcn)		{	$ActionCmd += "-novcn "	}
+					if ($Pat)		{	$ActionCmd += "-pat "	}
+					if($Remove_All)	{	$ActionCmd += " -set "	}
+					if ($ListofvLuns)
+						{	foreach ($vLUN in $ListofvLuns)
+								{	$vName = $vLUN.Name
+									if ($vName)
+										{	$RemoveCmds = $ActionCmd + " $vName $($vLun.LunID) $($vLun.PresentTo)"
+											$Result1 = Invoke-CLICommand -cmds  $RemoveCmds
+											write-verbose "Removing Virtual LUN's with command $RemoveCmds" 
+											if ($Result1 -match "Issuing removevlun")
+												{	$successmsg += "Success: Unexported vLUN $vName from $($vLun.PresentTo)"
+												}
+											elseif($Result1 -match "Dry run:")
+												{	$successmsg += $Result1
+												}
+											else
+												{	$successmsg += "FAILURE : While unexporting vLUN $vName from $($vLun.PresentTo) "
+												}				
+										}
+								}
+							return $successmsg
+						}
+					else
+						{	return "FAILURE : no vLUN found for $vvName presented to host $PresentTo"
+						}	
+				}		
 	}
 }
 }

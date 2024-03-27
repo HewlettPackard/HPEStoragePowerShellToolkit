@@ -648,16 +648,11 @@ Function Get-A9VvList_CLI
 	Id    Name                            Prov Compr Dedup Type  CopyOf                          BsId  Rd -Detailed_State-
 	--    ----                            ---- ----- ----- ----  ------                          ----  -- ----------------
 	2     .mgmtdata                       full NA    NA    base  -                               2     RW normal
-	419   .shared.SSD_r6_0                dds  NA    NA    base  -                               419   RW normal
 	420   tmaas_cluster1_veeam12_vol.0    tdvv v1    Yes   base  -                               420   RW normal
-	421   tmaas_cluster1_veeam12_vol.1    tdvv v1    Yes   base  -                               421   RW normal
 	424   vsa-ds1                         tdvv v1    Yes   base  -                               424   RW normal
 	425   vsa-ds2                         tdvv v1    Yes   base  -                               425   RW normal
 	606   BackupVol                       tdvv v1    Yes   base  -                               606   RW normal
-	613   BackupVol1                      tdvv v1    Yes   base  -                               613   RW normal
 	652   virt-Alletra9050-orai1db1-v.0   tdvv v1    Yes   base  -                               652   RW normal
-	653   virt-Alletra9050-orai1db1-v.1   tdvv v1    Yes   base  -                               653   RW normal
-	660   virt-alletra9k-orai1db1-arc.0   tdvv v1    Yes   base  -                               660   RW normal
 #>
 [CmdletBinding()]
 	param(
@@ -1507,7 +1502,7 @@ process
 }
 }
 
-Function Show-A9RSV_CLI
+Function Show-A9VvScsiReservations
 {
 <#
 .SYNOPSIS
@@ -1524,6 +1519,10 @@ Function Show-A9RSV_CLI
 	information about both scsi2 and scsi3 reservations will be shown.
 .PARAMETER Hostname
 	Displays reservation and registration information only for virtual volumes that are visible to the specified host.
+.EXAMPLE
+	PS:> Show-A9RSV_CLI -Hostname virt-r-node1
+
+	no reservations found
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$SCSI3,
@@ -1561,7 +1560,7 @@ process
 }
 }
 
-Function Show-A9Template_CLI
+Function Show-A9Template
 {
 <#
 .SYNOPSIS
@@ -1613,7 +1612,7 @@ process
 }
 }
 
-Function Show-A9VvMappedToPD_CLI
+Function Show-A9VvMappedToPD
 {
 <#
 .SYNOPSIS
@@ -1753,7 +1752,7 @@ process
 }
 }
 
-Function Show-A9VvMapping_CLI
+Function Show-A9VvMapping
 {
 <#
 .SYNOPSIS
@@ -1795,13 +1794,13 @@ process
 }
 }
 
-Function Show-A9VvpDistribution_CLI
+Function Show-A9VvpDistribution
 {
 <#
 .SYNOPSIS
 	Show virtual volume distribution across physical disks.
 .DESCRIPTION
-	The command displays virtual volume (VV) distribution across physical disks (PD).
+	The command displays virtual volume (VV) distribution across physical disks (PD). Use Get-A9VVList to obtain the name which is the VV_name
 .PARAMETER VV_Name
 	Specifies the virtual volume with the specified name (31 character maximum) or matches the glob-style pattern for which information is
 	displayed. This specifier can be repeated to display configuration information about multiple virtual volumes. This specifier is not
@@ -1812,6 +1811,23 @@ Function Show-A9VvpDistribution_CLI
 		inc : Sort in increasing order (default).
 		dec : Sort in decreasing order.
 	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.EXAMPLE
+	PS:> Show-A9VvpDistribution_CLI -VV_Name Zertobm9 | format-table
+
+	Id                          Cage_Pos SA SD usr total
+	--                          -------- -- -- --- -----
+	0                           0:0:0    1  0  2   3
+	1                           0:1:0    0  0  2   2
+	2                           0:2:0    1  0  2   3
+	3                           0:3:0    1  0  2   3
+	4                           0:4:0    0  0  2   2
+	5                           0:5:0    1  0  2   3
+	6                           0:6:0    0  0  2   2
+	7                           0:7:0    1  0  2   3
+	8                           0:8:0    1  0  2   3
+	9                           0:9:0    0  0  2   2
+	---------------------------
+	10                          total    6  0  20  26
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Sortcol,
@@ -1996,41 +2012,6 @@ process
 }
 }
 
-Function Update-A9Vv_CLI
-{
-<#
-.SYNOPSIS
-	The command increases the size of a virtual volume.
-.DESCRIPTION	
-	The command increases the size of a virtual volume.
-.EXAMPLE
-	PS:> Update-A9Vv_CLI -VVname XYZ -Size 1g
-.PARAMETER VVname     
-	The name of the volume to be grown.
-.PARAMETER Size       
-	Specifies the size in MB to be added to the volume user space. The size must be an integer in the range from 1 to 16T.
-.PARAMETER Option       
-	Suppresses the requested confirmation before growing a virtual volume size from under 2 T to over2 T.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]		[String]	$VVname ,		
-		[Parameter(Mandatory=$true)]		[String]	$Size 
-)
-Begin	
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$cmd= "growvv -f "
-	if ($VVname)	{	$cmd+=" $VVname "	}
-	if ($Size)		{	$demo=$Size[-1]
-						$de=" g | G | t | T "
-						if($de -match $demo)	{	$cmd+=" $Size "	}
-						else					{	return "Error: -Size $Size is Invalid Try eg: 2G  "	}
-					}
-	$Result = Invoke-CLICommand -cmds  $cmd
-	return  $Result
-} 
-}
 
 Function Update-A9VvProperties_CLI
 {

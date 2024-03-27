@@ -657,7 +657,7 @@ Process
 }
 }
 
-Function Set-A9Vv_CLI
+Function Set-A9VvSnapshot
 {
 <#
 .SYNOPSIS
@@ -665,21 +665,21 @@ Function Set-A9Vv_CLI
 .DESCRIPTION
 	Updates a snapshot Virtual Volume (VV) with a new snapshot.
 .EXAMPLE
-    PS:> Set-A9Vv_CLI -Name volume1 -Force
+    PS:> Set-A9VvSnapshot -Name volume1 -Force
 	snapshot update of snapshot VV "volume1"
 .EXAMPLE
-    PS:> Set-A9Vv_CLI -Name volume1,volume2 -Force
+    PS:> Set-A9VvSnapshot -Name volume1,volume2 -Force
 	snapshot update of snapshot VV's "volume1" and "volume2"
 .EXAMPLE
-    PS:> Set-A9Vv_CLI -Name set:vvset1 -Force
+    PS:> Set-A9VvSnapshot -Name set:vvset1 -Force
 	snapshot update of snapshot VVSet "vvset1"
 .EXAMPLE
-    PS:> Set-A9Vv_CLI -Name set:vvset1,set:vvset2 -Force
+    PS:> Set-A9VvSnapshot -Name set:vvset1,set:vvset2 -Force
 	snapshot update of snapshot VVSet's "vvset1" and "vvset2"
 .EXAMPLE	
-	PS:> Set-A9Vv_CLI -Name as2 -RO
+	PS:> Set-A9VvSnapshot -Name as2 -RO
 .EXAMPLE	
-	PS:> Set-A9Vv_CLI -Name as2 -Force -RemoveAndRecreate 
+	PS:> Set-A9VvSnapshot -Name as2 -Force -RemoveAndRecreate 
 .PARAMETER Name 
     Specifies the name(s) of the snapshot virtual volume(s) or virtual volume set(s) to be updated.
 .PARAMETER RO 

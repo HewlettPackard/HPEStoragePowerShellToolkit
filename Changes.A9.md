@@ -332,7 +332,7 @@ Major Design Changes
 	be decryptable, preserving security. 
 
 - Codebase Refactoring
-	The previous version of the toolkit was 75,967 lines of code. The new code base has been reduced to 32,167 lines by utilizing PowerShell best practices such as using parameter sets instead of complex
+	The previous version of the toolkit was 75,967 lines of code. The new code base has been reduced to 32,201 lines by utilizing PowerShell best practices such as using parameter sets instead of complex
 	test conditions inside of functions as well as refactoring to relocate commonalities into common internal functions among other changes. 
 
 
