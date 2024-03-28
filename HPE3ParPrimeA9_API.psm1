@@ -17,7 +17,6 @@
 . $PSScriptRoot\A9.scripts\SystemEvents.ps1
 . $PSScriptRoot\A9.scripts\SystemInformationQueriesAndManagement.ps1 
 . $PSScriptRoot\A9.scripts\SystemReporter.ps1 
-. $PSScriptRoot\A9.scripts\VirtualLUNs.ps1
 . $PSScriptRoot\A9.scripts\WsapiUserAndRoleInformation.ps1
 
 Export-ModuleMember -Function *  

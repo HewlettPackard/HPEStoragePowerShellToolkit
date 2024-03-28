@@ -905,22 +905,22 @@ Param(	[Parameter(Mandatory=$true, ParameterSetName='SSHF')]
 	)
 Begin 
 {	if ( $PSCmdlet.ParameterSetName -eq 'API' )
-{	if ( Test-A9Connection -CLientType 'API' -returnBoolean -and -not $UseSSH )
-		{	$PSetName = 'API'
-		}
-	else{	if ( Test-A9Connection -ClientType 'SSHClient' -returnBoolean )
-				{	$PSetName = 'SSH'
+		{	if ( Test-A9Connection -CLientType 'API' -returnBoolean -and -not $UseSSH )
+				{	$PSetName = 'API'
+				}
+			else{	if ( Test-A9Connection -ClientType 'SSHClient' -returnBoolean )
+						{	$PSetName = 'SSH'
+						}
 				}
 		}
-}
-elseif ( $PSCmdlet.ParameterSetName -like "SSH*" )	
-{	if ( Test-A9COnnection -ClientType 'SSHClient' -returnBoolean )
-		{	$PSetName = 'SSH'
+		elseif ( $PSCmdlet.ParameterSetName -like "SSH*" )	
+		{	if ( Test-A9COnnection -ClientType 'SSHClient' -returnBoolean )
+				{	$PSetName = 'SSH'
+				}
+			else{	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
+					return
+				}
 		}
-	else{	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
-			return
-		}
-}
 }
 Process 
 {   switch ( $PSetName )
@@ -978,6 +978,192 @@ Process
 						{	return "FAILURE : no vLUN found for $vvName presented to host $PresentTo"
 						}	
 				}		
+	}
+}
+}
+
+Function New-A9vLun 
+{
+<#
+.SYNOPSIS
+	Creating a VLUN
+.DESCRIPTION
+	Creating a VLUN. Any user with Super or Edit role, or any role granted vlun_create permission, can perform this operation.
+.PARAMETER VolumeName
+	Name of the volume or VV set to export.
+.PARAMETER LUNID
+	LUN ID.	
+.PARAMETER HostName  
+	Name of the host or host set to which the volume or VV set is to be exported.
+	The host set should be in set:hostset_name format.
+.PARAMETER NSP
+	System port of VLUN exported to. It includes node number, slot number, and card port number. Specifies the system port of the virtual LUN export.
+	node:  Specifies the system node, where the node is a number from 0 through 7.
+	slot: Specifies the PCI bus slot in the node, where the slot is a number from 0 through 5.
+	port: Specifies the port number on the FC card, where the port number is 1 through 4.
+.PARAMETER NoVcn
+	Specifies that a VCN not be issued after export (-novcn). Default: false.
+.PARAMETER vvName 
+	Specifies the virtual volume or virtual volume set name, using up to 31 characters in length. 
+	The volume name is provided in the syntax of basename.int.  The VV set name must start with "set:".
+.PARAMETER vvSet 
+	Specifies the virtual volume or virtual volume set name, using up to 31 characters in length. The volume name is provided in the syntax of basename.int.  
+	The VV set name must start with "set:".
+.PARAMETER LUN
+	Specifies the LUN as an integer from 0 through 16383. Alternatively n+ can be used to indicate a LUN should be auto assigned, but be
+	a minimum of n, or m-n to indicate that a LUN should be chosen in the range m to n. In addition the keyword auto may be used and is treated as 0+.
+.PARAMETER HostSet
+	Specifies the host set where the LUN is exported, using up to 31 characters in length. The set name must start with "set:".
+.PARAMETER Cnt
+	Specifies that a sequence of VLUNs, as specified by the num argument, are exported to the same system port and host that is created. The num
+	argument can be specified as any integer. For each VLUN created, the .int suffix of the VV_name specifier and LUN are incremented by one.
+.PARAMETER NoVcn
+	Specifies that a VLUN Change Notification (VCN) not be issued after export. For direct connect or loop configurations, a VCN consists of a
+	Fibre Channel Loop Initialization Primitive (LIP). For fabric configurations, a VCN consists of a Registered State Change
+	Notification (RSCN) that is sent to the fabric controller.
+.PARAMETER Ovrd
+	Specifies that existing lower priority VLUNs will be overridden, if necessary. Can only be used when exporting to a specific host.
+
+.EXAMPLE
+	PS:> New-A9vLun -VolumeName xxx -LUNID x -HostName xxx
+
+.EXAMPLE
+	PS:> New-A9vLun -VolumeName xxx -LUNID x -HostName xxx -NSP 1:1:1
+#>
+[CmdletBinding(DefaultParameterSetName='API')]
+Param(	[Parameter(Mandatory=$true, ParameterSetName='API')]					[String]	$VolumeName,
+		[Parameter(Mandatory=$true, ParameterSetName='API')]					[int]		$LUNID,
+
+		[Parameter(ParameterSetName='SSHvvName_HostName', 	Mandatory=$true)]
+		[Parameter(ParameterSetName='SSHvvSet_HostSet', 	Mandatory=$true)]
+		[Parameter(ParameterSetName='API', 					Mandatory=$true)]	[String]	$HostName,
+
+		[Parameter(ParameterSetName='SSHvvSet_NSP', 	 	Mandatory=$true)]
+		[Parameter(ParameterSetName='SSHvvName_NSP', 		Mandatory=$true)]
+		[Parameter(ParameterSetName='API')]										[String]	$NSP,
+
+		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
+		[Parameter(ParameterSetName='SSHvvName_HostSet')]										
+		[Parameter(ParameterSetName='SSHvvName_HostName')]										
+		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
+		[Parameter(ParameterSetName='SSHvvSet_HostSet')]										
+		[Parameter(ParameterSetName='SSHvvSet_HostName')]	
+		[Parameter(ParameterSetName='API')]										[Boolean]	$NoVcn = $false,
+
+		[Parameter(ParameterSetName='vvName_NSP', 			Mandatory=$true)]
+		[Parameter(ParameterSetName='vvName_HostSet', 		Mandatory=$true)]
+		[Parameter(ParameterSetName='vvName_HostName', 		Mandatory=$true)]	[String]	$vvName,
+
+		[Parameter(ParameterSetName='vvSet_NSP',  			Mandatory=$true)]	
+		[Parameter(ParameterSetName='vvSet_HostSet',  		Mandatory=$true)]	
+		[Parameter(ParameterSetName='vvSet_HostName', 		Mandatory=$true)]
+		[ValidateScript({	if( $_ -match "^set:") { $true } else { throw "Valid vvSet Parameter must start with 'Set:'"} } )]	
+																				[String]	$vvSet,
+
+		[Parameter(ParameterSetName='SSHvvSet_NSP',			Mandatory=$true)]										
+		[Parameter(ParameterSetName='SSHvvName_HostSet', 	Mandatory=$true)]										
+		[Parameter(ParameterSetName='SSHvvName_HostName', 	Mandatory=$true)]										
+		[Parameter(ParameterSetName='SSHvvSet_NSP',  		Mandatory=$true)]										
+		[Parameter(ParameterSetName='SSHvvSet_HostSet',  	Mandatory=$true)]										
+		[Parameter(ParameterSetName='SSHvvSet_HostName', 	Mandatory=$true)]												
+																				[String]	$LUN,
+
+		[Parameter(ParameterSetName='SSHvvName_HostSet', 	Mandatory=$true)]
+		[Parameter(ParameterSetName='SSHvvSet_HostSet',  	Mandatory=$true)]
+		[ValidateScript({	if( $_ -match "^set:") { $true } else { throw "Valid vvSet Parameter must start with 'Set:'"} } )]	
+																				[String]	$HostSet,
+
+		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
+		[Parameter(ParameterSetName='SSHvvName_HostSet')]										
+		[Parameter(ParameterSetName='SSHvvName_HostName')]										
+		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
+		[Parameter(ParameterSetName='SSHvvSet_HostSet')]										
+		[Parameter(ParameterSetName='SSHvvSet_HostName')]	
+																				[String]	$Cnt,
+
+		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
+		[Parameter(ParameterSetName='SSHvvName_HostSet')]										
+		[Parameter(ParameterSetName='SSHvvName_HostName')]										
+		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
+		[Parameter(ParameterSetName='SSHvvSet_HostSet')]										
+		[Parameter(ParameterSetName='SSHvvSet_HostName')]	
+																				[switch]	$Ovrd,
+		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
+		[Parameter(ParameterSetName='SSHvvName_HostSet')]										
+		[Parameter(ParameterSetName='SSHvvName_HostName')]										
+		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
+		[Parameter(ParameterSetName='SSHvvSet_HostSet')]										
+		[Parameter(ParameterSetName='SSHvvSet_HostName')]
+																				[Switch]	$UseSSH
+		)
+Begin 
+{	if ( $PSCmdlet.ParameterSetName -eq 'API' )
+		{	if ( Test-A9Connection -CLientType 'API' -returnBoolean -and -not $UseSSH )
+				{	$PSetName = 'API'
+				}
+			else{	if ( Test-A9Connection -ClientType 'SSHClient' -returnBoolean )
+						{	$PSetName = 'SSH'
+						}
+				}
+		}
+		elseif ( $PSCmdlet.ParameterSetName -like "SSH*" )	
+		{	if ( Test-A9COnnection -ClientType 'SSHClient' -returnBoolean )
+				{	$PSetName = 'SSH'
+				}
+			else{	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
+					return
+				}
+		}
+}
+Process 
+{	switch ( $PSetName)
+	{	
+		'API'	{	
+					$body = @{}    
+					$body["volumeName"] ="$($VolumeName)" 
+					$body["lun"] =$LUNID
+					$body["hostname"] ="$($HostName)" 
+					If ($NSP) 
+						{	$NSPbody = @{} 
+							$list = $NSP.split(":")
+							$NSPbody["node"] = [int]$list[0]		
+							$NSPbody["slot"] = [int]$list[1]
+							$NSPbody["cardPort"] = [int]$list[2]		
+							$body["portPos"] = $NSPbody		
+						}
+					If ($NoVcn) 
+						{	$body["noVcn"] = $NoVcn
+						}
+					$Result = $null
+					$Result = Invoke-WSAPI -uri '/vluns' -type 'POST' -body $body 
+					$status = $Result.StatusCode	
+					if($status -eq 201)
+						{	write-host "Cmdlet executed successfully" -foreground green
+							return Get-A9vLun -VolumeName $VolumeName -LUNID $LUNID -HostName $HostName
+						}
+					else
+						{	write-error "FAILURE : While Creating a VLUN" 
+							return $Result.StatusDescription
+						}	
+				}
+		'SSH'	{
+					$cmdVlun = " createvlun -f"
+					if($Cnt)			{	$cmdVlun += " -cnt $Cnt "	}
+					if($NoVcn)			{	$cmdVlun += " -novcn "	}
+					if($Ovrd)			{	$cmdVlun += " -ovrd "	}	
+					if($vvName)			{	$cmdVlun += " $vvName "	}
+					if($vvSet)			{	$cmdVlun += " $vvSet "	}
+					if($LUN)			{	$cmdVlun += " $LUN "	}
+					if($NSP)			{	$cmdVlun += " $NSP "	}
+					elseif($HostSet)	{	$cmdVlun += " $HostSet "	}
+					elseif($HostName)	{	$cmdVlun += " $HostName "	}
+					$Result1 = Invoke-CLICommand -cmds  $cmdVlun
+					write-verbose "Presenting $vvName to server $item with the command --> $cmdVlun" 
+					if($Result1 -match "no active paths")		{	$successmsg += $Result1	}
+					elseif([string]::IsNullOrEmpty($Result1))	{	$successmsg += "Success : $vvName exported to host $objName`n"	}
+					else										{	$successmsg += "FAILURE : While exporting vv $vvName to host $objName Error : $Result1`n"	}		
+					return $successmsg
+				}
 	}
 }
 }
