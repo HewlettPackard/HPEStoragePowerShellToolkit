@@ -67,7 +67,7 @@ Process
 	if($TargetsBody.Count -gt 0){	$TargetsObj += $TargetsBody 	}
 	if($TargetsObj.Count -gt 0)	{	$body["targets"] = $TargetsObj 	}
     $Result = $null	
-    $Result = Invoke-WSAPI -uri '/remotecopygroups' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/remotecopygroups' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -137,7 +137,7 @@ Process
 	if($ObjStartingSnapshots.Count -gt 0)	{	$body["startingSnapshots"] = $ObjStartingSnapshots 	}
     $Result = $null	
 	$uri = "/remotecopygroups/" + $GroupName
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return $Result		
@@ -187,7 +187,7 @@ Process
 	If ($TargetName) 	{	$body["targetName"] = "$($TargetName)"    }		
     $Result = $null	
 	$uri = "/remotecopygroups/" + $GroupName
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
 		return $Result				
@@ -249,7 +249,7 @@ Process
 	If ($FullSync) 			{	$body["fullSync"] = $true    }	
 	$Result = $null	
 	$uri = "/remotecopygroups/" + $GroupName
-	$Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
 		return $Result		
@@ -294,7 +294,7 @@ Process
 	if($keepSnap)	{	$uri = $uri + "?keepSnap=true"	}
 	if(!$keepSnap)	{	$uri = $uri + "?keepSnap=false"	}
 	$Result = $null
-	$Result = Invoke-WSAPI -uri $uri -type 'DELETE' 
+	$Result = Invoke-A9API -uri $uri -type 'DELETE' 
 	$status = $Result.StatusCode
 	if($status -eq 202)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -435,7 +435,7 @@ Process
 	if($TargetsBody.Count -gt 0)	{	$body["targets"] = $TargetsBody 	}	    
     $Result = $null
 	$uri = '/remotecopygroups/'+ $GroupName
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return Get-A9System				
@@ -520,7 +520,7 @@ Process
 	if($PoliciesBody.Count -gt 0)	{	$body["policies"] = $PoliciesBody	}
     $Result = $null
 	$uri = '/remotecopygroups/'+ $GroupName+'/targets/'+$TargetName
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 	
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 	
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return Get-A9System		
@@ -595,7 +595,7 @@ Process
 	If ($LocalGroupsDirection) 	{	$body["localGroupsDirection"] = $true    }		
     $Result = $null
 	$uri = "/remotecopygroups/"+$GroupName
-    $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -670,7 +670,7 @@ Process
 	if($TargetsBody.Count -gt 0)	{	$body["targets"] = $TargetsBody 	}
     $Result = $null
 	$uri = "/remotecopygroups/"+$GroupName+"/volumes"
-    $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -716,7 +716,7 @@ Process
 	If ($RemoveSecondaryVolume) 	{	$body["removeSecondaryVolume"] = $RemoveSecondaryVolume	}
     $Result = $null
 	$uri = "/remotecopygroups/"+$GroupName+"/volumes/"+$VolumeName
-    $Result = Invoke-WSAPI -uri $uri -type 'DELETE' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'DELETE' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -788,7 +788,7 @@ Process
 	If($Disabled) 	{	$body["disabled"] = $true	 }
 	if($PortPosAndLinkBody.Count -gt 0)	{	$body["portPosAndLink"] = $PortPosAndLinkBody 	}
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/remotecopytargets' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/remotecopytargets' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -836,8 +836,8 @@ Process
 	if($PoliciesBody.Count -gt 0)	{	$body["policies"] = $PoliciesBody 	}
     $Result = $null
 	$uri = '/remotecopytargets/'+ $TargetName
-	Write-Verbose "Request: Request to Update-RCopyTarget_WSAPI (Invoke-WSAPI)." 
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+	Write-Verbose "Request: Request to Update-RCopyTarget_WSAPI (Invoke-A9API)." 
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
 	}
@@ -901,7 +901,7 @@ Process
 	if($volumeMappingsObj.Count -gt 0)	{	$body["volumeMappings"] = $volumeMappingsObj 	}
     $Result = $null
 	$uri = "/remotecopygroups/"+$GroupName+"/targets"
-    $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body
+    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -938,7 +938,7 @@ Begin
 Process 
 {	$Result = $null
 	$uri = "/remotecopygroups/"+$GroupName+"/targets/"+$TargetName
-	$Result = Invoke-WSAPI -uri $uri -type 'PUT' 
+	$Result = Invoke-A9API -uri $uri -type 'PUT' 
 	$status = $Result.StatusCode
 	if($status -eq 201)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -1008,7 +1008,7 @@ Process
     $Result = $null
 	if($VolumeName)		{	$uri = "/remotecopygroups/"+$GroupName+"/volumes/"+$VolumeName	}
 	else				{	$uri = "/remotecopygroups/"+$GroupName+"/volumes"	}
-    $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body	
+    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body	
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -1041,7 +1041,7 @@ Begin
 Process 
 {	$Result = $null
 	$dataPS = $null
-	$Result = Invoke-WSAPI -uri '/remotecopy' -type 'GET'
+	$Result = Invoke-A9API -uri '/remotecopy' -type 'GET'
 	if($Result.StatusCode -eq 200)
 	{	$dataPS = $Result.content | ConvertFrom-Json
 		write-host "Cmdlet executed successfully" -foreground green
@@ -1079,7 +1079,7 @@ Process
 	$dataPS = $null	
 	$uri = '/remotecopytargets'
 	if($TargetName)	{	$uri = $uri+'/'+$TargetName	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 		  
+	$Result = Invoke-A9API -uri $uri -type 'GET' 		  
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 			write-host "Cmdlet executed successfully" -foreground green
@@ -1143,7 +1143,7 @@ Process
 				}
 			$uri = $uri+'/'+$Query
 		}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 			if($dataPS.Count -gt 0)
@@ -1199,7 +1199,7 @@ Process
 	if($TargetName)
 		{	$uri = $uri+'/'+$TargetName
 		}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 			write-host "Cmdlet executed successfully" -foreground green
@@ -1240,7 +1240,7 @@ Process
 	$dataPS = $null
 	$uri = '/remotecopygroups/'+$GroupName+'/volumes'	
 	if($VolumeName)		{	$uri = $uri+'/'+$VolumeName	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET'	
+	$Result = Invoke-A9API -uri $uri -type 'GET'	
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = $Result.content | ConvertFrom-Json
 			write-host "Cmdlet executed successfully" -foreground green
@@ -1282,7 +1282,7 @@ Process
 	$dataPS = $null
 	$uri = '/remotecopylinks'	
 	if($LinkName)	{	$uri = $uri+'/'+$LinkName	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 	{	$dataPS = $Result.content | ConvertFrom-Json
 		write-host "Cmdlet executed successfully" -foreground green

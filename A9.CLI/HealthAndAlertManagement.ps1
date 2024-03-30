@@ -34,6 +34,8 @@ Function Get-A9Alert
 	Specifies that only service alerts are displayed. This option can only be used with the -d or -oneline formatting options.
 .PARAMETER Wide
 	Do not truncate the message text. Only valid for customer alerts and if the -oneline option is also specified.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$N,
@@ -58,7 +60,7 @@ Process
 	if($Svc)	{	$Cmd += " -svc " 	}
 	if($Wide)	{	$Cmd += " -wide " 	}
 	if($Oneline){	$Cmd += " -oneline "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -119,6 +121,8 @@ Function Get-A9EventLog_CLI
 	Specifies that only events, whose components match the specified pattern(s), are displayed.
 .PARAMETER Ncomp
 	Specifies that only events, whose components do not match the specified pattern(s), are displayed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -164,7 +168,7 @@ Process
 	if($Nmsg)	{	$Cmd += " -nmsg $Nmsg " }
 	if($Comp)	{	$Cmd += " -comp $Comp " }
 	if($Ncomp)	{	$Cmd += " -ncomp $Ncomp " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -190,6 +194,8 @@ Function Get-A9Health
 	Do not display which component is currently being checked. Do not display the footnote with the -list option.
 .PARAMETER D
 	Display detailed information regarding the status of the system.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Lite,
@@ -212,7 +218,7 @@ Process
 	if($Quiet)	{	$Cmd += " -quiet " 	}
 	if($D)		{	$Cmd += " -d " 		}
 	if($Component){	$Cmd += " $Component "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 Return $Result
 }
 }
@@ -231,6 +237,8 @@ Function Remove-A9Alerts
 .PARAMETER F
 	Specifies that the command is forced. If this option is not used and there are alerts in the "new" state, the command requires confirmation
 	before proceeding with the operation.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='All', Mandatory=$true, ValueFromPipeline=$true)]	[switch]	$All,
@@ -245,7 +253,7 @@ Process
 	if($F) 			{	$Cmd += " -f "	}
 	if($All)		{	$Cmd += " -a "	}
 	if($Alert_ID){	$Cmd += " $Alert_ID "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -268,6 +276,8 @@ Function Set-A9Alert
 	Specifies that the alert(s), as indicated with the <alert_ID> specifier or with option -a, be set as "New"(new), "Acknowledged"(ack), or "Fixed"(fixed).
 .PARAMETER Fixed
 	Specifies that the alert(s), as indicated with the <alert_ID> specifier or with option -a, be set as "New"(new), "Acknowledged"(ack), or "Fixed"(fixed).
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='NewAll', Mandatory=$true)]
@@ -297,7 +307,7 @@ Process
 	if($Fixed)		{	$Cmd += " fixed " }
 	if($All)		{	$Cmd += " -a " }
 	if($Alert_ID){	$Cmd += " $Alert_ID " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }

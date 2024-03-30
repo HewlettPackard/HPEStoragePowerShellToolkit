@@ -64,6 +64,8 @@ Function Compress-A9VV_CLI
 	Slice size. Size of slice to use when volume size is greater than <threshold>. <size> must be in multiples of 128GiB. Minimum is 128GiB. Default is 2TiB. Maximum is 16TiB.
 .PARAMETER SANConnection 
     Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(		[Parameter(Mandatory=$true)][ValidateSet('usr_cpg','snp_cpg','restart','rollback')]
@@ -109,7 +111,7 @@ Process
 	if($Threshold)	{	$Cmd += " -slth $Threshold"	}
 	if($SliceSize)	{	$Cmd += " -slsz $SliceSize"	}
 	if($VVName)		{	$Cmd += " $VVName"	}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	return  $Result
 
 }
@@ -159,6 +161,8 @@ Function Get-A9HistogramChunklet
 	Specifies that histograms for only non-idle devices are displayed. This option is shorthand for the option -filt t,0,0.
 .PARAMETER LDname 
     Specifies the Logical Disk (LD), identified by name, from which chunklet statistics are sampled.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$LDname,
@@ -187,7 +191,7 @@ Process
 	if($RW)			{	$histchCMD +=" -rw "	}
 	if($Interval)	{	$histchCMD +=" -d $Interval "	}
 	if($NI)			{	$histchCMD +=" -ni "	}	
-	$Result = Invoke-CLICommand -cmds  $histchCMD	
+	$Result = Invoke-A9CLICommand -cmds  $histchCMD	
 	$range1 = $Result.count
 	if($range1 -le "5")	{	return "No data available Please try with valid input."	}
 	Write-Verbose " displays a histogram of service -->$histchCMD" 
@@ -288,6 +292,8 @@ Function Get-A9HistogramLogicalDisk
 	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). If no option is specified, the histogram shows data from the beginning of the command's execution.
 .PARAMETER Beginning
 	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). If no option is specified, the histogram shows data from the beginning of the command's execution.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	
@@ -314,13 +320,13 @@ Process
 	else			{	return "Error :  -Iteration is mandatory. "	}
 	if ($Metric)	{	$histldCmd+=" -metric $Metric "				}
 	if($VV_Name)	{	$cmd= "showvv "
-						$demo = Invoke-CLICommand -cmds  $Cmd
+						$demo = Invoke-A9CLICommand -cmds  $Cmd
 						if($demo -match $VV_Name )	{	$histldCmd+=" -vv $VV_Name"	}
 						else						{ 	return  "FAILURE : No Virtual Volume : $VV_Name found, Please try with valid input."	}		
 					} 
 	if($Domain)
 	{	$cmd= "showdomain "
-		$demo = Invoke-CLICommand -cmds  $Cmd
+		$demo = Invoke-A9CLICommand -cmds  $Cmd
 		if($demo -match $Domain )	{	$histldCmd+=" -domain $Domain"	}
 		else	{ 	return  "FAILURE : No Domain : $Domain found, Please try with valid input."	}
 	}	
@@ -332,11 +338,11 @@ Process
 	if($Secs)		{	$histldCmd+=" -d $Secs"	}
 	if ($NI)		{	$histldCmd += " -ni "	}
 	if ($LdName)	{	$cmd= "showld "
-						$demo = Invoke-CLICommand -cmds  $Cmd
+						$demo = Invoke-A9CLICommand -cmds  $Cmd
 						if($demo -match $LdName )	{	$histldCmd += "  $LdName"	}
 						else	{ 	return  "FAILURE : No LD_name $LdName found "	}
 					}	
-	$Result = Invoke-CLICommand -cmds  $histldCmd
+	$Result = Invoke-A9CLICommand -cmds  $histldCmd
 	write-verbose "  The Get-HistLD command displays a histogram of service times for Logical Disks (LDs) in a timed loop.->$cmd"	
 	$range1 = $Result.count
 	#write-host "count = $range1"
@@ -436,6 +442,8 @@ Function Get-A9HistogramPhysicalDisk
 	<count>: Specifies the minimum number of access above the threshold service time. When filtering is done, the <count> is compared with the sum of all columns 
 			starting with the one which corresponds to the threshold service time. For example, -t,8,100 means to only display the rows where the 8ms column
 			and all columns to the right adds up to more than 100.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Iteration,
@@ -473,7 +481,7 @@ Process
 	if ($Beginning)		{	$Cmd += " -begin "}
 	if ($Percentage)	{	$Cmd += " -pct "	}	
 	if ($FSpec)			{	$Cmd += " -filt $FSpec"	}
-	$Result = Invoke-CLICommand -cmds  $Cmd 
+	$Result = Invoke-A9CLICommand -cmds  $Cmd 
 	write-verbose " The Get-HistPD command displays a histogram of service times for Physical Disks (PDs). " 
 	$range1 = $Result.count
 	if($range1 -lt "5")	{	return "No data available"	}		
@@ -586,6 +594,8 @@ Function Get-A9HistogramPort
 	histogram shows data from the beginning of the command's execution.
 .PARAMETER RW	
 	Specifies that the display includes separate read and write data. If not specified, the total is displayed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$Iteration,	
@@ -631,7 +641,7 @@ Process
 	if ($Beginning)	{	$Cmd += " -begin "	}
 	if ($Percentage){	$Cmd += " -pct "	}
 	if ($RW)		{	$Cmd += " -rw "		}
-	$Result = Invoke-CLICommand -cmds  $Cmd 	
+	$Result = Invoke-A9CLICommand -cmds  $Cmd 	
 	$range1 = $Result.count
 	#write-host "count = $range1"
 	if ($range1 -lt "5")	{	return "No data available"	}		
@@ -731,6 +741,8 @@ Function Get-A9HistogramRemoteCopyVv
 .PARAMETER group
     Shows only volumes whose volume group matches the specified group name or pattern of names. Multiple group names or patterns may be specified using a comma-separated list..PARAMETER iteration
     Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$ASync,
@@ -776,7 +788,7 @@ Process
 	if ($VV_Name)	{ 	$Cmd += " $VV_Name"			}
 	if ($iteration)	{ 	$Cmd += " -iter $iteration "}	
 	else			{	return "Error :  -Iteration is mandatory. "	}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	write-verbose " histograms sums for all synchronous remote - copy volumes" 
 	if ( $Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -866,6 +878,8 @@ Function Get-A9HistogramVLun
 	Specifies that VLUNs with LUNs matching the specified LUN(s) or pattern(s) are displayed. Multiple LUNs or patterns can be repeated using a comma-separated list.
 .PARAMETER iteration
 	Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$iteration,
@@ -891,11 +905,11 @@ Process
 	if ($domain)	{ 	$Cmd += " -domain $domain"	}	
 	if($hostE)		{	$objType = "host"
 						$objMsg  = "hosts"		
-						if ( -not (Test-CLIObject -objectType $objType -objectName $host -objectMsg $objMsg))	{	return "FAILURE : No host $host found"	}		
+						if ( -not (Test-A9CLIObject -objectType $objType -objectName $host -objectMsg $objMsg))	{	return "FAILURE : No host $host found"	}		
 						$Cmd += " -host $host "		
 					}
 	if ($vvname)	{	$GetvVolumeCmd="showvv"
-						$Res = Invoke-CLICommand -cmds  $GetvVolumeCmd
+						$Res = Invoke-A9CLICommand -cmds  $GetvVolumeCmd
 						if ($Res -match $vvname)
 							{	$Cmd += " -v $vvname"
 							}
@@ -916,7 +930,7 @@ Process
 	if ($Previous)	{	$Cmd += " -prev "	}
 	if ($Beginning)	{	$Cmd += " -begin "	}
 	if ($Percentage){	$Cmd += " -pct "	}		
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	write-verbose " histograms The Get-HistVLun command displays Virtual Volume Logical Unit Number (VLUN)  " 
 	$range1 = $Result.Count
 	if($range1 -le "5" ){	return "No Data Available"	}	
@@ -1041,6 +1055,8 @@ Function Get-A9HistogramVv
 	Virtual Volume name
 .PARAMETER iteration
 	Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$iteration,
@@ -1078,11 +1094,11 @@ Process
 	if ($VVname)
 		{	$vv=$VVname
 			$Cmd1 ="showvv"
-			$Result1 = Invoke-CLICommand -cmds  $Cmd1
+			$Result1 = Invoke-A9CLICommand -cmds  $Cmd1
 			if($Result1 -match $vv)	{	$cmd += " $vv "	}
 			else					{	Return "Error: -VVname $VVname is not available `n Try Using Get-VvList to list all the VV's Available  "	}
 		}		
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	write-verbose " Get-HistVv command displays Virtual Volume Logical Unit Number (VLUN)  " 
 	$range1 = $Result.count
 	if($range1 -le "5")	{	return "No data available"	}	
@@ -1151,6 +1167,8 @@ Function Get-A9StatisticsChunklet
 	Specifies that statistics are restricted to a particular chunklet number.
 .PARAMETER Iteration 
 	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$Iteration ,
@@ -1175,12 +1193,12 @@ Process
 	if($NI)		{	$cmd+=" -ni "		}
 	if($Delay)	{	$cmd+=" -d $Delay"	}
 	if($LDname)	{	$ld="showld"
-					$Result1 = Invoke-CLICommand -cmds  $ld
+					$Result1 = Invoke-A9CLICommand -cmds  $ld
 					if($Result1 -match $LDname )	{	$cmd+=" -ld $LDname "	}
 					else{	Return "FAILURE : -LDname $LDname is not available . "	}
 				}
 	if($CHnum)	{	$cmd+=" -ch $CHnum "	}
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Get-StatChunklet command displays chunklet statistics in a timed loop. with the command  " 
 	$range1 = $Result.Count
 	if($range1 -le "5" )	{	return "No Data Available"	}
@@ -1239,6 +1257,8 @@ Function Get-A9StatCacheMemoryPages
 	Specifies that statistics for only non-idle VVs are displayed. This option is valid only if -v is also specified.
 .PARAMETER Iteration 
 	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$NI,
@@ -1258,7 +1278,7 @@ Process
 	if($VVname)	{	$cmd+=" -n $VVname "	}		
 	if ($Domian){	$cmd+= " -domain $Domian "	}
 	if($Delay)	{	$cmd+=" -d $Delay"	}		
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Get-StatCMP command displays Cache Memory Page (CMP) statistics. with the command  " 
 	$range1 = $Result.count
 	if($range1 -le "3")	{	return "No data available"	}	
@@ -1312,6 +1332,8 @@ Function Get-A9CPUStatisticalDataReports_CLI
 	Show only the totals for all the CPUs on each node.
 .PARAMETER Iteration 
 	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$delay,
@@ -1326,7 +1348,7 @@ Process
 	$cmd+=" -iter $Iteration "
 	if($delay)	{	$cmd+=" -d $delay "	}
 	if ($total)	{	$cmd+= " -t "		}
-	$Result = Invoke-CLICommand -cmds  $cmd	
+	$Result = Invoke-A9CLICommand -cmds  $cmd	
 	write-verbose "  Executing  Get-StatCPU command displays Cache Memory Page (CMP) statistics. with the command  " 
 	$range1 = $Result.count
 	if($range1 -eq "5"){	return "No data available"	}		
@@ -1405,6 +1427,8 @@ Function Get-A9LogicalDiskStatisticsReports_CLI
 	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
 .PARAMETER Iteration 
 	Specifies that I/O statistics are displayed a specified number of times as indicated by the number argument using an integer from 1 through 2147483647.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$RW,
@@ -1428,20 +1452,20 @@ Process
 	if($NI)		{	$cmd+=" -ni "		}
 	if($VVname)	
 		{	$ld="showvv"
-			$Result1 = Invoke-CLICommand -cmds  $ld
+			$Result1 = Invoke-A9CLICommand -cmds  $ld
 			if($Result1 -match $VVname )	{	$cmd+=" -vv $VVname "	}
 			else 							{	Return "FAILURE : -VVname $VVname is not available .`n Try Using Get-VvList to get all available VV  "	}
 		}
 	if($LDname)	
 		{	if($cmd -match "-vv")	{	return "Stop: Executing -VVname $VVname and  -LDname $LDname cannot be done in a single Execution "	}
 			$ld="showld"
-			$Result1 = Invoke-CLICommand -cmds  $ld		
+			$Result1 = Invoke-A9CLICommand -cmds  $ld		
 			if($Result1 -match $LDname )	{	$cmd+=" $LDname "	}
 			else 							{	Return "FAILURE : -LDname $LDname is not available . "	}
 		}	
 	if($Domain)		{	$cmd+=" -domain $Domain "	}	
 	if($Delay)		{	$cmd+=" -d $Delay "	}		
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	$range1 = $Result.count
 	if($range1 -le "5")	{	return "No data available" }	
 	if ( $Result.Count -gt 1)
@@ -1499,6 +1523,8 @@ Function Get-A9StatisticLinkUtilization
 	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
 .PARAMETER Iteration 
 	Specifies that I/O statistics are displayed a specified number of times as indicated by the number argument using an integer from 1 through 2147483647.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]					[switch]	$Detail,
@@ -1512,7 +1538,7 @@ Process
 {	$cmd= "statlink -iter $Iteration "
 	if ($Detail)	{	$cmd+=" -detail "	}
 	if ($Interval)	{	$cmd+=" -d $Interval "	}
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	$range1 = $Result.count
 	if($range1 -eq "3")	{	return "No data available"	}	
 	if ( $Result.Count -gt 1)
@@ -1586,6 +1612,8 @@ Function Get-APhysicalDiskStatisticsReports_CLI
 	Specifies that the display is limited to specified ports and PDs connected to those ports
 .PARAMETER  Iteration
 	Specifies that the histogram is to stop after the indicated number of iterations using an integer from 1 through 2147483647.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$RW,
@@ -1614,7 +1642,7 @@ Process
 	if ($nodes)	{	$cmd+=" -nodes $nodes "	}	
 	if ($slots)	{	$cmd+=" -slots $slots "	}	
 	if ($ports ){	$cmd+=" -ports $ports "	}			
-	$Result = Invoke-CLICommand -cmds  $cmd	
+	$Result = Invoke-A9CLICommand -cmds  $cmd	
 	$range1 = $Result.count	
 	if($range1 -eq "4")	{	return "No data available"	}	
 	if ( $Result.Count -gt 1)
@@ -1700,10 +1728,11 @@ Function Get-A9PortStatisticsReports_CLI
 	Specifies that the display is limited to specified PCI slots and physical disks connected to those PCI slots. The slot list is specified
 	as a series of integers separated by commas (e.g. 1,2,3). The list can also consist of a single integer. If the slot list is not specified, all
 	disks on all slots are displayed.
-	
- .PARAMETER  Iteration
+.PARAMETER  Iteration
 	Specifies that the histogram is to stop after the indicated number of iterations using an integer from
 	1 through 2147483647.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Both ,
@@ -1746,7 +1775,7 @@ Process
 	if ($nodes)		{	$cmd+=" -nodes $nodes "	}
 	if ($slots)		{	$cmd+=" -slots $slots "	}
 	if ($ports )	{	$cmd+=" -ports $ports "	}				
-	$Result = Invoke-CLICommand -cmds  $cmd	
+	$Result = Invoke-A9CLICommand -cmds  $cmd	
 	$range1 = $Result.count
 	if($range1 -eq "4")	{	return "No data available"	}
 	if(($Both) -And ($range -eq "6"))	{	return "No data available"	}
@@ -1847,6 +1876,8 @@ Function Get-A9RCopyStatisticalReports_CLI
 	command defaults to 2 seconds.
 .PARAMETER Subset
 	Show subset statistics for Asynchronous Remote Copy on a per group basis.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)][String]	$Iteration ,		
@@ -1897,7 +1928,7 @@ Process
 			if ($s -match $VVname )		{	$cmd+=" $VVname"	}
 			else						{	Return "FAILURE : -VVname $VVname  is Unavailable to execute. "	}		
 		}
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	$range1 = $Result.count
 	if($range1 -eq "4")	{	return "No data available"	}
 	if( $Result.Count -gt 1)
@@ -1983,6 +2014,8 @@ Function Get-A9vLunStatisticsReports_CLI
 .PARAMETER  Iteration
 	Specifies that the histogram is to stop after the indicated number of iterations using an integer from
 	1 through 2147483647.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]		[switch]	$RW,
@@ -2021,7 +2054,7 @@ Process
 		}
 	if ($LUN)	{	$cmd+=" -l $LUN"	}	
 	if ($nodes)	{	$cmd+=" -nodes $nodes"	}				
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	$range1 = $Result.count
 	if($range1 -eq "4")					{	return "No data available"	}	
 	if(($range1 -eq "6") -and ($NI))	{	return "No data available"	}
@@ -2101,6 +2134,8 @@ Function Get-A9VvStatisticsReports
 	1 through 2147483647.
 .PARAMETER  VVname
 	Only statistics are displayed for the specified VV.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]				[switch]	$RW ,
@@ -2121,7 +2156,7 @@ Process
 	if ($NI)		{	$cmd+=" -ni "				}
 	if ($domian)	{	$cmd+=" -domain $domian"	}			
 	if ($VVname)	{	$cmd+="  $VVname"			}	
-	$Result = Invoke-CLICommand -cmds  $cmd	
+	$Result = Invoke-A9CLICommand -cmds  $cmd	
 	$range1 = $Result.count
 	if($range1 -eq "4")	{	return "No data available"	}	
 	if ( $Result.Count -gt 1)
@@ -2172,6 +2207,8 @@ Function Set-A9StatisticsInUseChunklets
 	Specifies the name of the logical disk in which the chunklet to be configured resides.
 .PARAMETER CLnum 	
 	Specifies the chunklet that is configured using the setstatch command.	
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]											[switch]	$Start,
@@ -2187,12 +2224,12 @@ Process
 	if ($Start)		{	$cmd1 += " start "	}
 	if ($Stop)		{	$cmd1 += " stop "	}
 	if($LDname)		{	$cmd2="showld"
-						$Result1 = Invoke-CLICommand -cmds  $cmd2
+						$Result1 = Invoke-A9CLICommand -cmds  $cmd2
 						if($Result1 -match $LDname)	{	$cmd1 += " $LDname "	}
 						Else		{	return "Error:  LDname  is Invalid ."	}
 					}
 	if($CLnum)		{	$cmd1+="$CLnum"	}
-	$Result = Invoke-CLICommand -cmds  $cmd1
+	$Result = Invoke-A9CLICommand -cmds  $cmd1
 	write-verbose "   The Set-Statch command sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD).->$cmd"
 	if([string]::IsNullOrEmpty($Result))
 		{	return  "Success : Set-Statch $Result "	}
@@ -2218,6 +2255,8 @@ Function Set-A9StatisticsCollectionPhysicalDiskChunklets
     Specifies that the collection of statistics is either started or stopped for the specified Logical Disk (LD) and chunklet.
 .PARAMETER PD_ID   
     Specifies the PD ID.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]					[switch]	$Start,
@@ -2232,10 +2271,10 @@ Process
 	if ($Start)		{	$cmd1 += " start "	}
 	if ($Stop)		{	$cmd1 += " stop "	}
 	$cmd2="showpd"
-	$Result1 = Invoke-CLICommand -cmds  $cmd2
+	$Result1 = Invoke-A9CLICommand -cmds  $cmd2
 	if($Result1 -match $PD_ID)	{	$cmd1 += " $PD_ID "	}
 	Else						{	return "Error:  PD_ID   is Invalid ."	}						
-	$Result = Invoke-CLICommand -cmds  $cmd1
+	$Result = Invoke-A9CLICommand -cmds  $cmd1
 	if([string]::IsNullOrEmpty($Result))
 		{	write-host "Success : Executing Set-StatPdch 	 " -ForegroundColor green
 			return $Result  
@@ -2310,6 +2349,8 @@ Function Measure-A9System
 	Specifies the maximum number of tunenodech tasks which the Measure-SYS command can run simultaneously. <number> must be between 1 and 8. The default value is 1.
 .PARAMETER Waittask
 	Wait for all tasks created by this command to complete before returning.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -2355,7 +2396,7 @@ Process
 	if($Maxtasks)	{	$Cmd += " -maxtasks $Maxtasks " }
 	if($Maxnodetasks){	$Cmd += " -maxnodetasks $Maxnodetasks " }
 	if($Waittask)	{	$Cmd += " -waittask " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -2409,10 +2450,11 @@ Function Optimize-A9PhysicalDisk
 	physical disks are displayed.
 .PARAMETER Movech
 	Specifies that if any disks with unbalanced loads are detected that chunklets are moved from those disks for load balancing.
-	auto:Specifies that the system chooses source and destination chunklets. 
+	auto: 	Specifies that the system chooses source and destination chunklets. 
 	manual: Specifies that the source and destination chunklets are manually entered.
-	If not specified, you are prompted for selecting the source and
-	destination chunklets.   
+	If not specified, you are prompted for selecting the source and destination chunklets.  
+.NOTES
+	This command requires a SSH type connection. 
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Nodes,
@@ -2453,7 +2495,7 @@ Process
 	if($MaxSvct)		{	$Cmd += " maxSvct $MaxSvct "	} 
 	elseif($AvgSvct)	{	$Cmd += " avgsvct $AvgSvct "	}
 	else				{	return	"Please select at list one from [ MaxSvct or AvgSvct]."	}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }

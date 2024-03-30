@@ -54,7 +54,7 @@ Process
 					return 
 				}
 			$uri = '/ports/'+$NSP
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 					write-host "Cmdlet executed successfully" -foreground green
@@ -92,7 +92,7 @@ Process
 						}
 				}
 			$uri = '/ports/'+$Query
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			If($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 				}
@@ -105,7 +105,7 @@ Process
 				}
 		}
 	else
-		{	$Result = Invoke-WSAPI -uri '/ports' -type 'GET' 
+		{	$Result = Invoke-A9API -uri '/ports' -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members	
 					write-host "Cmdlet executed successfully" -foreground green
@@ -177,7 +177,7 @@ Process
 					$uri = '/ports/'+$NSP+'/iSCSIVlans/'
 				}		
 		}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET'
+	$Result = Invoke-A9API -uri $uri -type 'GET'
 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
@@ -231,7 +231,7 @@ Process
 								}				
 						}
 					$uri = '/portdevices'+$Query
-					$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+					$Result = Invoke-A9API -uri $uri -type 'GET' 
 					If($Result.StatusCode -eq 200)
 						{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 						}
@@ -244,7 +244,7 @@ Process
 						}
 				}
 			else{	$uri = '/portdevices/all/'+$NSP
-					$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+					$Result = Invoke-A9API -uri $uri -type 'GET' 
 					If($Result.StatusCode -eq 200)
 						{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 						}	
@@ -289,7 +289,7 @@ Process
 	$dataPS = $null
 	$uri = '/portdevices/targetdrivenzones/'
 	if($NSP)	{	$uri = $uri+'/'+$NSP}	
-	$Result = Invoke-WSAPI -uri  -type 'GET' 	
+	$Result = Invoke-A9API -uri  -type 'GET' 	
 	If($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 			if($dataPS.Count -gt 0)
@@ -331,7 +331,7 @@ Process
 	$dataPS = $null		
 	if($NSP)
 		{	$uri = '/portdevices/fcswitch/'+$NSP
-			$Result = Invoke-WSAPI -uri $uri -type 'GET'
+			$Result = Invoke-A9API -uri $uri -type 'GET'
 		}
 	If($Result.StatusCode -eq 200)
 		{	if($dataPS.Count -gt 0)
@@ -398,7 +398,7 @@ Process
 	if($iSCSIPortInfobody.Count -gt 0){	$body["iSCSIPortInfo"] = $iSCSIPortInfobody 	}
     $Result = $null	
 	$uri = '/ports/'+$NSP 
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return $Result		
@@ -446,7 +446,7 @@ Process
 	$body["vlanTag"] = $VlanTag   
     $Result = $null
 	$uri = "/ports/"+$NSP+"/iSCSIVlans/"
-    $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body
+    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
 	$status = $Result.StatusCode	
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -495,7 +495,7 @@ Process
 	$body["vlanTag"] = $VlanTag   
     $Result = $null
 	$uri = "/ports/"+$NSP+"/iSCSIVlans/"
-	$Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body 
+	$Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
 	$status = $Result.StatusCode	
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -563,7 +563,7 @@ Process
 	If ($ISNSAddr) 	{ 	$body["iSNSAddr"] ="$($ISNSAddr)"}
     $Result = $null	
 	$uri = "/ports/" + $NSP + "/iSCSIVlans/" + $VlanTag 
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return $Result		
@@ -598,7 +598,7 @@ Process
     $body["action"] = 2
     $Result = $null
 	$uri = '/ports/'+$NSP 
-    $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body
+    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
 	$status = $Result.StatusCode	
 	if($status -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -637,7 +637,7 @@ Begin
 Process 
 {	$uri = "/ports/"+$NSP+"/iSCSIVlans/"+$VlanTag 
 	$Result = $null
-	$Result = Invoke-WSAPI -uri $uri -type 'DELETE'
+	$Result = Invoke-A9API -uri $uri -type 'DELETE'
 	$status = $Result.StatusCode
 	if($status -eq 202)
 		{	write-host "Cmdlet executed successfully" -foreground green

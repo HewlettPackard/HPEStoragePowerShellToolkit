@@ -2,7 +2,7 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ## 
 
-function Invoke-WSAPI 
+function Invoke-A9API 
 {
 [CmdletBinding()]
 Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex. /volumes)")]
@@ -19,14 +19,14 @@ Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex.
 					$WsapiConnection = $global:WsapiConnection
 	)
 Process
-{	Write-verbose "Invoke-WSAPI: Request: Request Invoke-WSAPI URL : $uri TYPE : $type "   
+{	Write-verbose "Invoke-A9API: Request: Request Invoke-A9API URL : $uri TYPE : $type "   
 	$ip = $WsapiConnection.IPAddress
 	$key = $WsapiConnection.Key
 	if 		($ArrayType -eq "3par") 		{	$APIurl = 'https://' + $ip + ':8080/api/v1' }
 	Elseif (($ArrayType -eq "Primera") -or ($ArrayType -eq "Alletra9000")) 
 			{	$APIurl = 'https://' + $ip + ':443/api/v1'
 			}
-	else {	return "Invoke-WSAPI: Array type is Null."	}
+	else {	return "Invoke-A9API: Array type is Null."	}
 	$url = $APIurl + $uri
 	Write-verbose "Running: Constructing header." 
 	$headers = @{}
@@ -36,37 +36,37 @@ Process
 	$headers["X-HP3PAR-WSAPI-SessionKey"] = $key
 	$data = $null
 	If ($type -eq 'GET') 
-		{	Try 	{	Write-verbose "Invoke-WSAPI: Request: Invoke-WebRequest for Data, Request Type : $type" 
+		{	Try 	{	Write-verbose "Invoke-A9API: Request: Invoke-WebRequest for Data, Request Type : $type" 
 						if ($PSEdition -eq 'Core') 	{	$data = Invoke-WebRequest -Uri "$url" -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck } 
 						else 						{  	$data = Invoke-WebRequest -Uri "$url" -Headers $headers -Method $type -UseBasicParsing 	}
 						return $data
 					}
-			Catch 	{	Write-verbose "Invoke-WSAPI: Stop: Exception Occurs" 
+			Catch 	{	Write-verbose "Invoke-A9API: Stop: Exception Occurs" 
 						return
 					}
 		}
 	If (($type -eq 'POST') -or ($type -eq 'PUT')) 
-		{	Try		{	Write-verbose "Invoke-WSAPI: Request: Invoke-WebRequest for Data, Request Type : $type" 
+		{	Try		{	Write-verbose "Invoke-A9API: Request: Invoke-WebRequest for Data, Request Type : $type" 
 						$json = $body | ConvertTo-Json  -Compress -Depth 10	
 						if ($PSEdition -eq 'Core') 	{	$data = Invoke-WebRequest -Uri "$url" -Body $json -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck } 
 						else 						{	$data = Invoke-WebRequest -Uri "$url" -Body $json -Headers $headers -Method $type -UseBasicParsing }
 						return $data
 					}
-			Catch 	{	Write-error "Invoke-WSAPI: Stop: Exception Occurs" 
+			Catch 	{	Write-error "Invoke-A9API: Stop: Exception Occurs" 
 						return $_
 					}
 		}
 	If ($type -eq 'DELETE') 
-		{	Try {	Write-verbose "Invoke-WSAPI: Request: Invoke-WebRequest for Data, Request Type : $type" 
+		{	Try {	Write-verbose "Invoke-A9API: Request: Invoke-WebRequest for Data, Request Type : $type" 
 					if 	($PSEdition -eq 'Core') {	$data = Invoke-WebRequest -Uri "$url" -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck } 
 					else 						{  	$data = Invoke-WebRequest -Uri "$url" -Headers $headers -Method $type -UseBasicParsing 	}
 					return $data
 				}
 			Catch 
-				{	Write-error "Invoke-WSAPI: Stop: Exception Occurs" 
+				{	Write-error "Invoke-A9API: Stop: Exception Occurs" 
 					return $_
 				}
 		}
-	Write-verbose "End: Invoke-WSAPI" 
+	Write-verbose "End: Invoke-A9API" 
 }
 }

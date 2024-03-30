@@ -65,7 +65,7 @@ Process
 	if($Disabled)	{	$srinfocmd += " -disabled "	}
 	if($Critical)	{	$srinfocmd += " -critical "	}
 	write-verbose "Get alert criteria command => $srinfocmd"
-	$Result = Invoke-CLICommand -cmds  $srinfocmd	
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd	
 	if($Result -match "Invalid")	{	return "FAILURE : $Result"	}
 	if($Result -match "Error")		{	return "FAILURE : $Result"	}
 	if($Result -match "No criteria listed")	{	return "No srcriteria listed"	}
@@ -147,7 +147,7 @@ Process
 	if ($oneline)	{	$cmd+=" -oneline "		}
 	if ($VV_name)	{	$cmd+=" -vv $VV_name "		}
 	if ($withvv)	{	$cmd+=" -withvv "		}	
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose " The Get-SRAOMoves command creates and admits physical disk definitions to enable the use of those disks  " 
 	return 	$Result	
 } 
@@ -261,7 +261,7 @@ Process
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,PrivateBase(MB),PrivateSnap(MB),Shared(MB),Free(MB),Total(MB),UsableFree(MB),Dedup_GC(KB/s),Compact,Dedup,Compress,DataReduce,OverProv"
 		}
 	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 	if($Result -contains "FAILURE")
 		{	Remove-Item  $tempFile
 			return "FAILURE : $Result"
@@ -412,7 +412,7 @@ Process
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
 		}
 	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 	$range1  = $Result.count
 	if($range1 -le "3")
 		{	Remove-Item  $tempFile
@@ -567,7 +567,7 @@ Process
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
 		}
 	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 	$range1  = $Result.count
 	if($range1 -le "3")
 		{	Remove-Item  $tempFile
@@ -712,7 +712,7 @@ Process
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
 		}
 	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 	$range1  = $Result.count		
 	if($range1 -le "3")
 		{	Remove-Item  $tempFile
@@ -880,7 +880,7 @@ Process
 					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
 				}
 			write-verbose "System reporter command => $srinfocmd"
-			$Result = Invoke-CLICommand -cmds  $srinfocmd
+			$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 			$range1  = $Result.count
 			if($range1 -le "3")
 				{	Remove-Item  $tempFile
@@ -968,6 +968,8 @@ Function Get-A9SystemReportLogicalDiskSpace
 	Limit data to LDs owned by the specified nodes.
 .PARAMETER LDname
 	CPGs matching either the specified CPG_name or glob-style pattern are included. This specifier can be repeated to display information for multiple CPGs. If not specified, all CPGs are included.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$attime,
@@ -1027,7 +1029,7 @@ Process
 					$rangestart = "2"
 				}
 			write-verbose "System reporter command => $srinfocmd"
-			$Result = Invoke-CLICommand -cmds  $srinfocmd
+			$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 			if($Result -contains "FAILURE")
 				{	Remove-Item  $tempFile
 					return "FAILURE : $Result"
@@ -1113,6 +1115,8 @@ Function Get-A9SRPhysicalDiskSpace
 	Limit the data to disks of the specified RPM. Allowed speeds are  7, 10, 15, 100 and 150
 .PARAMETER PDID
 	PDs with IDs that match either the specified PDID or glob-style  pattern are included. This specifier can be repeated to include multiple PDIDs or patterns.  If not specified, all PDs are included.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]		[switch]	$attime,
@@ -1166,7 +1170,7 @@ Process
 					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,Normal(Chunklets)_Used_OK,Normal(Chunklets)_Used_Fail,Normal(Chunklets)_Avail_Clean,Normal(Chunklets)_Avail_Dirty,Normal(Chunklets)_Avail_Fail,Spare(Chunklets)_Used_OK,Spare(Chunklets)_Used_Fail,Spare(Chunklets)_Avail_Clean,Spare(Chunklets)_Avail_Dirty,Spare(Chunklets)_Avail_Fail,LifeLeft%,T(C)"
 				}
 			write-verbose "System reporter command => $srinfocmd"
-			$Result = Invoke-CLICommand -cmds  $srinfocmd
+			$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 			if($Result -contains "FAILURE")
 				{	Remove-Item  $tempFile
 					return "FAILURE : $Result"
@@ -1234,6 +1238,8 @@ Function Get-A9SRrgiodensity
 	Show the data for each VV.
 .PARAMETER Rw
 	Specifies that the display includes separate read and write data. If not specified, the total is displayed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Btsecs,
@@ -1264,7 +1270,7 @@ Process
 	if($Withvv)	{	$Cmd += " -withvv " 		}
 	if($Rw)		{	$Cmd += " -rw " 			}
 	if($Aocfg_name){$Cmd += " $Aocfg_name " 	}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -1327,6 +1333,8 @@ Function Get-A9SystemReportStatCache
 .PARAMETER Node
 	Only the specified node numbers are included, where each node is a number from 0 through 7. If want to display information for multiple nodes specift <nodenumber>,<nodenumber2>,etc. 
 	If not specified, all nodes are included. Get-SRStatCache  -Node 0,1,2
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$attime,
@@ -1385,7 +1393,7 @@ Process
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,CMP_r/s,CMP_w/s,CMP_rhit%,CMP_whit%,FMP_rhit%,FMP_whit%,FMP_Used%,Read_Back_IO/s,Read_Back_MB/s,Dstg_Wrt_IO/s,Dstg_Wrt_MB/s"
 		}
 	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 	if($Result -contains "FAILURE")
 		{	Remove-Item  $tempFile
 			return "FAILURE : $Result"
@@ -1462,6 +1470,8 @@ Function Get-A9SystemReporterStatCacheMemoryPages
 .PARAMETER Node
 	Only the specified node numbers are included, where each node is a number from 0 through 7. If want to display information for multiple nodes specift <nodenumber>,<nodenumber2>,etc. 
 	If not specified, all nodes are included. Get-SRStatCMP  -Node 0,1,2
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$attime,
@@ -1520,7 +1530,7 @@ Process
 			}
 		#write-host " cmd = $srinfocmd"
 		write-verbose "System reporter command => $srinfocmd"
-		$Result = Invoke-CLICommand -cmds  $srinfocmd
+		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 		if($Result -contains "FAILURE")
 			{	Remove-Item  $tempFile
 				return "FAILURE : $Result"
@@ -1597,6 +1607,8 @@ Function Get-A9SRStatCPU
 .PARAMETER Node
 	Only the specified node numbers are included, where each node is a number from 0 through 7. If want to display information for multiple nodes specift <nodenumber>,<nodenumber2>,etc. If not specified, all nodes are included.
 	Get-SRStatCPU  -Node 0,1,2
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$attime,
@@ -1646,7 +1658,7 @@ Process
 					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,User%,Sys%,Idle%,Intr/s,CtxtSw/s"
 				}
 			write-verbose "System reporter command => $srinfocmd"
-			$Result = Invoke-CLICommand -cmds  $srinfocmd
+			$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 			if($Result -contains "FAILURE")
 				{	Remove-Item  $tempFile
 					return "FAILURE : $Result"
@@ -1740,6 +1752,8 @@ Function Get-A9SRStatfsav
 	inc		Sort in increasing order (default).
 	dec		Sort in decreasing order.
 	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Attime,
@@ -1772,7 +1786,7 @@ Process
 	if($Node)		{	$Cmd += " -node $Node "		}
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
 	if($FPGname)	{	$Cmd += " $FPGname " 		} 
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -1857,6 +1871,8 @@ Function Get-A9SRStatfsblock
 .PARAMETER BlockdevName  
 	Block Devices matching either the specified name or glob-style pattern are included. This specifier can be repeated to display information
 	for multiple devices. If not specified, all block devices are included.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Attime,
@@ -1889,7 +1905,7 @@ Process
 	if($Node)		{	$Cmd += " -node $Node "}
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
 	if($BlockdevName){	$Cmd += " $Blockdev_name " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -1973,6 +1989,8 @@ Function Get-A9SRStatfscpu
 	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
 .PARAMETER CpuId
 	Only the specified CPU ID numbers are included. This specifier can be repeated to display information for multiple CPUs. If not specified, all CPUs are included.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Attime,
@@ -2005,7 +2023,7 @@ Process
 	if($Node)		{	$Cmd += " -node $Node " }
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
 	if($CpuId)		{	$Cmd += " $CpuId " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -2086,6 +2104,8 @@ Function Get-A9SRStatfsfpg
 .PARAMETER FpgName
 	File provisioning groups matching either the specified name or glob-style pattern are included. This specifier can be repeated to
 	display information for multiple FPGs. If not specified, all FPGs are included.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Attime,
@@ -2118,7 +2138,7 @@ Process
 	if($Node)		{	$Cmd += " -node $Node " 		}
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "	}
 	if($FpgName)	{	$Cmd += " $FpgName " 			}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -2192,6 +2212,8 @@ Function Get-A9SRStatfsmem
 		inc		Sort in increasing order (default).
 		dec		Sort in decreasing order.
 	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Attime,
@@ -2222,7 +2244,7 @@ Process
 	if($Compareby)	{	$Cmd += " -compareby $Compareby " }
 	if($Node)		{	$Cmd += " -node $Node " }
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -2300,6 +2322,8 @@ Function Get-A9SRStatfsnet
 .PARAMETER EthdevName
 	Ethernet interface devices matching either the specified name or glob-style pattern are included. This specifier can be repeated to
 	display information for multiple devices. If not specified, all devices are included.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -2333,7 +2357,7 @@ Process
 	if($Node)		{	$Cmd += " -node $Node " }
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
 	if($EthdevName)	{	$Cmd += " $EthdevName " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -2415,6 +2439,8 @@ Function Get-A9SRStatfsnfs
 		inc		Sort in increasing order (default).
 		dec		Sort in decreasing order.
 	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Attime,
@@ -2445,7 +2471,7 @@ Process
 	if($Compareby)		{	$Cmd += " -compareby $Compareby " }
 	if($Node)			{	$Cmd += " -node $Node " }
 	if($Sortcol)		{	$Cmd += " -sortcol $Sortcol " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -2507,6 +2533,8 @@ Function Set-A9SRAlertCrit
 	cannot be combined with -name, -condition, or any of the type-specific filtering options.
 .PARAMETER NewName
 	Specifies that the name of the SR alert be changed to <newname>, with a maximum of 31 characters.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]    $Enable, 
@@ -2550,7 +2578,7 @@ Process
 	if($NewName)	{	$srinfocmd += " -name $NewName" 	}
 	if($NameOfTheCriterionToModify)	{	$srinfocmd += " $NameOfTheCriterionToModify" 	}
 	write-verbose "Set alert crit command => $srinfocmd"
-	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 	return $Result
 }
 }
@@ -2572,6 +2600,8 @@ Function Remove-A9SRAlertCrit
 	Specifies the name of the criterion to Remove.  .PARAMETER SANConnection 
 
 	Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$Name,
@@ -2587,7 +2617,7 @@ Process
 	if(($force) -and ($Name))	{	$srinfocmd += " -f $Name"	}
 	else	{	return "FAILURE : Please specify -force or Name parameter values"	}
 	write-verbose "Remove alert crit => $srinfocmd"
-	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 	if($Result)	{	return "FAILURE : $Result"	}
 	else{	return "Success : sralert $Name has been removed" }	
 }
@@ -2696,6 +2726,8 @@ Function New-A9SRAlertCrit
 	can be specified in seconds or with a suffix of m, h or d to represent time in minutes (e.g. 30m), hours (e.g. 1.5h), or days (e.g. 7d).
 	Note that a single alert criteria can generate multiple alerts if multiple objects exceed the defined threshold. A deferral period
 	applies to each unique alert. Acknowledging an alert with "setalert ack <id>" will end its deferral period early.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)][ValidateSet("port","vlun","pd","ld","cmp","cpu","link","qos","rcopy","rcvv")]	
@@ -2763,7 +2795,7 @@ Process
 	if($Condition)	{	$srinfocmd += " $Condition "	}
 	$srinfocmd += " $Name "
 	write-verbose "Create alert criteria command => $srinfocmd"
-	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing New-SRAlertCrit Command $Result"	}
 	else{	return  "FAILURE : While Executing New-SRAlertCrit $Result "	}
 }
@@ -2834,6 +2866,8 @@ Function Get-A9SRStatPort
 .PARAMETER port
     <npat>:<spat>:<ppat> Ports with <port_n>:<port_s>:<port_p> that match any of the specified <npat>:<spat>:<ppat> patterns are included, where each of the patterns
 	is a glob-style pattern. This specifier can be repeated to include multiple ports or patterns. If not specified, all ports are included.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$attime,
@@ -2893,7 +2927,7 @@ Process
 					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"			
 				}
 			write-verbose "System reporter command => $srinfocmd"
-			$Result = Invoke-CLICommand -cmds  $srinfocmd
+			$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 			if($Result -contains "FAILURE")	{	return "FAILURE : $Result"	}
 			$range1  = $Result.count
 			if($range1 -le "4")
@@ -2970,6 +3004,8 @@ Function Get-A9SRStatPhysicalDisk
 	Limit the data to disks of the specified RPM. Allowed speeds are 7, 10, 15, 100 and 150
 .PARAMETER PDID
 	PDs with IDs that match either the specified PDID or glob-style pattern are included. This specifier can be repeated to include multiple PDIDs or patterns. If not specified, all PDs are included.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$attime,
@@ -3024,7 +3060,7 @@ Process
 		{	$rangestart = "2"
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
 		}
-	$Result = Invoke-CLICommand -cmds  $srinfocmd		
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd		
 	if($Result -contains "FAILURE")
 		{	Remove-Item  $tempFile
 			return "FAILURE : $Result"
@@ -3115,6 +3151,8 @@ Function Get-A9SRStatfssmb
 		inc		Sort in increasing order (default).
 		dec		Sort in decreasing order.
 	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Attime,
@@ -3143,7 +3181,7 @@ Process
 	if($Groupby)	{	$Cmd += " -groupby $Groupby " }
 	if($Compareby)	{	$Cmd += " -compareby $Compareby " }
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -3205,6 +3243,8 @@ Function Get-A9SRStatLD
 	-Node 0,1,2
 .PARAMETER LDName
 	LDs matching either the specified LD_name or glob-style pattern are included. This specifier can be repeated to display information for multiple LDs. If not specified, all LDs are included.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$attime,
@@ -3259,7 +3299,7 @@ Process
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
 		}
 	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 	if($Result -contains "FAILURE")
 		{	Remove-Item  $tempFile
 			return "FAILURE : $Result"
@@ -3352,6 +3392,8 @@ Function Get-A9SRStatfssnapshot
 		inc		Sort in increasing order (default).
 		dec		Sort in decreasing order.
 	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Attime,
@@ -3382,7 +3424,7 @@ Process
 	if($Compareby)	{	$Cmd += " -compareby $Compareby "}
 	if($Node)		{	$Cmd += " -node $Node "		}
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -3459,6 +3501,8 @@ Function Get-A9SRStatlink
 	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
 .PARAMETER Node
 	Only the specified node numbers are included, where each node is a number from 0 through 7. This specifier can be repeated to display information for multiple nodes. If not specified, all nodes are included.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Attime,
@@ -3489,7 +3533,7 @@ Process
 	if($Compareby)	{	$Cmd += " -compareby $Compareby " }
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
 	if($Node)		{	$Cmd += " $Node " 			}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -3578,6 +3622,8 @@ Function Get-A9SRStatqos
 		inc		Sort in increasing order (default).
 		dec		Sort in decreasing order.
 	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Attime,
@@ -3612,7 +3658,7 @@ Process
 	if($Groupby) 	{	$Cmd += " -groupby $Groupby " }
 	if($Compareby) 	{	$Cmd += " -compareby $Compareby " }
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
@@ -3720,6 +3766,8 @@ Function Get-A9SRStatrcvv
 		Async    - Asynchronous
 .PARAMETER Group
 	Limit the data to GROUP_NAMEs that match one or more of the specified GROUP_NAMEs or glob-style patterns.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -3757,7 +3805,7 @@ Process
 	if ($Target) 	{	$Cmd += " -target $Target "	}
 	if ($Mode) 		{	$Cmd += " -mode $Mode "		}
 	if ($Group) 	{	$Cmd += " -group $Group "	}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -3845,6 +3893,8 @@ Function Get-A9SRStatVLun
 	Limit the data to VVol containers that match one or more of the specified VVol container names or glob-styled patterns.
 .PARAMETER Summary 
 	Summarize performance across requested objects and time range.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]		[switch]	$attime,
@@ -3919,7 +3969,7 @@ Process
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
 		}
 	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 	$range1  = $Result.count -3	
 	if($Summary)	{ $range1 = 4 }
 	if($range1 -le "2")
@@ -4021,6 +4071,8 @@ Function Get-A9SRVvSpace
 	Limit the data to VVOLs that have states in either the Bound or Unbound state.
 .PARAMETER vvoLsc
 	Limit the data to VVol containers that match one or more of the specified VVol container names or glob-styled patterns.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$attime,
@@ -4095,7 +4147,7 @@ Process
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,RawRsvd(MB)_User,RawRsvd(MB)_Snap,RawRsvd(MB)_Total,User(MB)_Used,User(MB)_Free,User(MB)_Rsvd,Snap(MB)_Used,Snap(MB)_Free,Snap(MB)_Rsvd,Snap(MB)_Vcopy,Total(MB)_Vcopy,Total(MB)_Used,Total(MB)_Rsvd,Total(MB)_HostWr,Total(MB)_VirtualSize,(KB/s)_Compr_GC,Efficiency_Compact,Efficiency_Compress"
 		}
 	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 	if($Result -contains "FAILURE")
 		{	Remove-Item  $tempFile
 			return "FAILURE : $Result"
@@ -4182,6 +4234,8 @@ Function Show-A9SrStatIscsi
         PROTOCOL    The protocol type for the port
 .PARAMETER NSP
 	Dode Sloat Port Value 1:2:3
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Attime, 
@@ -4210,7 +4264,7 @@ Process
 	if ($Daily)		{	$cmd+=" -daily "	}		
 	if($Groupby)	{	$cmd+=" -groupby $Groupby"}
 	if ($NSP)		{	$cmd+=" $NSP "	}
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Show-SrStatIscsi command that displays information iSNS table for iSCSI ports in the system  "	
 	$Flag="True"
 	if($Attime -or $Summary)
@@ -4373,6 +4427,8 @@ Function Show-A9SrStatIscsiSession
 	TPGT        The TPGT ID for the session
 .PARAMETER NSP
 	Node Sloat Poart Value 1:2:3
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Attime, 
@@ -4400,7 +4456,7 @@ Process
 	if ($Daily)		{	$cmd+=" -daily "	}	
 	if ($Groupby)	{	$cmd+=" -groupby $Groupby"	}
 	if ($NSP)	{	$cmd+=" $NSP "	}
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Show-SrStatIscsiSession command that displays information iSNS table for iSCSI ports in the system  "
 	if($Attime)
 		{	if($Result -match "Time")

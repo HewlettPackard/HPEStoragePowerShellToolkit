@@ -62,6 +62,8 @@ Function Get-A9CPG_CLI
 .PARAMETER Domain_Name
 	Shows only CPGs that are in domains with names matching one or more of the <domain_name_or_pattern> argument. This option does not allow
 	listing objects within a domain of which the user is not a member. Patterns are glob-style (shell-style) patterns (see help on sub,globpat).
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$ListCols,
@@ -93,12 +95,12 @@ Process
 	if($Domain_Name)	{	$GetCPGCmd += "-domain $Domain_Name "	}
 	if ($cpgName)		{	$objType = "cpg"
 							$objMsg  = "cpg"
-							if ( -not ( Test-CLIObject -objectType $objType -objectName $cpgName -objectMsg $objMsg )) 
+							if ( -not ( Test-A9CLIObject -objectType $objType -objectName $cpgName -objectMsg $objMsg )) 
 									{	return "FAILURE : No cpg $cpgName found"
 									}
 							$GetCPGCmd += "  $cpgName"
 						}	
-	$Result = Invoke-CLICommand -cmds  $GetCPGCmd	
+	$Result = Invoke-A9CLICommand -cmds  $GetCPGCmd	
 	if($ListCols -or $History)	{	return $Result	}
 	if ( $Result.Count -gt 1)
 		{	$3parosver = Get-Version -S 
@@ -462,6 +464,8 @@ Function New-A9CPG_CLI
 .PARAMETER CH
 	Specifies the chunklet location characteristics: either first (attempt to use the lowest numbered available chunklets) or last(attempt to 
 	use the highest numbered available chunklets). If no argument is specified, the default characteristic is first.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(mandatory=$true)]	
@@ -503,7 +507,7 @@ Process
 	if($HA)				{	$CreateCPGCmd += " -ha $HA "		}
 	if($CH)				{	$CreateCPGCmd += " -ch $CH "		}
 	$CreateCPGCmd += " $cpgName"
-	$Result1 = Invoke-CLICommand -cmds  $CreateCPGCmd	
+	$Result1 = Invoke-A9CLICommand -cmds  $CreateCPGCmd	
 	return $Result1
 } 
 }
@@ -532,6 +536,8 @@ Function Remove-A9CPG_CLI
     Specify name of the CPG
 .PARAMETER Pat 
     The specified patterns are treated as glob-style patterns and that all common provisioning groups matching the specified pattern are removed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$force,
@@ -552,7 +558,7 @@ Process
 			$objType = "cpg"
 			$objMsg  = "cpg"
 			$RemoveCPGCmd = "removecpg "
-			if ( -not ( Test-CLIObject -objectType $objType -objectName $cpgName -objectMsg $objMsg )) 
+			if ( -not ( Test-A9CLIObject -objectType $objType -objectName $cpgName -objectMsg $objMsg )) 
 				{	write-verbose " CPG $cpgName does not exist. Nothing to remove"   
 					return "FAILURE: No cpg $cpgName found"
 				}
@@ -562,9 +568,9 @@ Process
 					if ($saLDname)	{	$RemoveCPGCmd +=" -sa $saLDname "}
 					if ($sdLDname)	{	$RemoveCPGCmd +=" -sd $sdLDname "	}
 					$RemoveCPGCmd += " $cpgName "
-					$Result3 = Invoke-CLICommand -cmds  $RemoveCPGCmd
+					$Result3 = Invoke-A9CLICommand -cmds  $RemoveCPGCmd
 					write-verbose "Removing CPG  with the command --> $RemoveCPGCmd" 
-					if (Test-CLIObject -objectType $objType -objectName $cpgName -objectMsg $objMsg)
+					if (Test-A9CLIObject -objectType $objType -objectName $cpgName -objectMsg $objMsg)
 						{	write-verbose " CPG $cpgName exists. Nothing to remove"   
 							return "FAILURE: While removing cpg $cpgName `n $Result3"
 						}
@@ -685,6 +691,8 @@ Function Set-A9CPG
 	<LD_name> argument can be repeated to specify multiple logical disks.
 .PARAMETER NewName
 	Specifies the name of the Common Provisioning Group (CPG) to be modified to. <newname> can be up to 31 characters in length.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Sa,
@@ -756,7 +764,7 @@ Process
 	if($NewName){	$Cmd += " -name $NewName " }
 	if($CPG_name){	$Cmd += " $CPG_name " }
 	else		{	Return "CPG Name is mandatory please enter..." }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if ([string]::IsNullOrEmpty($Result))	{    Get-CPG -Detailed -cpgName $CPG_name }
 	else	{ 	Return $Result	}
 }
@@ -785,6 +793,8 @@ Function Compress-A9CPG
 	option. If all logical disks match the CPG growth characteristics, this option has no effect.
 .PARAMETER Dr
 	Specifies that the operation is a dry run, and the tasks are not actually performed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Pat,
@@ -806,7 +816,7 @@ Process
 	if($Dr)			{	$Cmd += " -dr " }
 	if($CPG_name)	{	$Cmd += " $CPG_name "}
 	else			{	Return "CPG Name is mandatory please enter...." }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }

@@ -10,6 +10,8 @@ Function Get-A9Domain
 	Displays a list of domains in a system.
 .PARAMETER D
 	Specifies that detailed information is displayed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$D
@@ -20,7 +22,7 @@ Begin
 Process
 {	$Cmd = " showdomain "
 	if($D)	{	$Cmd += " -d " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1) 
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -2  
@@ -57,6 +59,8 @@ Function Get-A9DomainSet
 	domain sets that contain the supplied domains or patterns
 .PARAMETER SetOrDomainName
 	specify either Domain Set name or domain name (member of Domain set)
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$D,
@@ -71,7 +75,7 @@ Process
 	if($D)		{	$Cmd += " -d " }
 	if($Domain)	{	$Cmd += " -domain " } 
 	if($SetOrDomainName)	{	$Cmd += " $SetOrDomainName " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)	{	return  $Result }
 	else	{	return  $Result }
 }
@@ -97,6 +101,8 @@ Function Move-A9Domain
 	Specifies that the object is a host.
 .PARAMETER F
 	Specifies that the command is forced. If this option is not used, the command requires confirmation before proceeding with its operation.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$vv,
@@ -117,7 +123,7 @@ Process
 	if($F)		{	$Cmd += " -f " }
 	if($ObjName){	$Cmd += " $ObjName " }
 	if($DomainName){$Cmd += " $DomainName " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result -match "Id")
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -1  
@@ -156,6 +162,8 @@ Function New-A9Domain
 	Specify the maximum value that can be set for the retention time of a volume in this domain. <time> is a positive integer value and in the range of 0 - 43,800 hours (1825 days).
 	Time can be specified in days or hours providing either the 'd' or 'D' for day and 'h' or 'H' for hours following the entered time value.
 	To disable setting the volume retention time in the domain, enter 0 for <time>.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Comment,
@@ -171,7 +179,7 @@ Process
 	if($Vvretentiontimemax) {	$Cmd += " -vvretentiontimemax $Vvretentiontimemax " } 
 	if($Domain_name) 		{	$Cmd += " $Domain_name " }
 	else {	return "Domain Required.." }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 	if ([string]::IsNullOrEmpty($Result))	{   Return $Result = "Domain : $Domain_name Created Successfully."	}
 	else									{	Return $Result	}
@@ -194,6 +202,8 @@ Function New-A9DomainSet
 	Specifies that the domains listed should be added to an existing set. At least one domain must be specified.
 .PARAMETER Comment
 	Specifies any comment or additional information for the set. The comment can be up to 255 characters long. Unprintable characters are not allowed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$SetName,
@@ -208,7 +218,7 @@ Process
 	if($Add) 		{	$Cmd += " -add " }
 	if($Comment)	{	$Cmd += " -comment " + '" ' + $Comment +' "' }
 	if($SetName)	{	$Cmd += " $SetName " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -226,6 +236,8 @@ Function Remove-A9Domain
 	Specifies the domain that is removed. If the -pat option is specified the DomainName will be treated as a glob-style pattern, and multiple domains will be considered.
 .PARAMETER Pat
 	Specifies that names will be treated as glob-style patterns and that all domains matching the specified pattern are removed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]					[switch]	$Pat,
@@ -238,7 +250,7 @@ Process
 {	$Cmd = " removedomain -f "
 	if($Pat)		{	$Cmd += " -pat " }
 	if($DomainName)	{	$Cmd += " $DomainName " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -261,6 +273,8 @@ Function Remove-A9DomainSet
 	Specifies that the command is forced. If this option is not used, the command requires confirmation before proceeding with its operation.
 .PARAMETER Pat
 	Specifies that both the set name and domains will be treated as glob-style patterns.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]					[switch]	$F,
@@ -277,7 +291,7 @@ Process
 	if($Pat)	{	$Cmd += " -pat " }
 	if($SetName){	$Cmd += " $SetName " }
 	if($Domain)	{	$Cmd += " $Domain " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
@@ -295,6 +309,8 @@ Function Set-A9Domain
 	PS:> Set-A9Domain -Domain "XXX"
 .PARAMETER Domain
 	Name of the domain to be set as the working domain for the current CLI session. If the <domain> parameter is not present or is equal to -unset then the working domain is set to no current domain.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Domain
@@ -305,7 +321,7 @@ Begin
 Process
 {	$Cmd = " changedomain "
 	if($Domain)	{	$Cmd += " $Domain " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if([String]::IsNullOrEmpty($Domain))
 		{	$Result = "Working domain is unset to current domain."
 			Return $Result
@@ -340,6 +356,8 @@ Function Update-A9Domain
 	range of 0 - 43,800 hours (1825 days). Time can be specified in days or hours providing either the 'd' or 'D' for day and 'h' or 'H' for hours
 	following the entered time value. To remove the maximum volume retention time for the domain, enter '-vvretentiontimemax ""'. As a result, the maximum 
 	volume retention time for the system is used instead. To disable setting the volume retention time in the domain, enter 0 for <time>.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[String]	$NewName,
@@ -356,7 +374,7 @@ Process
 	if($Comment){	$Cmd += " -comment " + '" ' + $Comment +' "'}
 	if($Vvretentiontimemax)	{	$Cmd += " -vvretentiontimemax $Vvretentiontimemax "	}
 	if($DomainName)	{	$Cmd += " $DomainName "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -376,6 +394,8 @@ Function Update-A9DomainSet
 	Specifies any comment or additional information for the set. The comment can be up to 255 characters long. Unprintable characters are not allowed.
 .PARAMETER NewName
 	Specifies a new name for the domain set, using up to 27 characters in length.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Comment,
@@ -390,7 +410,7 @@ Process
 	if($Comment)	{	$Cmd += " -comment " + '" ' + $Comment +' "' }
 	if($NewName)	{  	$Cmd += " -name $NewName " }
 	if($DomainSetName){	$Cmd += " $DomainSetName " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 } 

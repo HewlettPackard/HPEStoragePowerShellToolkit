@@ -17,7 +17,7 @@ Begin
 {	Test-A9Connection -ClientType 'API' 
 }
 Process
-{	$Result = Invoke-WSAPI -uri '/fileservices' -type 'GET'
+{	$Result = Invoke-A9API -uri '/fileservices' -type 'GET'
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json)
 			write-host "Cmdlet executed successfully" -foreground green
@@ -84,7 +84,7 @@ Process
 	If ($NodeId) 	{	$body["nodeId"] = $NodeId   	}
 	If ($Comment) 	{	$body["comment"] = "$($Comment)"}
     $Result = $null
-	$Result = Invoke-WSAPI -uri '/fpgs' -type 'POST' -body $body
+	$Result = Invoke-A9API -uri '/fpgs' -type 'POST' -body $body
 	$status = $Result.StatusCode	
 	if($status -eq 202)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -119,7 +119,7 @@ Begin
 Process 
 {	$uri = '/fpgs/'+$FPGId
 	$Result = $null
-	$Result = Invoke-WSAPI -uri $uri -type 'DELETE' 
+	$Result = Invoke-A9API -uri $uri -type 'DELETE' 
 	$status = $Result.StatusCode
 	if($status -eq 202)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -178,21 +178,21 @@ Process
 								}
 						}
 					$uri = '/fpgs/'+$Query
-					$Result = Invoke-WSAPI -uri $uri -type 'GET' 		
+					$Result = Invoke-A9API -uri $uri -type 'GET' 		
 					If($Result.StatusCode -eq 200)
 						{	$dataPS = ($Result.content | ConvertFrom-Json).members				
 						}
 				}
 			else
 				{	$uri = '/fpgs/'+$FPG
-					$Result = Invoke-WSAPI -uri $uri -type 'GET' 		
+					$Result = Invoke-A9API -uri $uri -type 'GET' 		
 					If($Result.StatusCode -eq 200)
 						{	$dataPS = $Result.content | ConvertFrom-Json				
 						}		
 				}				
 		}
 	else
-		{	$Result = Invoke-WSAPI -uri '/fpgs' -type 'GET' 
+		{	$Result = Invoke-A9API -uri '/fpgs' -type 'GET' 
 			If($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 				}		
@@ -233,7 +233,7 @@ Begin
 {	Test-A9Connection -ClientType 'API' 
 }
 Process
-{	$Result = Invoke-WSAPI -uri '/fpgs/reclaimtasks' -type 'GET' 
+{	$Result = Invoke-A9API -uri '/fpgs/reclaimtasks' -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 			if($dataPS.Count -gt 0)
@@ -349,7 +349,7 @@ Process
 	If($SnapshotQuotaEnabled) {	$body["snapshotQuotaEnabled"] = $true   }
 	if($IPInfoBody.Count -gt 0) {	$body["IPInfo"] = $IPInfoBody 		}
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/virtualfileservers/' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/virtualfileservers/' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 202)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -383,7 +383,7 @@ Begin
 Process 
 {	$Result = $null
 	$uri = "/virtualfileservers/"+$VFSID
-    $Result = Invoke-WSAPI -uri $uri -type 'DELETE' 
+    $Result = Invoke-A9API -uri $uri -type 'DELETE' 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -434,7 +434,7 @@ Process
 	$Query="?query=""  """
 	if($VFSID)
 		{	$uri = '/virtualfileservers/'+$VFSID
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 				}		
@@ -446,7 +446,7 @@ Process
 					$flg = "No"
 				}
 			$uri = '/virtualfileservers/'+$Query
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}
@@ -456,13 +456,13 @@ Process
 				{	$Query = $Query.Insert($Query.Length-3," fpg EQ $FPGName")
 				}
 			$uri = '/virtualfileservers/'+$Query
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}		
 		}
 	else
-		{	$Result = Invoke-WSAPI -uri '/virtualfileservers' -type 'GET' 
+		{	$Result = Invoke-A9API -uri '/virtualfileservers' -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}	
@@ -528,7 +528,7 @@ Process
 	If($SupressSecOpErr)			{	$body["supressSecOpErr"] = $true    }
 	If($Comment) 					{	$body["comment"] = "$($Comment)"    }
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/filestores/' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/filestores/' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -579,7 +579,7 @@ Process
 	If($SupressSecOpErr) 			{	$body["supressSecOpErr"]= $true    		}		
     $Result = $null
 	$uri = '/filestores/'+$FStoreID
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -612,7 +612,7 @@ Begin
 }
 Process 
 {	$uri = '/filestores/'+$FStoreID
-	$Result = Invoke-WSAPI -uri $uri -type 'DELETE' 
+	$Result = Invoke-A9API -uri $uri -type 'DELETE' 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -666,7 +666,7 @@ Process
 	$Query="?query=""  """
 	if($FStoreID)
 		{	$uri = '/filestores/'+$FStoreID
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 				}
@@ -682,7 +682,7 @@ Process
 					$flgFPG = "No"
 				}
 			$uri = '/filestores/'+$Query
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}
@@ -698,7 +698,7 @@ Process
 						}
 				}
 			$uri = '/filestores/'+$Query
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}
@@ -709,13 +709,13 @@ Process
 					$flgFPG = "No"
 				}
 			$uri = '/filestores/'+$Query
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}		
 		}
 	else
-		{	$Result = Invoke-WSAPI -uri '/filestores' -type 'GET' 
+		{	$Result = Invoke-A9API -uri '/filestores' -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}	
@@ -776,7 +776,7 @@ Process
 	If($RetainCount){	$body["retainCount"] = $RetainCount }
 	If($FPG) 		{	$body["fpg"] 	= "$($FPG)"     }
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/filestoresnapshots/' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/filestoresnapshots/' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -809,7 +809,7 @@ Begin
 }
 Process 
 {	$uri = '/filestoresnapshots/'+$ID
-	$Result = Invoke-WSAPI -uri $uri -type 'DELETE' 
+	$Result = Invoke-A9API -uri $uri -type 'DELETE' 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -870,7 +870,7 @@ Process
 				{	Return "we cannot use FileStoreSnapshotName,VFSName,FileStoreName and FPGName with ID as FileStoreSnapshotName,VFSName,FileStoreName and FPGName is use for filtering."
 				}
 			$uri = '/filestoresnapshots/'+$ID
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 				}
@@ -890,7 +890,7 @@ Process
 					$flgFPG = "No"
 				}
 			$uri = '/filestoresnapshots/'+$Query
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}
@@ -912,7 +912,7 @@ Process
 						}
 				}
 			$uri = '/filestoresnapshots/'+$Query
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}
@@ -928,7 +928,7 @@ Process
 						}
 				}
 			$uri = '/filestoresnapshots/'+$Query
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}
@@ -939,13 +939,13 @@ Process
 					$flgFPG = "No"
 				}
 			$uri = '/filestoresnapshots/'+$Query
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}		
 		}	
 	else
-		{	$Result = Invoke-WSAPI -uri '/filestoresnapshots' -type 'GET' 
+		{	$Result = Invoke-A9API -uri '/filestoresnapshots' -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}	
@@ -1074,7 +1074,7 @@ Process
 	If($FtpShareIPs){	$body["ftpShareIPs"] = "$($FtpShareIPs)"}
 	If($FtpOptions) {	$body["ftpOptions"] = "$($FtpOptions)"	}
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/fileshares/' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/fileshares/' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -1107,7 +1107,7 @@ Begin
 }
 Process 
 {	$uri = '/fileshares/'+$ID
-    $Result = Invoke-WSAPI -uri $uri -type 'DELETE' 
+    $Result = Invoke-A9API -uri $uri -type 'DELETE' 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -1167,7 +1167,7 @@ Process
 	$flg = "NO"
 	if($ID)
 		{	$uri = '/fileshares/'+$ID
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 				}
@@ -1198,13 +1198,13 @@ Process
 					$flg = "YES"
 				}
 			$uri = '/fileshares/'+$Query
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}
 		}
 	else 
-		{	$Result = Invoke-WSAPI -uri '/fileshares' -type 'GET' 
+		{	$Result = Invoke-A9API -uri '/fileshares' -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}	
@@ -1247,7 +1247,7 @@ Process
 {	$Result = $null
 	$dataPS = $null	
 	$uri = '/fileshares/'+$ID+'/dirperms'
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = $Result.content | ConvertFrom-Json
 		}
@@ -1324,7 +1324,7 @@ Process
 	If($SoftFileLimit) 	{	$body["softFileLimit"] = $SoftFileLimit}
 	If($HardFileLimit) 	{	$body["hardFileLimit"] = $HardFileLimit	}
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/filepersonaquotas/' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/filepersonaquotas/' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -1403,7 +1403,7 @@ Process
 	If($RMHardBlockMiB) {	$body["rmHardBlockMiB"] = $RMHardBlockMiB     }
     $Result = $null
 	$uri = '/filepersonaquotas/'+$ID
-    $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -1436,7 +1436,7 @@ Begin
 }
 Process 
 {	$uri = '/filepersonaquotas/'+$ID
-	$Result = Invoke-WSAPI -uri $uri -type 'DELETE' 
+	$Result = Invoke-A9API -uri $uri -type 'DELETE' 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -1495,7 +1495,7 @@ Process
 	$flg = "NO"	
 	if($ID)
 		{	$uri = '/filepersonaquota/'+$ID
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 				}
@@ -1542,13 +1542,13 @@ Process
 					$flg = "YES"
 				}
 			$uri = '/filepersonaquota/'+$Query
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}
 		}	
 	else
-		{	$Result = Invoke-WSAPI -uri '/filepersonaquota' -type 'GET' 
+		{	$Result = Invoke-A9API -uri '/filepersonaquota' -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}	
@@ -1595,7 +1595,7 @@ Process
 	If($VFSUUID) 		{	$body["vfsUUID"] = "$($VFSUUID)"	}	
 	If($ArchivedPath) 	{	$body["archivedPath"] = "$($ArchivedPath)"	}
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/filepersonaquotas/' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/filepersonaquotas/' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -1633,7 +1633,7 @@ Process
 		{	$body["quotaArchiveParameter"] = "$($QuotaArchiveParameter)"
 		}
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/filepersonaquotas/' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/filepersonaquotas/' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green

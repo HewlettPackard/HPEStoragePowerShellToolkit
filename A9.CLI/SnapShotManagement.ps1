@@ -37,6 +37,8 @@ Function New-A9GroupSnapVolume_CLI
 	By default, all snapshots are created read-write. The -ro option instead specifies that all snapshots created will be read-only.
 	The -match option specifies that snapshots are created matching each parent's read-only or read-write setting. The -ro and -match
 	options cannot be combined. Either of these options can be overridden for an individual snapshot VV in the colon separated specifiers.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$vvNames,
@@ -59,13 +61,13 @@ Process
 	$vvName1 = $vvNames.Split(',')
 	$limit = $vvName1.Length - 1
 	foreach($i in 0..$limit)
-		{	if ( !( Test-CLIObject -objectType 'vv' -objectName $vvName1[$i] ))
+		{	if ( !( Test-A9CLIObject -objectType 'vv' -objectName $vvName1[$i] ))
 				{	write-verbose " VV $vvName1[$i] does not exist. Please use New-VV to create a VV before creating GroupSnapVolume" 
 					return "FAILURE : No vv $vvName1[$i] found"
 				}
 		}
 	$CreateGSVCmd += " $vvName1 "	
-	$result1 = Invoke-CLICommand -cmds  $CreateGSVCmd
+	$result1 = Invoke-A9CLICommand -cmds  $CreateGSVCmd
 	write-verbose " Creating Snapshot Name with the command --> $CreateGSVCmd"
 	if($result1 -match "CopyOfVV")
 		{	return "Success : Executing  `n $result1"
@@ -133,6 +135,8 @@ Function New-A9GroupVvCopy_CLI
 	This option can only be used with a CPG that has SSD (Solid State Drive) device type. Cannot be used with the -tpvv option.
 .PARAMETER Compressed
 	Indicates that the VV the online copy creates should be a compressed virtual volume.    
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]		[String]		$parent_VV,
@@ -184,7 +188,7 @@ Process
 	if($wwn)		{	$groupvvcopycmd += ":"
 						$groupvvcopycmd += "$wwn"
 					}	
-	$Result1 = Invoke-CLICommand -cmds  $groupvvcopycmd
+	$Result1 = Invoke-A9CLICommand -cmds  $groupvvcopycmd
 	write-verbose " Creating consistent group fo Virtual copies with the command --> $groupvvcopycmd"
 	if ($Result1 -match "TaskID")	{	$outmessage += "Success : `n $Result1"	}
 	else							{	$outmessage += "FAILURE : `n $Result1"	}
@@ -235,6 +239,8 @@ Function New-A9SnapVolume_CLI
 	Time can be optionally specified in days or hours providing either d or D for day and h or H for hours following the entered time value.
 .PARAMETER ro
 	Specifies that the copied volume is read-only. If not specified, the volume is read/write.	
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName="set",Mandatory=$true)]	[String]	$svName,			
@@ -252,7 +258,7 @@ Begin
 }
 Process
 {	if ($vvName)
-		{	if ( !( Test-CLIObject -objectType 'vv' -objectName $vvName ))
+		{	if ( !( Test-A9CLIObject -objectType 'vv' -objectName $vvName ))
 				{	write-verbose " VV $vvName does not exist. Please use New-VV to create a VV before creating SV" 
 					return "FAILURE :  No vv $vvName found"
 				}
@@ -264,7 +270,7 @@ Process
 			if($retain)	{	$CreateSVCmd += " -f -retain $retain  "	}
 			if($Comment){	$CreateSVCmd += " -comment $Comment  "	}
 			$CreateSVCmd +=" $svName $vvName "
-			$result1 = Invoke-CLICommand -cmds  $CreateSVCmd
+			$result1 = Invoke-A9CLICommand -cmds  $CreateSVCmd
 			write-verbose " Creating Snapshot Name $svName with the command --> $CreateSVCmd"
 			if([string]::IsNullOrEmpty($result1))
 				{	return  "Success : Created virtual copy $svName"
@@ -277,7 +283,7 @@ Process
 		{	if ( $vvSetName -match "^set:")	
 				{	$objName = $vvSetName.Split(':')[1]
 					$objType = "vv set"
-					if ( ! (Test-CLIObject -objectType $objType -objectName $objName ))
+					if ( ! (Test-A9CLIObject -objectType $objType -objectName $objName ))
 						{	Write-Verboose " VV set $vvSetName does not exist. Please use New-VVSet to create a VVSet before creating SV"
 							return "FAILURE : No vvset $vvsetName found"
 						}
@@ -288,7 +294,7 @@ Process
 					if($retain)	{	$CreateSVCmdset += " -f -retain $retain  "	}
 					if($Comment){	$CreateSVCmdset += " -comment $Comment  "	}
 					$CreateSVCmdset +=" $svName $vvSetName "
-					$result2 = Invoke-CLICommand -cmds  $CreateSVCmdset
+					$result2 = Invoke-A9CLICommand -cmds  $CreateSVCmdset
 					write-verbose " Creating Snapshot Name $svName with the command --> $CreateSVCmdset" 	
 					if([string]::IsNullOrEmpty($result2))	{	return  "Success : Created virtual copy $svName"	}
 					elseif($result2 -match "use by volume")	{	return "FAILURE : While creating virtual copy $result2"	}
@@ -361,6 +367,8 @@ Function New-A9VvCopy_CLI
 	task.  If this option is not specified, the createvvcopy operation is started with default priority of medium. High priority indicates that
 	the operation will complete faster. Low priority indicates that the operation will run slower than the default priority task. This option
 	cannot be used with -halt option.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$parentName,		
@@ -389,28 +397,28 @@ Process
 			$vvsetName = $objName
 			$objType = "vv set"
 			#$objMsg  = $objType
-			if(!( Test-CLIObject -objectType $objType  -objectName $vvsetName ))
+			if(!( Test-A9CLIObject -objectType $objType  -objectName $vvsetName ))
 				{	write-verbose " vvset $vvsetName does not exist. Please use New-VvSet to create a new vvset " 
 					return "FAILURE : No vvset $vvSetName found"
 				}
 		}
 	else
-		{	if(!( Test-CLIObject -objectType "vv"  -objectName $parentName ))
+		{	if(!( Test-A9CLIObject -objectType "vv"  -objectName $parentName ))
 				{	write-verbose " vv $parentName does not exist. Please use New-Vv to create a new vv " 
 					return "FAILURE : No parent VV  $parentName found"
 				}
 		}
 	if($online)
-		{	if(!( Test-CLIObject -objectType 'cpg' -objectName $CPGName ))
+		{	if(!( Test-A9CLIObject -objectType 'cpg' -objectName $CPGName ))
 				{	write-verbose " CPG $CPGName does not exist. Please use New-CPG to create a CPG " 
 					return "FAILURE : No cpg $CPGName found"
 				}		
-			if( Test-CLIObject -objectType 'vv' -objectName $vvCopyName )
+			if( Test-A9CLIObject -objectType 'vv' -objectName $vvCopyName )
 				{	write-verbose " vv $vvCopyName is exist. For online option vv should not be exists..." 
 				}		
 			$vvcopycmd = "createvvcopy -p $parentName -online "
 			if($snapcpg)
-				{	if(!( Test-CLIObject -objectType 'cpg' -objectName $snapcpg ))
+				{	if(!( Test-A9CLIObject -objectType 'cpg' -objectName $snapcpg ))
 						{	write-verbose " Snapshot CPG $snapcpg does not exist. Please use New-CPG to create a CPG " 
 							return "FAILURE : No snapshot cpg $snapcpg found"
 						}
@@ -427,7 +435,7 @@ Process
 			if($Priority){	$vvcopycmd += " -pri $Priority "}
 			if($CPGName){	$vvcopycmd += " $CPGName "}
 			$vvcopycmd += " $vvCopyName"
-			$Result4 = Invoke-CLICommand -cmds  $vvcopycmd
+			$Result4 = Invoke-A9CLICommand -cmds  $vvcopycmd
 			write-verbose " Creating online vv copy with the command --> $vvcopycmd" 
 			if($Result4 -match "Copy was started.")	{	return "Success : $Result4"	}
 			else									{	return "FAILURE : $Result4"	}		
@@ -439,12 +447,12 @@ Process
 			if($Saves)	{	$vvcopycmd += " -s "	}
 			if($Blocks)	{	$vvcopycmd += " -b "	}
 			if($Priority){	$vvcopycmd += " -pri $Priority "}
-			if( !(Test-CLIObject -objectType 'vv' -objectName $vvCopyName))
+			if( !(Test-A9CLIObject -objectType 'vv' -objectName $vvCopyName))
 				{	write-verbose " vv $vvCopyName does not exist.Please speicify existing vv name..." 
 					return "FAILURE : No vv $vvCopyName found"
 				}
 			$vvcopycmd += " -p $parentName $vvCopyName"
-			$Result3 = Invoke-CLICommand -cmds  $vvcopycmd
+			$Result3 = Invoke-A9CLICommand -cmds  $vvcopycmd
 			write-verbose " Creating Virtual Copy with the command --> $vvcopycmd" 
 			write-verbose " Check the task status using Get-Task command --> Get-Task "
 			if($Result3 -match "Copy was started")	{	return "Success : $Result3"	}
@@ -500,6 +508,8 @@ Function Push-A9GroupSnapVolume
 	to initiate the promote command, but can be brought online and used during the background tasks. Each specified virtual copy and its base
 	volume must be the same size. The base volume is the only possible target of online promote, and is the default. To halt a promote started
 	with the online option, use the canceltask command. The -halt, -target, and -pri options cannot be combined with the -online option.	
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$VVNames,
@@ -524,7 +534,7 @@ Process
 					$PromoteCmd += "$TargetVV "
 				}
 			
-	$result = Invoke-CLICommand -cmds  $PromoteCmd
+	$result = Invoke-A9CLICommand -cmds  $PromoteCmd
 	if( $result -match "has been started to promote virtual copy")
 		{	return "Success : Execute  `n $result"
 		}
@@ -573,8 +583,10 @@ Function Push-A9SnapVolume
 	initiate the promote command, but can bring it online and use it during the background task. The specified virtual copy and its base volume must
 	be the same size. The base volume is the only possible target of online promote, and is the default. To halt a promote started with the online
 	option, use the canceltask command. The -halt, -target, and -pri options cannot be combined with the -online option.
+.NOTES
+	This command requires a SSH type connection.
 #>
- [CmdletBinding()]
+[CmdletBinding()]
 param(	[Parameter()]	[String]	$name,
 		[Parameter()]	[String]	$target,
 		[Parameter()]	[switch]	$RCP,
@@ -588,7 +600,7 @@ Begin
 Process
 {	$promoCmd = "promotesv"	
 	if($target)
-		{	if ( !( Test-CLIObject -objectType 'vv' -objectName $target -SANConnection $SANConnection))
+		{	if ( !( Test-A9CLIObject -objectType 'vv' -objectName $target -SANConnection $SANConnection))
 				{	write-verbose " VV $target does not exist. " 
 					$promoCmd += " -target $target "
 					return "FAILURE : No vv $target found"
@@ -600,12 +612,12 @@ Process
 	if ($PRI) 	{	$promoCmd += " -pri $PRI "	}
 	if ($Online){	$promoCmd += " -online "	}
 	if ($name) 	
-		{	if ( !( Test-CLIObject -objectType 'vv' -objectName $name -SANConnection $SANConnection))
+		{	if ( !( Test-A9CLIObject -objectType 'vv' -objectName $name -SANConnection $SANConnection))
 				{	write-verbose " VV $vvName does not exist. Please use New-Vv to create a VV before creating SV" 
 					return "FAILURE : No vv $vvName found"
 				}								
 			$promoCmd += " $name "
-			$result = Invoke-CLICommand -cmds  $promoCmd
+			$result = Invoke-A9CLICommand -cmds  $promoCmd
 			write-verbose " Promoting Snapshot Volume Name $vvName with the command --> $promoCmd" 
 			Return $result
 		}		
@@ -630,6 +642,8 @@ Function Push-A9VvCopy
     Specifies the name of the physical copy to be promoted.
 .PARAMETER SANConnection 
     Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$physicalCopyName
@@ -638,12 +652,12 @@ Begin
 {	Test-A9Connection -ClientType 'SshClient' 	
 }
 Process
-{	if(!( Test-CLIObject -objectType "vv"  -objectName $physicalCopyName))
+{	if(!( Test-A9CLIObject -objectType "vv"  -objectName $physicalCopyName))
 		{	write-verbose " vv $physicalCopyName does not exist. Please use New-Vv to create a new vv" 
 			return "FAILURE : No vv $physicalCopyName found"
 		}
 	$promotevvcopycmd = "promotevvcopy $physicalCopyName"
-	$Result3 = Invoke-CLICommand -cmds  $promotevvcopycmd		
+	$Result3 = Invoke-A9CLICommand -cmds  $promotevvcopycmd		
 	write-verbose " Promoting Physical volume with the command --> $promotevvcopycmd"
 	if( $Result3 -match "not a physical copy")
 		{	return "FAILURE : $Result3"
@@ -688,6 +702,8 @@ Function Set-A9VvSnapshot
 	virtual volume set
 .PARAMETER Force
 	Specifies that the command is forced.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$Name,		
@@ -709,20 +725,20 @@ Process
 				{	$objName = $vvtempnames[$i].Split(':')[1]
 					$vvsetName = $objName
 					$objType = "vv set"
-					if(!( Test-CLIObject -objectType $objType  -objectName $vvsetName -SANConnection $SANConnection))
+					if(!( Test-A9CLIObject -objectType $objType  -objectName $vvsetName -SANConnection $SANConnection))
 						{	write-verbose " vvset $vvsetName does not exist. Please use New-VvSet to create a new vvset " 
 							return "FAILURE : No vvset $vvsetName found"
 						}
 				}				
 			else{	$subcmd = $vvtempnames[$i]
-					if(!( Test-CLIObject -objectType "vv"  -objectName $subcmd -SANConnection $SANConnection))
+					if(!( Test-A9CLIObject -objectType "vv"  -objectName $subcmd -SANConnection $SANConnection))
 						{	write-verbose " vv $vvtempnames[$i] does not exist. Please use New-Vv to create a new vv" 
 							return "FAILURE : No vv $subcmd found"
 						}
 				}
 		}		
 	$updatevvcmd += " $vvtempnames "
-	$Result1 = Invoke-CLICommand -cmds  $updatevvcmd
+	$Result1 = Invoke-A9CLICommand -cmds  $updatevvcmd
 	write-verbose " updating a snapshot Virtual Volume (VV) with a new snapshot using--> $updatevvcmd" 
 	return $Result1						
 }

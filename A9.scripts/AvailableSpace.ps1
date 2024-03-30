@@ -30,7 +30,7 @@ Begin
 { Test-A9Connection -ClientType 'API' 
 }
 Process
-{ $Result = Invoke-WSAPI -uri '/capacity' -type 'GET' 
+{ $Result = Invoke-A9API -uri '/capacity' -type 'GET' 
   if($Result.StatusCode -eq 200)
     { $dataPS = ($Result.content | ConvertFrom-Json)
     }

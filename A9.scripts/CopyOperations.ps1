@@ -84,7 +84,7 @@ Process
 	if($ParameterBody.Count -gt 0){	$body["parameters"] 			= $ParameterBody 	}
     $Result = $null
 	$uri = '/volumes/'+$VolumeName
-    $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body
+    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	Write-HOST "SUCCESS: volume snapshot:$snpVVName created successfully" -ForegroundColor green 
@@ -193,8 +193,8 @@ Process
 	If ($AddToSet) 			{	$ParameterBody["addToSet"] = "$($AddToSet)"	}	
 	if($ParameterBody.Count -gt 0)	{	$body["parameters"] = $ParameterBody 	}
     $Result = $null
-	Write-verbose "Request: Request to New-VvListGroupSnapshot_WSAPI : $SnapshotName (Invoke-WSAPI)." 
-    $Result = Invoke-WSAPI -uri '/volumes' -type 'POST' -body $body 
+	Write-verbose "Request: Request to New-VvListGroupSnapshot_WSAPI : $SnapshotName (Invoke-A9API)." 
+    $Result = Invoke-A9API -uri '/volumes' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 300)
 		{	Write-host "SUCCESS: Group snapshots of a virtual volumes list : $SnapshotName created successfully" -ForegroundColor green
@@ -316,9 +316,9 @@ Process
 		{	$body["parameters"] = $ParameterBody 
 		}
     $Result = $null
-	Write-Verbose "Request: Request to New-VvPhysicalCopy_WSAPI : $VolumeName (Invoke-WSAPI)." 
+	Write-Verbose "Request: Request to New-VvPhysicalCopy_WSAPI : $VolumeName (Invoke-A9API)." 
 	$uri = '/volumes/'+$VolumeName
-    $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body
+    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	Write-host "SUCCESS: Physical copy of a volume: $VolumeName created successfully" -ForegroundColor green
@@ -356,8 +356,8 @@ Process
 	$body["action"] = 2	
     $Result = $null	
 	$uri = "/volumes/" + $VolumeName
-	Write-verbose "Request: Request to Reset-PhysicalCopy_WSAPI : $VolumeName (Invoke-WSAPI)." 
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body
+	Write-verbose "Request: Request to Reset-PhysicalCopy_WSAPI : $VolumeName (Invoke-A9API)." 
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return $Result		
@@ -394,8 +394,8 @@ Process
 	$body["action"] = 1	
     $Result = $null	
 	$uri = "/volumes/" + $VolumeName
-	Write-verbose "Request: Request to Stop-A9PhysicalCopy : $VolumeName (Invoke-WSAPI)."
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body
+	Write-verbose "Request: Request to Stop-A9PhysicalCopy : $VolumeName (Invoke-A9API)."
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 		return $Result		
@@ -453,7 +453,7 @@ Process
 	if($AllowRemoteCopyParent)	{	$body["allowRemoteCopyParent"] = $true	}    
     $Result = $null	
 	$uri = "/volumes/" + $VirtualCopyName	
-	$Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return $Result		
@@ -513,7 +513,7 @@ Process
 	if($AllowRemoteCopyParent)	{	$body["allowRemoteCopyParent"] = $true	}
     $Result = $null	
 	$uri = "/volumesets/" + $VVSetName
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return $Result		
@@ -583,7 +583,7 @@ Process
 	if($ParameterBody.Count -gt 0)	{	$body["parameters"] = $ParameterBody 					}
     $Result = $null	
 	$uri = '/volumesets/'+$VolumeSetName
-    $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -639,7 +639,7 @@ Process
 		}
     $Result = $null	
 	$uri = '/volumesets/'+$VolumeSetName
-    $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body	
+    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body	
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -686,7 +686,7 @@ Process
 		}
     $Result = $null	
 	$uri = "/volumesets/" + $VolumeSetName
-	$Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
 		return $Result		
@@ -732,7 +732,7 @@ Process
 		}
     $Result = $null	
 	$uri = "/volumesets/" + $VolumeSetName
-	$Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return $Result		
@@ -780,7 +780,7 @@ Process
 	If ($ReadOnly) 					{	$ParameterBody["readOnly"] = $ReadOnly		 }
 	if($ParameterBody.Count -gt 0)	{	$body["parameters"] = $ParameterBody 	}
     $Result = $null	
-    $Result = Invoke-WSAPI -uri '/volumes/' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/volumes/' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green

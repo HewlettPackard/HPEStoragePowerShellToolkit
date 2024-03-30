@@ -19,7 +19,7 @@ Begin
 Process 
 {	$Result = $null
 	$dataPS = $null	
-	$Result = Invoke-WSAPI -uri '/eventstream' -type 'GET' 
+	$Result = Invoke-A9API -uri '/eventstream' -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 		}	
@@ -52,7 +52,7 @@ Begin
 Process 
 {	$Result = $null
 	$dataPS = $null	
-	$Result = Invoke-WSAPI -uri '/eventlog' -type 'GET' 
+	$Result = Invoke-A9API -uri '/eventlog' -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 		}	

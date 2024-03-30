@@ -34,7 +34,7 @@ Process
 	If ($Enable) 	{	$body["flashCachePolicy"] = 1	}
 	If ($Disable)	{	$body["flashCachePolicy"] = 2	}
     $Result = $null	
-    $Result = Invoke-WSAPI -uri '/system' -type 'PUT' -body $body 
+    $Result = Invoke-A9API -uri '/system' -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return $Result		
@@ -92,7 +92,7 @@ Process
 	If($NoCheckSCMSize) 		{	$FlashCacheBody["noCheckSCMSize"] = $NoCheckSCMSize }
 	if($FlashCacheBody.Count -gt 0){$body["flashCache"] = $FlashCacheBody }
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -121,7 +121,7 @@ Begin
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
-{	$Result = Invoke-WSAPI -uri '/flashcache' -type 'DELETE' 
+{	$Result = Invoke-A9API -uri '/flashcache' -type 'DELETE' 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -154,7 +154,7 @@ Begin
 Process 
 {	$Result = $null
 	$dataPS = $null
-	$Result = Invoke-WSAPI -uri '/flashcache' -type 'GET' 
+	$Result = Invoke-A9API -uri '/flashcache' -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = $Result.content | ConvertFrom-Json
 		}

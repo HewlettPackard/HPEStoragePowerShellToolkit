@@ -16,6 +16,8 @@ Function New-A9FlashCache_CLI
 	Specifies the size for the flash cache in MiB for each node pair. The flashcache size should be a multiple of 16384 (16GiB), and be an integer. 
 	The minimum size of the flash cache is 64GiB. The maximum size of the flash cache is based on the node types, ranging from 768GiB up to 12288GiB (12TiB).
     An optional suffix (with no whitespace before the suffix) will modify the units to GiB (g or G suffix) or TiB (t or T suffix).
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Sim,
@@ -30,7 +32,7 @@ Process
 	if($Sim) 	{	$Cmd += " -sim " }
 	if($RAIDType){	$Cmd += " -t $RAIDType " }
 	if($Size)	{	$Cmd += " $Size " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
@@ -56,6 +58,8 @@ Function Set-A9FlashCache_CLI
 	Note(set Name Should de is the same formate Ex:  vvset:vvset1 )
 .PARAMETER All
 	The policy is applied to all virtual volumes.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='Enable', Mandatory=$true, ValueFromPipeline=$true)]	[switch]	$Enable,
@@ -74,7 +78,7 @@ Process
 	elseif($Clear)	{	$Cmd += " clear " }
 	if($vvSet)		{	$Cmd += " $vvSet " }
 	if($All) 		{	$Cmd += " sys:all " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -90,6 +94,8 @@ Function Remove-A9FlashCache_CLI
 	PS:> Remove-A9FlashCache_CLI
 .PARAMETER F
 	Specifies that the command is forced. If this option is not used, the command requires confirmation before proceeding with its operation.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$F
@@ -100,7 +106,7 @@ Begin
 Process
 {	$Cmd = " removeflashcache "
 	if($F)	{	$Cmd += " -f " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }

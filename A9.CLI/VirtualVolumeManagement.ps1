@@ -27,6 +27,8 @@ Function Add-A9Vv
 	Specifies the World Wide Name (WWN) of the remote volumes to be admitted.
 .PARAMETER VV_WWN_NewWWN 
 	Specifies the World Wide Name (WWN) for the local copy of the remote volume. If the keyword "auto" is specified the system automatically generates a WWN for the virtual volume
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName="wwn")]							
@@ -43,12 +45,12 @@ process
 		if($DomainName)	{	$Cmd+= " -domain $DomainName"	}		
 		if($VV_WWN)	
 			{	$cmd += " $VV_WWN"
-				$Result = Invoke-CLICommand -cmds  $cmd
+				$Result = Invoke-A9CLICommand -cmds  $cmd
 				return  "$Result"
 			}
 		if($VV_WWN_NewWWN)	
 			{	$cmd += " $VV_WWN_NewWWN"
-				$Result = Invoke-CLICommand -cmds  $cmd
+				$Result = Invoke-A9CLICommand -cmds  $cmd
 				return  $Result
 			}		
 	}
@@ -76,6 +78,8 @@ Function Compress-A9LogicalDisk
 	Only unused LD space is removed. Regions are not moved.
 .PARAMETER LD_Name
 	Specifies the name of the LD to be compacted. Multiple LDs can be specified.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Pat,
@@ -98,7 +102,7 @@ PROCESS
 	if($Dr) 		{	$Cmd += " -dr "}
 	if($Trimonly) 	{	$Cmd += " -trimonly " }
 	if($LD_Name)	{ $Cmd += " $LD_Name " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
@@ -129,6 +133,8 @@ Function Find-A9LogicalDisk
 	Check only the specified RAID set.
 .PARAMETER LD_Name
 	Requests that the integrity of a specified LD is checked. This specifier can be repeated to execute validity checks on multiple LDs.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -150,7 +156,7 @@ PROCESS
 	if($Recover){	$Cmd += " -recover $Recover " }
 	if($Rs)		{	$Cmd += " -rs $Rs " }
 	if($LD_Name)	{	$Cmd += " $LD_Name "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -206,6 +212,8 @@ Function Get-A9LogicalDisk
 	10  pdsld0.2        6    normal         1/0 53120  0      P   0         Y     N
 	163 tp0sa0.3        1    normal         1/0 5120   4224   C   SA   0          N
 	158 tp0sa0.5        1    normal         0/1 16384  13056  C   SA   0          N
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Cpg,
@@ -234,7 +242,7 @@ process
 	if($P)		{	$Cmd += " -p "	}
 	if($State) 	{	$Cmd += " -state " }
 	if($LD_Name){ 	$Cmd += " $LD_Name " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($Cpg)	{	Return  $Result	}
 	else
@@ -293,6 +301,8 @@ Function Get-A9LogicalDiskChunklet
 	5    0   1   0:3:0 3    3466 normal ld    valid N  ---  ---
 	6    1   0   0:5:0 5    3466 normal ld    valid N  ---  ---
 	7    1   0   0:1:0 1    3466 normal ld    valid N  ---  ---
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Degraded,
@@ -312,7 +322,7 @@ process
 	if($Linfo)		{	$Cmd += " -linfo $Linfo " }
 	if($LD_Name)	{	$Cmd += " $LD_Name " }
 	if($WhatIf)		{ 	write-host "Command to be sent via CLI`n $Cmd"; return }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count - 3 
@@ -369,8 +379,6 @@ Function Get-A9Space
 	Specifies that free space history over time for CPGs specified
 .PARAMETER SSZ
 	Specifies the set size in terms of chunklets.
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
 .EXAMPLE
 	PS:> Get-A9Space -cpgName 'rancher2023'
 
@@ -387,6 +395,8 @@ Function Get-A9Space
 	Compress     : -
 	DataReduce   : -
 	Overprov     : 0.23
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding(DefaultParameterSetName='CPGName')]
 param(	[Parameter(ValueFromPipeline=$true,parametersetname='CPGName')]	[String]	$cpgName,
@@ -406,7 +416,7 @@ process
 	$sysinfo = @{}	
 	if($cpgName)
 		{	$sysspacecmd += " -cpg $cpgName"
-			$Result = Invoke-CLICommand -cmds  $sysspacecmd
+			$Result = Invoke-A9CLICommand -cmds  $sysspacecmd
 			if ($Result -match "FAILURE :")	{	return "FAILURE : no CPGs found or matched"	}
 			if( $Result -match "There is no free space information")	{	return "FAILURE : There is no free space information"		}
 			if( $Result.Count -lt 4 )		{	return "$Result"	}
@@ -457,7 +467,7 @@ process
 	if($Cage)
 		{	if(($RaidType) -or ($cpgName) -or($Disk))	{	return "FAILURE : Use only One parameter at a time."	}
 			$sysspacecmd += " -p -cg $Cage"
-			$Result = Invoke-CLICommand -cmds  $sysspacecmd
+			$Result = Invoke-A9CLICommand -cmds  $sysspacecmd
 			if ($Result -match "Illegal pattern integer or range")	{	return "FAILURE : $Result "	}
 			foreach ($s in $Result[2..$Result.count])
 				{	$s= [regex]::Replace($s,"^ +","")
@@ -471,7 +481,7 @@ process
 		}
 	if($Disk)
 		{	$sysspacecmd += "-p -dk $Disk"
-			$Result = Invoke-CLICommand -cmds  $sysspacecmd
+			$Result = Invoke-A9CLICommand -cmds  $sysspacecmd
 			if ($Result -match "Illegal pattern integer or range")	{	return "FAILURE : Illegal pattern integer or range: $Disk"	}
 			foreach ($s in $Result[2..$Result.count])
 				{	$s= [regex]::Replace($s,"^ +","")
@@ -487,7 +497,7 @@ process
 		}
 	if($SSZ)
 	{	$sysspacecmd += " -ssz $SSZ "
-		$Result = Invoke-CLICommand -cmds  $sysspacecmd
+		$Result = Invoke-A9CLICommand -cmds  $sysspacecmd
 		if ($Result -match "Invalid setsize")
 			{	return "FAILURE : $Result"
 			}		
@@ -502,7 +512,7 @@ process
 		return
 	}
 	if(-not(( ($Disk) -or ($Cage)) -or (($RaidType) -or ($cpg))))
-		{	$Result = Invoke-CLICommand -cmds  $sysspacecmd
+		{	$Result = Invoke-A9CLICommand -cmds  $sysspacecmd
 			if ($Result -match "Illegal pattern integer or range")
 				{	return "FAILURE : Illegal pattern integer or range: $Disk"
 				}
@@ -653,6 +663,8 @@ Function Get-A9VvList_CLI
 	425   vsa-ds2                         tdvv v1    Yes   base  -                               425   RW normal
 	606   BackupVol                       tdvv v1    Yes   base  -                               606   RW normal
 	652   virt-Alletra9050-orai1db1-v.0   tdvv v1    Yes   base  -                               652   RW normal
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 	param(
@@ -699,7 +711,7 @@ process
 {	$GetvVolumeCmd = "showvv "
 	$cnt=1
 	if ($Listcols)	{	$GetvVolumeCmd += "-listcols "
-						$Result = Invoke-CLICommand -cmds  $GetvVolumeCmd
+						$Result = Invoke-A9CLICommand -cmds  $GetvVolumeCmd
 						return $Result				
 					}
 	if($D)			{	$GetvVolumeCmd += "-d "; 		$cnt=0	}	
@@ -737,7 +749,7 @@ process
 		}
 	if($ShowCols)	{	$GetvVolumeCmd += "-showcols $ShowCols ";	$cnt=0	}	
 	if ($vvName)	{	$GetvVolumeCmd += " $vvName"	}
-	$Result = Invoke-CLICommand -cmds  $GetvVolumeCmd
+	$Result = Invoke-A9CLICommand -cmds  $GetvVolumeCmd
 	if($Result -match "no vv listed")	{	return "FAILURE : No vv $vvName found"	}
 	if ( $Result.Count -gt 1)
 		{	$incre = "true"
@@ -884,6 +896,8 @@ Function Get-A9VvSet_CLI
 	1 51d61280-2ef2-4fdc-88a5-9e1b4b0d97a7 vvset_dscc-test    {dscc-test}                                          1                       False      False
 	5 2f00cefc-b14d-4098-a9c9-d4cd6cbcb044 vvset_Oradata1     {MySQLData}                                          1                       False      False
 	7 b8f1a3e6-81ff-47da-887f-5fd529427789 AppSet_SAP_HANA    {HANA_data, HANA_log, HANA_shared, Veeam_datastore}  4                       False      False
+.NOTES
+	This command requires a SSH type connection
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Detailed,
@@ -903,7 +917,7 @@ process
 	if ($vvSetName)	{	$GetVVSetCmd += " $vvSetName"	}
 	elseif($vvName)	{	$GetVVSetCmd += " $vvName"	}
 	else			{	write-verbose "VVSet parameter $vvSetName is empty. Simply return all existing vvset " 			}	
-	$Result = Invoke-CLICommand -cmds  $GetVVSetCmd
+	$Result = Invoke-A9CLICommand -cmds  $GetVVSetCmd
 	if($Result -match "No vv set listed")	{	return "FAILURE : No vv set listed"	}
 	if($Result -match "total")
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -980,6 +994,8 @@ Function Import-A9Vv
 	Specifies the name of the CPG from which the volume user space will be allocated.
 .PARAMETER VVName
 	Specifies the VVs with the specified name 
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Usrcpg ,
@@ -1025,7 +1041,7 @@ process
 	if($Usrcpg)		{	$Cmd += " $Usrcpg "	}
 	else{	return "FAILURE : No CPG Name specified ."	}	
 	if($VVName)		{	$Cmd += " $VVName"	}	
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	return  "$Result"	
 }
 } 
@@ -1112,6 +1128,8 @@ Function New-A9Vv_CLI
 .PARAMETER snp_al
 	Sets a snapshot space allocation limit. The snapshot space of the VV is prevented from growing beyond the indicated
 	percentage of the virtual volume size.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]			[String]	$vvName,
@@ -1138,12 +1156,12 @@ Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process	
-{	if ( !( Test-CLIObject -objectType 'cpg' -objectName $CPGName -SANConnection $SANConnection))
+{	if ( !( Test-A9CLIObject -objectType 'cpg' -objectName $CPGName -SANConnection $SANConnection))
 		{	write-verbose " CPG $CPGName does not exist. Please use New-CPG to create a CPG before creating vv"  
 			return "FAILURE : No cpg $cpgName found"
 		}		
 	## Check vv Name . Create if necessary
-	if (Test-CLIObject -objectType 'vv' -objectName $vvName -SANConnection $SANConnection)
+	if (Test-A9CLIObject -objectType 'vv' -objectName $vvName -SANConnection $SANConnection)
 		{	write-verbose " virtual Volume $vvName already exists. No action is required"
 			return "FAILURE : vv $vvName already exists"
 		}			
@@ -1184,7 +1202,7 @@ process
 	if($Snp_al)				{	$CreateVVCmd +=" -snp_al $Snp_al "	}
 	$CreateVVCmd +=" $CPGName $vvName $Size"			
 	$Result1 = $Result2 = $Result3 = ""
-	$Result1 = Invoke-CLICommand -cmds  $CreateVVCmd
+	$Result1 = Invoke-A9CLICommand -cmds  $CreateVVCmd
 	#write-host "Result = ",$Result1
 	if([string]::IsNullOrEmpty($Result1))
 		{	$successmsg += "Success : Created vv $vvName"
@@ -1196,10 +1214,10 @@ process
 	# If VolumeSet is specified then add vv to existing Volume Set
 	if ($vvSetName)
 		{	## Check vvSet Name 
-			if ( !( Test-CLIObject -objectType 'vv set' -objectName $vvSetName -SANConnection $SANConnection))
+			if ( !( Test-A9CLIObject -objectType 'vv set' -objectName $vvSetName -SANConnection $SANConnection))
 				{	write-verbose " Volume Set $vvSetName does not exist. Use New-vVolumeSet to create a Volume set before creating vLUN"  
 					$CreatevvSetCmd = "createvvset $vvSetName"
-					$Result2 =Invoke-CLICommand -cmds  $CreatevvSetCmd
+					$Result2 =Invoke-A9CLICommand -cmds  $CreatevvSetCmd
 					if([string]::IsNullOrEmpty($Result2))
 						{	$successmsg += "Success : Created vvset $vvSetName"
 						}
@@ -1209,7 +1227,7 @@ process
 					write-verbose " Creating Volume set with the command --> $CreatevvSetCmd" 
 				}
 			$AddVVCmd = "createvvset -add $vvSetName $vvName" 	## Add vv to existing Volume set
-			$Result3 = Invoke-CLICommand -cmds  $AddVVCmd
+			$Result3 = Invoke-A9CLICommand -cmds  $AddVVCmd
 			if([string]::IsNullOrEmpty($Result3))
 				{	$successmsg += "Success : vv $vvName added to vvset $vvSetName"
 				}
@@ -1267,6 +1285,8 @@ Function New-A9VvSet_CLI
 	For each VV in the sequence, the .<int> suffix of the vvname is incremented by 1.
 .PARAMETER Add 
 	Specifies that the VVs listed should be added to an existing set. At least one VV must be specified.	
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]			[String]	$vvSetName,
@@ -1287,7 +1307,7 @@ process
 	if($Domain) {	$CreateVolumeSetCmd += " -domain $Domain "	}
 	if($vvSetName){	$CreateVolumeSetCmd += " $vvSetName "		}
 	if($vvName)	{	$CreateVolumeSetCmd += " $vvName "			}
-	$Result = Invoke-CLICommand -cmds  $CreateVolumeSetCmd
+	$Result = Invoke-A9CLICommand -cmds  $CreateVolumeSetCmd
 	if($Add)
 		{	if([string]::IsNullOrEmpty($Result))
 				{	return "Success : command executed vv : $vvName is added to vvSet : $vvSetName"
@@ -1327,6 +1347,8 @@ Function Remove-A9LogicalDisk
 .PARAMETER Unused
 	Specifies the command to remove non-system LDs. This option cannot be used with the  -rmsys option.
 	
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Pat,
@@ -1345,7 +1367,7 @@ process
 	if($Rmsys) 	{	$Cmd += " -rmsys " }
 	if($Unused) {	$Cmd += " -unused " }
 	if($LD_Name){	$Cmd += " $LD_Name " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -1365,6 +1387,8 @@ Function Remove-A9VvLogicalDiskCpgTemplates
 .PARAMETER Pat
 	The specified patterns are treated as glob-style patterns and that all templates matching the specified pattern are removed. By default,
 	confirmation is required to proceed with the command unless the -f option is specified. This option must be used if the pattern specifier is used.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Template_Name,
@@ -1377,7 +1401,7 @@ process
 {	$Cmd = " removetemplate -f "
 	if($Pat)	{	$Cmd += " -pat "	}
 	if($Template_Name)	{	$Cmd += " $Template_Name "	}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -1410,6 +1434,8 @@ Function Set-A9Template_CLI
 	Indicates that the option(s) that follow -remove are removed from the
 	existing template. When specifying an option for removal, do not specify
 	the option's value. For valid options, refer to createtemplate command.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$True)]	[String]	$Option_Value,
@@ -1424,7 +1450,7 @@ process
 	if($Remove)			{	$Cmd += " -remove $Remove "	}
 	if($Option_Value)	{	$Cmd += " $Option_Value " }
 	if($Template_Name)	{ 	$Cmd += " $Template_Name " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -1442,6 +1468,8 @@ Function Set-A9VvSpace_CLI
 	Remove the snapshot administration and snapshot data spaces from all the virtual volumes that match any of the specified glob-style patterns.
 .PARAMETER VV_Name
 	Specifies the virtual volume name, using up to 31 characters.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]					[switch]	$Pat,
@@ -1454,7 +1482,7 @@ process
 {	$Cmd = " freespace -f "
 	if($Pat)		{	$Cmd += " -pat "}
 	if($VV_Name)	{	$Cmd += " $VV_Name "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -1472,6 +1500,8 @@ Function Show-A9LdMappingToVvs_CLI
 	PS:> Show-A9LdMappingToVvs_CLI -LD_Name v0.usr.0
 .PARAMETER LD_Name
 	Specifies the logical disk name.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(		[Parameter(Mandatory=$True)]	[String]	$LD_Name
@@ -1482,7 +1512,7 @@ Begin
 process
 {	$Cmd = " showldmap "
 	if($LD_Name)	{	$Cmd += " $LD_Name " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count  
@@ -1523,6 +1553,8 @@ Function Show-A9VvScsiReservations
 	PS:> Show-A9RSV_CLI -Hostname virt-r-node1
 
 	no reservations found
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$SCSI3,
@@ -1539,7 +1571,7 @@ process
 	if($SCSI2)		{	$Cmd += " -l scsi2 " }
 	if($HostInfo)	{	$Cmd += " -host $Hostname " }
 	if($VV_Name)	{	$Cmd += " $VV_Name " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($Result -match "SYNTAX" )	{	Return $Result	}
 			$tempFile = [IO.Path]::GetTempFileName()
@@ -1573,6 +1605,8 @@ Function Show-A9Template
 	Specifies that the properties of the template is displayed to fit within 80 character lines.
 .PARAMETER Template_name_or_pattern
 	Specifies the name of a template, using up to 31 characters or glob-style pattern for matching multiple template names. If not specified, all templates are displayed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$T,
@@ -1591,7 +1625,7 @@ process
 			}
 	if($Fit) 						{	$Cmd += " -fit " }
 	if($Template_name_or_pattern) 	{	$Cmd += " $Template_name_or_pattern " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($Result -match "SYNTAX" )	{	Return $Result	}
 			$tempFile = [IO.Path]::GetTempFileName()
@@ -1685,6 +1719,8 @@ Function Show-A9VvMappedToPD
 		dec:Sort in decreasing order.
 	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted
 	by values in later columns.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -1730,7 +1766,7 @@ process
 	if($Rpm) 		{	$Cmd += " -rpm $Rpm " 			}
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " 	}
 	if($PD_ID) 		{	$Cmd += " PD_ID "			 	}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($Result -match "SYNTAX" )	{	Return $Result	}
 			$tempFile = [IO.Path]::GetTempFileName()
@@ -1761,6 +1797,8 @@ Function Show-A9VvMapping
 	The command displays information about how virtual volume regions are mapped to logical disks.
 .PARAMETER VV_Name
 	The virtual volume name.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$True)]	[String]	$VV_Name
@@ -1771,7 +1809,7 @@ Begin
 process
 {	$Cmd = " showvvmap "
 	if($VV_Name)	{	$Cmd += " $VV_Name "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Write-Verbose "Executing function : Show-VvMapping command -->" 
 	if($Result.count -gt 1)
 		{	if($Result -match "SYNTAX" )	{	Return $Result	}
@@ -1828,6 +1866,8 @@ Function Show-A9VvpDistribution
 	9                           0:9:0    0  0  2   2
 	---------------------------
 	10                          total    6  0  20  26
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Sortcol,
@@ -1840,7 +1880,7 @@ process
 {	$Cmd = " showvvpd "
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
 	if($VV_Name) 	{	$Cmd += " $VV_Name " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($Result -match "SYNTAX" )	{	Return $Result	}
 			$tempFile = [IO.Path]::GetTempFileName()
@@ -1875,6 +1915,8 @@ Function Start-A9LD_CLI
 	Specifies the LD name, using up to 31 characters.
 .PARAMETER Ovrd
 	Specifies that the LD is forced to start, even if some underlying data is missing.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]					[switch]	$Ovrd,
@@ -1887,7 +1929,7 @@ process
 { 	$Cmd = " startld "
 	if($Ovrd)		{	$Cmd += " -ovrd " }
 	if($LD_Name) 	{	$Cmd += " $LD_Name " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -1905,6 +1947,8 @@ Function Start-A9Vv_CLI
 	Specifies the VV name, using up to 31 characters.
 .PARAMETER Ovrd
 	Specifies that the logical disk is forced to start, even if some underlying data is missing.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]				[switch]	$Ovrd,
@@ -1917,7 +1961,7 @@ process
 {	$Cmd = " startvv "
 	if($Ovrd)	{	$Cmd += " -ovrd "	}
 	if($VV_Name)	{	$Cmd += " $VV_Name "	}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -1957,6 +2001,8 @@ Function Test-A9Vv_CLI
 	This task will display compression and total savings ratios on a per-VV basis, and the dedup ratio will be calculated on a group basis of input VVs. 	
 .PARAMETER VVName       
 	Requests that the integrity of the specified VV is checked. This specifier can be repeated to execute validity checks on multiple VVs. Only base VVs are allowed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]				[switch]	$Yes,	
@@ -1981,7 +2027,7 @@ process
 	if($Compr_Dryrun)		{	$cmd += " -compr_dryrun "}
 	if($Dedup_Compr_Dryrun)	{	$cmd += " -dedup_compr_dryrun "}
 	$cmd += " $VVName"
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing Test-Vv Command.-->  " 
 	return  "$Result"
 }
@@ -1997,6 +2043,8 @@ Function Update-A9SnapSpace_CLI
 	"showvv -hist" is not necessarily the current usage and the SpaceCalcTime column will show when it was last calculated.  This command causes the
 	system to start calculating current snapshot space usage.  If one or more VV names or patterns are specified, only the specified VVs will be updated.
 	If none are specified, all VVs will be updated.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$VV_Name
@@ -2007,7 +2055,7 @@ Begin
 process
 {	$Cmd = " updatesnapspace "
 	if($VV_Name)	{	$Cmd += " $VV_Name " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -2091,6 +2139,8 @@ Function Update-A9VvProperties_CLI
 .PARAMETER Hpc
 	Allows you to define the virtual volume geometry heads per cylinder value that is reported to the hosts though the SCSI mode pages. 
 	The valid range is between 1 to 255 and the default value is 8.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Name,
@@ -2134,7 +2184,7 @@ process
 	if($Hpc)		{	$Cmd += " -hpc $Hpc " 		}
 	if($Pol)		{	$Cmd += " -pol $Pol " 		}
 	if($Vvname) 	{	$Cmd += " $Vvname " 		}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Write-verbose "Executing function : Update-VvProperties command -->"
 	Return $Result
 }
@@ -2156,6 +2206,8 @@ Function Update-A9VvSetProperties_CLI
 
 .PARAMETER Name
 	Specifies a new name for the VV set using up to 27 characters.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]					[String]	$Comment,
@@ -2170,7 +2222,7 @@ process
 	if($Comment)	{	$Cmd += " -comment $Comment "}
 	if($Name)		{	$Cmd += " -name $Name "}
 	$Cmd += " Setname " 
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -2216,6 +2268,8 @@ Function Set-A9Host_CLI
 	Specifies any additional information for the host.
 .PARAMETER  Persona <hostpersonaval>
 	Sets the host persona that specifies the personality for all ports which are part of the host set.  
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]		[String]	$hostName,		
@@ -2248,7 +2302,7 @@ process
 	if($Comment)		{	$SetHostCmd +=" -comment $Comment"	}	
 	$Addr = [string]$Address
 	$SetHostCmd +=" $hostName $Addr"
-	$Result1 = Invoke-CLICommand -cmds  $SetHostCmd
+	$Result1 = Invoke-A9CLICommand -cmds  $SetHostCmd
 	write-verbose " Setting  Host with the command --> $SetHostCmd" 
 	if([string]::IsNullOrEmpty($Result1))
 		{	return "Success : Set host $hostName with Optn_Iscsi $Optn_Iscsi $Addr "
@@ -2278,7 +2332,7 @@ Begin
 }	
 process	
 {	$cmd = " showpeer"
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing Show-Peer Command.-->"
 	if($Result -match "No peers")	{	return $Result	}
 	else	{	$tempFile = [IO.Path]::GetTempFileName()
@@ -2310,6 +2364,8 @@ Function Resize-A9Vv_CLI
 	Specifies the name of the VV.
 .PARAMETER PAT
 	Compacts VVs that match any of the specified patterns. This option must be used if the pattern specifier is used.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$VVName,
@@ -2322,7 +2378,7 @@ PROCESS
 {	$Cmd = " compactvv -f "
 	if($PAT)	{	$Cmd += " -pat "	}
 	if($VVName)	{	$Cmd += " $VVName " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result 
 }
 }

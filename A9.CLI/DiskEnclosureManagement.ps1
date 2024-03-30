@@ -32,6 +32,8 @@ Function Set-A9AdmitPhysicalDisk
 	hardware enablement.
 .PARAMETER wwn
 	Indicates the World-Wide Name (WWN) of the physical disk to be admitted. If WWNs are specified, only the specified physical disk(s) are admitted.	
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Nold,
@@ -45,7 +47,7 @@ Process
 	if ($Nold)		{	$cmd+=" -nold "	}
 	if ($NoPatch)	{	$cmd+=" -nopatch " }
 	if($wwn)		{	$cmd += " $wwn"	}
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	return 	$Result	
 } 
 }
@@ -92,6 +94,8 @@ Function Find-A9Cage
 .PARAMETER PortName  
 	Indicates the port specifiers. Accepted values are A0|B0|A1|B1|A2|B2|A3|B3. 
 	If a port is specified, the port LED will oscillate between green and off.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]				[String]	$Time,
@@ -118,7 +122,7 @@ Process
 		}
 	if ($CageName)
 		{	$cmd2="showcage "
-			$Result2 = Invoke-CLICommand -cmds  $cmd2
+			$Result2 = Invoke-A9CLICommand -cmds  $cmd2
 			if($Result2 -match $CageName)
 				{	$cmd+=" $CageName"
 				}
@@ -149,7 +153,7 @@ Process
 					else			{	return "Error : -PortName $PortName is invalid use [ A0| B0 | A1 | B1 | A2 | B2 | A3 | B3 ] only  "	}
 				}	
 		}	
-	$Result = Invoke-CLICommand -cmds  $cmd	
+	$Result = Invoke-A9CLICommand -cmds  $cmd	
 	write-verbose "  Executing Find-Cage Command , surface scans or diagnostics on physical disks with the command   " 	
 	if([string]::IsNullOrEmpty($Result))
 		{	return  "Success : Find-Cage Command Executed Successfully $Result"
@@ -199,6 +203,8 @@ Function Get-A9Cage
 	Displays inventory information with HPE serial number, spare part number, and so on. it is supported only on HPE 3PAR Storage 7000 Storagesystems and  HPE 3PAR 8000 series systems"
 .PARAMETER CageName  
 	Specifies a drive cage name for which information is displayed. This specifier can be repeated to display information for multiple cages
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[Switch]	$D,
@@ -227,7 +233,7 @@ Process
 		{	$cmd+=" $CageName "
 			$testCmd+=" $CageName "
 		}
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Get-Cage command that displays information about drive cages. with the command   " 
 	if($cmd -eq "showcage " -or ($cmd -eq $testCmd))
 		{	if($Result.Count -gt 1)
@@ -369,6 +375,8 @@ Function Show-A9PhysicalDisk
 	by commas (e.g. 1,2,3). The list can also consist of a single integer. If the port list is not specified, all disks on all ports are displayed.
 .PARAMETER WWN
 	Specifies the WWN of the physical disk. This option and argument can be specified if the <PD_ID> specifier is not used. This option should be the last option in the command line.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$I,
@@ -404,7 +412,7 @@ Process
 {	$cmd= "showpd "	
 	if($Listcols)
 		{	$cmd+=" -listcols "
-			$Result = Invoke-CLICommand -cmds  $cmd
+			$Result = Invoke-A9CLICommand -cmds  $cmd
 			return $Result
 		}
 	if($I)	{	$cmd+=" -i "	}
@@ -434,14 +442,14 @@ Process
 	if ($PD_ID)
 		{	$PD=$PD_ID		
 			$pdd="showpd $PD"
-			$Result1 = Invoke-CLICommand -cmds  $pdd	
+			$Result1 = Invoke-A9CLICommand -cmds  $pdd	
 			if($Result1 -match "No PDs listed" )
 				{	return " FAILURE : $PD_ID is not available id pLease try using only [Show-PD] to get the list of PD_ID Available. "			
 				}
 			else{	$cmd+=" $PD_ID "
 				}
 		}	
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	if($Result -match "Invalid device type")	{	return $Result	}
 	if($Result.Count -lt 2)	{	return $Result	}
 	if($I -Or $State -Or $StateInfo)
@@ -569,6 +577,8 @@ Function Remove-A9PhysicalDisk
 	PS:> Remove-A9PhysicalDisk -PDID 1
 .PARAMETER PDID
 	Specifies the PD(s), identified by integers, to be removed from system use.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$True)]	[String]	$PDID
@@ -579,7 +589,7 @@ Begin
 Process
 {	$Cmd = " dismisspd "
 	if($PDID)	{	$Cmd += " $PDID " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -605,6 +615,8 @@ Function Set-A9Cage
 	Sets the model of a cage power supply, where <model> is a model name to be assigned to the power supply by service personnel. get information regarding PSModel try using  [ Get-Cage -option d ]
 .PARAMETER CageName	 
 	Indicates the name of the drive cage that is the object of the setcage operation.	
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Position,
@@ -619,14 +631,14 @@ Process
 	if ($Position ){	$cmd+="position $Position "}		
 	if ($PSModel)
 		{	$cmd2="showcage -d"
-			$Result2 = Invoke-CLICommand -cmds  $cmd2
+			$Result2 = Invoke-A9CLICommand -cmds  $cmd2
 			if($Result2 -match $PSModel)	{	$cmd+=" ps $PSModel "	}	
 			else{	return "Failure: -PSModel $PSModel is Not available. To Find Available Model `n Try  [Get-Cage -option d ] Command"
 				}
 		}		
 	if ($CageName)
 		{	$cmd1="showcage"
-			$Result1 = Invoke-CLICommand -cmds  $cmd1
+			$Result1 = Invoke-A9CLICommand -cmds  $cmd1
 			if($Result1 -match $CageName)	{	$cmd +="$CageName "	}
 			else{	return "Failure:  -CageName $CageName is Not available `n Try using [ Get-Cage ] Command to get list of Cage Name "
 				}	
@@ -634,7 +646,7 @@ Process
 	else
 		{	return "ERROR: -CageName is a required parameter"
 		}		
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose " The Set-Cage command enables service personnel to set or modify parameters for a drive cage  " 		
 	if([string]::IsNullOrEmpty($Result))
 		{	return  "Success : Executing Set-Cage Command $Result "
@@ -663,6 +675,8 @@ Function Set-A9PhysicalDisk
 .PARAMETER ldalloc 
 	Specifies that the PD, as indicated with the PD_ID specifier, is either allocatable (on) or nonallocatable for LDs (off)..PARAMETER PD_ID 
 	Specifies the PD identification using an integer.	
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)][ValidateSet('on','off')]	[String]	$Ldalloc,	
@@ -675,7 +689,7 @@ Process
 {	$cmd= "setpd "	
 	$cmd+=" ldalloc $Ldalloc "				
 	$cmd+=" $PD_ID "
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	if([string]::IsNullOrEmpty($Result))
 		{	return  "Success : Executing Set-PD  $Result"
 		}
@@ -699,6 +713,8 @@ Function Switch-A9PhysicalDisk
 	Specifies that the operation is forced, even if the PD is in use.
 .PARAMETER WWN
 	Specifies the World Wide Name of the PD. This specifier can be repeated to identify multiple PDs.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='up',  Mandatory=$true)]	[switch]	$Spinup,
@@ -715,7 +731,7 @@ Process
 	elseif($Spindown)	{	$Cmd += " spindown " }
 	if($Ovrd)			{	$Cmd += " -ovrd " }
 	if($WWN)			{	$Cmd += " $WWN " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }	
@@ -773,6 +789,8 @@ Function Test-A9PhysicalDisk
 	Indicates total bytes to transfer per disk. If a size is not specified, the default size is 1g.
 .PARAMETER retry
 	Specifies the total number of retries on an I/O error.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='diag', Mandatory=$true, ValueFromPipeline=$true)]	[switch]	$Diag,		
@@ -812,7 +830,7 @@ Process
 			if ($retry )	{	$cmd +=" -retry $retry "	}
 		}	
 	$cmd += " $pd_ID "
-	$Result = Invoke-CLICommand -cmds  $cmd	
+	$Result = Invoke-A9CLICommand -cmds  $cmd	
 	return $Result	
 } 
 }

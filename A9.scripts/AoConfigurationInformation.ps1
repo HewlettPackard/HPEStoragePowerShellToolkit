@@ -27,7 +27,7 @@ Process
 	$dataPS = $null
 	$uri = '/aoconfigurations'
 	if($AOconfigName)	{	$uri = $uri+'/'+$AOconfigName	}	
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = $Result.content | ConvertFrom-Json
 			if($dataPS.Count -eq 0)

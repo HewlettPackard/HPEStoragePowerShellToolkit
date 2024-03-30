@@ -1,5 +1,5 @@
 ﻿####################################################################################
-## 	© 2020,2021 Hewlett Packard Enterprise Development LP
+## 	© 2024 Hewlett Packard Enterprise Development LP
 ##
 
 Function Get-A9Vv 
@@ -118,7 +118,7 @@ Process
 					$Query="?query=""  """	
 					if($VVName)
 						{	$uri = '/volumes/'+$VVName
-							$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+							$Result = Invoke-A9API -uri $uri -type 'GET' 
 							If($Result.StatusCode -eq 200)
 								{	$dataPS = $Result.content | ConvertFrom-Json
 								}		
@@ -169,7 +169,7 @@ Process
 						}
 					$uri = '/volumes'
 					if($WWN -Or $UserCPG -Or $SnapCPG -Or $CopyOf -Or $ProvisioningType)	{	$uri = $uri+'/'+$Query }
-					$Result = Invoke-WSAPI -uri '/volumes' -type 'GET' 
+					$Result = Invoke-A9API -uri '/volumes' -type 'GET' 
 					If($Result.StatusCode -eq 200)
 						{	$dataPS = ($Result.content | ConvertFrom-Json).members
 							if($dataPS.Count -gt 0)
@@ -190,7 +190,7 @@ Process
 				{	$GetvVolumeCmd = "showvvcpg"
 					if ($DomainName)	{	$GetvVolumeCmd += " -domain $DomainName"	}	
 					if ($vvName)		{	$GetvVolumeCmd += " $vvName"	}
-					$Result = Invoke-CLICommand -cmds $GetvVolumeCmd
+					$Result = Invoke-A9CLICommand -cmds $GetvVolumeCmd
 					if($Result -match "no vv listed")	{	return "FAILURE: No vv $vvName found"	}
 					$Result = $Result | where-object 	{ ($_ -notlike '*total*') -and ($_ -notlike '*---*')} ## Eliminate summary lines
 					if ( $Result.Count -gt 1)
@@ -210,7 +210,6 @@ Process
 	}
 }
 }
-
 
 Function Remove-A9Vv
 {
@@ -287,7 +286,7 @@ process
 {	switch ($PSetName )
 		{	'API'		{	$uri = '/volumes/'+$VVName
 							$Result = $null
-							$Result = Invoke-WSAPI -uri $uri -type 'DELETE' 
+							$Result = Invoke-A9API -uri $uri -type 'DELETE' 
 							$status = $Result.StatusCode
 							if($status -eq 200)
 								{	write-host "Cmdlet executed successfully" -foreground green
@@ -318,8 +317,8 @@ process
 										{	$vName = $vVolume.Name
 											if ($vName)
 												{	$RemoveCmds = $ActionCmd + " $vName $($vVolume.Lun)"
-													$Result1 = Invoke-CLICommand -cmds  $removeCmds
-													if( ! (Test-CLIObject -objectType "vv" -objectName $vName -SANConnection $SANConnection))
+													$Result1 = Invoke-A9CLICommand -cmds  $removeCmds
+													if( ! (Test-A9CLIObject -objectType "vv" -objectName $vName -SANConnection $SANConnection))
 														{	$successmsglist += "Success : Removing vv $vName"
 														}
 													else
@@ -396,7 +395,7 @@ process
 	{	'API'	{
 					$uri = '/volumesets/'+$VVSetName
 					$Result = $null
-					$Result = Invoke-WSAPI -uri $uri -type 'DELETE'
+					$Result = Invoke-A9API -uri $uri -type 'DELETE'
 					$status = $Result.StatusCode
 					if($status -eq 200)
 					{	write-host "Cmdlet executed successfully" -foreground green
@@ -411,7 +410,7 @@ process
 						{	return "FAILURE : no -force option is selected to remove vvset"		}
 					$objType = "vvset"
 					$objMsg  = "vv set"
-					if ( -not ( Test-CLIObject -objectType $objType -objectName $vvsetName -objectMsg $objMsg -SANConnection $SANConnection)) 
+					if ( -not ( Test-A9CLIObject -objectType $objType -objectName $vvsetName -objectMsg $objMsg -SANConnection $SANConnection)) 
 						{	return "FAILURE : No vvset $vvSetName found"
 						}
 					else
@@ -420,7 +419,7 @@ process
 							if($Pat)	{	$RemovevvsetCmd += " -pat "	}
 							$RemovevvsetCmd += " $vvsetName "
 							if($vvName)	{	$RemovevvsetCmd +=" $vvName"	}		
-							$Result1 = Invoke-CLICommand -cmds  $RemovevvsetCmd
+							$Result1 = Invoke-A9CLICommand -cmds  $RemovevvsetCmd
 							if([string]::IsNullOrEmpty($Result1))
 								{	if($vvName)	{	return  "Success : Removed vv $vvName from vvset $vvSetName"	}
 									return  "Success : Removed vvset $vvSetName"
@@ -433,7 +432,6 @@ process
 	}
 }
 }
-
 
 Function Update-A9Vv
 {
@@ -568,7 +566,7 @@ Process
 										if($de -match $demo)	{	$cmd+=" $Size "	}
 										else					{	return "Error: -Size $Size is Invalid Try eg: 2G  "	}
 									}
-					$Result = Invoke-CLICommand -cmds  $cmd
+					$Result = Invoke-A9CLICommand -cmds  $cmd
 					return  $Result
 				}
 		'SSH'	
@@ -610,7 +608,7 @@ Process
 					if($VvPolicies.Count -gt 0)	{	$body["policies"] 				= $VvPolicies 			}
 					$Result = $null
 					$uri = '/volumes/'+$VVName 
-					$Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+					$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 					if($Result.StatusCode -eq 200)
 						{	write-host "Cmdlet executed successfully" -foreground green
 							if($NewName)	{	return Get-Vv_WSAPI -VVName $NewName	}
@@ -624,7 +622,6 @@ Process
 	}
 }
 }
-
 
 Function Get-A9vLun 
 {
@@ -761,11 +758,11 @@ Process
 {	switch( $PsetName )
 	{	
 		'API'	{
-					Write-Verbose "Request: Request to Get-vLun_WSAPI [ VolumeName : $VolumeName | LUNID : $LUNID | HostName : $HostName | NSP : $NSP] (Invoke-WSAPI)."
+					Write-Verbose "Request: Request to Get-vLun_WSAPI [ VolumeName : $VolumeName | LUNID : $LUNID | HostName : $HostName | NSP : $NSP] (Invoke-A9API)."
 					$Result = $null
 					$dataPS = $null		
 					write-verbose "Making URL call to /vluns"
-					$Result = Invoke-WSAPI -uri '/vluns' -type 'GET' 
+					$Result = Invoke-A9API -uri '/vluns' -type 'GET' 
 					If($Result.StatusCode -eq 200)
 						{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 						}		
@@ -810,7 +807,7 @@ Process
 					if($Slotlist)		{	$cmd += " -slots $Slotlist" 	}
 					if($Portlist)		{	$cmd += " -ports $Portlist" 	}
 					if($DomainName)		{	$cmd += " -domain $DomainName" 	}
-					$Result = Invoke-CLICommand -cmds  $cmd
+					$Result = Invoke-A9CLICommand -cmds  $cmd
 					return $Result
 				}
 	}
@@ -823,7 +820,8 @@ Function Remove-A9vLun
 .SYNOPSIS
 	Removing a VLUN.
 .DESCRIPTION
-	Removing a VLUN. Any user with the Super or Edit role, or any role granted with the vlun_remove right, can perform this operation.    
+	Removing a VLUN. Any user with the Super or Edit role, or any role granted with the vlun_remove right, can perform this operation. The command will attempt to use the API to accomplish the task, if the API is unavalable or other parameters 
+	are used, the command will attempt to fail back to a SSH type connection to accomplish the goal. You can force  the command to use the SSH type connection using the -UseSSH as a parameter.
 .PARAMETER VolumeName
 	Name of the volume or VV set to be exported.
 	The VV set should be in set:<volumeset_name> format.
@@ -931,8 +929,8 @@ Process
 						{	$uri = $uri+","+$NSP
 						}	
 					$Result = $null
-					Write-verbose "Request: Request to Remove-vLun_WSAPI : $CPGName (Invoke-WSAPI)." 
-					$Result = Invoke-WSAPI -uri $uri -type 'DELETE'
+					Write-verbose "Request: Request to Remove-vLun_WSAPI : $CPGName (Invoke-A9API)." 
+					$Result = Invoke-A9API -uri $uri -type 'DELETE'
 					$status = $Result.StatusCode
 					if($status -eq 200)
 						{	write-host "Cmdlet executed successfully" -foreground green
@@ -959,7 +957,7 @@ Process
 								{	$vName = $vLUN.Name
 									if ($vName)
 										{	$RemoveCmds = $ActionCmd + " $vName $($vLun.LunID) $($vLun.PresentTo)"
-											$Result1 = Invoke-CLICommand -cmds  $RemoveCmds
+											$Result1 = Invoke-A9CLICommand -cmds  $RemoveCmds
 											write-verbose "Removing Virtual LUN's with command $RemoveCmds" 
 											if ($Result1 -match "Issuing removevlun")
 												{	$successmsg += "Success: Unexported vLUN $vName from $($vLun.PresentTo)"
@@ -988,7 +986,8 @@ Function New-A9vLun
 .SYNOPSIS
 	Creating a VLUN
 .DESCRIPTION
-	Creating a VLUN. Any user with Super or Edit role, or any role granted vlun_create permission, can perform this operation.
+	Creating a VLUN. Any user with Super or Edit role, or any role granted vlun_create permission, can perform this operation. The command will attempt to use the API to accomplish the task, if the API is unavalable or other parameters 
+	are used, the command will attempt to fail back to a SSH type connection to accomplish the goal. You can force  the command to use the SSH type connection using the -UseSSH as a parameter.
 .PARAMETER VolumeName
 	Name of the volume or VV set to export.
 .PARAMETER LUNID
@@ -1042,7 +1041,7 @@ Param(	[Parameter(Mandatory=$true, ParameterSetName='API')]					[String]	$Volume
 		[Parameter(ParameterSetName='SSHvvName_NSP', 		Mandatory=$true)]
 		[Parameter(ParameterSetName='API')]										[String]	$NSP,
 
-		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
+		[Parameter(ParameterSetName='SSHvvName_NSP')]										
 		[Parameter(ParameterSetName='SSHvvName_HostSet')]										
 		[Parameter(ParameterSetName='SSHvvName_HostName')]										
 		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
@@ -1050,17 +1049,17 @@ Param(	[Parameter(Mandatory=$true, ParameterSetName='API')]					[String]	$Volume
 		[Parameter(ParameterSetName='SSHvvSet_HostName')]	
 		[Parameter(ParameterSetName='API')]										[Boolean]	$NoVcn = $false,
 
-		[Parameter(ParameterSetName='vvName_NSP', 			Mandatory=$true)]
-		[Parameter(ParameterSetName='vvName_HostSet', 		Mandatory=$true)]
-		[Parameter(ParameterSetName='vvName_HostName', 		Mandatory=$true)]	[String]	$vvName,
+		[Parameter(ParameterSetName='SSHvvName_NSP', 			Mandatory=$true)]
+		[Parameter(ParameterSetName='SSHvvName_HostSet', 		Mandatory=$true)]
+		[Parameter(ParameterSetName='SSHvvName_HostName', 		Mandatory=$true)]	[String]	$vvName,
 
-		[Parameter(ParameterSetName='vvSet_NSP',  			Mandatory=$true)]	
-		[Parameter(ParameterSetName='vvSet_HostSet',  		Mandatory=$true)]	
-		[Parameter(ParameterSetName='vvSet_HostName', 		Mandatory=$true)]
+		[Parameter(ParameterSetName='SSHvvSet_NSP',  			Mandatory=$true)]	
+		[Parameter(ParameterSetName='SSHvvSet_HostSet',  		Mandatory=$true)]	
+		[Parameter(ParameterSetName='SSHvvSet_HostName', 		Mandatory=$true)]
 		[ValidateScript({	if( $_ -match "^set:") { $true } else { throw "Valid vvSet Parameter must start with 'Set:'"} } )]	
 																				[String]	$vvSet,
 
-		[Parameter(ParameterSetName='SSHvvSet_NSP',			Mandatory=$true)]										
+		[Parameter(ParameterSetName='SSHvvName_NSP',			Mandatory=$true)]										
 		[Parameter(ParameterSetName='SSHvvName_HostSet', 	Mandatory=$true)]										
 		[Parameter(ParameterSetName='SSHvvName_HostName', 	Mandatory=$true)]										
 		[Parameter(ParameterSetName='SSHvvSet_NSP',  		Mandatory=$true)]										
@@ -1073,7 +1072,7 @@ Param(	[Parameter(Mandatory=$true, ParameterSetName='API')]					[String]	$Volume
 		[ValidateScript({	if( $_ -match "^set:") { $true } else { throw "Valid vvSet Parameter must start with 'Set:'"} } )]	
 																				[String]	$HostSet,
 
-		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
+		[Parameter(ParameterSetName='SSHvvName_NSP')]										
 		[Parameter(ParameterSetName='SSHvvName_HostSet')]										
 		[Parameter(ParameterSetName='SSHvvName_HostName')]										
 		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
@@ -1081,14 +1080,14 @@ Param(	[Parameter(Mandatory=$true, ParameterSetName='API')]					[String]	$Volume
 		[Parameter(ParameterSetName='SSHvvSet_HostName')]	
 																				[String]	$Cnt,
 
-		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
+		[Parameter(ParameterSetName='SSHvvName_NSP')]										
 		[Parameter(ParameterSetName='SSHvvName_HostSet')]										
 		[Parameter(ParameterSetName='SSHvvName_HostName')]										
 		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
 		[Parameter(ParameterSetName='SSHvvSet_HostSet')]										
 		[Parameter(ParameterSetName='SSHvvSet_HostName')]	
 																				[switch]	$Ovrd,
-		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
+		[Parameter(ParameterSetName='SSHvvName_NSP')]										
 		[Parameter(ParameterSetName='SSHvvName_HostSet')]										
 		[Parameter(ParameterSetName='SSHvvName_HostName')]										
 		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
@@ -1135,7 +1134,7 @@ Process
 						{	$body["noVcn"] = $NoVcn
 						}
 					$Result = $null
-					$Result = Invoke-WSAPI -uri '/vluns' -type 'POST' -body $body 
+					$Result = Invoke-A9API -uri '/vluns' -type 'POST' -body $body 
 					$status = $Result.StatusCode	
 					if($status -eq 201)
 						{	write-host "Cmdlet executed successfully" -foreground green
@@ -1157,7 +1156,7 @@ Process
 					if($NSP)			{	$cmdVlun += " $NSP "	}
 					elseif($HostSet)	{	$cmdVlun += " $HostSet "	}
 					elseif($HostName)	{	$cmdVlun += " $HostName "	}
-					$Result1 = Invoke-CLICommand -cmds  $cmdVlun
+					$Result1 = Invoke-A9CLICommand -cmds  $cmdVlun
 					write-verbose "Presenting $vvName to server $item with the command --> $cmdVlun" 
 					if($Result1 -match "no active paths")		{	$successmsg += $Result1	}
 					elseif([string]::IsNullOrEmpty($Result1))	{	$successmsg += "Success : $vvName exported to host $objName`n"	}
@@ -1167,4 +1166,3 @@ Process
 	}
 }
 }
-

@@ -105,7 +105,7 @@ Process
 	If ($Comment)		{	$DescriptorsBody["Comment"] = "$($Comment)"		}
 	if($DescriptorsBody.Count -gt 0){	$body["descriptors"] = $DescriptorsBody}
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/hosts' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/hosts' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -171,7 +171,7 @@ Process
 	if($ParametersBody.Count -gt 0){$body["parameters"] = $ParametersBody 	}
     $Result = $null
 	$uri = '/hosts/'+$HostName
-    $Result = Invoke-WSAPI -uri $uri -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -288,7 +288,7 @@ Process
 	if($Persona)					{	$body['persona'] = $PersonaHash[$Persona] }
     $Result = $null
 	$uri = '/hosts/'+$HostName
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -323,7 +323,7 @@ Begin
 Process 
 {	$uri = '/hosts/'+$HostName
 	$Result = $null
-	$Result = Invoke-WSAPI -uri $uri -type 'DELETE' 
+	$Result = Invoke-A9API -uri $uri -type 'DELETE' 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -336,52 +336,7 @@ Process
 }
 }
 
-Function Get-A9Host
-{
-<#
-.SYNOPSIS
-	Get Single or list of Hotes.
-.DESCRIPTION
-	Get Single or list of Hotes.
-.EXAMPLE
-	PS:> Get-A9Host
 
-	Display a list of host.
-.EXAMPLE
-	PS:> Get-A9Host -HostName MyHost
-
-	Get the information of given host.
-.PARAMETER HostName
-	Specify name of the Host.
-#>
-[CmdletBinding()]
-Param(	[Parameter()]	[String]	$HostName
-)
-Begin 
-{	Test-A9Connection -ClientType 'API'	 
-}
-Process 
-{	$Result = $null
-	$dataPS = $null		
-	if($HostName)
-	{	$uri = '/hosts/'+$HostName
-		$Result = Invoke-WSAPI -uri $uri -type 'GET' 
-		If($Result.StatusCode -eq 200)			{	$dataPS = $Result.content | ConvertFrom-Json	}	
-	}	
-	else
-		{	$Result = Invoke-WSAPI -uri '/hosts' -type 'GET'
-			If($Result.StatusCode -eq 200)		{	$dataPS = ($Result.content | ConvertFrom-Json).members		}		
-		}
-	If($Result.StatusCode -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $dataPS
-		}
-	else
-		{	Write-Error "Failure:  While Executing Get-Host_WSAPI." 
-			return $Result.StatusDescription
-		}
-}
-}
 
 Function Get-A9HostWithFilter 
 {
@@ -467,7 +422,7 @@ Process
 	else
 		{	return "Please select at list any one from [ISCSI | WWN]"
 		}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	If($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 		}	
@@ -533,7 +488,7 @@ Process
 	$Query="?query=""  """
 	if($Id)
 		{	$uri = '/hostpersonas/'+$Id
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			If($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 					write-host "Cmdlet executed successfully" -foreground green
@@ -557,7 +512,7 @@ Process
 						}
 				}
 			$uri = '/hostpersonas/'+$Query		
-			$Result = Invoke-WSAPI -uri $uri -type 'GET'
+			$Result = Invoke-A9API -uri $uri -type 'GET'
 			If($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members	
 					if($dataPS.Count -gt 0)
@@ -575,7 +530,7 @@ Process
 				}
 		}
 	else
-		{	$Result = Invoke-WSAPI -uri '/hostpersonas' -type 'GET' 
+		{	$Result = Invoke-A9API -uri '/hostpersonas' -type 'GET' 
 			If($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members	
 					write-host "Cmdlet executed successfully" -foreground green

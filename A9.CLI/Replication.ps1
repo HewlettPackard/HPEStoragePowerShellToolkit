@@ -18,6 +18,8 @@ Function Add-A9RCopyTarget_CLI
 	Specifies the mode of the target as either synchronous (sync), asynchronous periodic (periodic), or asynchronous streaming (async).
 .PARAMETER Group_name 
     Specifies the name of the existing remote copy volume group created with the creatercopygroup command to which the target will be added.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$Target_name,
@@ -80,6 +82,8 @@ Function Add-A9RCopyVv_CLI
 .PARAMETER TargetVolumeName
 	The target name associated with this group, as set with the creatercopygroup command. The target is created with the creatercopytarget command. 
 	<sec_VV_name> specifies the name of the secondary volume on the target system.  One <target_name>:<sec_VV_name> must be specified for each target of the group.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Pat,
@@ -133,6 +137,8 @@ Function Add-A9RCopyLink_CLI
 	Node number:Slot number:Port Number:IP Address of the Target to be created.
 .PARAMETER N_S_P_WWN
 	Node number:Slot number:Port Number:World Wide Name (WWN) address on the target system.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]						[String]	$TargetName,
@@ -175,6 +181,8 @@ Function Disable-A9RCopylink_CLI
 	Specifies the node, slot, and port of the Ethernet port on the local system and an IP address of the peer port on the target system.
 .PARAMETER NSP_WWN
 	Specifies the node, slot, and port of the Fibre Channel port on the local system and World Wide Name (WWN) of the peer port on the target system.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[Switch]	$RCIP,
@@ -230,6 +238,8 @@ Function Disable-A9RCopyTarget_CLI
 	The name of the target to be removed.
 .PARAMETER Group_name		
 	The name of the group that currently includes the target.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Target_name,
@@ -277,6 +287,8 @@ Function Disable-A9RCopyVv_CLI
 	The name of the volume to be removed. Volumes are added to a group with the admitrcopyvv command.
 .PARAMETER Group_name		
 	The name of the group that currently includes the target.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Pat,
@@ -327,6 +339,8 @@ Function Get-A9RCopy_CLI
 	Specifies either all remote-copy volume groups or a specific remote-copy volume group by name or by glob-style pattern.
 .PARAMETER Targets
 	Specifies either all target definitions or a specific target definition by name or by glob-style pattern.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Detailed,
@@ -380,6 +394,8 @@ Function Get-A9StatRCopy_CLI
 .PARAMETER Interval
 	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483647. If no interval is specified, the option
 	defaults to an interval of two seconds.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()][ValidateRange(1,2147483647)]	[Int]		$Interval,
@@ -425,6 +441,8 @@ Function Remove-A9RCopyGroup_CLI
 	Remove remote sides' volumes.	
 .PARAMETER GroupName      
 	The name of the group that currently includes the target.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]					[switch]	$RemoveVV,
@@ -467,6 +485,8 @@ Function Remove-A9RCopyTarget_CLI
 	Remove all groups that have no other targets or dismiss this target from groups with additional targets.
 .PARAMETER TargetName      
 	The name of the group that currently includes the target.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$ClearGroups,
@@ -501,6 +521,8 @@ Function Remove-A9RCopyTargetFromGroup_CLI
 	The name of the target to be removed.
 .PARAMETER GroupName      
 	The name of the group that currently includes the target.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$TargetName,
@@ -603,6 +625,8 @@ Function Set-A9RCopyGroupPeriod_CLI
 	Specifies the local snap CPG and target snap CPG that will be used for volumes that are auto-created. The local CPG will only be used after failover and recover.
 .PARAMETER Usr_cpg_unset
 	Unset all user CPGs that are associated with this group..PARAMETER Snp_cpg_unset Unset all snap CPGs that are associated with this group.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)][ValidateSet('s','m','h','d')]	
@@ -757,6 +781,8 @@ Function Set-A9RCopyGroupPol_CLI
 	no_path_management	:	ALUA behaviour will be disabled for volumes in the group.	
 .PARAMETER GroupName
 	Specifies the name of the volume group whose policy is set, or whose target direction is switched.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[Switch]	$Force,
@@ -830,6 +856,8 @@ Function Set-A9RCopyTarget_CLI
 	specify enable or disable 
 .PARAMETER TargetName  
 	Specifies the target name 
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true, ParameterSetName='Enable')]		[switch]	$Enable ,
@@ -866,6 +894,8 @@ Function Set-A9RCopyTargetName_CLI
 	The new name for the indicated target. 
 .PARAMETER TargetName  
 	Specifies the target name for the target definition.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$NewName,
@@ -903,6 +933,8 @@ Function Set-A9RCopyTargetPol_CLI
 	Specifies the target name for the target definition.
 .NOTES
 	That the no_mirror_config specifier should only be used to allow recovery from an unusual error condition and only used after consulting your HPE representative.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -961,6 +993,8 @@ Function Set-A9RCopyTargetWitness_CLI
 	Specifies the target name for the target definition previously created with the creatercopytarget command.
 .PARAMETER Node_id	
 	Node id with node option
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]			[ValidateSet('witness','create','start','stop','remove','check')]	
@@ -1030,6 +1064,8 @@ Function Show-A9RCopyTransport_CLI
 	Show information about Ethernet end-to-end transport.
 .PARAMETER RCFC
 	Show information about Fibre Channel end-to-end transport.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$RCIP,
@@ -1072,6 +1108,8 @@ Function Start-A9RCopy_CLI
 	PS:> Start-A9RCopy_CLI 
     
 	command starts the Remote Copy Service.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param()	
@@ -1114,6 +1152,8 @@ Function Start-A9RCopyGroup_CLI
 .PARAMETER Volumes_Snapshots 
 	Member volumes and snapshots can be specified by vv:sv syntax, where vv is the base volume name and sv is the snapshot volume name. To indicate a full
 	resync, specify the starting, read-only snapshot with "-".
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$NoSync,
@@ -1154,6 +1194,8 @@ Function Stop-A9RCopy_CLI
 	Specifies that any started remote-copy volume groups are stopped.
 .PARAMETER Clear
 	Specifies that configuration entries affiliated with the stopped mode are deleted.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$StopGroups,
@@ -1189,6 +1231,8 @@ Function Stop-A9RCopyGroup_CLI
 	Indicates that only the group on the specified target is started. If this option is not used, by default,  	the New-RCopyGroup command will affect all of a group’s targets.
 .PARAMETER GroupName 
 	The name of the remote-copy volume group.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]					[switch]	$NoSnap,
@@ -1233,6 +1277,8 @@ Function Sync-A9RCopy_CLI
 	Indicates that only the group on the specified target is started. If this option is not used, by default,  	the New-RCopyGroup command will affect all of a group’s targets.
 .PARAMETER GroupName 
 	Specifies the name of the remote-copy volume group to be synchronized.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Wait,
@@ -1303,6 +1349,8 @@ Function Test-A9RCopyLink_CLI
 	Specifies the test duration in seconds. Specifies the number of seconds for the test to run using an integer from 300 to 172800.
 .PARAMETER Port
 	Specifies the port on which to run the test. If this specifier is not used, the test automatically runs on port 3492.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='StartC',Mandatory=$true)]	[switch]	$StartClient,
@@ -1374,6 +1422,8 @@ Function Remove-A9RCopyVvFromGroup
 	The name of the volume to be removed. Volumes are added to a group with the admitrcopyvv command.	
 .PARAMETER GroupName      
 	The name of the group that currently includes the target.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]					[switch]	$Pat,
@@ -1465,6 +1515,8 @@ Function Sync-A9RecoverDRRcopyGroup
 	integer with a range of 1 to 720 minutes (12 Hours). Default time is 720 minutes. 
 .PARAMETER Group_name
 	Name of the Group
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[ValidateSet('sync','recovery')]	
@@ -1525,6 +1577,7 @@ Function Set-A9AdmitRCopyHost
         555 RH0_Group0_0            1 NO     NO         NO  Pri
         556 RH1_Group0_2            1 NO     NO         NO  Sec
 .NOTES
+	This command requires a SSH type connection.
 	SUPPORTED ARRAY VERSIONS: HPE Primera OS 4.3 onwards, HPE Alletra OS 9.3 onwards
     This command is only supported for groups for which the active_active policy is set.
     The policy value can be seen in Get-HostSet -summary under the RC_host column.
@@ -1566,6 +1619,7 @@ Function Remove-A9RCopyHost
 
 	PS:> Remove-A9RCopyHost group1 host1
 .NOTES
+	This command requires a SSH type connection.
 	SUPPORTED ARRAY VERSIONS HPE Primera OS 4.3 onwards, HPE Alletra OS 9.3 onwards
     This command is only supported for groups for which the active_active policy is set.
 #>

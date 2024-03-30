@@ -2,238 +2,8 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Get-A9Host_CLI
-{
-<#
-.SYNOPSIS
-	Lists hosts
-.DESCRIPTION
-	Queries hosts
-.EXAMPLE
-    PS:> Get-A9Host_CLI 
 
-	Lists all hosts
-.EXAMPLE	
-	PS:> Get-A9Host_CLI -hostName HV01A
 
-	List host HV01A
-.EXAMPLE
-	PS:> Get-A9Host_CLI -Domain scvmm
-.EXAMPLE	
-	PS:> Get-A9Host_CLI -D
-.EXAMPLE
-	PS:> Get-A9Host_CLI -CHAP
-.EXAMPLE
-	PS:> Get-A9Host_CLI -Descriptor
-.EXAMPLE
-	PS:> Get-A9Host_CLI -Agent
-.EXAMPLE
-	PS:> Get-A9Host_CLI -Pathsum
-.EXAMPLE
-	PS:> Get-A9Host_CLI -Persona
-.EXAMPLE
-	PS:> Get-A9Host_CLI -Listpersona
-.PARAMETER D
-	Shows a detailed listing of host and path information. This option can be used with -agent and -domain options.
-.PARAMETER Verb
-	Shows a verbose listing of all host information. This option cannot be used with -d.
-.PARAMETER CHAP
-	Shows the CHAP authentication properties. This option cannot be used with -d.
-.PARAMETER Descriptor
-	Shows the host descriptor information. This option cannot be used with -d.
-.PARAMETER Agent
-	Shows information provided by host agent.
-.PARAMETER Pathsum
-	Shows summary information about hosts and paths. This option cannot be used with -d.
-.PARAMETER Persona
-	Shows the host persona settings in effect. This option cannot be used with -d.
-.PARAMETER Listpersona
-	Lists the defined host personas. This option cannot be used with -d.
-.PARAMETER NoName
-	Shows only host paths (WWNs and iSCSI names) not assigned to any host. This option cannot be used with -d.
-.PARAMETER Domain 
-	Shows only hosts that are in domains or domain sets that match one or more of the specifier <domainname_or_pattern> or set <domainset>
-	arguments. The set name <domain_set> must start with "set:". This specifier does not allow listing objects within a domain of which the
-	user is not a member.
-.PARAMETER CRCError
-	Shows the CRC error counts for the host/port.
-.PARAMETER hostName
-    Specify new name of the host
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$Domain,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$D,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Verb,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$CHAP,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Descriptor,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Agent,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Pathsum,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Persona,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Listpersona,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$NoName,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$CRCError,
-		[Parameter()]							[String]	$hostName
-)		
-Begin	
-{	Test-A9Connection -ClientType 'SshClient' 
-}
-Process
-{	$CurrentId = $CurrentName = $CurrentPersona = $null
-	$ListofvHosts = @()	
-	$GetHostCmd = "showhost "	
-	if ($Domain)		{	$GetHostCmd +=" -domain $Domain"}
-	if ($D)				{	$GetHostCmd +=" -d "			}
-	if ($Verb)			{	$GetHostCmd +=" -verbose "		}
-	if ($CHAP)			{	$GetHostCmd +=" -chap "			}
-	if ($Descriptor)	{	$GetHostCmd +=" -desc "			}
-	if ($Agent)			{	$GetHostCmd +=" -agent "		}
-	if ($Pathsum)		{	$GetHostCmd +=" -pathsum "		}
-	if ($Persona)		{	$GetHostCmd +=" -persona "		}
-	if ($Listpersona)	{	$GetHostCmd +=" -listpersona "	}
-	if ($NoName)		{	$GetHostCmd +=" -noname "		}
-	if ($CRCError)		{	$GetHostCmd +=" -lesb "			}	
-	if($hostName)		{	$objType = "host"
-							$objMsg  = "hosts"
-							if ( -not (Test-CLIObject -objectType $objType -objectName $hostName -objectMsg $objMsg ))
-								{	return "FAILURE : No host $hostName found"
-								}
-						}
-	$GetHostCmd+=" $hostName"
-	$Result = Invoke-CLICommand -cmds  $GetHostCmd	
-	write-verbose "Get list of Hosts" 
-	if ($Result -match "no hosts listed")	{	return "Success : no hosts listed"	}
-	if ($Verb -or $Descriptor)				{	return $Result	}	
-	$tempFile = [IO.Path]::GetTempFileName()
-	$Header = $Result[0].Trim() -replace '-WWN/iSCSI_Name-' , ' Address' 
-	set-content -Path $tempFile -Value $Header
-	$Result_Count = $Result.Count - 3
-	if($Agent)	{	$Result_Count = $Result.Count - 3	}
-	if($Result.Count -gt 3)
-		{	$CurrentId = $null
-			$CurrentName = $null
-			$CurrentPersona = $null		
-			$address = $null
-			$Port = $null
-			$Flg = "false"
-			foreach ($s in $Result[1..$Result_Count])
-				{	if($Pathsum)
-						{	$s =  [regex]::Replace($s , "," , "|"  )  # Replace ','  with "|"	
-						}			
-					if($Flg -eq "true")
-						{	$temp = $s.Trim()
-							$temp1 = $temp.Split(',')
-							if($temp1[0] -match "--")
-								{	$temp =  [regex]::Replace($temp , "--" , ""  )  # Replace '--'  with ""				
-									$s = $temp
-								}
-						}
-					$Flg = "true"	
-					$match = [regex]::match($s, "^  +")   # Match Line beginning with 1 or more spaces
-					if (-not ($match.Success))
-						{	$s= $s.Trim()				
-							$s= [regex]::Replace($s, " +" , "," )	# Replace spaces with comma (,)
-							$sTemp = $s.Split(',')
-							$TempCnt = $sTemp.Count
-							if($TempCnt -eq 2)
-								{	$address = $sTemp[0]
-									$Port = $sTemp[1] # [regex]::Replace($sTemp[4] , "-+" , ""  )  # Replace '----'  with ""  
-								}
-							else{	$CurrentId =  $sTemp[0]
-									$CurrentName = $sTemp[1]
-									$CurrentPersona = $sTemp[2]			
-									$address = $sTemp[3]
-									$Port = $sTemp[4] # [regex]::Replace($sTemp[4] , "-+" , ""  )  # Replace '----'  with ""
-								}
-						}			
-					else{	$s = $s.trim()
-							$s= [regex]::Replace($s, " +" , "," )								
-							$sTemp = $s.Split(',')
-							$TempCnt1 = $sTemp.Count
-							if($TempCnt1 -eq 2)
-								{	$address = $sTemp[0]
-									$Port = $sTemp[1] # [regex]::Replace($sTemp[4] , "-+" , ""  )  # Replace '----'  with ""  
-								}
-							else{	$CurrentId =  $sTemp[0]
-									$CurrentName = $sTemp[1]
-									$CurrentPersona = $sTemp[2]			
-									$address = $sTemp[3]
-									$Port = $sTemp[4] # [regex]::Replace($sTemp[4] , "-+" , ""  )  # Replace '----'  with ""
-								}
-							
-						}
-					$vHost= @{	ID 		= $CurrentId
-								Persona = $currentPersona
-								Name = $CurrentName
-								Address = $address
-								Port= $port
-							} 
-					$ListofvHosts += $vHost		
-				}	
-		}	
-	else{	Remove-Item  $tempFile
-			return "Success : No Data Available for Host Name :- $hostName"
-		}
-	Remove-Item  $tempFile
-	return $ListofvHosts		
-}
-}
-
-Function Get-A9HostSet_CLI
-{
-<#
-.SYNOPSIS
-    show host set(s) information	
-.DESCRIPTION
-    The command lists the host sets defined on the storage system and their members.
-.EXAMPLE
-    PS:> Get-A9HostSet_CLI	
-
-	List all host set information
-.EXAMPLE
-	PS:> Get-A9HostSet_CLI -D myset
-
-	Show the details of myset
-.EXAMPLE
-	PS:> Get-A9HostSet_CLI -hostSetName "MyVVSet"
-
-	List Specific HostSet name "MyVVSet"
-.EXAMPLE	
-	PS:> Get-A9HostSet_CLI -hostName "MyHost"
-	
-	Show the host sets containing host "MyHost"	
-.EXAMPLE	
-	PS:> Get-A9HostSet_CLI -D	
-
-	Show a more detailed listing of each set
-.PARAMETER D
-	Show a more detailed listing of each set.
-.PARAMETER hostSetName 
-    Specify name of the hostsetname to be listed.
-.PARAMETER hostName 
-    Show host sets that contain the supplied hostnames or patterns.
-.PARAMETER summary 
-    Shows host sets with summarized output with host set names and number of hosts in those sets.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$hostSetName,
-		[Parameter()]	[String]	$hostName,
-		[Parameter()]	[Switch]	$D,
-		[Parameter()]	[Switch]	$summary
-)		
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$GetHostSetCmd = "showhostset "
-	if($D)			{	$GetHostSetCmd +=" -d"				}
-	if($summary)	{	$GetHostSetCmd +=" -summary"		}	
-	if ($hostName)	{	$GetHostSetCmd +=" -host $hostName"	}
-	if ($hostSetName){	$GetHostSetCmd +=" $hostSetName"	}	
-	else			{	write-verbose "HostSet parameter is empty. Simply return all hostset information "	}
-	$Result = Invoke-CLICommand  -cmds  $GetHostSetCmd
-	return $Result
-}
-}
 
 Function New-A9Host_CLI
 {
@@ -292,6 +62,8 @@ Function New-A9Host_CLI
 	Host iSCSI name to be assigned or added to a host. This specifier is optional.
 .PARAMETER iSCSI
     when specified, it means that the address is an iSCSI address
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$HostName,	
@@ -330,7 +102,7 @@ Process
 	if ($HostName)	{	$cmd +="$HostName "			}
 	if ($WWN)		{	$cmd +="$WWN "				}
 	if ($IscsiName)	{	$cmd +="$IscsiName "		}
-	$Result = Invoke-CLICommand -cmds $cmd	
+	$Result = Invoke-A9CLICommand -cmds $cmd	
 	if([string]::IsNullOrEmpty($Result))
 		{	return "Success : New-Host command executed Host Name : $HostName is created."
 		}
@@ -391,6 +163,8 @@ Function New-A9HostSet_CLI
 	current domain is not set. A host set must be in the same domain as its members; if hosts are specified as part of the creation then
 	the set will be created in their domain. The -domain option should still be used to specify which domain to use for the set when the
 	hosts are members of domain sets. A domain cannot be specified when adding a host to an existing set with the -add option.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$HostSetName,
@@ -413,7 +187,7 @@ Process
 				return	
 			}
 	if($hostName)	{	$cmdCrtHostSet +=" $hostName "	}	
-	$Result = Invoke-CLICommand -cmds  $cmdCrtHostSet
+	$Result = Invoke-A9CLICommand -cmds  $cmdCrtHostSet
 	if($Add)
 		{	if([string]::IsNullOrEmpty($Result))
 				{	return "Success : New-HostSet command executed Host Name : $hostName is added to Host Set : $HostSetName"
@@ -462,6 +236,8 @@ Function Remove-A9Host_CLI
 	Specifies that host name will be treated as a glob-style pattern and that all hosts matching the specified pattern are removed. T
 .PARAMETER  Port 
 	Specifies the NSP(s) for the zones, from which the specified WWN will be removed in the target driven zoning. 
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]			[String]	$hostName,
@@ -484,7 +260,7 @@ Process
 			if($Pat)	{	$RemoveCmd += " -pat "	}
 			if($Port)	{	$RemoveCmd += " -port $Port "	}
 		}			
-	if ( -not ( Test-CLIObject -objectType $objType -objectName $hostName -objectMsg $objMsg )) 
+	if ( -not ( Test-A9CLIObject -objectType $objType -objectName $hostName -objectMsg $objMsg )) 
 		{	write-verbose " Host $hostName does not exist. Nothing to remove"   
 			return "FAILURE : No host $hostName found"
 		}
@@ -493,7 +269,7 @@ Process
 			$RemoveCmd += " $hostName $Addr"
 			$Result1 = Get-HostSet -hostName $hostName 			
 			if(($Result1 -match "No host set listed"))
-				{	$Result2 = Invoke-CLICommand -cmds  $RemoveCmd
+				{	$Result2 = Invoke-A9CLICommand -cmds  $RemoveCmd
 					write-verbose "Removing host  with the command --> $RemoveCmd" 
 					if([string]::IsNullOrEmpty($Result2))
 						{	return "Success : Removed host $hostName"
@@ -503,7 +279,7 @@ Process
 						}				
 				}
 			else
-				{	$Result3 = Invoke-CLICommand -cmds $RemoveCmd
+				{	$Result3 = Invoke-A9CLICommand -cmds $RemoveCmd
 					return "FAILURE : Host $hostName is still a member of set $Result3"
 				}			
 		}				
@@ -534,6 +310,8 @@ Function Remove-A9HostSet_CLI
 	If present, perform forcible delete operation
 .PARAMETER Pat
 	Specifies that both the set name and hosts will be treated as glob-style patterns.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$hostsetName,
@@ -553,7 +331,7 @@ Process
 				}
 			$objType = "hostset"
 			$objMsg  = "host set"
-			if ( -not ( Test-CLIObject -objectType $objType -objectName $hostsetName -objectMsg $objMsg )) 
+			if ( -not ( Test-A9CLIObject -objectType $objType -objectName $hostsetName -objectMsg $objMsg )) 
 				{	write-verbose " hostset $hostsetName does not exist. Nothing to remove"   
 					return "FAILURE : No hostset $hostsetName found"
 				}
@@ -562,7 +340,7 @@ Process
 					if($Pat)		{	$RemovehostsetCmd += " -pat "	}
 					$RemovehostsetCmd += " $hostsetName "
 					if($hostName)	{	$RemovehostsetCmd +=" $hostName"	}
-					$Result2 = Invoke-CLICommand -cmds  $RemovehostsetCmd
+					$Result2 = Invoke-A9CLICommand -cmds  $RemovehostsetCmd
 					if([string]::IsNullOrEmpty($Result2))
 						{	if($hostName)
 								{	return "Success : Removed host $hostName from hostset $hostsetName "
@@ -594,6 +372,8 @@ Function Update-A9HostSet_CLI
 	Specifies any comment or additional information for the set. The comment can be up to 255 characters long. Unprintable characters are not allowed.
 .PARAMETER NewName
 	Specifies a new name for the host set, using up to 27 characters in length.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Comment,
@@ -609,7 +389,7 @@ Process
 	if($NewName)	{	$Cmd += " -name $NewName " 	} 
 	if($Setname)	{	$Cmd += " $Setname " } 
 	else			{	return "Setname is mandatory Please enter..."	} 
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if ([string]::IsNullOrEmpty($Result))	{    Get-HostSet -hostSetName $NewName }
 	else	{ 	Return $Result }
 }

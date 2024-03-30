@@ -56,6 +56,8 @@ Function Get-A9Task_CLI
   Specifies that specified patterns are treated as glob-style patterns and that all tasks whose types match the specified pattern are displayed. To see the different task types use the showtask column help.
 .PARAMETER TaskID 
   Show detailed task status for specified tasks. Tasks must be explicitly specified using their task IDs <task_ID>. Multiple task IDs can be specified. This option cannot be used in conjunction with other options.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$TaskID,   
@@ -78,7 +80,7 @@ Process
 	if($Failed)		{		$taskcmd +=" -failed "	}
 	if($Active)		{		$taskcmd +=" -active "	}
 	if($Hours)		{		$taskcmd +=" -t $Hours "	}	
-	$result = Invoke-CLICommand -cmds  $taskcmd
+	$result = Invoke-A9CLICommand -cmds  $taskcmd
 	if($TaskID)	{	return $result	}	
 	if($Result -match "Id" )
     { $tempFile = [IO.Path]::GetTempFileName()
@@ -140,6 +142,8 @@ Function Remove-A9Task
   With this command, the specified task ID and any information associated with it are removed from the system. However, task IDs are not recycled, so the
   next task started on the system uses the next whole integer that has not already been used. Task IDs roll over at 29999. The system stores
   information for the most recent 2000 tasks.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(  [Parameter()]  [String] $TaskID,
@@ -156,7 +160,7 @@ process
   if ($A) {  $cmd += " -a"  }
   elseif ($D) { $cmd += " -d"		 }
   elseif ($T) { $cmd += " -t $T"  }	
-  $Result = Invoke-CLICommand -cmds  $cmd
+  $Result = Invoke-A9CLICommand -cmds  $cmd
   return 	$Result	
 }
 }
@@ -183,6 +187,8 @@ Function Stop-A9Task
   prevent actions like restarting the canceled task. Use the waittask command to ensure orderly completion of the cancellation before taking other
   actions. See waittask for more details.
   A Service user is only allowed to cancel tasks started by that specific user.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(  [Parameter()] [String]  $TaskID,		
@@ -198,7 +204,7 @@ process
   else {  Return "Force cancellation is only supported with the Stop-Task cmdlet." }
   if ($TaskID) {  $cmd += "$TaskID"		 }
   if ($ALL) { $cmd += " -all"		  }    	
-  $Result = Invoke-CLICommand -cmds  $cmd
+  $Result = Invoke-A9CLICommand -cmds  $cmd
   return 	$Result	
 }
 }
@@ -222,6 +228,8 @@ Function Wait-A9Task
   
   PS:> Wait-A9Task 1  
   Task 1 done      
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(  [Parameter()] [Switch]  $V, 
@@ -236,7 +244,7 @@ process
 	if ($V)     { $cmd += " -v "	}
   if ($TaskID){  $cmd += "$TaskID"}
   if ($Q)     { $cmd += " -q"		 }    	
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
   return 	$Result	
 }
 } 

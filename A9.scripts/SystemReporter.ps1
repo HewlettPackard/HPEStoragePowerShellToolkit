@@ -166,7 +166,7 @@ Process
 			$addQuery = "Yes"		
 		}
 	if($addQuery -eq "Yes")		{	$uri = $uri+$Query	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members	
 		}		
@@ -366,7 +366,7 @@ Process
 			$addQuery = "Yes"		
 		}
 	if($addQuery -eq "Yes")	{	$uri = $uri+$Query	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members	
 		}		
@@ -529,7 +529,7 @@ Process
 			$addQuery = "Yes"		
 		}
 	if($addQuery -eq "Yes")		{	$uri = $uri+$Query	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)	{	$dataPS = ($Result.content | ConvertFrom-Json).members	}		
 	if($Result.StatusCode -eq 200)
 		{	if($dataPS.Count -gt 0)
@@ -691,7 +691,7 @@ Process
 	if($addQuery -eq "Yes")
 		{	$uri = $uri+$Query
 		}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members	
 		}		
@@ -856,7 +856,7 @@ Process
 			$addQuery = "Yes"		
 		}
 	if($addQuery -eq "Yes")		{	$uri = $uri+$Query	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 			if($dataPS.Count -gt 0)
@@ -1038,7 +1038,7 @@ Process
 			$addQuery = "Yes"		
 		}
 	if($addQuery -eq "Yes")		{	$uri = $uri+$Query	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)	{	$dataPS = ($Result.content | ConvertFrom-Json).members	}		
 	if($Result.StatusCode -eq 200)
 		{	if($dataPS.Count -gt 0)
@@ -1236,7 +1236,7 @@ Process
 			$addQuery = "Yes"		
 		}
 	if($addQuery -eq "Yes")	{	$uri = $uri+$Query	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)	{	$dataPS = ($Result.content | ConvertFrom-Json).members		}		
 	if($Result.StatusCode -eq 200)
 		{	if($dataPS.Count -gt 0)
@@ -1415,7 +1415,7 @@ Process
 			$addQuery = "Yes"		
 		}	
 	if($addQuery -eq "Yes")	{	$uri = $uri+$Query	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)	{	$dataPS = ($Result.content | ConvertFrom-Json).members		}		
 	if($Result.StatusCode -eq 200)
 		{	if($dataPS.Count -gt 0)
@@ -1641,7 +1641,7 @@ Process
 			$addQuery = "Yes"		
 		}
 	if($addQuery -eq "Yes")	{	$uri = $uri+$Query	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 			if($dataPS.Count -gt 0)
@@ -1819,7 +1819,7 @@ Process
 			$addQuery = "Yes"		
 		}
 	if($addQuery -eq "Yes")		{	$uri = $uri+$Query	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 			if($dataPS.Count -gt 0)
@@ -2046,7 +2046,7 @@ Process
 			$addQuery = "Yes"		
 		}
 	if($addQuery -eq "Yes")		{	$uri = $uri+$Query	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 			if($dataPS.Count -gt 0)
@@ -2248,7 +2248,7 @@ Process
 			$addQuery = "Yes"		
 		}	
 	if($addQuery -eq "Yes")	{	$uri = $uri+$Query	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET'
+	$Result = Invoke-A9API -uri $uri -type 'GET'
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members	
 			if($dataPS.Count -gt 0)
@@ -2447,7 +2447,7 @@ Process
 			$addQuery = "Yes"		
 		}	
 	if($addQuery -eq "Yes")	{	$uri = $uri+$Query	}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)	{			}	
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members

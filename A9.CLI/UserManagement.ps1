@@ -2,7 +2,7 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Get-A9UserConnection_CLI
+Function Get-A9UserConnection
 {
 <#
 .SYNOPSIS
@@ -10,15 +10,15 @@ Function Get-A9UserConnection_CLI
 .DESCRIPTION
 	Displays information about users who are currently connected (logged in) to the storage system.
 .EXAMPLE
-    PS:> Get-A9UserConnection_CLI  
+    PS:> Get-A9UserConnection
 
 	Shows information about users who are currently connected (logged in) to the storage system.
 .EXAMPLE
-    PS:> Get-A9UserConnection_CLI -Current
+    PS:> Get-A9UserConnection -Current
 
 	Shows all information about the current connection only.
 .EXAMPLE
-    PS:> Get-A9UserConnection_CLI -Detailed
+    PS:> Get-A9UserConnection -Detailed
 
 	Specifies the more detailed information about the user connection
 .PARAMETER Current
@@ -27,7 +27,8 @@ Function Get-A9UserConnection_CLI
 	Specifies the more detailed information about the user connection.
 .PARAMETER SANConnection 
     Specify the SAN Connection object created with New-PoshSshConnection or New-CLIConnection
-#Requires HPE 3par cli.exe 
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Current ,		
@@ -37,14 +38,13 @@ Begin
 { Test-A9Connection -CLientType 'SshClient'
 }
 process	
-{	if ( -not $(Test-A9CLI) ) 	{	return }
-	$cmd2 = "showuserconn "
+{	$cmd2 = "showuserconn "
 	if ($Current)	{	$cmd2 += " -current " }
 	if($Detailed)	{	$cmd2 += " -d "
-						$result = Invoke-CLICommand -cmds  $cmd2
+						$result = Invoke-A9CLICommand -cmds  $cmd2
 						return $result
 					}
-	$result = Invoke-CLICommand -cmds  $cmd2
+	$result = Invoke-A9CLICommand -cmds  $cmd2
 	$count = $result.count - 3
 	$tempFile = [IO.Path]::GetTempFileName()
 	Add-Content -Path $tempFile -Value "Id,Name,IP_Addr,Role,Connected_since_Date,Connected_since_Time,Connected_since_TimeZone,Current,Client,ClientName"

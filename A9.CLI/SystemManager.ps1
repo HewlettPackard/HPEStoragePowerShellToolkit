@@ -29,6 +29,8 @@ Function Get-A9Cert
 	Displays the certificates in human readable format. When a filename is specified the certificates are exported to the file.
 .PARAMETER File
 	Specifies the export file of the -pem or -text option.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Listcols,
@@ -52,11 +54,11 @@ Process
 	if($Text)		{	$Cmd += " -text " }
 	if($File)		{	$Cmd += " -file $File " }
 	if($Listcols -Or $Pem -Or $Text)
-		{	$Result = Invoke-CLICommand -cmds  $Cmd
+		{	$Result = Invoke-A9CLICommand -cmds  $Cmd
 			Return $Result
 		}
 	else
-		{	$Result = Invoke-CLICommand -cmds  $Cmd
+		{	$Result = Invoke-A9CLICommand -cmds  $Cmd
 			Write-Verbose "Executing Function : Get-Cert Command -->" 
 			if($Result.count -gt 1)
 				{	$tempFile = [IO.Path]::GetTempFileName()
@@ -96,6 +98,8 @@ Function Get-A9Encryption
 	The Get-Encryption command shows Data Encryption information.
 .PARAMETER D
 	Provides details on the encryption status.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$D
@@ -106,7 +110,7 @@ Begin
 Process	
 {	$Cmd = " showencryption "
 	if($D)	{	$Cmd += " -d " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	$LastItem = 0
 			$Fcnt = 0
@@ -172,6 +176,8 @@ Function Get-A9SystemReporter
 		- Time string: "11:00:00" or 11:00:00
 	- A negative number indicating the number of seconds before the	current time. Instead of a number representing seconds, <secs> can
 		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$ldrg,
@@ -186,7 +192,7 @@ Process
 	if($ldrg)	{	$srinfocmd += "-ldrg "	}
 	if($Btsecs)	{	$srinfocmd += "-btsecs $Btsecs "	}
 	if($Etsecs)	{	$srinfocmd += "-etsecs $Etsecs "	}
-	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 	return  $Result	
 }
 }
@@ -207,6 +213,8 @@ Function Import-A9Cert
 	Allows the import of a CA bundle without importing a service certificate. Note the filename "stdin" can be used to paste the CA bundle into the CLI.
 .PARAMETER Ca
 	Allows the import of a CA bundle without importing a service certificate. Note the filename "stdin" can be used to paste the  CA bundle into the CLI.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -224,7 +232,7 @@ Process
 	if($Service_cert) 	{	$Cmd += " $Service_cert " 	}
 	if($CA_bundle) 		{	$Cmd += " $CA_bundle " 		}
 	if($Ca) 			{	$Cmd += " -ca $Ca " 		}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -264,6 +272,8 @@ Function New-A9Cert
 	Specifies the value of common name (CN) attribute of the subject of the certificate. Over ssh, -CN must be specified.
 .PARAMETER SAN
 	Subject alternative name is a X509 extension that allows other pieces of information to be associated with the certificate. Multiple SANs may delimited with a comma.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]						[String]	$SSL_service,
@@ -296,7 +306,7 @@ Process
 	if($OU)				{	$Cmd += " -OU $OU " 	}
 	if($CN)				{	$Cmd += " -CN $CN " 	}
 	if($SAN)			{	$Cmd += " -SAN $SAN " 	}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -334,6 +344,8 @@ Function New-A9RCopyGroup_CLI
 	sync—synchronous replication
 	async—asynchronous streaming replication
 	periodic—periodic asynchronous replication
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$GroupName,
@@ -373,7 +385,7 @@ Process
 	if ($GroupName)	{	$cmd+=" $GroupName"	}
 	if ($TargetName){	$cmd+=" $TargetName"}
 	if ($Mode)		{	$cmd+=":$Mode "	}
-	$Result = Invoke-CLICommand -cmds  $cmd	
+	$Result = Invoke-A9CLICommand -cmds  $cmd	
 	write-verbose "  The command creates a remote-copy volume group..   " 	
 	if([string]::IsNullOrEmpty($Result))
 		{	return  "Success : Executing  New-RCopyGroup Command $Result"
@@ -417,6 +429,8 @@ Function New-A9RCopyGroupCPG_CLI
 	sync—synchronous replication
 	async—asynchronous streaming replication
 	periodic—periodic asynchronous replication
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$GroupName,
@@ -454,7 +468,7 @@ Process
 	$cmd+=" $GroupName"	
 	$cmd+=" $TargetName"
 	$cmd+=":$Mode "
-	$Result = Invoke-CLICommand -cmds  $cmd	
+	$Result = Invoke-A9CLICommand -cmds  $cmd	
 	write-verbose "  The command creates a remote-copy volume group..   " 	
 	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing  New-RCopyGroupCPG Command $Result"	}
 	else									{	return  "FAILURE : While Executing  New-RCopyGroupCPG 	$Result "	} 	
@@ -496,6 +510,8 @@ Function New-A9RCopyTarge_CLI
 	Node number:Slot number:Port Number:IP Address of the Target to be created.
 .PARAMETER NSP_WWN
 	Node number:Slot number:Port Number:World Wide Name (WWN) address on the target system.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='IP', Mandatory=$true)]	[switch]	$RCIP,
@@ -521,7 +537,7 @@ Process
 						$s= [regex]::Replace($s,","," ")	
 						$cmd+=" FC $Node_WWN $s"
 					}		
-	$Result = Invoke-CLICommand -cmds  $cmd	
+	$Result = Invoke-A9CLICommand -cmds  $cmd	
 	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing New-RCopyTarget Command "	}
 	else									{	return  "FAILURE : While Executing New-RCopyTarget $Result "	} 	
 }
@@ -547,6 +563,8 @@ Function Remove-A9Cert
 .PARAMETER Type
 	Allows the user to limit the removal to a specific type. Note that types are cascading. For example, intca will cause the service certificate to
 	also be removed. Valid types are csr, cert, intca, and rootca.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$SSL_Service_Name,	
@@ -561,7 +579,7 @@ Process
 	if($SSL_Service_Name)	{	$Cmd += " $SSL_Service_Name " }
 	if($F)					{	$Cmd += " -f "}
 	if($Type) 				{	$Cmd += " -type $Type " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
@@ -598,6 +616,8 @@ Function Measure-A9Upgrade
 	Used to check when reverting nodes as part of aborting an upgrade.
 .PARAMETER Verbose
 	Display output from the checkupgrade update package check.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Allow_singlepathhost,
@@ -627,7 +647,7 @@ Process
 	if($Phase)					{	$Cmd += " -phase $Phase " }
 	if($Revertnode)				{	$Cmd += " -revertnode " }
 	if($Verbose)				{	$Cmd += " -verbose " }
-$Result = Invoke-CLICommand -cmds  $Cmd
+$Result = Invoke-A9CLICommand -cmds  $Cmd
 Return $Result
 }
 }
@@ -667,6 +687,8 @@ Function Optimize-A9LogicalDisk
 	Only to be used when called from tunenodech. When present tuneld will exit the CLI if certain errors occur, otherwise only an error will be displayed.
 .PARAMETER Preserved
 	Only to be used when source LD is in a preserved state. This option will move all good regions from the source LD to a new LD.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Waittask,	
@@ -691,7 +713,7 @@ Process
 	if($Tunenodech) {	$Cmd += " -tunenodech " }
 	if($Preserved)	{	$Cmd += " -preserved " }
 	if($LD_name)	{	$Cmd += " $LD_name " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 Return $Result
 }
 }
@@ -723,6 +745,8 @@ Function Optimize-A9Node
 	Specifies a comma separated list of one or more devtypes to be tuned. <devtype> can be one of SSD, FC or NL. Default is all devtypes. All named devtypes must be present on the node being tuned.
 .PARAMETER DR
 	Perform a dry-run analysis of the system and report details on what tuning would be performed with the supplied settings.  
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -744,7 +768,7 @@ Process
 	if($Fulldiskpct){	$Cmd += " -fulldiskpct $Fulldiskpct " }
 	if($Devtype)	{	$Cmd += " -devtype $Devtype " }
 	if($DR) 		{	$Cmd += " -dr " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -760,6 +784,8 @@ Function Start-A9SystemTeporter
     PS:> Start-A9SystemTeporter
 
 	Starts System Reporter
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param()
@@ -769,7 +795,7 @@ Begin
 Process	
 {	$srinfocmd = "startsr -f "
 	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 	if(-not $Result)	{	return "Success: Started System Reporter $Result"	}
 	elseif($Result -match "Cannot startsr, already started")	{	Return "Command Execute Successfully :- Cannot startsr, already started"	}
 	else	{	return $Result	}		
@@ -787,6 +813,8 @@ Function Stop-A9SSystemReporter
     PS:> Stop-A9SSystemReporter
 
 	Stop System Reporter
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param()
@@ -796,7 +824,7 @@ Begin
 Process	
 {	$srinfocmd = "stopsr -f "
 	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-CLICommand -cmds  $srinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 	if(-not $Result)	{	return "Success: Stopped System Reporter $Result"	}
 	else				{	return $Result	}
 }

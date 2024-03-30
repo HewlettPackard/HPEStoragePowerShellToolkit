@@ -27,6 +27,8 @@ Function Find-A9Node
 .PARAMETER NodeID
 	Indicates which node the locatenode operation will act on. Accepted
 	values are 0 through 7.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$T,
@@ -49,7 +51,7 @@ process
 	if($Drive)	{	$Cmd += " -drive " 		}
 	if($Bat)	{	$Cmd += " -bat " 		}
 	if($NodeID) {	$Cmd += " $NodeID " 	}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -74,6 +76,8 @@ Function Find-A9System
 	In the following example, a storage system is identified by illuminating or blinking the LEDs on all drive cages in the system for 90 seconds. 
 	
 	PS:> Find-A9System_CLI -T 90
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$T,
@@ -88,7 +92,7 @@ process
 	if($T) 			{	$Cmd += " -t $T " }
 	if($NodeList) 	{	$Cmd += " -nodes $NodeList " }
 	if($NoCage)		{	$Cmd += " -nocage " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -127,6 +131,8 @@ Function Get-A9System_CLI
 .PARAMETER DevType FC|NL|SSD
 	Displays the system capacity information where the disks must have a device type string matching the specified device type; either Fast
 	Class (FC), Nearline (NL), Solid State Drive (SSD). This option can only be issued with -space or -vvspace.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	
@@ -153,7 +159,7 @@ process
     if ($Descriptor) 		{	$sysinfocmd += " -desc "	}
     if ($DevType) 			{    $sysinfocmd += " -devtype $DevType"}
     write-verbose "Get system information " 
-    $Result3 = Invoke-CLICommand -cmds  $sysinfocmd	
+    $Result3 = Invoke-A9CLICommand -cmds  $sysinfocmd	
     if ($Fan -or $DomainSpace -or $sysinfocmd -eq "showsys ") 
 		{	$incre = "True"
 			$FirstCnt = 1
@@ -255,6 +261,8 @@ Function Ping-A9RCIPPorts
 .PARAMETER count
 	Specifies the number of replies accepted by the system before
 	terminating the command. The default is 1; the maximum value is 25.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 Param(		[Parameter(Mandatory=$true)]	[System.IPAddress]	$IP_address,
@@ -275,7 +283,7 @@ process
 	if($PF)		{	$Cmds +=" -pf"	}
 	$Cmds +=" $IP_address "	
 	$Cmds +=" $NSP "
-	$result = Invoke-CLICommand  -cmds $Cmds	
+	$result = Invoke-A9CLICommand  -cmds $Cmds	
 	return $result	
 }
 }
@@ -309,6 +317,8 @@ Function Set-A9Battery
 	Specifies the power supply number on the node using either 0 (left side from the rear of the node) or 1 (right side from the rear of the node).
 .PARAMETER Battery_ID
 	Specifies the battery number on the power supply where 0 is the first battery.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -332,7 +342,7 @@ process
 	if($Node_ID)		{	$Cmd += " $Node_ID "	}
 	if($Powersupply_ID)	{	$Cmd += " $Powersupply_ID "}
 	if($Battery_ID)		{	$Cmd += " $Battery_ID "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
@@ -360,6 +370,8 @@ Function Set-A9FCPorts
 	PS:> Set-A9FCPorts -Ports 1:2:1,1:2:2 
 	
 	Configure ports 1:2:1 and 1:2:2 as Fibre Channel connected to a fabric 
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 Param(	[Parameter()][ValidatePattern("^\d:\d:\d")]	
@@ -374,7 +386,7 @@ process
 {	foreach ($P in $Ports)
 		{	Write-Verbose  "Set port $p offline " 
 			$Cmds = "controlport offline -f $p"
-			Invoke-CLICommand -cmds $Cmds
+			Invoke-A9CLICommand -cmds $Cmds
 			$PortConfig = "point"
 			$PortMsg    = "Fabric ( Point mode)"
 			if ($DirectConnect)
@@ -383,10 +395,10 @@ process
 				}
 			Write-Verbose  "Configuring port $p as $PortMsg " 
 			$Cmds= "controlport config host -ct $PortConfig -f $p"
-			Invoke-CLICommand -cmds $Cmds
+			Invoke-A9CLICommand -cmds $Cmds
 			Write-Verbose  "Resetting port $p " 
 			$Cmds="controlport rst -f $p"
-			Invoke-CLICommand -cmds $Cmds	
+			Invoke-A9CLICommand -cmds $Cmds	
 			Write-Verbose  "FC port $P is configured" 
 			return 
 		}
@@ -440,6 +452,8 @@ Function Set-A9HostPorts
 	Net Mask Name
 .PARAMETER NSP
 	NSP Name 
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 Param(		[Parameter()]	[String]	$FCConfigFile,
@@ -467,14 +481,14 @@ process
 			else			{	return "NetMask required with RCIPConfiguration Option"	}
 			if($NSP)		{	$Cmds=" $NSP "		}
 			else			{	return "NSP required with RCIPConfiguration Option"		}
-			$result = Invoke-CLICommand -cmds $Cmds
+			$result = Invoke-A9CLICommand -cmds $Cmds
 			return $result
 		}
 	if ($RCFCConfiguration)
 		{	$Cmds="controlport rcfc init -f "	
 			if($NSP)	{	$Cmds=" $NSP "	}
 			else		{	return "NSP required with RCFCConfiguration Option"	}
-			$result = Invoke-CLICommand -cmds $Cmds
+			$result = Invoke-A9CLICommand -cmds $Cmds
 			return $result
 		}
 	if ($FCConfigFile)
@@ -485,13 +499,13 @@ process
 						{	$Port = $p.Controller 
 							Write-Verbose  "Set port $Port offline " 
 							$Cmds = "controlport offline -f $Port"
-							Invoke-CLICommand -cmds $Cmds
+							Invoke-A9CLICommand -cmds $Cmds
 							Write-Verbose  "Configuring port $Port as host " 
 							$Cmds= "controlport config host -ct point -f $Port"
-							Invoke-CLICommand -cmds $Cmds
+							Invoke-A9CLICommand -cmds $Cmds
 							Write-Verbose  "Resetting port $Port " 
 							$Cmds="controlport rst -f $Port"
-							Invoke-CLICommand -cmds $Cmds
+							Invoke-A9CLICommand -cmds $Cmds
 						}
 				}	
 			else
@@ -515,15 +529,15 @@ process
 							if ($bDHCP)
 								{	Write-Verbose  "Enabling DHCP on port $Port " 
 									$Cmds = "controliscsiport dhcp on -f $Port"
-									Invoke-CLICommand -cmds $Cmds			
+									Invoke-A9CLICommand -cmds $Cmds			
 								}
 							else
 								{	Write-Verbose  "Setting IP address and subnet on port $Port " 
 									$Cmds = "controliscsiport addr $IPAddr $IPSubnet -f $Port"
-									Invoke-CLICommand -cmds $Cmds
+									Invoke-A9CLICommand -cmds $Cmds
 									Write-Verbose  "Setting gateway on port $Port " 
 									$Cmds = "controliscsiport gw $IPgw -f $Port"
-									Invoke-CLICommand -cmds $Cmds
+									Invoke-A9CLICommand -cmds $Cmds
 								}				
 						}
 				}	
@@ -549,6 +563,8 @@ Function Set-A9NodeProperties
 	Specifies the power supply ID.
 .PARAMETER Node_ID
 	Specifies the node ID.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param( 	[Parameter(Mandatory=$True)]	[String]	$PS_ID,
@@ -563,7 +579,7 @@ process
 	if($PS_ID)		{	$Cmd += " $PS_ID "	}	
 	if($S) 			{	$Cmd += " -s $S " 	} 
 	if($Node_ID) 	{	$Cmd += " $Node_ID "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -591,6 +607,8 @@ Function Set-A9NodesDate
 	Displays a timezone within a group, if a group is specified. If a group is not specified, displays a list of valid groups.
 .PARAMETER TzGroup
 	Displays a timezone within a group, if a group is specified. it alwase use with -Tzlist.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Tzlist,
@@ -605,7 +623,7 @@ process
 		{	$Cmd += " -tzlist "
 			if($TzGroup) 	{	$Cmd += " $TzGroup " }
 		}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
@@ -633,6 +651,8 @@ Function Set-A9SysMgr
 	Specifies the name of the system to be started, using up to 31 characters.
 .PARAMETER Toc_gen_number
 	Specifies the table of contents generation number for the system to start with.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Wipe,
@@ -660,7 +680,7 @@ process
 	if($Force_iderecovery) 	{	$Cmd += " force_iderecovery " 	} 
 	if($Force_idewipe) 		{	$Cmd += " force_idewipe " 		}
 	if($Export_vluns) 		{	$Cmd += " export_vluns " 		}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -692,6 +712,8 @@ Function Show-A9Battery
 	Displays inventory information with HPE serial number, spare part etc. This option must be used with -i option and it is not supported on HPE 3PAR 10000 systems.
 .PARAMETER Node_ID
 	Displays the battery information for the specified node ID(s). This specifier is not required. Node_ID is an integer from 0 through 7.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -711,7 +733,7 @@ process
 {	$Cmd = " showbattery "
 	if($Listcols)
 		{	$Cmd += " -listcols "
-			$Result = Invoke-CLICommand -cmds  $Cmd
+			$Result = Invoke-A9CLICommand -cmds  $Cmd
 			return $Result
 		}
 	if($Showcols)	{	$Cmd += " -showcols $Showcols "}
@@ -722,7 +744,7 @@ process
 	if($Svc)		{	$Cmd += " -svc "	}
 	if($Node_ID)	{	$Cmd += " $Node_ID "}
 	$Cmd
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($D)	{	Return  $Result		}
 			else	{	$tempFile = [IO.Path]::GetTempFileName()
@@ -769,6 +791,8 @@ Function Show-A9EEProm
 .PARAMETER Node_ID
 	Specifies the node ID for which EEPROM log information is retrieved. Multiple node IDs are separated with a single space (0 1 2). 
 	If no specifiers are used, the EEPROM log for all nodes is displayed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Dead,
@@ -781,7 +805,7 @@ process
 {	$Cmd = " showeeprom "
 	if($Dead)	{	$Cmd += " -dead "}
 	if($Node_ID)	{	$Cmd += " $Node_ID "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -812,6 +836,8 @@ Function Get-A9SystemInformation
 	
     date	
 	command displays the date and time for each system node
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Option
@@ -828,7 +854,7 @@ process
 			if($a -eq $l)
 				{	$sysinfocmd+=" -$option "
 					if($Option -eq "date")
-						{	$Result = Invoke-CLICommand -cmds  "showdate"
+						{	$Result = Invoke-A9CLICommand -cmds  "showdate"
 							write-verbose "Get system date information " 
 							write-verbose "Get system fan information cmd -> showdate " 
 							$tempFile = [IO.Path]::GetTempFileName()
@@ -849,7 +875,7 @@ process
 							return
 						}	
 					else
-						{	$Result = Invoke-CLICommand -cmds  $sysinfocmd
+						{	$Result = Invoke-A9CLICommand -cmds  $sysinfocmd
 							return $Result
 						}
 				}
@@ -858,7 +884,7 @@ process
 				}
 		}
 	else
-		{	$Result = Invoke-CLICommand -cmds  $sysinfocmd
+		{	$Result = Invoke-A9CLICommand -cmds  $sysinfocmd
 			return $Result 
 		}		
 }
@@ -892,6 +918,10 @@ Function Show-A9FCOEStatistics
 	Shows the differences from the previous sample.
 .PARAMETER Begin
 	Shows the values from when the system was last initiated.
+.NOTES
+	This command requires a SSH type connection.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]		[String]	$D,
@@ -918,7 +948,7 @@ Process
 	if($Fullcounts)	{	$Cmd += " -fullcounts " }
 	if($Prev)		{	$Cmd += " -prev " }
 	if($Begin)		{	$Cmd += " -begin " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Write-Verbose  "Executing function : Show-FCOEStatistics command -->"  
 	Return $Result
 }
@@ -945,6 +975,8 @@ Function Show-A9Firmwaredb
 	Reloads the SCSI database file into the system.
 .PARAMETER All
 	Specifies current and past firmware entries are displayed. If not specified, only current entries are displayed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$VendorName,
@@ -959,7 +991,7 @@ Process
 	if($VendorName)	{	$Cmd += " -n $VendorName "}
 	if($L)			{	$Cmd += " -l "	}
 	if($All)		{	$Cmd += " -all " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -971,6 +1003,8 @@ Function Show-A9TOCGen
 	Shows system Table of Contents (TOC) generation number.
 .DESCRIPTION
 	Displays the table of contents generation number.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param()
@@ -979,7 +1013,7 @@ Begin
 }
 process
 {	$Cmd = " showtocgen "
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -1020,6 +1054,8 @@ Function Show-A9iSCSISessionStatistics
 	Shows the differences from the previous sample.
 .PARAMETER Begin
 	Shows the values from when the system was last initiated.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(mandatory=$true)]	[String]	$Iterations,
@@ -1042,7 +1078,7 @@ process
 	if($PortList)	{	$cmd+=" -ports $PortList "	}	
 	if($Previous)	{	$cmd+=" -prev "	}
 	if($Begin)		{	$cmd+=" -begin "	}
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	if($Result -match "Total" -and $Result.Count -gt 5)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count - 3 
@@ -1162,6 +1198,8 @@ Function Show-A9iSCSIStatistics
 	Shows the values from when the system was last initiated.
 .PARAMETER SANConnection 
     Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Iterations,
@@ -1187,7 +1225,7 @@ process
 	if($Fullcounts)	{	$cmd+=" -fullcounts "	}
 	if($Prev)		{	$cmd+=" -prev "	}
 	if($Begin)		{	$cmd+=" -begin "	}	
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Show-iSCSIStatistics command that displays information iSNS table for iSCSI ports in the system  " 	
 	if($Result -match "Total" -or $Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -1245,6 +1283,8 @@ Function Show-A9NetworkDetail
 	PS:> Show-A9NetworkDetail -D
 .PARAMETER D
 	Show detailed information.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$D
@@ -1255,7 +1295,7 @@ Begin
 process
 {	$Cmd = " shownet "
 	if($D)	{	$Cmd += " -d "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -1275,6 +1315,8 @@ Function Show-A9NodeEnvironmentStatus
 .PARAMETER Node_ID
 	Specifies the ID of the node whose environment status is displayed. Multiple node IDs can be specified as a series of integers separated by
 	a space (1 2 3). If no option is used, then the environment status of all nodes is displayed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Node_ID
@@ -1285,7 +1327,7 @@ Begin
 process
 {	$Cmd = " shownodeenv "
 	if($Node_ID)	{	$Cmd += " -n $Node_ID "} 
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -1310,6 +1352,8 @@ Function Show-A9iSCSISession
     Specifies the connection state of current iSCSI sessions. If this option is not used, then only summary information about the iSCSI session is displayed.
 .PARAMETER NSP
 	Requests that information for a specified port is displayed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Detailed,
@@ -1324,7 +1368,7 @@ process
 	if ($Detailed)	{	$cmd+=" -d "	}
 	if ($ConnectionState)	{	$cmd+=" -state "	}
 	if ($NSP)	{	$cmd+=" $NSP "	}
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	if($Result -match "total")
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -2 		
@@ -1420,6 +1464,8 @@ Function Show-A9NodeProperties
 	Displays inventory information with HPE serial number, spare part etc. This option must be used with -i option and it is not supported on HPE 3PAR 10000 systems
 .PARAMETER Node_ID
 	Displays the node information for the specified node ID(s). This specifier is not required. Node_ID is an integer from 0 through 7.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Listcols,
@@ -1446,7 +1492,7 @@ process
 { 	$Cmd = " shownode "
 	if($Listcols)
 		{	$Cmd += " -listcols "
-			$Result = Invoke-CLICommand -cmds  $Cmd
+			$Result = Invoke-A9CLICommand -cmds  $Cmd
 			return $Result
 		}
 	if($Showcols)	{	$Cmd += " -showcols $Showcols " }
@@ -1464,7 +1510,7 @@ process
 	if($Uptime)		{	$Cmd += " -uptime " }
 	if($Svc) 		{	$Cmd += " -svc " }
 	if($Node_ID)	{	$Cmd += " $Node_ID " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($I -Or $D -Or $VerboseD)	{	Return  $Result	}
 			else{	$tempFile = [IO.Path]::GetTempFileName()
@@ -1574,6 +1620,8 @@ Function Show-A9Portdevices_CLI
 		specified PCI bus slot.
 .PARAMETER WWN
     Specifies the Fibre Channel worldwide port name of an attached port.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -1625,7 +1673,7 @@ process
 	if($PFC)		{	$Cmd += " -pfc " }
 	if($PG)			{	$Cmd += " -pg " }
 	if($NSP)		{ 	$Cmd += " $NSP " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
@@ -1643,6 +1691,8 @@ Function Show-A9PortISNS
 	PS:> Show-PortISNS -NSP 1:2:3
 .PARAMETER NSP
 	Specifies the port for which information about devices on that port are displayed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$NSP 
@@ -1653,7 +1703,7 @@ Begin
 process
 {	$cmd= "showportisns "	
 	if ($NSP)	{	$cmd+=" $NSP "	}
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Show-PortISNS command that displays information iSNS table for iSCSI ports in the system  " 
 	if($Result -match "N:S:P")
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -1684,6 +1734,8 @@ Function Show-A9SystemManager
 	Shows additional detailed information if available.
 .PARAMETER L
 	Shows field service diagnostics for System Manager specific Config Locks and MCALLs, and system-wide ioctl system calls.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$D,
@@ -1696,7 +1748,7 @@ process
 {	$Cmd = " showsysmgr "
 	if($D)	{	$Cmd += " -d "	}
 	if($L)	{	$Cmd += " -l "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -1708,6 +1760,8 @@ Function Show-A9SystemResourcesSummary
 	Show system Table of Contents (TOC) summary.
 .DESCRIPTION
 	The command displays the system table of contents summary that provides a summary of the system's resources.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param()
@@ -1716,7 +1770,7 @@ Begin
 }
 process
 {	$Cmd = " showtoc "
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 } 
@@ -1732,6 +1786,8 @@ Function Start-A9NodeRescue
 	Start-A9NodeRescue -Node 0
 .PARAMETER Node
 	Specifies the node to be rescued.  This node must be physically present in the system and powered on, but not part of the cluster.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$True)]	[String]	$Node
@@ -1742,7 +1798,7 @@ Begin
 process
 {	$Cmd = " startnoderescue "
 	if($Node)	{	$Cmd += " -node $Node " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -1818,6 +1874,8 @@ Function Get-A9HostPorts_CLI
 	PS:> Get-A9HostPorts_CLI -RCFC -NSP 0:0:0
 .EXAMPLE
 	PS:> Get-A9HostPorts_CLI -RCIP
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 Param(		[Parameter()]	[switch]	$I,
@@ -1865,7 +1923,7 @@ process
 					else		{	return " -d can only be used with -sfp"}
 				}
 	if($NSP)	{	$Cmds+=" $NSP"	}
-	$Result=Invoke-CLICommand  -cmds $Cmds 	
+	$Result=Invoke-A9CLICommand  -cmds $Cmds 	
 	$LastItem = $Result.Count -2  
 	if($SFP -and $D){	return $Result	}
 	if($Result -match "N:S:P")
@@ -1971,6 +2029,8 @@ Function Get-A9Node
 .PARAMETER NodeID
 	Displays the node information for the specified node ID(s). This
 	specifier is not required. Node_ID is an integer from 0 through 7.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Listcols,
@@ -1998,7 +2058,7 @@ process
 {	$Cmd = " shownode "
 	if($Listcols)
 		{	$Cmd += " -listcols "
-			$Result = Invoke-CLICommand -cmds  $Cmd
+			$Result = Invoke-A9CLICommand -cmds  $Cmd
 			return $Result
 		}
 	if($Showcols){	$Cmd += " -showcols $Showcols " }
@@ -2017,7 +2077,7 @@ process
 	if($Uptime)	{	$Cmd += " -uptime " }
 	if($Svc) 	{	$Cmd += " -svc " 	}
 	if($NodeID)	{ 	$Cmd += " $NodeID " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -1  
@@ -2087,6 +2147,8 @@ Function Get-A9Target
 	Specifies that the rescan is forced. If this option is not used, the rescan will be suppressed if the peer ports have already been rescanned within the last 10 seconds.
 .PARAMETER Rescan
 	Rescan the peer ports to find the unknown targets.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Lun,
@@ -2117,7 +2179,7 @@ process
 	if($Node_WWN){	$Cmd += " $Node_WWN " }
 	if($LUN_WWN){	$Cmd += " $LUN_WWN " }
 	write-host "$Cmd"
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
@@ -2135,6 +2197,8 @@ Function Show-A9PortARP
 	PS:> Show-A9PortARP -NSP 1:2:3
 .PARAMETER NSP
 	Specifies the port for which information about devices on that port are displayed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[ValidatePattern("^\d:\d:\d")]	[String]	$NSP 			
@@ -2145,7 +2209,7 @@ Begin
 Process	
 {	$cmd= "showportarp "	
 	if ($NSP)	{	$cmd+=" $NSP "	}
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	if($Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count 		
@@ -2203,6 +2267,8 @@ Function Show-A9UnrecognizedTargetsInfo
 	Indicates the World Wide Name (WWN) of the node.
 .PARAMETER LUN_WWN
 	Indicates the World Wide Name (WWN) of a LUN exported from an unknown target.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Lun,
@@ -2234,7 +2300,7 @@ Process
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "}
 	if($Node_WWN)	{	$Cmd += " $Node_WWN "}
 	if($LUN_WWN)	{	$Cmd += " $LUN_WWN "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -2266,6 +2332,7 @@ Function Test-A9FCLoopback
     Starting loopback test on port 0:0:1
     Port 0:0:1 completed 5 loopback frames in 0 seconds Passed
 .NOTES
+	This command requires a SSH type connection.
     Access to all domains is required to run this command.
 
     When both the -time and -iter options are specified, the first limit reached terminates the program. If neither are specified, the default is
@@ -2291,7 +2358,7 @@ Process
     if ($PortNSP) 		{    $cmd += "$PortNSP"		   }
     elseif (($Node) -and ($Slot) -and ($Port)) {    $cmd += "$($Node):$($Slot):$($Port)"    }
     else 				{           Return "Node, slot and plot details are required" }
-    $Result = Invoke-CLICommand -cmds  $cmd
+    $Result = Invoke-A9CLICommand -cmds  $cmd
     return 	$Result	
 }
 }

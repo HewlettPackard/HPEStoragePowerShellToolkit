@@ -138,7 +138,7 @@ Process
 	If ($Compression) 			{ 	$body["compression"] = $true }
 	if($VvPolicies.Count -gt 0){$body["policies"] = $VvPolicies }
 	$Result = $null
-    $Result = Invoke-WSAPI -uri '/volumes' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/volumes' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -184,13 +184,13 @@ Process
 	$dataPS = $null			
 	if($VVName)
 	{	$uri = '/volumespacedistribution/'+$VVName
-		$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+		$Result = Invoke-A9API -uri $uri -type 'GET' 
 		if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 		}
 	}
 	else
-	{	$Result = Invoke-WSAPI -uri '/volumespacedistribution' -type 'GET' 
+	{	$Result = Invoke-A9API -uri '/volumespacedistribution' -type 'GET' 
 		if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members 
 		}			
@@ -236,7 +236,7 @@ Process
 	If ($SizeMiB)	{	$body["sizeMiB"] = $SizeMiB }
     $Result = $null	
 	$uri = '/volumes/'+$VVName 
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
 		return Get-Vv_WSAPI -VVName $VVName		
@@ -330,7 +330,7 @@ Process
 	If ($Compression) 	{	$body["compression"] = $false    } 
     $Result = $null	
 	$uri = '/volumes/'+$VVName 
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			Get-Vv_WSAPI -VVName $VVName		

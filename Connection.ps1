@@ -245,8 +245,8 @@ Process
 		{	$key = $WsapiConnection.Key
 			$uri = '/credentials/'+$key
 			$data = $null
-			Write-Verbose "Request: Request to close wsapi connection (Invoke-WSAPI)." 
-			$data = Invoke-WSAPI -uri $uri -type 'DELETE' 
+			Write-Verbose "Request: Request to close wsapi connection (Invoke-A9API)." 
+			$data = Invoke-A9API -uri $uri -type 'DELETE' 
 			$global:WsapiConnection = $null
 			If ($3parkey) 	{	Remove-Variable -name 3parKey -scope global	}
 			If ($3parArray)	{	Remove-Variable -name 3parArray -scope global }
@@ -416,7 +416,7 @@ Process
 				Write-host "To View the list of commands available to you that utilize the CLI please use 'Get-Command -module HPEAlletra9000AndPrimeraAnd3Par_CLI'." -ForegroundColor Green
 				write-verbose 'Removing non-used modules'
 				if ( [boolean](get-module -name HPEAlletra6000andNimbleStorage) )	{ remove-module -name HPEAlletra6000andNimbleStorage }
-				if ( [boolean](get-module -name HPEMSA) 						)	{ remove-module -name HPEAlletra6000andNimbleStorage }
+				if ( [boolean](get-module -name HPEMSA ) 						)	{ remove-module -name HPEMSA }
 			}	
 	elseif ( $ArrayType -eq 'Nimble' -or $ArrayType -eq'Alletra6000')	
 			{	$ModPath = $ModPath + '\HPEAlletra6000andNimbleStorage.psd1'

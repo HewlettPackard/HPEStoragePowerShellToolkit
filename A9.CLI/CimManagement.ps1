@@ -27,6 +27,9 @@ Function Show-A9CIM
 
         --------------Policy---------------
         replica_entity,one_hwid_per_view,use_pegasus_interop_namespace,no_tls_strict
+.NOTES
+	This command requires a SSH type connection.
+
 #>
 [CmdletBinding()]
 param(  [Parameter()]    [Switch]    $Pol
@@ -38,7 +41,7 @@ Begin
 process
 {   $cmd = "showcim "
     if ($Pol) {    $cmd += " -pol "    }	
-    $Result = Invoke-CLICommand -cmds $cmd
+    $Result = Invoke-A9CLICommand -cmds $cmd
     write-verbose " Executed the Show-CIM cmdlet" 
     return 	$Result	
 
@@ -58,6 +61,8 @@ Function Start-A9CIM
     PS:> Start-A9CIM
 
     CIM server will start shortly.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param()	
@@ -66,7 +71,7 @@ begin
 }	
 process 
 {   $cmd = "startcim "
-    $Result = Invoke-CLICommand  -cmds  $cmd
+    $Result = Invoke-A9CLICommand  -cmds  $cmd
     write-verbose " Executed the Start-CIM cmdlet" 
     return 	$Result	
 }
@@ -122,6 +127,7 @@ Function Set-A9CIM
 
     PS:> Set-A9CIM -F -Pol replica_entity
 .NOTES
+    This command requires a SSH type connection.
     Access to all domains is required to run this command.    You cannot disable both of the HTTP and HTTPS ports.
 
     When the CIM server is active, a warning message will be prompted to inform you of the current status of the CIM server and asks for the confirmation to
@@ -153,7 +159,7 @@ Process
         }
     else{   Return "At least one of the options -Slp, -Http, -Https, or -Pol are required."
         }
-    $Result = Invoke-CLICommand -cmds  $cmd
+    $Result = Invoke-A9CLICommand -cmds  $cmd
     return 	$Result	
 }
 }
@@ -177,7 +183,9 @@ Function Stop-A9CIM
 
     The following example stops the CIM server immediately without graceful shutdown notice and confirmation:
 
-    PS:> Stop-A9CIM -F -X        
+    PS:> Stop-A9CIM -F -X 
+.NOTES
+	This command requires a SSH type connection.      
 #>
 [CmdletBinding()]
 param(  [Parameter()]
@@ -193,7 +201,7 @@ Process
     if ($F)     {    $cmd += " -f " }
     else        {   Return "Force set option is only supported with the Stop-CIM cmdlet."}
     if ($X) {    $cmd += " -x "}
-    $Result = Invoke-CLICommand -cmds  $cmd
+    $Result = Invoke-A9CLICommand -cmds  $cmd
     return 	$Result	
 }
 }

@@ -38,7 +38,7 @@ Process
 	if($Nopatch)	{	$Cmd += " -nopatch " 	}
 	if($Tune)		{	$Cmd += " -tune " 		}
 	if($Notune)		{	$Cmd += " -notune " 	}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -71,7 +71,7 @@ Process
 {	$Cmd = " showpatch "
 	if($Hist)	{	$Cmd += " -hist " }
 	if($D) 		{	$Cmd += " -d " 	}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -115,7 +115,7 @@ Process
     if ($A) {    $Cmd += " -a"    }
     if ($B) {    $Cmd += " -b"    }
     if ($S) {    $Cmd += " -s"    }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
     return $Result
 }
 }
@@ -154,7 +154,7 @@ Process
 					}
 	if($Status)		{	$Cmd += " -status " }
 	if($Cagename)	{	$Cmd += " $Cagename " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Status)	
 		{	if($Result.count -gt 1)
 				{	$tempFile = [IO.Path]::GetTempFileName()
@@ -216,7 +216,7 @@ Process
 	Elseif($Check)	{	$Cmd += " check " }
 	Elseif($Restart){	$Cmd += " restart " }
 	if($Node_ID)	{	$Cmd += " Node_ID " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
@@ -276,7 +276,7 @@ Process
 	if($F) 			{	$Cmd += " -f " }
 	if($Cage_name)	{	$Cmd += " $Cage_name " }
 	if($Magazine)	{	$Cmd += " $Magazine " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -312,6 +312,8 @@ Function Set-A9ServiceCage
 	specifies the number of the module indicated by -pcm or -iom to be serviced.
 .PARAMETER CageName
 	Specifies the name of the cage to be serviced.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='Start', Mandatory=$true)]	[switch]	$Start,
@@ -364,7 +366,7 @@ Process
 		}
 	elseif($Remove)		{	$Cmd += " remove -f "	}
 	$Cmd += " $CageName "
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
@@ -398,6 +400,8 @@ Function Set-A9ServiceNodes
 .PARAMETER Bat
 	Specifies that the node's battery backup unit will be placed into servicing-mode. For HPE 3PAR 600 series systems, this option is not
 	supported, use servicecage for servicing the Power Cooling Battery Module (PCBM).
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$True)] 	[String] 	$Nodeid,
@@ -422,7 +426,7 @@ Process
 	if($Fan)		{	$Cmd += " -fan $Fan " }
 	if($Bat)		{	$Cmd += " -bat " }
 	if($Nodeid)		{	$Cmd += " Nodeid " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -442,6 +446,8 @@ Function Reset-A9System
 	Specifies that the system should be restarted after shutdown. If this subcommand is not given, the halt or restart subcommand must be used.
 .PARAMETER Restart
 	Specifies that the storage services should be restarted. If this subcommand is not given, the halt or reboot subcommand must be used.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='Halt',   Mandatory=$true)]	[switch]	$Halt,
@@ -456,7 +462,7 @@ Process
 	if($Halt)	{	$Cmd += " halt " }
 	if($Reboot)	{	$Cmd += " reboot " }
 	if($Restart){	$Cmd += " restart " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -481,6 +487,8 @@ Function Update-A9PdFirmware
 .PARAMETER PD_ID
 	Specifies that the firmware of either one or more physical disks identified by their IDs (PD_ID) is upgraded. If this specifier is not
 	used, then the -a or -w option must be issued on the command line.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$F,
@@ -499,7 +507,7 @@ Process
 	if($A)			{	$Cmd += " -a " } 
 	if($W)			{	$Cmd += " -w $W " } 
 	if($PD_ID) 		{	$Cmd += " $PD_ID " } 
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -530,6 +538,8 @@ Function Search-A9ServiceNode
 	supported, use servicecage for servicing the Power Cooling Battery Module (PCBM).
 .PARAMETER NodeId  
 	Indicates which node the servicenode operation will act on. Accepted values are 0 through 3 for HPE 3PAR 600 series systems.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Start,
@@ -555,7 +565,7 @@ Process
 	if($Fan) 		{	$Cmd += " -fan $Fan "}
 	if($Bat)		{	$Cmd += " -bat "}
 	if($NodeId)		{	$Cmd += " $NodeId "	}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -579,6 +589,8 @@ Function Get-A9ResetReason
 	To display reset reason in more detail (-d option):
 	
 	PS:> Get-A9ResetReason -d
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$D
@@ -589,7 +601,7 @@ Begin
 Process
 {	$Cmd = " showreset "
 	if ($D) {    $Cmd += " -d "   }
-    $Result = Invoke-CLICommand -cmds  $Cmd
+    $Result = Invoke-A9CLICommand -cmds  $Cmd
     $Result 
 }
 }
@@ -650,6 +662,8 @@ Function Set-A9Security
 
     Warning: This action will restart the ssh service, which may terminate ALL existing connections including this one. When that happens, you must reconnect to continue.
     Continue restarting (yes/no)?
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(  [Parameter(ParameterSetName='FE', Mandatory=$true)]	[switch]    $FipsEnable,
@@ -670,7 +684,7 @@ Process
     if ($SSHKeysGenerate) {    $Cmd += " ssh-keys generate "    }
     if ($SSHKeysSync) {    $Cmd += " ssh-keys sync "    } 
 	if ($F) {    $Cmd += " -f "    } 
-    $Result = Invoke-CLICommand -cmds  $Cmd
+    $Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -705,6 +719,8 @@ Function Get-A9Security
     WSAPI   Disabled
     -----------------
     11      6 Enabled
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param( 	[Parameter(Mandatory=$true)]   [switch]    $FipsStatus
@@ -715,7 +731,7 @@ Begin
 Process
 {	$Cmd = " controlsecurity "
     if ($FipsStatus) {    $Cmd += " fips status "    } 
-    $Result = Invoke-CLICommand -cmds  $Cmd
+    $Result = Invoke-A9CLICommand -cmds  $Cmd
     Return $Result
 }
 }

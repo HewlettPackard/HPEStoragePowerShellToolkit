@@ -23,7 +23,7 @@ Begin
 Process 
 {	$Result = $null	
 	$dataPS = $null	
-	$Result = Invoke-WSAPI -uri '/system' -type 'GET' 
+	$Result = Invoke-A9API -uri '/system' -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = $Result.content | ConvertFrom-Json
 			write-host "Cmdlet executed successfully" -foreground green
@@ -170,7 +170,7 @@ Process
 		{	$body["parameters"] = $ObjMain 
 		}	
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/system' -type 'PUT' -body $body 
+    $Result = Invoke-A9API -uri '/system' -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return Get-A9System		
@@ -258,7 +258,7 @@ Begin
 Process 
 {	$Result = $null	
 	$dataPS = $null	
-	$Result = Invoke-WSAPI -uri '/wsapiconfiguration' -type 'GET' 
+	$Result = Invoke-A9API -uri '/wsapiconfiguration' -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = $Result.content | ConvertFrom-Json
 			write-host "Cmdlet executed successfully" -foreground green
@@ -300,7 +300,7 @@ Process
 	$dataPS = $null	
 	$uri='/tasks'
 	if($TaskID)		{	$uri = $uri+'/'+$TaskID		}
-	$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 	{	$dataPS = $Result.content | ConvertFrom-Json
 		write-host "Cmdlet executed successfully" -foreground green
@@ -336,7 +336,7 @@ Process
 	$body["action"] = 4
 	$Result = $null	
 	$uri = "/tasks/" + $TaskID
-	$Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return $Result		

@@ -52,7 +52,7 @@ Process
 	If ($Domain) 	{	$body["domain"] = "$($Domain)"    }	
 	If ($SetMembers){	$body["setmembers"] = $SetMembers    }
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/hostsets' -type 'POST' -body $body
+    $Result = Invoke-A9API -uri '/hostsets' -type 'POST' -body $body
 	$status = $Result.StatusCode	
 	if($status -eq 201)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -165,7 +165,7 @@ Process
 	
     $Result = $null	
 	$uri = '/hostsets/'+$HostSetName 
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			if($NewName)	{	Get-HostSet_WSAPI -HostSetName $NewName	}	
@@ -201,7 +201,7 @@ Begin
 Process 
 {	$uri = '/hostsets/'+$HostSetName
 	$Result = $null
-	$Result = Invoke-WSAPI -uri $uri -type 'DELETE'
+	$Result = Invoke-A9API -uri $uri -type 'DELETE'
 	$status = $Result.StatusCode
 	if($status -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -214,119 +214,6 @@ Process
 }
 }
 
-Function Get-A9HostSet 
-{
-<#
-.SYNOPSIS
-	Get Single or list of Hotes Set.
-.DESCRIPTION
-	Get Single or list of Hotes Set.
-.EXAMPLE
-	PS:> Get-A9HostSet
-
-	Display a list of Hotes Set.
-.EXAMPLE
-	PS:> Get-A9HostSet -HostSetName MyHostSet
-
-	Get the information of given Hotes Set.
-.EXAMPLE
-	PS:> Get-A9HostSet -Members MyHost
-
-	Get the information of Hotes Set that contain MyHost as Member.
-.EXAMPLE
-	PS:> Get-A9HostSet -Members "MyHost,MyHost1,MyHost2"
-
-	Multiple Members.
-.EXAMPLE
-	PS:> Get-A9HostSet -Id 10
-
-	Filter Host Set with Id
-.EXAMPLE
-	PS:> Get-A9HostSet -Uuid 10
-
-	Filter Host Set with uuid
-.EXAMPLE
-	PS:> Get-A9HostSet -Members "MyHost,MyHost1,MyHost2" -Id 10 -Uuid 10
-
-	Multiple Filter
-.PARAMETER HostSetName
-	Specify name of the Hotes Set.
-.PARAMETER Members
-	Specify name of the Hotes.
-.PARAMETER Id
-	Specify id of the Hotes Set.
-.PARAMETER Uuid
-	Specify uuid of the Hotes Set.
-#>
-[CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$HostSetName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Members,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Id,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Uuid
-)
-Begin 
-{	Test-A9Connection -ClientType 'API'	 
-}
-Process 
-{	$Result = $null
-	$dataPS = $null		
-	$Query="?query=""  """
-	if($HostSetName)
-		{	$uri = '/hostsets/'+$HostSetName
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
-			If($Result.StatusCode -eq 200)
-				{	$dataPS = $Result.content | ConvertFrom-Json
-					write-host "Cmdlet executed successfully" -foreground green
-					return $dataPS
-				}
-			else
-				{	Write-Error "Failure:  While Executing Get-HostSet_WSAPI." 
-					return $Result.StatusDescription
-				}
-		}
-	if($Members)
-		{	$count = 1
-			$lista = $Members.split(",")
-			foreach($sub in $lista)
-				{	$Query = $Query.Insert($Query.Length-3," setmembers EQ $sub")			
-					if($lista.Count -gt 1)
-						{	if($lista.Count -ne $count)
-								{	$Query = $Query.Insert($Query.Length-3," OR ")
-									$count = $count + 1
-								}				
-						}
-				}		
-		}
-	if($Id)
-		{	if($Members)	{	$Query = $Query.Insert($Query.Length-3," OR id EQ $Id")	}
-			else			{	$Query = $Query.Insert($Query.Length-3," id EQ $Id")	}
-		}
-	if($Uuid)
-		{	if($Members -or $Id)	{	$Query = $Query.Insert($Query.Length-3," OR uuid EQ $Uuid")	}
-			else					{	$Query = $Query.Insert($Query.Length-3," uuid EQ $Uuid")	}
-		}	
-	$uri = '/hostsets'
-	if($Members -Or $Id -Or $Uuid)
-		{	$uri = $uri+'/'+$Query
-		}	
-	$Result = Invoke-WSAPI -uri $uri -type 'GET'	
-	If($Result.StatusCode -eq 200)
-		{	$dataPS = ($Result.content | ConvertFrom-Json).members
-			if($dataPS.Count -gt 0)
-				{	write-host "Cmdlet executed successfully" -foreground green
-					return $dataPS
-				}
-			else
-				{	Write-Error "Failure:  While Executing Get-HostSet_WSAPI. Expected Result Not Found with Given Filter Option : Members/$Members Id/$Id Uuid/$Uuid." 
-					return 
-				}		
-		}
-	else
-		{	Write-Error "Failure:  While Executing Get-HostSet_WSAPI." 
-			return $Result.StatusDescription
-		}
-}
-}
 
 Function New-A9VvSet
 {
@@ -379,7 +266,7 @@ Process
 	If ($Domain)    {	$body["domain"] = "$($Domain)"	 	}
 	If ($SetMembers){	$body["setmembers"] = $SetMembers   }
     $Result = $null
-    $Result = Invoke-WSAPI -uri '/volumesets' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/volumesets' -type 'POST' -body $body 
 	$status = $Result.StatusCode	
 	if($status -eq 201)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -497,7 +384,7 @@ Process
 	if($Priority -eq "low")	{	$body["priority"] = 3	}
     $Result = $null	
 	$uri = '/volumesets/'+$VVSetName 
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			if($NewName)
@@ -574,7 +461,7 @@ Process
 	$Query="?query=""  """
 	if($VVSetName)
 		{	$uri = '/volumesets/'+$VVSetName
-			$Result = Invoke-WSAPI -uri $uri -type 'GET'		 
+			$Result = Invoke-A9API -uri $uri -type 'GET'		 
 			If($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 					write-host "Cmdlet executed successfully" -foreground green
@@ -605,9 +492,9 @@ Process
 				}
 	if($Members -Or $Id -Or $Uuid)
 		{	$uri = '/volumesets/'+$Query
-			$Result = Invoke-WSAPI -uri $uri -type 'GET'	
+			$Result = Invoke-A9API -uri $uri -type 'GET'	
 		}	
-	else{	$Result = Invoke-WSAPI -uri '/volumesets' -type 'GET' 
+	else{	$Result = Invoke-A9API -uri '/volumesets' -type 'GET' 
 		}
 	If($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
@@ -656,7 +543,7 @@ Process
 	else				{	$body["flashCachePolicy"] = 2 	}		
     $Result = $null
 	$uri = '/volumesets/'+$VvSet
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body 
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green

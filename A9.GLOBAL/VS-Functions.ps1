@@ -26,7 +26,7 @@
 ##					v3.5.0 (03/17/2024) - Refactored all commands. Removed CLI access. only uses SSH or WSAPI now.
 
 
-Function Invoke-CLICommand 
+Function Invoke-A9CLICommand 
 {
 <#
 .SYNOPSIS
@@ -38,35 +38,28 @@ Function Invoke-CLICommand
 .PARAMETER Cmds
 	Command to be executed
 .EXAMPLE		
-	Invoke-CLICommand -Connection $global:SANConnection -Cmds "showsysmgr"
+	Invoke-A9CLICommand -Connection $global:SANConnection -Cmds "showsysmgr"
 
 	The command queries a array to get the system information
 	$global:SANConnection is created wiith the cmdlet New-CLIConnection or New-PoshSshConnection
 #>
 [CmdletBinding()]
-Param(	# [Parameter(Mandatory = $true)]	$Connection,
-		[Parameter(Mandatory = $true)]	[string]	$Cmds  
+Param(	[Parameter(Mandatory = $true)]	[string]	$Cmds  
 	)
-	$connection = $SANConnection	
-	$Validate1 = Test-A9Connection -ClientType 'SshClient' 
-	if ($Validate1 -eq "Failed") {
-		Write-Verbose  "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-*Connection and pass it as parameter" 
-		Write-Verbose  "Stop: Exiting Invoke-CLICommand since connection object values are null/empty"
-		return
-	}
-	$clittype = $Connection.cliType	
-	if ($clittype -eq "SshClient") 
-		{	$Result = Invoke-SSHCommand -Command $Cmds -SessionId $Connection.SessionId
-			if ($Result.ExitStatus -eq 0) 	{	return $Result.Output	}
-			else{	$ErrorString = "Error :-" + $Result.Error + $Result.Output			    
-					return $ErrorString
-				}		
+	if ( -not (Test-A9Connection -ClientType 'SshClient' -returnBoolean) ) 
+		{	Write-Warning  "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-*Connection and pass it as parameter" 
+			Write-Warning  "Stop: Exiting Invoke-A9CLICommand since connection object values are null/empty"
+			return
 		}
-	else{	return "FAILURE : Invalid cliType option selected/chosen"	}
-
+	$Result = Invoke-SSHCommand -Command $Cmds -SessionId $SANConnection.SessionId
+	if ($Result.ExitStatus -eq 0) 	
+		{	return $Result.Output	}
+	else{	$ErrorString = "Error :-" + $Result.Error + $Result.Output			    
+			return $ErrorString
+		}	
 }
 
-function Invoke-WSAPI 
+function Invoke-A9API 
 {
 [CmdletBinding()]
 Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex. /volumes)")]
@@ -82,7 +75,7 @@ Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex.
 		[Parameter()]
 		$WsapiConnection = $global:WsapiConnection
 	)
-	Write-Verbose  "Request: Request Invoke-WSAPI URL : $uri TYPE : $type " 
+	Write-Verbose  "Request: Request Invoke-A9API URL : $uri TYPE : $type " 
 	$ip = $WsapiConnection.IPAddress
 	$key = $WsapiConnection.Key
 	$arrtyp = $global:ArrayType

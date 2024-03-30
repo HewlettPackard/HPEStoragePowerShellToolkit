@@ -15,6 +15,8 @@ Function Get-A9Wsapi
     PS:> Get-A9Wsapi -D
 .PARAMETER D
     Shows WSAPI information in table format.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(  [Parameter()] [switch]	$D
@@ -25,7 +27,7 @@ Begin
 Process
 { $Cmd = " showwsapi "
   if($D)  {	$Cmd += " -d " }
-  $Result = Invoke-CLICommand -cmds  $Cmd
+  $Result = Invoke-A9CLICommand -cmds  $Cmd
   if($Result -match "-Service-")
     {	$range = $Result.count
       $tempFile = [IO.Path]::GetTempFileName()
@@ -53,6 +55,8 @@ Function Get-A9WsapiSession
   and IP Address of the connecting client. It also displays the session creation time and session type.
 .EXAMPLE
 	PS:> Get-A9WsapiSession
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param()
@@ -61,7 +65,7 @@ Begin
 }
 Process
 { $Cmd = " showwsapisession "
-  $Result = Invoke-CLICommand -cmds  $Cmd
+  $Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.Count -gt 2)
     { $range = $Result.count - 3
       $tempFile = [IO.Path]::GetTempFileName()
@@ -104,6 +108,8 @@ Function Remove-A9WsapiSession
   Specifies the name of the WSAPI user to be removed.
 .PARAMETER IP_address
   Specifies the IP address of the WSAPI user to be removed.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(  [Parameter()]   [switch]   $Pat,
@@ -124,7 +130,7 @@ Process
   if($Id)         {  $Cmd += " $Id "        }
   if($User_name)  {  $Cmd += " $User_name " }
   if($IP_address) {  $Cmd += " IP_address " }
-  $Result = Invoke-CLICommand -cmds  $Cmd
+  $Result = Invoke-A9CLICommand -cmds  $Cmd
   Return $Result
 }
 }
@@ -151,6 +157,8 @@ Function Set-A9Wsapi
   subsequent WSAPI sessions. The default timeout value is 15 minutes.
 .PARAMETER Evtstream
   Enables or disables the event stream feature. This supports Server Sent Event (SSE) protocol. The default value is enable.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(  [Parameter()]   [switch]	$Force,
@@ -168,7 +176,7 @@ Process
   if($Pol)      {	$Cmd += " -pol $Pol " }
   if($Timeout)  {	$Cmd += " -timeout $Timeout " }
   if($Evtstream){	$Cmd += " -evtstream $Evtstream " }
-  $Result = Invoke-CLICommand -cmds  $Cmd
+  $Result = Invoke-A9CLICommand -cmds  $Cmd
   Return $Result
 }
 }
@@ -183,6 +191,8 @@ Function Start-A9Wsapi
   By default, the Web Services API server is not started until this command is issued.
 .EXAMPLE
   PS:> Start-A9Wsapi
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param()
@@ -191,7 +201,7 @@ Begin
 }
 Process
 { $cmd= " startwsapi "
-  $Result = Invoke-CLICommand -cmds  $cmd 
+  $Result = Invoke-A9CLICommand -cmds  $cmd 
   return $Result	
 }
 }
@@ -203,6 +213,8 @@ Function Stop-A9Wsapi
   Stop the Web Services API server. Future HTTP and HTTPS requests will be rejected.
 .DESCRIPTION
   The command stops the Web Services API server from servicing HTTP and HTTPS requests.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param()
@@ -211,7 +223,7 @@ Begin
 }
 Process
 { $Cmd = " stopwsapi -f "
-  $Result = Invoke-CLICommand -cmds  $Cmd
+  $Result = Invoke-A9CLICommand -cmds  $Cmd
   Return $Result
 }
 }

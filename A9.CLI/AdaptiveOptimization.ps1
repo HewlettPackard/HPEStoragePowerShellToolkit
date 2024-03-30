@@ -13,6 +13,9 @@ Function Get-A9AdaptiveOptimizationConfig
 	Shows only AO configurations that are in domains with names matching one or more of the <domain_name_or_pattern> argument. This option
 	does not allow listing objects within a domain of which the user is not a member. Patterns are glob-style (shell-style) patterns (see help on sub,globpat)
 .PARAMETER AOConfigurationName
+.NOTES
+	This command requires a SSH type connection.
+
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Domain,
@@ -25,7 +28,7 @@ process
 {	$Cmd = " showaocfg "
 	if($Domain)	{	$Cmd += " -domain $Domain "	}
 	if($ConfigName)	{	$Cmd += " $ConfigName " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -2  
@@ -118,6 +121,9 @@ Function New-A9AdaptiveOptimizationConfig
 	either the CPG sdgl, sdgw, or maximum possible growth size.
 .PARAMETER AOConfigurationName
 	Specifies an AO configuration name up to 31 characters in length.
+.NOTES
+	This command requires a SSH type connection.
+
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$T0cpg,
@@ -149,7 +155,7 @@ process
 	if($T1max)					{	$Cmd += " -t1max $T1max "}
 	if($T2max)					{	$Cmd += " -t2max $T2max "}
 	if($AOConfigurationName) 	{	$Cmd += " $AOConfigurationName "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
@@ -165,6 +171,8 @@ Function Remove-A9AdaptiveOptimizationConfig
 	Specifies that specified patterns are treated as glob-style patterns and that all AO configurations matching the specified pattern are removed.
 .PARAMETER AOConfigurationName
 	Specifies the name of the AO configuration to be removed
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Pattern,
@@ -182,7 +190,7 @@ process
 	if($AOConfigurationName)
 		{	$Cmd += " $AOConfigurationName "
 		}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
@@ -287,6 +295,9 @@ Function Start-A9AdaptiveOptimizationConfig
 	either the CPG sdgl, sdgw, or maximum possible growth size.
 .PARAMETER AocfgName
 	The AO configuration name, using up to 31 characters.
+.NOTES
+	This command requires a SSH type connection.
+
 #>
 [CmdletBinding()]
 param(
@@ -328,7 +339,7 @@ process
 	if($T1max)		{	$Cmd += " -t1max $T1max " }
 	if($T2max)		{	$Cmd += " -t2max $T2max " }
 	if($AocfgName) 	{	$Cmd += " $AocfgName " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }
@@ -381,6 +392,8 @@ Function Update-A9AdaptiveOptimizationConfig
 .PARAMETER NewName
 	Specifies a new name for the AO configuration of up to 31 characters in length.
 .PARAMETER AOConfigurationName
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -415,7 +428,7 @@ process
 	if($T2max) 	{	$Cmd += " -t2max $T2max " 	}
 	if($NewName){	$Cmd += " -name $NewName " 	} 
 	if($AOConfigurationName) {	$Cmd += " $AOConfigurationName " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }

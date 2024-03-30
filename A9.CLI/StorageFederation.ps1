@@ -32,6 +32,8 @@ Function Join-A9Federation
 	Specifies the UUID of the Federation to be joined.
 .PARAMETER FedName
 	Specifies the name of the Federation to be joined.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[Switch]	$Force ,
@@ -53,7 +55,7 @@ Process
 					if($Setkv)	{	$Cmd+= " -setkv $Setkv"		}
 					if($Setkvifnotset)	{	$Cmd+= " -setkvifnotset $Setkvifnotset"	}			
 					$Cmd += " $UUID $FedName "
-					$Result = Invoke-CLICommand -cmds  $Cmd
+					$Result = Invoke-A9CLICommand -cmds  $Cmd
 					return  "$Result"	
 				}
 			else{	return "FAILURE : UUID Not specified."	}
@@ -86,6 +88,8 @@ Function New-A9Federation
 .PARAMETER Fedname
 	Specifies the name of the Federation to be created. The name must be between 1 and 31 characters in length
 	and must contain only letters, digits, or punctuation characters '_', '-', or '.'
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]	[String]	$Fedname ,
@@ -102,7 +106,7 @@ Process
 	if($Setkv)		{	$cmd+= " -setkv $Setkv"		}
 	if($Setkvifnotset){	$cmd+= " -setkvifnotset $Setkvifnotset"	}
 	$cmd += " $Fedname"
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	return  "$Result"				
 }
 }
@@ -139,6 +143,8 @@ Function Set-A9Federation
 	Checks whether given key/value pairs exist. If not, any subsequent key/value options on the command line will be ignored for the federation.
 .PARAMETER FedName
 	Specifies the new name of the Federation.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$FedName ,
@@ -163,7 +169,7 @@ Process
 	if($ClrKey)		{	$cmd += " -clrkey $ClrKey "		}
 	if($ClrKV)		{	$cmd += " -clrkv $ClrKV "		}
 	if($IfKV)		{	$cmd += " -ifkv $IfKV "			}
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	if([string]::IsNullOrEmpty($Result))	{	return "Success : Set-Federation command executed successfully."}
 	else									{	return $Result	}	
 }
@@ -178,6 +184,8 @@ Function Remove-A9Federation
 	The command removes the StoreServ system from Federation membership.
 .EXAMPLE	
 	PS:> Remove-A9Federation	
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param()		
@@ -186,7 +194,7 @@ Begin
 }
 Process
 {	$cmd = " removefed -f"
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	return  "$Result"				
 }
 }
@@ -201,6 +209,8 @@ Function Show-A9Federation
 	of the Federation of which the StoreServ system is member.
 .EXAMPLE	
 	PS:> Show-A9Federation
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param()		
@@ -209,7 +219,7 @@ Begin
 }
 Process
 {	$cmd = " showfed"
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing Show-Federation Command.--> "
 	$tempFile = [IO.Path]::GetTempFileName()
 	$LastItem = $Result.Count  

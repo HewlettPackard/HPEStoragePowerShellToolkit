@@ -9,6 +9,8 @@ Function Get-A9FcPorts
 	Query to get FC ports
 .DESCRIPTION
 	Get information for FC Ports
+.NOTES
+	This command requires a SSH type connection.
 #>
 
 [CmdletBinding()]
@@ -47,6 +49,8 @@ Function Get-A9FcPortsToCsv
     PS:> Get-A9FcPortsToCsv_CLI -ResultFile C:\3PAR-FC.CSV
 
 	creates C:\3PAR-FC.CSV and stores all FCPorts information
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 Param(	[Parameter()]	[String]$ResultFile	)
@@ -77,7 +81,7 @@ Process
 }
 
 
-Function Test-CLIObject 
+Function Test-A9CLIObject 
 {
 Param( 	
     [string]	$ObjectType, 
@@ -88,7 +92,7 @@ Process
 {	$IsObjectExisted = $True
 	$ObjCmd = $ObjectType -replace ' ', '' 
 	$Cmds = "show$ObjCmd $ObjectName"
-	$Result = Invoke-CLICommand -cmds  $Cmds
+	$Result = Invoke-A9CLICommand -cmds  $Cmds
 	if ($Result -like "no $ObjectMsg listed")	{	$IsObjectExisted = $false	}
 	return $IsObjectExisted
 }	

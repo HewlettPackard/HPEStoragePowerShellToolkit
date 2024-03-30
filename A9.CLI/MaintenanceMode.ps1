@@ -19,6 +19,8 @@ Function Get-A9Maintenance
 	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
 		inc: Sort in increasing order (default).
 		dec: Sort in decreasing order.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$All,
@@ -31,7 +33,7 @@ Process
 {	$Cmd = " showmaint "
 	if($All)	{	$Cmd += " -all " }
 	if($Sortcol){	$Cmd += " -sortcol $Sortcol "}
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -2  
@@ -70,6 +72,8 @@ Function New-A9Maintenance
 	Sets the duration of the maintenance window record. May be specified in minutes (e.g. 20m) or hours (e.g. 6h). Value is not to exceed 24 hours. The default is 4 hours.
 .PARAMETER MaintType
 	Specify the maintenance type. Maintenance type can be Other, Node, Restart, Disk, Cage, Cabling, Upgrade, DiskFirmware, or CageFirmware.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]					[String]	$Comment,
@@ -84,7 +88,7 @@ Process
 	if($Comment)	{	$Cmd += " -comment $Comment " }
 	if($Duration)	{	$Cmd += " -duration $Duration " }
 	if($MaintType) 	{	$Cmd += " $MaintType " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -109,6 +113,8 @@ Function Set-A9Maintenance
 	The maintenance type for the maintenance window record to be modified. Maintenance type can be Other, Node, Restart, Disk, Cage, Cabling,
 	Upgrade, DiskFirmware, CageFirmware, or all. "all" can only be specified with option -end, which ends all maintenance window records,
 	regardless of their reference counts.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Comment,
@@ -125,7 +131,7 @@ Process
 	if($Duration)	{	$Cmd += " -duration $Duration " }
 	if($End)		{	$Cmd += " -end " }
 	if($MaintType)	{	$Cmd += " $MaintType " }
-	$Result = Invoke-CLICommand -cmds  $Cmd
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 }

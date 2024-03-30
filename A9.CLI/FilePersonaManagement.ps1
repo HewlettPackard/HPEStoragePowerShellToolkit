@@ -11,6 +11,8 @@ Function Start-A9FSNDMP
 	The command is used to start both NDMP service and ISCSI service.
 .EXAMPLE	
 	PS:> Start-A9FSNDMP
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param()		
@@ -19,7 +21,7 @@ Begin
 }
 Process
 {	$cmd= "startfsndmp "	
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	Return $Result	
 }
 }
@@ -33,6 +35,8 @@ Function Stop-A9FSNDMP
 	The command is used to stop both NDMP service and ISCSI service.
 .EXAMPLE	
 	PS:> Stop-A9FSNDMP	
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param()		
@@ -41,7 +45,7 @@ Begin
 }
 Process	
 {	$cmd= "stopfsndmp "
-	$Result = Invoke-CLICommand -cmds  $cmd	
+	$Result = Invoke-A9CLICommand -cmds  $cmd	
 	write-verbose "  Executing  Stop-FSNDMP command that displays information iSNS table for iSCSI ports in the system  "	
 	return $Result	
 }

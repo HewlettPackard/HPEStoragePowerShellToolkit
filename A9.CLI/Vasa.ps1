@@ -65,6 +65,8 @@ Function Show-A9vVolvm_CLI
 .PARAMETER VM_name 
 	Specifies the VMs with the specified name (up to 80 characters in length). This specifier can be repeated to display information about multiple VMs.
 	This specifier is not required. If not specified, showvvolvm displays information for all VMs in the specified storage container.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$container_name,
@@ -86,7 +88,7 @@ process
 {	$cmd = "showvvolvm "
 	if($ListCols)
 		{	$cmd +=" -listcols "
-			$Result = Invoke-CLICommand -cmds  $cmd
+			$Result = Invoke-A9CLICommand -cmds  $cmd
 			write-verbose " The Show-vVolvm command creates and admits physical disk definitions to enable the use of those disks  "  
 			return 	$Result	
 		}
@@ -101,7 +103,7 @@ process
 	if ($container_name)	{	$cmd+="  -sc $container_name "	}	
 	else					{	return " FAILURE :  container_name is mandatory to execute Show-vVolvm command "	}	
 	if ($VM_name)			{	$cmd+=" $VM_name "	}	
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	return 	$Result	
 }
 }
@@ -126,6 +128,8 @@ Function Get-A9vVolSc_CLI
 	VVols that have been auto-dismissed by remote copy DR operations.
 .PARAMETER SC_name  
 	Storage Container
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Detailed,	
@@ -140,7 +144,7 @@ process
 	if ($Listcols)		{	$cmd+=" -listcols "	}
 	if ($Detailed)		{	$cmd+=" -d "		}
 	if ($SC_name)		{	$cmd+=" $SC_name "	}	
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	return 	$Result	
 }
 }
@@ -175,6 +179,8 @@ Function Set-A9VVolStorageContainer
 	are VVols.
 .PARAMETER vvset
 	The Virtual Volume set (VV set) name, which is used, or to be used, as a VVol storage container.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$vvset,
@@ -192,7 +198,7 @@ process
 	if($Keep)	{	$cmd += " -keep "	}
 	if ($vvset)	{	$cmd +="  set:$vvset "	}	
 	else		{	return " FAILURE :  vvset is mandatory to execute Set-VVolSC command"	}
-	$Result = Invoke-CLICommand -cmds  $cmd
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 	return 	$Result	
 }
 }

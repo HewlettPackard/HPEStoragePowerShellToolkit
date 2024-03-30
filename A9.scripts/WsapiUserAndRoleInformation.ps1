@@ -46,13 +46,13 @@ Process
 	$dataPS = $null
 	if($UserName)
 		{	$uri = '/users/'+$UserName	
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 				}
 		}	
 	else
-		{	$Result = Invoke-WSAPI -uri '/users' -type 'GET' 
+		{	$Result = Invoke-A9API -uri '/users' -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}	
@@ -118,13 +118,13 @@ Process
 	$dataPS = $null
 	if($RoleName)
 		{	$uri = '/roles/'+$RoleName
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 				}
 		}	
 	else
-		{	$Result = Invoke-WSAPI -uri '/roles' -type 'GET' 
+		{	$Result = Invoke-A9API -uri '/roles' -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}	

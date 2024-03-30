@@ -17,6 +17,8 @@ Function Get-A9Spare
     Display only used spare chunklets
 .PARAMETER count
 	Number of loop iteration
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$used,	
@@ -27,7 +29,7 @@ process
 	$spareinfocmd = "showspare "
 	if($used)	{	$spareinfocmd+= " -used "	}
 	write-verbose "Get list of spare information cmd is => $spareinfocmd "
-	$Result = Invoke-CLICommand -cmds  $spareinfocmd
+	$Result = Invoke-A9CLICommand -cmds  $spareinfocmd
 	$tempFile = [IO.Path]::GetTempFileName()
 	$range1 = $Result.count - 3 
 	$range = $Result.count	
@@ -78,6 +80,8 @@ Function New-A9Spare
     Specifies the position of a specific chunklet identified by its position in a drive cage, drive magazine, physical disk, and chunklet number.
 .PARAMETER Partial
 	Specifies that partial completion of the command is acceptable.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Pdid_chunkNumber,
@@ -96,7 +100,7 @@ process
 	if($pos){	$newsparecmd += " -f -pos $pos"
 				if($Pdid_chunkNumber)	{	return "FAILURE : Do not specify both the params , specify either -PDID_chunknumber or -pos"	}
 			}
-	$Result = Invoke-CLICommand -cmds  $newsparecmd
+	$Result = Invoke-A9CLICommand -cmds  $newsparecmd
 	write-verbose "Spare  cmd -> $newsparecmd "
 	if(-not $Result){	write-host "Success : Create spare chunklet "	}
 	else			{	return "$Result"	}
@@ -134,6 +138,8 @@ Function Move-A9Chunklet
 	a loss of quality because of the move. 
 .PARAMETER DryRun
 	Specifies that the operation is a dry run
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -162,7 +168,7 @@ process
 		}
 	else	{	return "FAILURE :  No parameters specified "	}
 	write-verbose "move chunklet cmd -> $movechcmd "	
-	$Result = Invoke-CLICommand -cmds  $movechcmd	
+	$Result = Invoke-A9CLICommand -cmds  $movechcmd	
 	if([string]::IsNullOrEmpty($Result))	{	return "FAILURE : Disk $SourcePD_Id chunklet $SourceChunk_Position is not in use. "	}
 	if($Result -match "Move")
 		{	$range = $Result.count
@@ -209,6 +215,8 @@ Function Move-A9ChunkletToSpare
 	Permits the moves to happen to different device types.
 .PARAMETER DryRun
 	Specifies that the operation is a dry run
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$SourcePD_Id,
@@ -229,7 +237,7 @@ process
 		}
 	else{	return "FAILURE : No parameters specified"	}
 	write-verbose "cmd is -> $movechcmd " 
-	$Result = Invoke-CLICommand -cmds  $movechcmd
+	$Result = Invoke-A9CLICommand -cmds  $movechcmd
 	if([string]::IsNullOrEmpty($Result))	{	return "FAILURE : "	}
 	elseif($Result -match "does not exist")	{	return $Result		}
 	elseif($Result.count -gt 1)
@@ -275,6 +283,8 @@ Function Move-A9PhyscialDisk
 	Permits the moves to happen to different device types.
 .PARAMETER Perm
 	Makes the moves permanent, removes source tags after relocation
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[Switch]	$DryRun,
@@ -295,7 +305,7 @@ process
 				}
 	else		{	return "FAILURE : No parameters specified"	}
 	write-verbose "Push physical disk command => $movechcmd " 
-	$Result = Invoke-CLICommand -cmds  $movechcmd
+	$Result = Invoke-A9CLICommand -cmds  $movechcmd
 	if([string]::IsNullOrEmpty($Result))	{	return "FAILURE : $Result"	}
 	if($Result -match "FAILURE")			{	return $Result	}
 	if($Result -match "-Detailed_State-")
@@ -355,6 +365,8 @@ Function Move-A9PhysicalDiskToSpare
 	a loss of quality because of the move. This option is only necessary
 	when the target of the move is not specified and the -perm flag is
 	used.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$PD_Id,
@@ -381,7 +393,7 @@ process
 					}
 	else			{	return "FAILURE : No parameters specified"			}	
 	write-verbose "push physical disk to spare cmd is  => $movechcmd "
-	$Result = Invoke-CLICommand -cmds  $movechcmd
+	$Result = Invoke-A9CLICommand -cmds  $movechcmd
 	if([string]::IsNullOrEmpty($Result)){	return "FAILURE : "	}
 	if($Result -match "Error:")			{	return $Result	}
 	if($Result -match "Move")
@@ -420,6 +432,8 @@ Function Move-A9RelocPhysicalDisk
 	Specifies that the command returns before the operation is completed.
 .PARAMETER partial
     Move as many chunklets as possible. If this option is not specified, the command fails if not all specified chunklets can be moved.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ValueFromPipeline=$true)]	[String]	$diskID,
@@ -439,7 +453,7 @@ process
 	if($diskID)		{	$movechcmd += " $diskID"	}
 	else			{	return "FAILURE : No parameters specified"	}
 	write-verbose "move relocation pd cmd is => $movechcmd " 
-	$Result = Invoke-CLICommand -cmds  $movechcmd
+	$Result = Invoke-A9CLICommand -cmds  $movechcmd
 	if([string]::IsNullOrEmpty($Result))	{	return "FAILURE : "	}
 	if($Result -match "Error:")				{	return $Result		}	
 	if($Result -match "There are no chunklets to move")	{	return "There are no chunklets to move"	}	
@@ -479,6 +493,8 @@ Function Remove-A9Spare
     Specifies the identification of the physical disk and the chunklet number on the disk.
 .PARAMETER pos
     Specifies the position of a specific chunklet identified by its position in a drive cage, drive magazine, physical disk, and chunklet number.
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
@@ -498,7 +514,7 @@ process
 			if($pos)	{	return "FAILURE: Please select only one params, either -Pdid_chunkNumber or -pos "	}
 		}
 	if($pos)	{	$newsparecmd += " -f -pos $pos"	}
-	$Result = Invoke-CLICommand -cmds  $newsparecmd
+	$Result = Invoke-A9CLICommand -cmds  $newsparecmd
 	if($Result -match "removed")	{	write-host "Success : Removed spare chunklet "  -ForegroundColor green	}
 	return "$Result"
 }

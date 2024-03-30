@@ -207,7 +207,7 @@ Process
 	if($LDLayoutDiskPatternsBody.Count -gt 0)	{	$LDLayoutBody["diskPatterns"] = $LDLayoutDiskPatternsBody		}		
 	if($LDLayoutBody.Count -gt 0)				{	$body["LDLayout"] = $LDLayoutBody 	}	
     $Result = $null	
-    $Result = Invoke-WSAPI -uri '/cpgs' -type 'POST' -body $body 
+    $Result = Invoke-A9API -uri '/cpgs' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -434,7 +434,7 @@ Process
 	if($LDLayoutBody.Count -gt 0){$body["LDLayout"] = $LDLayoutBody }
     $Result = $null
     $uri = '/cpgs/'+$CPGName	
-    $Result = Invoke-WSAPI -uri $uri -type 'PUT' -body $body	
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body	
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
@@ -477,7 +477,7 @@ Begin
 Process 
 {  	$uri = '/cpgs/'+$CPGName
 	$Result = $null
-	$Result = Invoke-WSAPI -uri $uri -type 'DELETE'
+	$Result = Invoke-A9API -uri $uri -type 'DELETE'
 	$status = $Result.StatusCode
 	if($status -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -519,13 +519,13 @@ Process
 	$dataPS = $null	
 	if($CPGName)
 		{	$uri = '/cpgs/'+$CPGName
-			$Result = Invoke-WSAPI -uri $uri -type 'GET' 
+			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = $Result.content | ConvertFrom-Json
 				}
 		}
 	else
-		{	$Result = Invoke-WSAPI -uri '/cpgs' -type 'GET'
+		{	$Result = Invoke-A9API -uri '/cpgs' -type 'GET'
 			if($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members
 				}		
