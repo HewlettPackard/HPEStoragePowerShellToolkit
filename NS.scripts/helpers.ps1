@@ -54,7 +54,7 @@ Process{
                     $Global:GlobalImportServerCertificate = $ImportServerCertificate
                     ValidateServerCertificate $group
                 }
-        Import-LocalizedData -BaseDirectory (Split-Path $PSScriptRoot -parent) -FileName "HPEAlletra6000andNimbleStoragePowerShellToolkit.psd1" -BindingVariable "ModuleData"
+        # Import-LocalizedData -BaseDirectory (Split-Path $PSScriptRoot -parent) -FileName "HPEAlletra6000andNimbleStoragePowerShellToolkit.psd1" -BindingVariable "ModuleData"
         $PSTKVersion = $ModuleData.moduleversion
         
         $Global:NimbleAppName = "HPEAlletra6000andNimbleStoragePowerShellToolkitV" + $PSTKVersion
