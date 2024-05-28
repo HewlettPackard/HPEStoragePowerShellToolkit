@@ -9,8 +9,8 @@ param(
     [Parameter(Mandatory = $True)]  [string] $username,
     [Parameter(Mandatory = $True)]  [string] $password,
     [Parameter(Mandatory = $True)]  [string] $host,
-                                    [Nullable[long]] $port,
-                                    [Nullable[bool]] $secure_mode
+                                    [long] $port,
+                                    [boolean] $secure_mode
   )
 process {
         # Gather request params based on user input.
@@ -53,10 +53,10 @@ param(
     [string]$host,
 
     [Parameter(ParameterSetName='nonId')]
-    [Nullable[long]]$port,
+    [long]$port,
 
     [Parameter(ParameterSetName='nonId')]
-    [Nullable[bool]]$secure_mode,
+    [boolean]$secure_mode,
 
     [Parameter(ParameterSetName='nonId')]
     [Object[]]$auto_switchover_messages

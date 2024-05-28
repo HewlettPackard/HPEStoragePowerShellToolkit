@@ -287,7 +287,7 @@ param(
 
     [bool] $compress,
 
-    [Nullable[bool]] $cache,
+    [boolean] $cache,
 
     [ValidateSet( 'normal', 'no_write', 'aggressive_read_no_write', 'disabled', 'aggressive')]
     [string] $cache_policy,
@@ -297,7 +297,7 @@ param(
 
     [string] $app_category,
 
-    [Nullable[bool]] $dedupe_enabled
+    [boolean] $dedupe_enabled
   )
 process {   # Gather request params based on user input.
         $RequestData = @{}

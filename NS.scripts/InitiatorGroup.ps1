@@ -237,7 +237,7 @@ param(
 
     [Object[]] $fc_initiators,
 
-    [Nullable[bool]] $vp_override
+    [boolean] $vp_override
   )
 process {
         # Gather request params based on user input.

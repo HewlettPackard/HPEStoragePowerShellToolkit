@@ -281,7 +281,7 @@ param (
     [Parameter(ValueFromPipelineByPropertyName=$True, Mandatory = $True)]
     [string]$target_pool_id,
 
-    [Nullable[bool]]$force
+    [boolean]$force
 )
 process{
     $Params = @{

@@ -42,13 +42,13 @@ param(
     [Parameter(Mandatory = $True)]
     [string] $serial,
 
-    [Nullable[bool]] $dedupe_disabled,
+    [boolean] $dedupe_disabled,
     
-    [Nullable[bool]] $create_pool,
+    [boolean] $create_pool,
 
     [string] $pool_description,
 
-    [Nullable[bool]] $allow_lower_limits,
+    [boolean] $allow_lower_limits,
 
     [Parameter(Mandatory = $True)]
     [string] $ctrlr_a_support_ip,

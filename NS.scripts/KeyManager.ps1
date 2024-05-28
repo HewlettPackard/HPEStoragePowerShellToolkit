@@ -38,7 +38,7 @@ param(
     [Parameter(Mandatory = $True)]  [string] $name,
                                     [string] $description,
     [Parameter(Mandatory = $True)]  [string] $hostname,
-    [Parameter(Mandatory = $True)]  [Nullable[long]] $port,
+    [Parameter(Mandatory = $True)]  [long] $port,
     [Parameter(Mandatory = $True)]
     [ValidateSet( 'KMIP1_1', 'KMIP1_2', 'KMIP1_0', 'KMIP1_3')]
                                     [string] $protocol,
@@ -104,13 +104,13 @@ param(
     [Parameter(ParameterSetName='nonId')] [string]$name,
     [Parameter(ParameterSetName='nonId')] [string]$description,
     [Parameter(ParameterSetName='nonId')] [string]$hostname,
-    [Parameter(ParameterSetName='nonId')] [Nullable[long]]$port,
+    [Parameter(ParameterSetName='nonId')] [long]$port,
     [Parameter(ParameterSetName='nonId')]
     [ValidateSet( 'KMIP1_1', 'KMIP1_2', 'KMIP1_0', 'KMIP1_3')]
                                           [string]$protocol,
     [Parameter(ParameterSetName='nonId')] [string]$username,
     [Parameter(ParameterSetName='nonId')] [string]$password,
-    [Parameter(ParameterSetName='nonId')] [Nullable[bool]]$active,
+    [Parameter(ParameterSetName='nonId')] [boolean]$active,
     [Parameter(ParameterSetName='nonId')] [string]$status,
     [Parameter(ParameterSetName='nonId')] [string]$vendor
   )
@@ -187,7 +187,7 @@ param(
       [string] $name,
       [string] $description,
       [string] $hostname,
-      [Nullable[long]] $port,
+      [long] $port,
       [ValidateSet( 'KMIP1_1', 'KMIP1_2', 'KMIP1_0', 'KMIP1_3')]
       [string] $protocol,
       [string] $username,

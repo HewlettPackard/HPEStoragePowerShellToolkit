@@ -7,8 +7,8 @@ function New-NSSubscriber {
 param(
     [Parameter(Mandatory = $True)]
     [string] $type,
-    [Nullable[long]] $renew_interval,
-    [Nullable[long]] $renew_response_timeout
+    [long] $renew_interval,
+    [long] $renew_response_timeout
   )
 process {
         # Gather request params based on user input.
@@ -39,11 +39,11 @@ function Get-NSSubscriber
 param(
     [Parameter(ParameterSetName='id')]    [string] $id,
     [Parameter(ParameterSetName='nonId')] [string]$type,
-    [Parameter(ParameterSetName='nonId')] [Nullable[long]]$renew_interval,
-    [Parameter(ParameterSetName='nonId')] [Nullable[long]]$renew_response_timeout,
-    [Parameter(ParameterSetName='nonId')] [Nullable[bool]]$is_connected,
-    [Parameter(ParameterSetName='nonId')] [Nullable[long]]$notification_count,
-    [Parameter(ParameterSetName='nonId')] [Nullable[bool]]$force
+    [Parameter(ParameterSetName='nonId')] [long]$renew_interval,
+    [Parameter(ParameterSetName='nonId')] [long]$renew_response_timeout,
+    [Parameter(ParameterSetName='nonId')] [boolean]$is_connected,
+    [Parameter(ParameterSetName='nonId')] [long]$notification_count,
+    [Parameter(ParameterSetName='nonId')] [boolean]$force
   )
 process
   {
@@ -87,9 +87,9 @@ function Set-NSSubscriber
 param(
     [Parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True, Mandatory = $True, ParameterSetName='all')]
     [string]$id,
-    [Nullable[long]] $renew_interval,
-    [Nullable[long]] $renew_response_timeout,
-    [Nullable[bool]] $force
+    [long] $renew_interval,
+    [long] $renew_response_timeout,
+    [boolean] $force
   )
 process {
         # Gather request params based on user input.

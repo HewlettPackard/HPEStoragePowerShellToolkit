@@ -422,7 +422,7 @@ Process
 			{	$ModPath = $ModPath + '\HPEAlletra6000andNimbleStorage.psd1'
 				Import-Module $ModPath -force -scope Global
 				Connect-NSGroup -group $ArrayNameOrIPAddress -credential $Credential 
-				Write-host "To View the list of commands available to you please use 'Get-Command -module HPEMSA'." -ForegroundColor Green
+				Write-host "To View the list of commands available to you please use 'Get-Command -module HPEAlletra6000AndNimbleStorage'." -ForegroundColor Green
 				write-verbose 'Removing non-used modules'
 				if ( [boolean](get-module -name HPEAlletra9000andPrimeraand3Par_API ) )	{ remove-module -name HPEAlletra9000andPrimeraand3Par_API }
 				if ( [boolean](get-module -name HPEAlletra9000andPrimeraand3Par_CLI ) )	{ remove-module -name HPEAlletra9000andPrimeraand3Par_API }
@@ -435,7 +435,7 @@ Process
 				$user = $Credential.GetNetworkCredential().username
 				write-Verbose "You will be using Username $user and Password $pass"
 				Connect-MSAGroup -FQDNorIP $ArrayNameOrIPAddress -Username $user -Password $pass
-				Write-host "To View the list of commands available to you please use 'Get-Command -module HPEAlletra6000AndNimbleStorage'." -ForegroundColor Green
+				Write-host "To View the list of commands available to you please use 'Get-Command -module HPEMSA'." -ForegroundColor Green
 				write-verbose 'Removing non-used modules'
 				if ( [boolean](get-module -name HPEAlletra9000andPrimeraand3Par_API ) )	{ remove-module -name HPEAlletra9000andPrimeraand3Par_API }
 				if ( [boolean](get-module -name HPEAlletra9000andPrimeraand3Par_CLI ) )	{ remove-module -name HPEAlletra9000andPrimeraand3Par_API }

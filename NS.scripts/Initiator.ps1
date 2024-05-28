@@ -85,7 +85,7 @@ param(
 
     [Parameter(ParameterSetName='iscsi')]
     [Parameter(ParameterSetName='fc')]
-    [Nullable[bool]] $vp_override,
+    [bool] $vp_override,
 
     [Parameter(ParameterSetName='iscsi')]
     [Parameter(ParameterSetName='fc')]
