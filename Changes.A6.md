@@ -1,5 +1,5 @@
-HPE Alletra 6000 and Nimble Storage PowerShell Toolkit 3.5.0 README
-====================================================================
+HPE Storage PowerShell Toolkit - Alletra 6000 and Nimble Storage 3.5.0 README
+==================================================
 README
 ==================================================
 
@@ -7,23 +7,23 @@ README
 Table of Contents
 =================
 
-* New Features in the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit 3.5.0
-* Installing the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit
-* Getting help with the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit
+* New Features in the HPE Storage PowerShell Toolkit 3.5.0
+* Installing the HPE Storage PowerShell Toolkit
+* Getting help with the HPE Storage PowerShell Toolkit
 * Tips and Tricks 
 * Resolved Issues
 * Known Issues
 1. The New PowerShell Toolkit is primarily testetd against PowerShel Version 7.2 and newer. Please use the following PowerShell command to download the latest version of PowerShell to your platform and run these commands from that newer PowerShell version. <code>iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"</code>
 
 
-New Features in the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit 3.5.0
+New Features in the HPE Toolkit 3.5.0
 =================================================================================
 
 The following features were added in the 3.5.0 version of the toolkit:
 
 * You can download the toolkit from Microsoft PowerShell Gallery. The toolkit is available under the module name:
 
-        "HPEAlletra6000andNimbleStoragePowerShellToolkit", version 3.5.0 
+        "HPEStorage*", version 3.5.0 
 
 1. A New Get-NSHostVolume Command exists that helps the user understand the mapping between Windows Volumes and their underlying Nimble Volumes. This command works for Standard Windows Volumes as well as Cluster Volumes and Cluster Shared Volumes.
 2. A New Get-NSHostHyperVVMStorage command helps the user map individual VMs to their underlying Nimble Volumes as well as identifies if those Volumes and VMs are Clustered.
@@ -32,10 +32,10 @@ The following features were added in the 3.5.0 version of the toolkit:
 
 
 
-Installing the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit
+Installing the HPE Storage PowerShell Toolkit
 ======================================================================
 
-To install the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit:
+To install the HPE Storage PowerShell Toolkit:
 
 1. Right-click on the downloaded ZIP file. If the file has the blocked property set, you must choose Unblock to download the file.
 
@@ -43,24 +43,26 @@ To install the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit:
 
         C:\Windows\System32\WindowsPowerShell\v1.0\Modules\
 
-3. Verify that HPEAlletra6000andNimbleStoragePowerShellToolkit.psd1 exists in the following location:
+3. Verify that HPEStorage.psd1 exists in the following location:
 
-        C:\Windows\System32\WindowsPowerShell\v1.0\Modules\HPEAlletra6000andNimbleStoragePowerShellToolkit\HPEAlletra6000andNimbleStoragePowerShellToolkit.psd1
+        C:\Windows\System32\WindowsPowerShell\v1.0\Modules\HPEStorage\HPEStorage.psd1
 
 Alternate Installation Method
 
 1. From a powershell 7.x prompt type the following command;
 
-<code>Find-Module HPEAlletra6000andNimble* | install-module</code>
+<code>Find-Module HPEStorage* | install-module</code>
 
-Using the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit
+Forcing the installation of the SubModule for the Alletra6000 and Nimble Storage Powershell Toolkit
 =================================================================
-
+This may be needed if you wish to use the legacy Nimble Connection Command to allow you to import the array certificate. Once this 
+certificate is installed, you should no longer need to use this override method of loading the legacy connection method and the default
+Connect-HPESAN command will connect properly. 
 To use the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit:
 
-1. From a PowerShell prompt, import the HPE Nimble Storage PowerShell module by running the following command:
+1. From a PowerShell prompt in the HPEStorage Module Directory, import the HPE Nimble Storage PowerShell module by running the following command:
 
-        PS:&gt; Import-Module HPEAlletra6000andNimbleStoragePowerShellToolkit
+        PS:&gt; Import-Module .\HPEAlletra6000andNimbleStoragePowerShellToolkit.psd1
 
 2. Connect to an existing Group using one of the following commands:
 
@@ -74,20 +76,22 @@ To use the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit:
         that you have an Administrative PowerShell Window. 
 
 
-Getting help with the HPE Alletra 6000 and Nimble Storage PowerShell Toolkit
+Getting help with the HPE Storage Toolkit for Alletra 6000 and Nimble Storage specific commands
 =============================================================================
 
 You can get help information about either a single command or multiple commands:
 
 * To get a complete list of PowerShell commands, run the following command:
 
-	PS:&gt; get-command -module HPENimblePowerShellToolkit
+	PS:&gt; Get-Command -module HPENimblePowerShellToolkit
+        -or-
+        PS:&gt; Get-Command *-NS*
 	
 * To get detailed help about a single command, run Get-Help with the name of the command, as shown in the following examples:
 
-	PS:&gt; get-help new-NSVolume
-	PS:&gt; get-help new-NSVolume -full
-	PS:&gt; get-help new-NSVolume -examples
+	PS:&gt; Get-Help new-NSVolume
+	PS:&gt; Get-Help new-NSVolume -full
+	PS:&gt; Get-Help new-NSVolume -examples
 
 	
 Tips and Tricks
@@ -158,7 +162,7 @@ PST-111: PowerShell Core performance issue occurs when the return objects are hu
 
 
 
-Known Issues in HPE Alletra 6000 and Nimble Storage PowerShell Toolkit 3.5.0
+Known Issues in HPE Storage Toolkit - Alletra 6000 and Nimble Storage 3.5.0
 =============================================================================
 
 PST-130: Failed to connect to array using PSTK due to SSL/TLS error
