@@ -394,6 +394,82 @@ Function Connect-HPESAN
 .PARAMETER Credential
 	This is a standard PowerShell Credential type, you can use the value (Get-Credential) as a value here if you want a popup to appear that lets you insert you username
 	and passsowrd. If you do not fill in this value, the command will ask you for your credentials.
+.EXAMPLE
+	PS:> Connect-HPESAN -ArrayNameOrIPAddress 192.168.1.50 -ArrayType Nimble
+
+	cmdlet Connect-HPESAN at command pipeline position 1
+	Supply values for the following parameters:
+	Credential
+	User: admin
+	Password for user admin: *****
+
+	Successfully connected to array 192.168.1.50
+	To View the list of commands available to you please use 'Get-Command -module HPEAlletra6000AndNimbleStorage'.
+.EXAMPLE
+	PS:> Connect-HPESAN -ArrayNameOrIPAddress 192.168.100.98 -ArrayType MSA
+
+	cmdlet Connect-HPESAN at command pipeline position 1
+	Supply values for the following parameters:
+	Credential
+	User: chris
+	Password for user chris: *********
+
+		object-name           : status
+		meta                  : https://192.168.100.98/rest/v1/meta/status
+		response-type         : Success
+		response-type-numeric : 0
+		response              : 9f8b16cbceb5c90927dbc8da465cb9ed
+		return-code           : 1
+		component-id          :
+		time-stamp            : 2022-11-14 23:50:58
+		time-stamp-numeric    : 1668469858
+
+		To View the list of commands available to you please use 'Get-Command -module HPEMSA'.
+.EXAMPLE
+	PS:> connect-hpesan -ArrayNameOrIPAddress 192.168.20.19 -ArrayType Primera
+
+	cmdlet Connect-HPESAN at command pipeline position 1
+	Supply values for the following parameters:
+	Credential
+	User: dev-team
+	Password for user dev-team: ************
+
+		Attempting to load the HPE 3Par / Primera / Alletra9000 PowerShell Commands that support SSH connectivity.
+		The path to the module is C:\Users\clionetti\Desktop\Powershell\HPEStoragePowerShellToolkit\HPEAlletra9000andPrimeraand3Par_CLI.psd1
+
+		Name                           Value
+		----                           -----
+		Model                          HPE Alletra 9060
+		TotalCapacityMiB               36608000
+		UserName                       dev-team
+		Serial                         4UW0003299
+		SessionId                      0
+		epwdFile                       Secure String
+		Name                           4UW0003299_Alletra660
+		AllocatedCapacityMiB           22524928
+		IPAddress                      192.168.20.19
+		CLIType                        SshClient
+		CLIDir                         Null
+		FreeCapacityMiB                14083072
+		You are now connected to the HPE Storage system 4UW0003299_Alletra660
+
+		Attempting to load the HPE 3Par / Primera / Alletra9000 PowerShell Commands that support the WSAPI.
+
+		IPAddress            : 192.168.20.19
+		SerialNumber         : 4UW0003299
+		FreeCapacityMiB      : 14083072
+		Model                : HPE Alletra 9060
+		Patches              :
+		Id                   : 518958
+		Name                 : 4UW0003299_Alletra660
+		Key                  : 0-3dcd5a5cedf5bcf79b2953f60bd3ed0b-5faa5866
+		AllocatedCapacityMiB : 22524928
+		TotalCapacityMiB     : 36608000
+		SystemVersion        : 9.5.4.2
+
+		To View the list of commands available to you that utilize the API please use 'Get-Command -module HPEAlletra9000AndPrimeraAnd3Par_API'.
+		To View the list of commands available to you that utilize the CLI please use 'Get-Command -module HPEAlletra9000AndPrimeraAnd3Par_CLI'.
+
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]												[String]    $ArrayNameOrIPAddress,
