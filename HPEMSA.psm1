@@ -18,9 +18,6 @@
 . $PSScriptRoot\MSA.scripts\hardware.ps1    # Contains  Enclosure, Fan, Power-Supply, Fru
 . $PSScriptRoot\MSA.scripts\iscsi.ps1 
 
-
-
-
 Export-ModuleMember -Function Connect-MSAGroup, Invoke-MSAStorageRestAPI,
     Get-MSADisk,        Get-MSADiskParameter,   Get-MSADiskStatistic,
     Get-MSADiskGroup,   Get-MSADiskGroupStatistic,

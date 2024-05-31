@@ -1,4 +1,4 @@
 . $PSScriptRoot\Connection.ps1
 
-Export-ModuleMember -Function *
+Export-ModuleMember -Function Connect-HPESAN
 
