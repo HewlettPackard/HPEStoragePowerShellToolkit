@@ -519,3 +519,126 @@ Process
 	}
 }
 }
+
+function Import-HPESANCertificate 
+{
+	<#
+.SYNOPSIS
+	Connect to a HPE SAN Device
+.DESCRIPTION
+	Connect to a HPE SAN Device for the purpose of retrieving the Array Certificate. If the Certificate does not exist on the Cert:\LocalMachine\Root store, it will add it.
+	If the Certificate already exists, it will warn you of this. To run this command you must execute this command with and Administrative PowerShell prompt. 
+.PARAMETER ArrayNameOrIPAddress
+	The IP Address or Array name that will resolve via name service to the IP Address of the target device to connect to.
+#>
+param(  [Parameter(Mandatory,Position=0)]   [string]$ArrayNameOrIPAddress
+)
+
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if ( -not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) )
+	{ 	write-warning "This command can ONLY be run in Administrator Mode, Please run an Administrator PowerShell Prompt and try this command againt."
+		return
+	}
+$Code = @'
+			using System;
+			using System.Collections.Generic;
+			using System.Net.Http;
+			using System.Net.Security;
+			using System.Security.Cryptography.X509Certificates;
+	
+			namespace CertificateCapture
+			{	public class Utility
+					{	public static Func<HttpRequestMessage,X509Certificate2,X509Chain,SslPolicyErrors,Boolean> ValidationCallback = 
+							(message, cert, chain, errors) => {	var newCert = new X509Certificate2(cert);
+																var newChain = new X509Chain();
+																newChain.Build(newCert);
+																CapturedCertificates.Add(new CapturedCertificate(){
+																		Certificate =  newCert,
+																		CertificateChain = newChain,
+																		PolicyErrors = errors,
+																		URI = message.RequestUri
+																	});
+																return true; 
+															};
+						public static List<CapturedCertificate> CapturedCertificates = new List<CapturedCertificate>();
+					}
+				public class CapturedCertificate 
+					{	public X509Certificate2 Certificate { get; set; }
+						public X509Chain CertificateChain { get; set; }
+						public SslPolicyErrors PolicyErrors { get; set; }
+						public Uri URI { get; set; }
+					}
+			}
+'@
+
+if ($PSEdition -ne 'Core')
+	{   write-verbose "Running Codebase for Not Core PowerShell."
+		$webrequest=[net.webrequest]::Create("https://$ArrayNameOrIPAddress")
+		try 	{ $response = $webrequest.getresponse() } 
+		catch 	{}
+		$cert=$webrequest.servicepoint.certificate
+		if($cert -ne $null)
+			{   $Thumbprint = $webrequest.ServicePoint.Certificate.GetCertHashString()
+				$bytes=$cert.export([security.cryptography.x509certificates.x509contenttype]::cert)
+				$tfile=[system.io.path]::getTempFileName()
+				set-content -value $bytes -encoding byte -path $tfile
+				$certdetails = $cert | select-object * | format-table -AutoSize | Out-String
+				$AlreadyExists = [boolean](get-childitem -path cert:\localmachine\root | select-object Thumbprint | where-object { $_.Thumbprint -eq $Certthumb } ) 
+				if (-not $AlreadyExists)  
+					{   try	{   $output =import-certificate -filepath $tfile -certStoreLocation 'Cert:\localmachine\Root'
+								$certdetails = $output | select-object -Property Thumbprint,subject | format-table -AutoSize | Out-String
+							}
+						catch{  Write-Error "Failed to import the server certificate `n`n $_.Exception.Message"  -ErrorAction Stop
+							}
+						Write-Host "Successfully imported the server certificate `n $certdetails"
+					}
+				else{   write-warning "The Certificate Already exists, no need to insert it."
+					}
+			}
+		else{   Write-Error "Failed to import the server certificate `n"
+			}  
+	}
+else{   write-verbose "Running Codebase for PowerShell Core."
+		try 	{ 	Add-Type $Code -IgnoreWarnings
+					Write-verbose "The Add-Type command ran without error."
+				}
+		catch 	{	write-warning $_.Exception
+					Write-Verbose "The Add-Type command failed, likely already loaded."
+				}
+		$Certs = [CertificateCapture.Utility]::CapturedCertificates
+		$Handler = [System.Net.Http.HttpClientHandler]::new()
+		$Handler.ServerCertificateCustomValidationCallback = [CertificateCapture.Utility]::ValidationCallback
+		$Client = [System.Net.Http.HttpClient]::new($Handler)
+		$Url = "https://$ArrayNameOrIPAddress"
+		$Result = $Client.GetAsync($Url).Result
+		$cert= $Certs[-1].Certificate
+		$certthumb = $cert.Thumbprint
+		write-verbose "The Thumbprint = $Certthumb "
+		write-verbose "The Certs will be tested against Null"
+		if($null -ne $certs)
+			{   write-verbose "The Certs were not NULL"
+				$certdetails = $cert | select-object -Property Thumbprint,subject | format-table -AutoSize | Out-String
+				$AlreadyExists = [boolean](get-childitem -path cert:\localmachine\root | select-object Thumbprint | where-object { $_.Thumbprint -eq $Certthumb } ) 
+				if (-not $AlreadyExists)  
+					{   write-verbose "The Certificate Does not already exist."
+						$bytes=$cert.export([security.cryptography.x509certificates.x509contenttype]::cert)
+						$OpenFlags = [System.Security.Cryptography.X509Certificates.OpenFlags]
+						$store = new-object system.security.cryptography.X509Certificates.X509Store -argumentlist "Root","LocalMachine"
+						try	{   $Store.Open($OpenFlags::ReadWrite)
+								$Store.Add($Cert)
+								$Store.Close()
+								Write-Host "Successfully imported the server certificate `n" 
+								return $CertDetails
+							}
+						catch{  write-error $_
+								Write-Error "Failed to import the server certificate `n`n $_.Exception.Message"  -ErrorAction Stop
+							}
+					}
+				else{   write-warning "The Certificate Already exists, no need to insert it."
+					}
+			}
+		else{   Write-Error "Failed to import the server certificate `n`n"  -ErrorAction Stop
+			}
+}
+}
+	
