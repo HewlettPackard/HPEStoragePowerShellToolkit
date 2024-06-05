@@ -1,6 +1,6 @@
 ﻿@{     
         RootModule              = 'HPEA6NS.psm1'
-        ModuleVersion           = '3.5.0'
+        ModuleVersion           = '3.5.0.0'
         CompanyName             = 'Hewlett Packard Enterprise Development LP'
         Copyright               = '© Copyright 2021, 2024 Hewlett Packard Enterprise Development LP'
         PowerShellVersion       = '5.0'

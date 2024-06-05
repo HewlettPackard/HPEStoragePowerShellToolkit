@@ -81,7 +81,9 @@ Tips and Tricks
 
 Resolved Issues in HPE MSA Storage PowerShell Toolkit 0.9.0
 ==============================================================
-
+This is the Initial Implementation
 
 Known Issues in HPE MSA Storage PowerShell Toolkit 0.9.0
 ===========================================================
+This toolkit has only implemented the Read Operations for this array. Future versions of this
+toolkit will implement the write operations (New/Set/Remove). 

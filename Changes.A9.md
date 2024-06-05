@@ -12,7 +12,7 @@ PRE-REQUISITES FOR HPE Alletra 9000 AND Primera AND 3PAR POWERSHELL TOOLKIT
 	Recommendations for Installation of POSH SSH Module
 	Starting and Configuring the WSAPI server
 	
-INSTALLING HPE Alletra 9000 AND Primera AND 3PAR POWERSHELL TOOLKIT 3.5
+INSTALLING HPE Alletra 9000 AND Primera AND 3PAR POWERSHELL TOOLKIT 3.5.0.0
 
 POWERSHELL CMDLETS HELP
 	Connection Management cmdlets
@@ -231,8 +231,6 @@ To get cmdlet specific help using the �full option, run the cmdlet:
 Connection Management cmdlets
 -----------------------------------------------------------------------------------------------
 Connect-HPESan                   		:- Builds a SAN connection object and if the array type is Alletra9K based, will attempt both a SSH and API type connection
-Connect-A9API                      		:- Builds a SAN connection object specifically with a 3Par/Primera/Alletra9K using the WSAPI
-Connect-A9CLI                      		:- Builds a SAN connection object specifically with a 3Par/Primera/Alletra9K using the SSH
 
 NOTE:  Toolkit command name and parameter name is case insensitive whereas parameter values are case sensitive.
 Session Management (Using Session Variable)
@@ -332,7 +330,7 @@ Major Design Changes
 	be decryptable, preserving security. 
 
 - Codebase Refactoring
-	The previous version of the toolkit was 75,967 lines of code. The new code base has been reduced to 32,201 lines by utilizing PowerShell best practices such as using parameter sets instead of complex
+	The previous version of the toolkit was 75,967 lines of code. The new code base has been reduced to 32,000+ lines by utilizing PowerShell best practices such as using parameter sets instead of complex
 	test conditions inside of functions as well as refactoring to relocate commonalities into common internal functions among other changes. 
 
 

@@ -6,7 +6,7 @@
     CompanyName         = 'Hewlett Packard Enterprise Development LP'
     Copyright           = '© 2020,2021,2024 Hewlett Packard Enterprise Development LP'
     Description         = 'HPE Storage Module providing support for the following platforms; Alletra 9000, Primera, 3PAR, Alletra 6000, and MSA which provides storage administrators the convenience of managing from a PowerShell environment.'
-    PowerShellVersion   = '5.1'
+    PowerShellVersion   = '5.0'
     FunctionsToExport   = '*'
     CmdletsToExport     = '*'
     VariablesToExport   = '*'

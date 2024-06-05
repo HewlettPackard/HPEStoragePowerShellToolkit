@@ -530,6 +530,18 @@ function Import-HPESANCertificate
 	If the Certificate already exists, it will warn you of this. To run this command you must execute this command with and Administrative PowerShell prompt. 
 .PARAMETER ArrayNameOrIPAddress
 	The IP Address or Array name that will resolve via name service to the IP Address of the target device to connect to.
+.EXAMPLE
+	PS C:\Users\chris\Desktop\PowerShell\HPEStoragePowerShellToolkit> Import-HPESANCertificate -ArrayNameOrIPAddress 192.168.1.50
+	Successfully imported the server certificate
+
+
+	Thumbprint                               Subject
+	----------                               -------
+	069A1B7D854C84718FDE234F894B277C29661FB8 CN=pegasus.lionetti.lab, O=Nimble Storage, OU=Lab, L=San Jose, S=CA, C=US
+.EXAMPLE
+	PS C:\Users\chris\Desktop\PowerShell\HPEStoragePowerShellToolkit> Import-HPESANCertificate -ArrayNameOrIPAddress 192.168.1.50
+
+	WARNING: The Certificate Already exists, no need to re-import it.
 #>
 param(  [Parameter(Mandatory,Position=0)]   [string]$ArrayNameOrIPAddress
 )
@@ -592,7 +604,7 @@ if ($PSEdition -ne 'Core')
 							}
 						Write-Host "Successfully imported the server certificate `n $certdetails"
 					}
-				else{   write-warning "The Certificate Already exists, no need to insert it."
+				else{   write-warning "The Certificate Already exists, no need to re-import it."
 					}
 			}
 		else{   Write-Error "Failed to import the server certificate `n"
@@ -634,7 +646,7 @@ else{   write-verbose "Running Codebase for PowerShell Core."
 								Write-Error "Failed to import the server certificate `n`n $_.Exception.Message"  -ErrorAction Stop
 							}
 					}
-				else{   write-warning "The Certificate Already exists, no need to insert it."
+				else{   write-warning "The Certificate Already exists, no need to re-import it."
 					}
 			}
 		else{   Write-Error "Failed to import the server certificate `n`n"  -ErrorAction Stop

@@ -1,6 +1,6 @@
 # HPEStoragePowerShellToolkit
 This is actually a Set of Toolkits combined into a single Download Package.
-The HPEStorage PowerShell Toolkit (version 3.5) and the HPE Alletra6K Nimble Storage PowerShell Toolkit (version 3.5)
+The HPEStorage PowerShell Toolkit (version 3.5.0.0) and the HPE Alletra6K Nimble Storage PowerShell Toolkit (version 3.5.0.0)
 Since these toolkits contain no conflicting file names, they can both co-exist in the same folder structure. 
 
 When you load the HPEStorage Toolkit, it will contain a command called 'Connect-HPEStorage'. You can run this command as follows
@@ -31,12 +31,6 @@ HPEStorage version 3.5. These changes to the existing toolkits are outlined in t
 These commands were tested against PowerShell version 7.x. If you run into problems, please consider downloading 
 PowerShell 7.x and run the commands in that version. To obtain PowerShell 7.x please use the following PowerShell Command.
 <code>PS:> iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI" </code>
-
-TODO: 
-1. Additionaly documentation will be added to a number commands that have no command examples.
-2. Once the Beta peroiod has expired and the fixes applied and tested, the module will be signed and posted to PSGallery
-
-Note that this toolkit is in Beta. Please download and test this toolkit (on non-production systems), and post any bugs found to this Guthub Site for final fix before the toolkit is finalized and digitally signed.
 
 Future:
 1. The next version of the Toolkit will include support for the AlletraMP
