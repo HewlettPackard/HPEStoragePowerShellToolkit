@@ -13,13 +13,16 @@ This command will connect to the array type and then load the commands specific 
 
 Additionally, to get the command list for each array type run the following commands
 
-Once connected to a Alletra9000/Primera/3Par type array, run the following command
+Once connected to a Alletra9000/Primera/3Par type array, run the following command;
+
 <code>PS:> Get-Command -Module (Get-Module HPEAlletra9000andPrimeraand3Par_*) </code>
 
-Once connected to a Alletra6000/Nimble type array, run the following command
+Once connected to a Alletra6000/Nimble type array, run the following command;
+
 <code>PS:> Get-Command -Module (Get-Module HPEAlletra6000andNimbleStorage) </code>
 
-Once connected to a Alletra6000/Nimble type array, run the following command
+Once connected to a Alletra6000/Nimble type array, run the following command;
+
 <code>PS:> Get-Command -Module (Get-Module HPEMSA) </code>
 
 Each of these toolkit is being upgraded to remove duplicate or depreciated commands, fix bugs, and streamline operations. These new versions are called out below;
@@ -30,6 +33,7 @@ HPEStorage version 3.5. These changes to the existing toolkits are outlined in t
 
 These commands were tested against PowerShell version 7.x. If you run into problems, please consider downloading 
 PowerShell 7.x and run the commands in that version. To obtain PowerShell 7.x please use the following PowerShell Command.
+
 <code>PS:> iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI" </code>
 
 Future:
