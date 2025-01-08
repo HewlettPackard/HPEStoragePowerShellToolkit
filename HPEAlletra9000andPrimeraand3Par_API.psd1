@@ -12,7 +12,7 @@
     VariablesToExport   = '*'
     AliasesToExport     = '*'
     PrivateData         = @{
-            PSData      = @{    Tags = @('Alletra' , 'Primera' , '3PAR' , 'Nimble', 'MSA') 
+            PSData      = @{    Tags = @('MP', 'B10000', 'Alletra' , 'Primera' , '3PAR' , 'Nimble', 'MSA') 
                                 LicenseUri  = 'https://github.com/HewlettPackard/HPEStoragePowerShellToolkit/blob/main/BSD-3License.txt'
                                 ProjectUri  = 'https://github.com/HewlettPackard/HPEStoragePowerShellToolkit/'
                                 IconUri     = 'https://github.com/HewlettPackard/HPEStoragePowerShellToolkit/blob/main/hpesm_pri_grn_rev_rgb.png'

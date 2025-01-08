@@ -9,7 +9,7 @@
 . $PSScriptRoot\A9.scripts\AvailableSpace.ps1 
 . $PSScriptRoot\A9.scripts\CopyOperations.ps1 
 . $PSScriptRoot\A9.scripts\CpgManagement.ps1 
-. $PSScriptRoot\A9.scripts\FilePersona.ps1
+
 . $PSScriptRoot\A9.scripts\FlashCacheOperations.ps1 
 . $PSScriptRoot\A9.scripts\HostManagement.ps1
 . $PSScriptRoot\A9.scripts\HostSetsAndVirtualVolumeSets.ps1 

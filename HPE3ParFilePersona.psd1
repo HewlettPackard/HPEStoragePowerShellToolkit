@@ -1,11 +1,11 @@
-﻿@{
-    RootModule          = 'HPE3ParPrimeA9_CLI.psm1'
+@{
+    RootModule          = 'HPE3ParFilePersona.psm1'
     ModuleVersion       = '4.0.0.0'
-    GUID                = '46a7e8f6-729c-45d0-b979-96c684fb28fe'
+    GUID                = '46a7e8f6-729c-45d0-b980-96c684fb28fe'
     Author              = 'Hewlett Packard Enterprise Development LP'
     CompanyName         = 'Hewlett Packard Enterprise Development LP'
     Copyright           = '© 2020,2021, 2024 Hewlett Packard Enterprise Development LP'
-    Description         = 'HPE Alletra MP B10000, 9000, Primera and 3PAR PowerShell Toolkit provides storage administrators the convenience of managing from a PowerShell environment.'
+    Description         = 'HPE 3PAR File Persona Commands. This module is a submodule of the HPEStorage Toolkit'
     PowerShellVersion   = '5.0'
     FunctionsToExport   = '*'
     CmdletsToExport     = '*'
@@ -13,7 +13,7 @@
     AliasesToExport     = '*'
     PrivateData         = @{
                 PSData  = @{
-                        Tags        = @('Alletra' , 'Primera' , '3PAR' , 'Nimble', 'MSA') 
+                        Tags        = @('3PAR' , 'FilePersona') 
                         LicenseUri  = 'https://github.com/HewlettPackard/HPEStoragePowerShellToolkit/blob/main/BSD-3License.txt'
                         ProjectUri  = 'https://github.com/HewlettPackard/HPEStoragePowerShellToolkit/'
                         IconUri     = 'https://github.com/HewlettPackard/HPEStoragePowerShellToolkit/blob/main/hpesm_pri_grn_rev_rgb.png'

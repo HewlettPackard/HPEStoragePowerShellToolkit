@@ -219,6 +219,11 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 	$ModPath = $CurrentModulePath + '\HPEAlletra9000andPrimeraand3Par_API.psd1'	
 	write-host "The path to the module is $ModPath" -ForegroundColor green
 	import-module $ModPath -scope global -force
+	if($ArrayType.ToLower() -eq "3par")
+		{	$ModPath = $CurrentModulePath + '\HPE3ParFilePersona.psd1'	
+			write-host "The path to the module is $ModPath" -ForegroundColor green
+			import-module $ModPath -scope global -force
+		}
 	return $SANZ
 }
 }
@@ -480,7 +485,7 @@ Function Connect-HPESAN
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]												[String]    $ArrayNameOrIPAddress,
 		[Parameter(Mandatory=$true)]
-		[ValidateSet('Alletra9000','Primera','3PAR','Nimble','Alletra6000','MSA', 'AlletraMP-B10000')]	[String]    $ArrayType,
+		[ValidateSet('AlletraMP-B10000', 'Alletra9000','Primera','3PAR','Nimble','Alletra6000','MSA')]	[String]    $ArrayType,
 		[Parameter(Mandatory=$true)]												[System.Management.Automation.PSCredential] $Credential
 		)
 Process
@@ -496,6 +501,9 @@ Process
 				connect-A9API -ArrayFQDNorIPAddress $ArrayNameOrIPAddress -SANUserName $user -SANPassword $pass -ArrayType $ArrayType
 				Write-host "To View the list of commands available to you that utilize the API please use 'Get-Command -module HPEAlletra9000AndPrimeraAnd3Par_API'." -ForegroundColor Green
 				Write-host "To View the list of commands available to you that utilize the CLI please use 'Get-Command -module HPEAlletra9000AndPrimeraAnd3Par_CLI'." -ForegroundColor Green
+				if ( $ArrayType -eq '3Par')
+				{	Write-host "Since the array is of type 3Par, the optional File Persona Commands will be loaded. To view a list of these commands use 'Get-Command -module HPE3ParFilePersona " -ForegroundColor Green
+				}
 				write-verbose 'Removing non-used modules'
 				if ( [boolean](get-module -name HPEAlletra6000andNimbleStorage) )	{ remove-module -name HPEAlletra6000andNimbleStorage }
 				if ( [boolean](get-module -name HPEMSA ) 						)	{ remove-module -name HPEMSA }

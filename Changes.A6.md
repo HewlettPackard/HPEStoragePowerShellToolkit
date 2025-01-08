@@ -7,7 +7,7 @@ README
 Table of Contents
 =================
 
-* New Features in the HPE Storage PowerShell Toolkit 3.5.0.0
+* New Features in the HPE Storage PowerShell Toolkit 4.0.0.0
 * Installing the HPE Storage PowerShell Toolkit
 * Getting help with the HPE Storage PowerShell Toolkit
 * Tips and Tricks 
@@ -16,18 +16,20 @@ Table of Contents
 1. The New PowerShell Toolkit is primarily testetd against PowerShel Version 7.2 and newer. Please use the following PowerShell command to download the latest version of PowerShell to your platform and run these commands from that newer PowerShell version. <code>iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"</code>
 
 
-New Features in the HPE Toolkit 3.5.0.0
+New Features in the HPE Toolkit 4.0.0.0
 =================================================================================
 
-The following features were added in the 3.5.0.0 version of the toolkit:
+The following features were added in the 4.0.0.0 version of the toolkit:
 
 * You can download the toolkit from Microsoft PowerShell Gallery. The toolkit is available under the module name:
 
-        "HPEStorage*", version 3.5.0.0
+        "HPEStorage*", version 4.0.0.0
 
-1. A New Get-NSHostVolume Command exists that helps the user understand the mapping between Windows Volumes and their underlying Nimble Volumes. This command works for Standard Windows Volumes as well as Cluster Volumes and Cluster Shared Volumes.
-2. A New Get-NSHostHyperVVMStorage command helps the user map individual VMs to their underlying Nimble Volumes as well as identifies if those Volumes and VMs are Clustered.
+1. Added support for the HPE Alletra Storage MP B10000 Platform
 
+No other changes were made to the Alletra 5000,6000, or Nimble Storage parts of the Toolkit
+
+* Support for the new Alletra MP, 9000 OS version 9.6
 * Support for new Nimble OS 6.0 and Alletra 6000 Storage OS 6.0.x . 
 
 

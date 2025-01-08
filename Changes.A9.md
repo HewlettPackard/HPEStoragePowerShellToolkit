@@ -212,8 +212,11 @@ This will return a small list of commands that are used ONLY for connecting your
 
 	PS C:\> Get-Command -module HPEAlletra9000andPrimeraand3Par_CLI 
 	PS C:\> Get-Command -module HPEAlletra9000andPrimeraand3Par_API 
+	PS C:\> Get-Command -module HPE3ParFilePersona
 
-These two commands will show you the commands available for each of the connection types. Using the Connection command in the base Module will attempt both a CLI and API connection at the same time. If the API connectivity is not enabled, and the connection attempt fails, the module containing those API based commands will not be loaded. Likewise If the CLI SSH module is unavailabe or the CLI connection is denied, the CLI based module will not be loaded. 
+	* this last sub-module is only availabe on 3par type arrays.
+
+These commands will show you the commands available for each of the connection types. Using the Connection command in the base Module will attempt both a CLI and API connection at the same time. If the API connectivity is not enabled, and the connection attempt fails, the module containing those API based commands will not be loaded. Likewise If the CLI SSH module is unavailabe or the CLI connection is denied, the CLI based module will not be loaded. 
 
 To get cmdlet specific help, run the cmdlet:
 	PS C:\> Get-Help <cmdlet name>	
@@ -280,6 +283,15 @@ The following shows that the command can be run in a variaty of ways, and what a
 
 Major Design Changes
 -------------------------------------------------------------------------------------------------
+- Added support for the HPE Alletra Storage MP B10000 Platform
+- All File Persona Commands have been moved into a seperate module since they only apply to 3Par users, and only load when connecting to a 3par type array.
+- Removing the File Persona Commands from the Main Stream as well as refactoring code, reduces the command count an additional 25 commands.
+* Support for the new Alletra MP, 9000 OS version 9.6
+
+Major Changes introduced in the previous (3.5.0) toolkit
+-------------------------------------------------------------------
+These are retained in this changes document to support customers updating from previous versions of the toolkit to this version who skip version 3.5.0. 
+
 - Command Renaming
 	Previous versions of the toolkit used improper PowerShell Naming Criteria and as such there were a number of command collisions with well known Microsoft PowerShell
 	commands such as Get-Host. To follow best practices, all Commands follow the Microsoft Recommended naming scheme as follows.

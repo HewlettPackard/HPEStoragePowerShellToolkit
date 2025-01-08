@@ -3,7 +3,7 @@
 . $PSScriptRoot\A9.GLOBAL\Logger.ps1
 if  ( -not ($HPEStorageModuleConnected)  -or $HPEStorageA9CLIEnable  )
     {   # Detected that I am being loaded via the HPEStorageModlue, so only load if I was able to successfully connect via CLI
-        Write-Host "HPEAlletra9000andPrimaraAnd3Par Module will load all CLI based commands"
+        Write-Host "HPE Alletra MP-B10000, 9000, Primara, And 3Par Module will load all CLI based commands"
         . $PSScriptRoot\A9.CLI\AdaptiveOptimization.ps1
         . $PSScriptRoot\A9.CLI\ConfigWebServicesAPI.ps1
         . $PSScriptRoot\A9.CLI\CPGManagement.ps1
@@ -30,9 +30,8 @@ if  ( -not ($HPEStorageModuleConnected)  -or $HPEStorageA9CLIEnable  )
         . $PSScriptRoot\A9.CLI\Vasa.ps1
         . $PSScriptRoot\A9.CLI\StorageFederation.ps1
         . $PSScriptRoot\A9.CLI\VirtualVolumeManagement.ps1
-        . $PSScriptRoot\A9.CLI\vLunManagement.ps1
     }
-else{   Write-warning "The HPEAlletra9000andPrimeraAnd3Par Module is loaded and read, but CLI Based commands are unavailable."
+else{   Write-warning "The HPE Alletra MP-B10000, 9000, Primera, And 3Par Module is loaded and read, but CLI Based commands are unavailable."
     }
 if  ( -not ($HPEStorageModuleConnected) -or $HPEStorageA9APIEnable )
     {   . $PSScriptRoot\A9.scripts\AoConfigurationInformation.ps1 
@@ -54,7 +53,7 @@ if  ( -not ($HPEStorageModuleConnected) -or $HPEStorageA9APIEnable )
         . $PSScriptRoot\A9.scripts\WsapiUserAndRoleInformation.ps1
         
     }
-else{   Write-warning "The HPEAlletra9000andPrimeraAnd3Par Module is loaded and read, but WSAPI Based commands are unavailable."
+else{   Write-warning "The HPE Alletra MP-B10000, 9000, Primera, And3Par Module is loaded and read, but WSAPI Based commands are unavailable."
     }
 
 Export-ModuleMember -Function *  
