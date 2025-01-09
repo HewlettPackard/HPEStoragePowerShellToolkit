@@ -36,11 +36,16 @@ Function Get-A9SystemReportAlertCrit
 	Displays only criteria that are disabled.
 .PARAMETER Critical
 	Displays only criteria that have critical severity.
+.NOTES
+	Authority:Any role in the system
+	Usage:
+	- Both options and conditions are displayed in the Conditions column. The only exception is that frequency options (-daily, -hourly, or -hires) are only displayed under the Freq column.
+	- By default, all criteria are shown (all frequencies, enabled, disabled and all severities).
 #>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Hourly ,
-		[Parameter()]	[switch]    $Daily ,
-		[Parameter()]	[switch]    $Hires ,
+[CmdletBinding(DefaultParameterSetName='default')]
+param(	[Parameter(ParameterSetName='Hourly',mandatory)]	[switch]	$Hourly ,
+		[Parameter(ParameterSetName='Daily',mandatory)]		[switch]    $Daily ,
+		[Parameter(ParameterSetName='Hires',mandatory)]		[switch]    $Hires ,
 		[Parameter()]	[switch]    $Major ,
 		[Parameter()]	[switch]    $Minor ,
 		[Parameter()]	[switch]    $Info ,
@@ -54,21 +59,26 @@ Begin
 Process	
 {	$version1 = Get-Version -S  -SANConnection $SANConnection
 	if( $version1 -lt "3.2.1")	{	return "Current OS version $version1 does not support these cmdlet"	}
-	$srinfocmd = "showsralertcrit "
-	if($Hourly)		{	$srinfocmd += " -hourly "	}
-	if($Daily)		{	$srinfocmd += " -daily "	}
-	if($Hires)		{	$srinfocmd += " -hires "	}
-	if($Major)		{	$srinfocmd += " -major "	}
-	if($Minor)		{	$srinfocmd += " -minor "	}
-	if($Info)		{	$srinfocmd += " -info "		}
-	if($Enabled)	{	$srinfocmd += " -enabled "	}
-	if($Disabled)	{	$srinfocmd += " -disabled "	}
-	if($Critical)	{	$srinfocmd += " -critical "	}
+	$srinfocmd = 'showsralertcrit '
+	if($Hourly)		{	$srinfocmd += ' -hourly '	}
+	if($Daily)		{	$srinfocmd += ' -daily '	}
+	if($Hires)		{	$srinfocmd += ' -hires '	}
+	if($Major)		{	$srinfocmd += ' -major '	}
+	if($Minor)		{	$srinfocmd += ' -minor '	}
+	if($Info)		{	$srinfocmd += ' -info '		}
+	if($Enabled)	{	$srinfocmd += ' -enabled '	}
+	if($Disabled)	{	$srinfocmd += ' -disabled '	}
+	if($Critical)	{	$srinfocmd += ' -critical '	}
 	write-verbose "Get alert criteria command => $srinfocmd"
 	$Result = Invoke-A9CLICommand -cmds  $srinfocmd	
-	if($Result -match "Invalid")	{	return "FAILURE : $Result"	}
-	if($Result -match "Error")		{	return "FAILURE : $Result"	}
-	if($Result -match "No criteria listed")	{	return "No srcriteria listed"	}
+
+	if(( $Result -match "Invalid") -or ($Result -match "Error"))	
+		{	write-error "FAILURE : $Result" 
+			return 	
+		}
+	if($Result -match "No criteria listed")	
+		{	write-warning "No srcriteria listed"
+			return 	}
 	$tempFile = [IO.Path]::GetTempFileName()
 	$range1 = $Result.count-3
 	foreach ($s in  $Result[0..$range1] )

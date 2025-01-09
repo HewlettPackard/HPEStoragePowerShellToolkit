@@ -17,13 +17,13 @@ Function Start-A9FSNDMP
 [CmdletBinding()]
 param()		
 Begin	
-{	Test-A9Connection -ClientType 'SshClient' 
-}
+	{	Test-A9Connection -ClientType 'SshClient' 
+	}
 Process
-{	$cmd= "startfsndmp "	
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	Return $Result	
-}
+	{	$cmd= "startfsndmp "	
+		$Result = Invoke-A9CLICommand -cmds  $cmd
+		Return $Result	
+	}
 }
 
 Function Stop-A9FSNDMP
@@ -41,12 +41,12 @@ Function Stop-A9FSNDMP
 [CmdletBinding()]
 param()		
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$cmd= "stopfsndmp "
-	$Result = Invoke-A9CLICommand -cmds  $cmd	
-	write-verbose "  Executing  Stop-FSNDMP command that displays information iSNS table for iSCSI ports in the system  "	
-	return $Result	
-}
+	{	$cmd= "stopfsndmp "
+		$Result = Invoke-A9CLICommand -cmds  $cmd	
+		write-verbose "  Executing  Stop-FSNDMP command that displays information iSNS table for iSCSI ports in the system  "	
+		return $Result	
+	}
 }

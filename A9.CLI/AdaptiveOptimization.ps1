@@ -2,76 +2,6 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Get-A9AdaptiveOptimizationConfig
-{
-<#
-.SYNOPSIS
-	Show Adaptive Optimization configurations.
-.DESCRIPTION
-	This command shows Adaptive Optimization configurations in the system.
-.PARAMETER Domain
-	Shows only AO configurations that are in domains with names matching one or more of the <domain_name_or_pattern> argument. This option
-	does not allow listing objects within a domain of which the user is not a member. Patterns are glob-style (shell-style) patterns (see help on sub,globpat)
-.PARAMETER AOConfigurationName
-.NOTES
-	This command requires a SSH type connection.
-
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$Domain,
-		[Parameter()]	[String]	$ConfigName
-)
-begin
-{	Test-A9Connection -ClientType 'SshClient' 
-}
-process
-{	$Cmd = " showaocfg "
-	if($Domain)	{	$Cmd += " -domain $Domain "	}
-	if($ConfigName)	{	$Cmd += " $ConfigName " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count -2  
-			$oneTimeOnly = "True"
-			foreach ($s in  $Result[1..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")
-					$s= [regex]::Replace($s,"^ ","")
-					$s= [regex]::Replace($s,"^ ","")		
-					$s= [regex]::Replace($s," +",",")		
-					$s= [regex]::Replace($s,"-","")		
-					$s= $s.Trim()		
-					if($oneTimeOnly -eq "True")
-						{	$sTemp1=$s				
-							$sTemp = $sTemp1.Split(',')							
-							$sTemp[2] = "T0(CPG)"
-							$sTemp[3] = "T1(CPG)"
-							$sTemp[4] = "T2(CPG)"
-							$sTemp[5] = "T0Min(MB)"
-							$sTemp[6] = "T1Min(MB)"
-							$sTemp[7] = "T2Min(MB)"
-							$sTemp[8] = "T0Max(MB)"
-							$sTemp[9] = "T1Max(MB)"
-							$sTemp[10] = "T2Max(MB)"
-							$sTemp[11] = "T0Warn(MB)"
-							$sTemp[12] = "T1Warn(MB)"
-							$sTemp[13] = "T2Warn(MB)"
-							$sTemp[14] = "T0Limit(MB)"
-							$sTemp[15] = "T1Limit(MB)"
-							$sTemp[16] = "T2Limit(MB)"
-							$newTemp= [regex]::Replace($sTemp,"^ ","")			
-							$newTemp= [regex]::Replace($sTemp," ",",")				
-							$newTemp= $newTemp.Trim()
-							$s=$newTemp			
-						}
-					Add-Content -Path $tempfile -Value $s
-					$oneTimeOnly = "False"		
-				}
-			Import-Csv $tempFile 
-			Remove-Item  $tempFile 
-		}
-	else{	Return $Result	}
-}
-}
 
 Function New-A9AdaptiveOptimizationConfig
 {
@@ -140,24 +70,24 @@ param(	[Parameter()]	[String]	$T0cpg,
 		[Parameter(Mandatory=$True)]	[String]	$AOConfigurationName
 )
 begin
-{	Test-A9Connection -ClientType 'SshClient' 
-}
+	{	Test-A9Connection -ClientType 'SshClient' 
+	}
 process
-{	$Cmd = " createaocfg "
-	if($T0cpg)					{	$Cmd += " -t0cpg $T0cpg " }
-	if($T1cpg)					{	$Cmd += " -t1cpg $T1cpg " }
-	if($T2cpg)					{	$Cmd += " -t2cpg $T2cpg "}
-	if($Mode)					{	$Cmd += " -mode $Mode "}
-	if($T0min)					{	$Cmd += " -t0min $T0min "}
-	if($T1min)					{	$Cmd += " -t1min $T1min "}
-	if($T2min)					{	$Cmd += " -t2min $T2min "}
-	if($T0max)					{	$Cmd += " -t0max $T0max "	}
-	if($T1max)					{	$Cmd += " -t1max $T1max "}
-	if($T2max)					{	$Cmd += " -t2max $T2max "}
-	if($AOConfigurationName) 	{	$Cmd += " $AOConfigurationName "}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-} 
+	{	$Cmd = " createaocfg "
+		if($T0cpg)					{	$Cmd += " -t0cpg $T0cpg " }
+		if($T1cpg)					{	$Cmd += " -t1cpg $T1cpg " }
+		if($T2cpg)					{	$Cmd += " -t2cpg $T2cpg "}
+		if($Mode)					{	$Cmd += " -mode $Mode "}
+		if($T0min)					{	$Cmd += " -t0min $T0min "}
+		if($T1min)					{	$Cmd += " -t1min $T1min "}
+		if($T2min)					{	$Cmd += " -t2min $T2min "}
+		if($T0max)					{	$Cmd += " -t0max $T0max "	}
+		if($T1max)					{	$Cmd += " -t1max $T1max "}
+		if($T2max)					{	$Cmd += " -t2max $T2max "}
+		if($AOConfigurationName) 	{	$Cmd += " $AOConfigurationName "}
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	} 
 }
 
 Function Remove-A9AdaptiveOptimizationConfig

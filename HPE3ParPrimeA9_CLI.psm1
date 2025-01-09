@@ -6,7 +6,7 @@
 . $PSScriptRoot\A9.GLOBAL\Disk.ps1
 
 
-. $PSScriptRoot\A9.CLI\AdaptiveOptimization.ps1
+
 . $PSScriptRoot\A9.CLI\ConfigWebServicesAPI.ps1
 . $PSScriptRoot\A9.CLI\CPGManagement.ps1
 . $PSScriptRoot\A9.CLI\Cage.ps1

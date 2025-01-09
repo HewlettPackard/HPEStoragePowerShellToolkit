@@ -5,7 +5,6 @@
 . $PSScriptRoot\A9.GLOBAL\Task.ps1
 . $PSScriptRoot\A9.GLOBAL\Disk.ps1
 
-. $PSScriptRoot\A9.scripts\AoConfigurationInformation.ps1 
 . $PSScriptRoot\A9.scripts\AvailableSpace.ps1 
 . $PSScriptRoot\A9.scripts\CopyOperations.ps1 
 . $PSScriptRoot\A9.scripts\CpgManagement.ps1 
