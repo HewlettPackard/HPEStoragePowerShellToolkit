@@ -1,6 +1,7 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
+## These commands are only used by classic 3Par devices. 
 
 
 Function New-A9AdaptiveOptimizationConfig
@@ -53,7 +54,6 @@ Function New-A9AdaptiveOptimizationConfig
 	Specifies an AO configuration name up to 31 characters in length.
 .NOTES
 	This command requires a SSH type connection.
-
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$T0cpg,
@@ -109,20 +109,20 @@ param(	[Parameter()]	[String]	$Pattern,
 		[Parameter()]	[String]	$AOConfigurationName
 )
 begin
-{	Test-A9Connection -ClientType 'SshClient' 
-} 
+	{	Test-A9Connection -ClientType 'SshClient' 
+	} 
 process
-{	$Cmd = " removeaocfg -f "
-	if($Pattern)
-		{	$Cmd += " -pat $Pattern "
-			if($AOConfigurationName)	{	Return "Either Pattern or AOConfigurationName."	}
-		}
-	if($AOConfigurationName)
-		{	$Cmd += " $AOConfigurationName "
-		}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-} 
+	{	$Cmd = " removeaocfg -f "
+		if($Pattern)
+			{	$Cmd += " -pat $Pattern "
+				if($AOConfigurationName)	{	Return "Either Pattern or AOConfigurationName."	}
+			}
+		if($AOConfigurationName)
+			{	$Cmd += " $AOConfigurationName "
+			}
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	} 
 }
 
 Function Start-A9AdaptiveOptimizationConfig
@@ -133,18 +133,6 @@ Function Start-A9AdaptiveOptimizationConfig
 .DESCRIPTION
 	This command starts execution of an Adaptive Optimization (AO) configuration using data region level performance data collected for the
 	specified number of hours.
-.EXAMPLE
-	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 3h -AocfgName prodaocfg
-	
-	Start execution of AO config prodaocfg using data for the past 3 hours:
-.EXAMPLE	
-	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 12h -Etsecs 3h -Maxrunh 6 -AocfgName prodaocfg
-
-	Start execution of AO config prodaocfg using data from 12 hours ago until 3 hours ago, allowing up to 6 hours to complete:
-.EXAMPLE
-	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 3h -Vv "set:dbvvset" -AocfgName prodaocfg
-
-	Start execution of AO for the vvset dbvvset in AOCFG prodaocfg using data for the past 3 hours:	
 .PARAMETER Btsecs
     Select the begin time in seconds for the analysis period. The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
@@ -225,9 +213,20 @@ Function Start-A9AdaptiveOptimizationConfig
 	either the CPG sdgl, sdgw, or maximum possible growth size.
 .PARAMETER AocfgName
 	The AO configuration name, using up to 31 characters.
+.EXAMPLE
+	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 3h -AocfgName prodaocfg
+	
+	Start execution of AO config prodaocfg using data for the past 3 hours:
+.EXAMPLE	
+	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 12h -Etsecs 3h -Maxrunh 6 -AocfgName prodaocfg
+
+	Start execution of AO config prodaocfg using data from 12 hours ago until 3 hours ago, allowing up to 6 hours to complete:
+.EXAMPLE
+	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 3h -Vv "set:dbvvset" -AocfgName prodaocfg
+
+	Start execution of AO for the vvset dbvvset in AOCFG prodaocfg using data for the past 3 hours:	
 .NOTES
 	This command requires a SSH type connection.
-
 #>
 [CmdletBinding()]
 param(
@@ -250,28 +249,28 @@ param(
 	[Parameter()]	[String]	$AocfgName
 )
 begin 
-{	Test-A9Connection -ClientType 'SshClient' 
-}
+	{	Test-A9Connection -ClientType 'SshClient' 
+	}
 process
-{	$Cmd = " startao "
-	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
-	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
-	if($Compact)	{	$Cmd += " -compact $Compact " }
-	if($Dryrun)		{	$Cmd += " -dryrun " }
-	if($Maxrunh)	{	$Cmd += " -maxrunh $Maxrunh " }
-	if($Min_iops)	{	$Cmd += " -min_iops $Min_iops " }
-	if($Mode)		{	$Cmd += " -mode $Mode " }
-	if($Vv)			{	$Cmd += " -vv $Vv " }
-	if($T0min)		{	$Cmd += " -t0min $T0min " }
-	if($T1min)		{	$Cmd += " -t1min $T1min " }
-	if($T2min)		{	$Cmd += " -t2min $T2min " }
-	if($T0max)		{	$Cmd += " -t0max $T0max " }
-	if($T1max)		{	$Cmd += " -t1max $T1max " }
-	if($T2max)		{	$Cmd += " -t2max $T2max " }
-	if($AocfgName) 	{	$Cmd += " $AocfgName " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-} 
+	{	$Cmd = " startao "
+		if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
+		if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
+		if($Compact)	{	$Cmd += " -compact $Compact " }
+		if($Dryrun)		{	$Cmd += " -dryrun " }
+		if($Maxrunh)	{	$Cmd += " -maxrunh $Maxrunh " }
+		if($Min_iops)	{	$Cmd += " -min_iops $Min_iops " }
+		if($Mode)		{	$Cmd += " -mode $Mode " }
+		if($Vv)			{	$Cmd += " -vv $Vv " }
+		if($T0min)		{	$Cmd += " -t0min $T0min " }
+		if($T1min)		{	$Cmd += " -t1min $T1min " }
+		if($T2min)		{	$Cmd += " -t2min $T2min " }
+		if($T0max)		{	$Cmd += " -t0max $T0max " }
+		if($T1max)		{	$Cmd += " -t1max $T1max " }
+		if($T2max)		{	$Cmd += " -t2max $T2max " }
+		if($AocfgName) 	{	$Cmd += " $AocfgName " }
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	} 
 }
 
 Function Update-A9AdaptiveOptimizationConfig
@@ -342,23 +341,23 @@ param(
 	[Parameter(Mandatory=$True)][String]	$AOConfigurationName
 )
 begin
-{	Test-A9Connection -ClientType 'SshClient' 
-}
+	{	Test-A9Connection -ClientType 'SshClient' 
+	}
 process 
-{	$Cmd = " setaocfg "
-	if($T0cpg)	{	$Cmd += " -t0cpg $T0cpg " 	}
-	if($T1cpg) 	{	$Cmd += " -t1cpg $T1cpg " 	}
-	if($T2cpg) 	{	$Cmd += " -t2cpg $T2cpg " 	}
-	if($Mode) 	{	$Cmd += " -mode $Mode " 	} 
-	if($T0min)	{	$Cmd += " -t0min $T0min " 	}
-	if($T1min) 	{	$Cmd += " -t1min $T1min " 	}
-	if($T2min) 	{	$Cmd += " -t2min $T2min " 	}
-	if($T0max) 	{	$Cmd += " -t0max $T0max " 	}
-	if($T1max) 	{	$Cmd += " -t1max $T1max " 	}
-	if($T2max) 	{	$Cmd += " -t2max $T2max " 	}
-	if($NewName){	$Cmd += " -name $NewName " 	} 
-	if($AOConfigurationName) {	$Cmd += " $AOConfigurationName " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-} 
+	{	$Cmd = " setaocfg "
+		if($T0cpg)	{	$Cmd += " -t0cpg $T0cpg " 	}
+		if($T1cpg) 	{	$Cmd += " -t1cpg $T1cpg " 	}
+		if($T2cpg) 	{	$Cmd += " -t2cpg $T2cpg " 	}
+		if($Mode) 	{	$Cmd += " -mode $Mode " 	} 
+		if($T0min)	{	$Cmd += " -t0min $T0min " 	}
+		if($T1min) 	{	$Cmd += " -t1min $T1min " 	}
+		if($T2min) 	{	$Cmd += " -t2min $T2min " 	}
+		if($T0max) 	{	$Cmd += " -t0max $T0max " 	}
+		if($T1max) 	{	$Cmd += " -t1max $T1max " 	}
+		if($T2max) 	{	$Cmd += " -t2max $T2max " 	}
+		if($NewName){	$Cmd += " -name $NewName " 	} 
+		if($AOConfigurationName) {	$Cmd += " $AOConfigurationName " }
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	} 
 }

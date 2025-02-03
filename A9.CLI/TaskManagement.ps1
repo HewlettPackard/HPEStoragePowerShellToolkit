@@ -56,7 +56,6 @@ process
   }
 }
 
-
 Function Wait-A9Task
 {
 <#
@@ -84,7 +83,7 @@ Function Wait-A9Task
 param(  [Parameter(parametersetname='Loud',mandatory)]  [Switch]  $Detailed, 
         [Parameter(parametersetname='Loud',mandatory)] 
         [Parameter(parametersetname='Quiet',mandatory)] [String]  $TaskID,
-        [Parameter(parametersetname='Quiet',mandatory)] [Switch]  $Queit
+        [Parameter(parametersetname='Quiet',mandatory)] [Switch]  $Quiet
     )	
 Begin
   { Test-A9Connection -ClientType 'SshClient'

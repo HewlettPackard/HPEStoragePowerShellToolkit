@@ -2963,18 +2963,6 @@ Function Get-A9SRStatPhysicalDisk
     System reporter performance reports for physical disks (PDs).
 .DESCRIPTION
     System reporter performance reports for physical disks (PDs).
-.EXAMPLE
-    PS:> Get-A9SRStatPD_CLI 
-
-	System reporter performance reports for physical disks (PDs).
-.EXAMPLE
-    PS:> Get-A9SRStatPD_CLI -Hourly -btsecs -24h
-
-	example displays aggregate hourly performance statistics for all physical disks beginning 24 hours ago:
-.EXAMPLE
-    PS:> Get-A9SRStatPD_CLI -Groupby SPEED
-.EXAMPLE
-    Get-SRStatPD -rpmSpeed 100
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
@@ -3014,6 +3002,18 @@ Function Get-A9SRStatPhysicalDisk
 	Limit the data to disks of the specified RPM. Allowed speeds are 7, 10, 15, 100 and 150
 .PARAMETER PDID
 	PDs with IDs that match either the specified PDID or glob-style pattern are included. This specifier can be repeated to include multiple PDIDs or patterns. If not specified, all PDs are included.
+.EXAMPLE
+    PS:> Get-A9SRStatPD_CLI 
+
+	System reporter performance reports for physical disks (PDs).
+.EXAMPLE
+    PS:> Get-A9SRStatPD_CLI -Hourly -btsecs -24h
+
+	example displays aggregate hourly performance statistics for all physical disks beginning 24 hours ago:
+.EXAMPLE
+    PS:> Get-A9SRStatPD_CLI -Groupby SPEED
+.EXAMPLE
+    Get-SRStatPD -rpmSpeed 100
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -3024,7 +3024,8 @@ param(	[Parameter()]	[switch]	$attime,
 		[Parameter()]	[switch]    $Hourly ,		
 		[Parameter()]	[switch]    $Daily ,		
 		[Parameter()]	[switch]    $Hires ,
-		[Parameter()]	[String]	$groupby,
+		[Parameter()]	[ValidateSet("PDID","PORT_N","PORT_S","PORT_P","DISK_TYPE","SPEED")]
+						[String]	$groupby,
 		[Parameter()]	[ValidateSet("FC","NL","SSD")]
 						[String]	$diskType,
 		[Parameter()]	[ValidateSet("7","10","15","100","150")]
@@ -3032,64 +3033,59 @@ param(	[Parameter()]	[switch]	$attime,
 		[Parameter()]	[String]	$PDID
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
-}
+	{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+	}
 Process	
-{	$srinfocmd = "srstatpd "
-	if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
-	if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
-	if($groupby)
-		{	$commarr = "PDID","PORT_N","PORT_S","PORT_P","DISK_TYPE","SPEED"
-			$lista = $groupby.split(",")
-			foreach($suba in $lista)
-				{	if(-not ($commarr -eq $suba.toUpper() ) ){	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
-				}
-			$srinfocmd += " -groupby $groupby"
-		}		
-	if($Hourly)	{	$srinfocmd += " -hourly"	}
-	if($Daily)	{	$srinfocmd += " -daily"		}
-	if($Hires)	{	$srinfocmd += " -hires"		}
-	if($diskType){	$srinfocmd += " -disk_type $diskType"	}
-	if($rpmSpeed){	$srinfocmd += " -rpm $rpmSpeed"	}
-	if($PDID)	{	$srinfocmd += " $PDID "	}
-	$tempFile = [IO.Path]::GetTempFileName()
-	if($attime)
-		{	$srinfocmd += " -attime "
-			write-verbose "System reporter command => $srinfocmd"
-			if($groupby)	{	$optionname = $groupby.toUpper()	}
-			else			{	$optionname = "PDID"	}
-			Add-Content -Path $tempFile -Value "PDID,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
-			$rangestart = "3"
-		}
-	elseif($groupby)
-		{	$optionname = $groupby.toUpper()
-			$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,$optionname,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
-		}
-	else
-		{	$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
-		}
-	$Result = Invoke-A9CLICommand -cmds  $srinfocmd		
-	if($Result -contains "FAILURE")
-		{	Remove-Item  $tempFile
-			return "FAILURE : $Result"
-		}
-	$range1  = $Result.count
-	if($range1 -le "4")
-		{	Remove-Item  $tempFile
-			return "No data available"
-		}
-	$range1 = $range1 - 3
-	foreach ($s in  $Result[$rangestart..$range1] )
-		{	$s= [regex]::Replace($s,"^ +","")			
-			$s= [regex]::Replace($s," +"," ")			
-			$s= [regex]::Replace($s," ",",")		
-			Add-Content -Path $tempFile -Value $s
-		}
-	Import-Csv $tempFile	
-	Remove-Item  $tempFile
-}
+	{	$srinfocmd = "srstatpd "
+		if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
+		if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
+		if($groupby){	$srinfocmd += " -groupby $groupby"	}		
+		if($Hourly)	{	$srinfocmd += " -hourly"	}
+		if($Daily)	{	$srinfocmd += " -daily"		}
+		if($Hires)	{	$srinfocmd += " -hires"		}
+		if($diskType){	$srinfocmd += " -disk_type $diskType"	}
+		if($rpmSpeed){	$srinfocmd += " -rpm $rpmSpeed"	}
+		if($PDID)	{	$srinfocmd += " $PDID "	}
+		$tempFile = [IO.Path]::GetTempFileName()
+		if($attime)
+			{	$srinfocmd += " -attime "
+				write-verbose "System reporter command => $srinfocmd"
+				if($groupby)	{	$optionname = $groupby.toUpper()	}
+				else			{	$optionname = "PDID"	}
+				Add-Content -Path $tempFile -Value "PDID,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
+				$rangestart = "3"
+			}
+		elseif($groupby)
+			{	$optionname = $groupby.toUpper()
+				$rangestart = "2"
+				Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,$optionname,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
+			}
+		else
+			{	$rangestart = "2"
+				Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
+			}
+		$Result = Invoke-A9CLICommand -cmds  $srinfocmd		
+		if($Result -contains "FAILURE")
+			{	Remove-Item  $tempFile
+				write-error "FAILURE" 
+				return $Result
+			}
+		$range1  = $Result.count
+		if($range1 -le "4")
+			{	Remove-Item  $tempFile
+				return "No data available"
+			}
+		$range1 = $range1 - 3
+		foreach ($s in  $Result[$rangestart..$range1] )
+			{	$s= [regex]::Replace($s,"^ +","")			
+				$s= [regex]::Replace($s," +"," ")			
+				$s= [regex]::Replace($s," ",",")		
+				Add-Content -Path $tempFile -Value $s
+			}
+		$returndata = Import-Csv $tempFile	
+		Remove-Item  $tempFile
+		return $returndata
+	}
 }
 
 Function Get-A9SRStatfssmb
@@ -3177,23 +3173,23 @@ param(	[Parameter()]	[switch]	$Attime,
 		[Parameter()]	[String]	$Sortcol
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$Cmd = " srstatfssmb "
-	if($Attime)		{	$Cmd += " -attime " }
-	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
-	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
-	if($Hires)		{	$Cmd += " -hires " }
-	if($Hourly)		{	$Cmd += " -hourly " }
-	if($Daily)		{	$Cmd += " -daily " }
-	if($Summary)	{	$Cmd += " -summary $Summary " }
-	if($Groupby)	{	$Cmd += " -groupby $Groupby " }
-	if($Compareby)	{	$Cmd += " -compareby $Compareby " }
-	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
+	{	$Cmd = " srstatfssmb "
+		if($Attime)		{	$Cmd += " -attime " }
+		if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
+		if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
+		if($Hires)		{	$Cmd += " -hires " }
+		if($Hourly)		{	$Cmd += " -hourly " }
+		if($Daily)		{	$Cmd += " -daily " }
+		if($Summary)	{	$Cmd += " -summary $Summary " }
+		if($Groupby)	{	$Cmd += " -groupby $Groupby " }
+		if($Compareby)	{	$Cmd += " -compareby $Compareby " }
+		if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
 }
 
 Function Get-A9SRStatLD
@@ -3269,66 +3265,66 @@ param(	[Parameter()]	[switch]	$attime,
 		[Parameter()]	[String]	$LDName
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
-}
+	{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+	}
 Process	
-{	$srinfocmd = "srstatld "
-	if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
-	if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
-	if($groupby)
-		{	$commarr = "LDID","DOM_NAME","LD_NAME","CPG_NAME","NODE"
-			$lista = $groupby.split(",")
-			foreach($suba in $lista)
-				{	if( -not ($commarr -eq $suba.toUpper() ) )
-					{	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
-				}
-			$srinfocmd += " -groupby $groupby"
-		}		
-	if($Hourly)	{	$srinfocmd += " -hourly"	}
-	if($Daily)	{	$srinfocmd += " -daily"		}
-	if($Hires)	{	$srinfocmd += " -hires"		}
-	if($Node)	{	$nodes = $Node.split(",")
-					$srinfocmd += " $nodes"			
-				}
-	if($cpgName){	$srinfocmd += " -cpg $cpgName "}
-	if($LDName)	{	$srinfocmd += " $LDName "	}
-	$tempFile = [IO.Path]::GetTempFileName()
-	if($attime)	{	$srinfocmd += " -attime "
-					write-verbose "System reporter command => $srinfocmd"
-					if($groupby)	{	$optionname = $groupby.toUpper()	}
-					else			{	$optionname = "LD_NAME"				}
-					Add-Content -Path $tempFile -Value "LD_NAME,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"												
-					$rangestart = "3"		
-				}
-	elseif($groupby)
-		{	$optionname = $groupby.toUpper()
-			$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,$optionname,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
-		}
-	else{	$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
-		}
-	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	if($Result -contains "FAILURE")
-		{	Remove-Item  $tempFile
-			return "FAILURE : $Result"
-		}
-	$range1  = $Result.count
-	if($range1 -le "4")
-		{	Remove-Item  $tempFile
-			return "No data available"
-		}
-	$range1 = $range1 - 3
-	foreach ($s in  $Result[$rangestart..$range1] )
-		{	$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +"," ")
-			$s= [regex]::Replace($s," ",",")
-			Add-Content -Path $tempFile -Value $s
-		}
-	Import-Csv $tempFile	
-	Remove-Item  $tempFile
-}
+	{	$srinfocmd = "srstatld "
+		if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
+		if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
+		if($groupby)
+			{	$commarr = "LDID","DOM_NAME","LD_NAME","CPG_NAME","NODE"
+				$lista = $groupby.split(",")
+				foreach($suba in $lista)
+					{	if( -not ($commarr -eq $suba.toUpper() ) )
+						{	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
+					}
+				$srinfocmd += " -groupby $groupby"
+			}		
+		if($Hourly)	{	$srinfocmd += " -hourly"	}
+		if($Daily)	{	$srinfocmd += " -daily"		}
+		if($Hires)	{	$srinfocmd += " -hires"		}
+		if($Node)	{	$nodes = $Node.split(",")
+						$srinfocmd += " $nodes"			
+					}
+		if($cpgName){	$srinfocmd += " -cpg $cpgName "}
+		if($LDName)	{	$srinfocmd += " $LDName "	}
+		$tempFile = [IO.Path]::GetTempFileName()
+		if($attime)	{	$srinfocmd += " -attime "
+						write-verbose "System reporter command => $srinfocmd"
+						if($groupby)	{	$optionname = $groupby.toUpper()	}
+						else			{	$optionname = "LD_NAME"				}
+						Add-Content -Path $tempFile -Value "LD_NAME,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"												
+						$rangestart = "3"		
+					}
+		elseif($groupby)
+			{	$optionname = $groupby.toUpper()
+				$rangestart = "2"
+				Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,$optionname,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
+			}
+		else{	$rangestart = "2"
+				Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
+			}
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
+		if($Result -contains "FAILURE")
+			{	Remove-Item  $tempFile
+				return "FAILURE : $Result"
+			}
+		$range1  = $Result.count
+		if($range1 -le "4")
+			{	Remove-Item  $tempFile
+				return "No data available"
+			}
+		$range1 = $range1 - 3
+		foreach ($s in  $Result[$rangestart..$range1] )
+			{	$s= [regex]::Replace($s,"^ +","")
+				$s= [regex]::Replace($s," +"," ")
+				$s= [regex]::Replace($s," ",",")
+				Add-Content -Path $tempFile -Value $s
+			}
+		Import-Csv $tempFile	
+		Remove-Item  $tempFile
+	}
 }
 
 Function Get-A9SRStatfssnapshot
@@ -3419,24 +3415,24 @@ param(	[Parameter()]	[switch]	$Attime,
 		[Parameter()]	[String]	$Sortcol
 )
 Begin
-{	Test-A9Connection -ClientType SshClient
-}
+	{	Test-A9Connection -ClientType SshClient
+	}
 Process	
-{	$Cmd = " srstatfssnapshot "
-	if($Attime)		{	$Cmd += " -attime " 		}
-	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
-	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs "	}
-	if($Hires)		{	$Cmd += " -hires "			}
-	if($Hourly)		{	$Cmd += " -hourly "			}
-	if($Daily)		{	$Cmd += " -daily "			}
-	if($Summary) 	{	$Cmd += " -summary $Summary "}
-	if($Groupby)	{	$Cmd += " -groupby $Groupby " }
-	if($Compareby)	{	$Cmd += " -compareby $Compareby "}
-	if($Node)		{	$Cmd += " -node $Node "		}
-	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
+	{	$Cmd = " srstatfssnapshot "
+		if($Attime)		{	$Cmd += " -attime " 		}
+		if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
+		if($Etsecs)		{	$Cmd += " -etsecs $Etsecs "	}
+		if($Hires)		{	$Cmd += " -hires "			}
+		if($Hourly)		{	$Cmd += " -hourly "			}
+		if($Daily)		{	$Cmd += " -daily "			}
+		if($Summary) 	{	$Cmd += " -summary $Summary "}
+		if($Groupby)	{	$Cmd += " -groupby $Groupby " }
+		if($Compareby)	{	$Cmd += " -compareby $Compareby "}
+		if($Node)		{	$Cmd += " -node $Node "		}
+		if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "}
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
 }
 
 Function Get-A9SRStatlink
@@ -3528,24 +3524,24 @@ param(	[Parameter()]	[switch]	$Attime,
 		[Parameter()]	[String]	$Node
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process
-{	$Cmd = " srstatlink "
-	if($Attime)		{	$Cmd += " -attime "			}
-	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
-	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
-	if($Hires)		{	$Cmd += " -hires " 			}
-	if($Hourly)		{	$Cmd += " -hourly " 		}
-	if($Daily)		{	$Cmd += " -daily " 			}
-	if($Summary)	{	$Cmd += " -summary $Summary " }
-	if($Groupby)	{	$Cmd += " -groupby $Groupby " }
-	if($Compareby)	{	$Cmd += " -compareby $Compareby " }
-	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
-	if($Node)		{	$Cmd += " $Node " 			}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
+	{	$Cmd = " srstatlink "
+		if($Attime)		{	$Cmd += " -attime "			}
+		if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
+		if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
+		if($Hires)		{	$Cmd += " -hires " 			}
+		if($Hourly)		{	$Cmd += " -hourly " 		}
+		if($Daily)		{	$Cmd += " -daily " 			}
+		if($Summary)	{	$Cmd += " -summary $Summary " }
+		if($Groupby)	{	$Cmd += " -groupby $Groupby " }
+		if($Compareby)	{	$Cmd += " -compareby $Compareby " }
+		if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
+		if($Node)		{	$Cmd += " $Node " 			}
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
 }
 
 Function Get-A9SRStatqos
@@ -3651,26 +3647,26 @@ param(	[Parameter()]	[switch]	$Attime,
 		[Parameter()]	[String]	$Sortcol
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process
-{	$Cmd = " srstatqos "
-	if($Attime)		{	$Cmd += " -attime " }
-	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
-	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs "}
-	if($Hires)		{	$Cmd += " -hires "}
-	if($Hourly) 	{	$Cmd += " -hourly "}
-	if($Daily) 		{	$Cmd += " -daily "}
-	if($Summary)	{	$Cmd += " -summary $Summary "}
-	if($Vvset)		{	$Cmd += " -vvset $Vvset "}
-	if($AllOthers) 	{	$Cmd += " -all_others " }
-	if($Target) 	{	$Cmd += " -target $Target "}
-	if($Groupby) 	{	$Cmd += " -groupby $Groupby " }
-	if($Compareby) 	{	$Cmd += " -compareby $Compareby " }
-	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-} 
+	{	$Cmd = " srstatqos "
+		if($Attime)		{	$Cmd += " -attime " }
+		if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
+		if($Etsecs)		{	$Cmd += " -etsecs $Etsecs "}
+		if($Hires)		{	$Cmd += " -hires "}
+		if($Hourly) 	{	$Cmd += " -hourly "}
+		if($Daily) 		{	$Cmd += " -daily "}
+		if($Summary)	{	$Cmd += " -summary $Summary "}
+		if($Vvset)		{	$Cmd += " -vvset $Vvset "}
+		if($AllOthers) 	{	$Cmd += " -all_others " }
+		if($Target) 	{	$Cmd += " -target $Target "}
+		if($Groupby) 	{	$Cmd += " -groupby $Groupby " }
+		if($Compareby) 	{	$Cmd += " -compareby $Compareby " }
+		if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "}
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	} 
 }
 
 Function Get-A9SRStatrcvv
@@ -3797,27 +3793,27 @@ param(
 	[Parameter()]	[String]	$Group
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process 
-{	$Cmd = " srstatrcvv "
-	if ($Attime) 	{	$Cmd += " -attime "			}
-	if ($Btsecs) 	{	$Cmd += " -btsecs $Btsecs "	}
-	if ($Etsecs) 	{	$Cmd += " -etsecs $Etsecs "	}
-	if ($Hires) 	{	$Cmd += " -hires " 			}
-	if ($Hourly) 	{	$Cmd += " -hourly "			}
-	if ($Daily) 	{	$Cmd += " -daily "			}
-	if ($Summary) 	{	$Cmd += " -summary $Summary "}
-	if ($Groupby) 	{	$Cmd += " -groupby $Groupby "}
-	if ($Compareby) {	$Cmd += " -compareby $Compareby "}
-	if ($Sortcol) 	{	$Cmd += " -sortcol $Sortcol "}
-	if ($Vv) 		{	$Cmd += " -vv $Vv "			}
-	if ($Target) 	{	$Cmd += " -target $Target "	}
-	if ($Mode) 		{	$Cmd += " -mode $Mode "		}
-	if ($Group) 	{	$Cmd += " -group $Group "	}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
+	{	$Cmd = " srstatrcvv "
+		if ($Attime) 	{	$Cmd += " -attime "			}
+		if ($Btsecs) 	{	$Cmd += " -btsecs $Btsecs "	}
+		if ($Etsecs) 	{	$Cmd += " -etsecs $Etsecs "	}
+		if ($Hires) 	{	$Cmd += " -hires " 			}
+		if ($Hourly) 	{	$Cmd += " -hourly "			}
+		if ($Daily) 	{	$Cmd += " -daily "			}
+		if ($Summary) 	{	$Cmd += " -summary $Summary "}
+		if ($Groupby) 	{	$Cmd += " -groupby $Groupby "}
+		if ($Compareby) {	$Cmd += " -compareby $Compareby "}
+		if ($Sortcol) 	{	$Cmd += " -sortcol $Sortcol "}
+		if ($Vv) 		{	$Cmd += " -vv $Vv "			}
+		if ($Target) 	{	$Cmd += " -target $Target "	}
+		if ($Mode) 		{	$Cmd += " -mode $Mode "		}
+		if ($Group) 	{	$Cmd += " -group $Group "	}
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
 }
 
 Function Get-A9SRStatVLun
@@ -3827,18 +3823,6 @@ Function Get-A9SRStatVLun
     Command displays historical performance data reports for VLUNs.
 .DESCRIPTION
     Command displays historical performance data reports for VLUNs.
-.EXAMPLE
-    PS:> Get-A9SRStatVLun
-
-	Command displays historical performance data reports for VLUNs.
-.EXAMPLE
-    PS:> Get-A9SRStatVLun -Hourly -btsecs -24h
-
-	Example displays aggregate hourly performance statistics for all VLUNs beginning 24 hours ago:
-.EXAMPLE
-    PS:> Get-A9SRStatVLun -btsecs -2h -host "set:hostset" -vv "set:vvset*"
-	
-	VV or host sets can be specified with patterns:
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
@@ -3903,6 +3887,18 @@ Function Get-A9SRStatVLun
 	Limit the data to VVol containers that match one or more of the specified VVol container names or glob-styled patterns.
 .PARAMETER Summary 
 	Summarize performance across requested objects and time range.
+.EXAMPLE
+    PS:> Get-A9SRStatVLun
+
+	Command displays historical performance data reports for VLUNs.
+.EXAMPLE
+    PS:> Get-A9SRStatVLun -Hourly -btsecs -24h
+
+	Example displays aggregate hourly performance statistics for all VLUNs beginning 24 hours ago:
+.EXAMPLE
+    PS:> Get-A9SRStatVLun -btsecs -2h -host "set:hostset" -vv "set:vvset*"
+	
+	VV or host sets can be specified with patterns:
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -3926,80 +3922,80 @@ param(	[Parameter()]		[switch]	$attime,
 		[Parameter()]		[String]	$vmId       
 	)
 Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
-}
+	{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+	}
 Process
-{	$tempFile = [IO.Path]::GetTempFileName()	
-	$srinfocmd = "srstatvlun "
-	if($Summary)	{	$srinfocmd += " -summary $Summary"	}
-	if($btsecs)		{	$srinfocmd += " -btsecs $btsecs"	}
-	if($etsecs)		{	$srinfocmd += " -etsecs $etsecs"	}				
-	if($Hourly)		{	$srinfocmd += " -hourly"			}
-	if($Daily)		{	$srinfocmd += " -daily"				}
-	if($Hires)		{	$srinfocmd += " -hires"				}
-	if($groupby)
-		{	$commarr = "DOM_NAME","VV_NAME","HOST_NAME","LUN","HOST_WWN","PORT_N","PORT_S","PORT_P","VVSET_NAME","HOSTSET_NAME"
-			$lista = $groupby.split(",")
-			foreach($suba in $lista)
-				{	if($commarr -eq $suba.toUpper())
-						{	$srinfocmd += " -groupby $groupby"
-						}
-					else{	Remove-Item  $tempFile
-							return "FAILURE: Invalid groupby option it should be in ( $commarr )"
-						}
-				}			
-		}
-	if($hostE)		{	$srinfocmd += " -host $hostE"		}
-	if($vv)			{	$srinfocmd += " -vv $vv "			}
-	if($lun)		{	$srinfocmd += " -l $lun "			}
-	if($port)		{	$srinfocmd += " -port $port "		}
-	if($vLun)		{	$srinfocmd += " -vlun $vLun "		}	
-	if($vmName)		{	$srinfocmd += " -vmname $vmName "	}
-	if($vmId)		{	$srinfocmd += " -vmid $vmId "		}		
-	if($vmHost)		{	$srinfocmd += " -vmhost $vmHost "	}
-	if($vvoLsc)		{	$srinfocmd += " -vvolsc $vvoLsc "	}
-	if($attime)
-		{	$srinfocmd += " -attime "
-			write-verbose "System reporter command => $srinfocmd"
-			if($groupby)	{	$optionname = $groupby.toUpper()	}
-			else			{	$optionname = "HOST_NAME"			}
-			Add-Content -Path $tempFile -Value "Host_Name,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
-			$rangestart = "4"
-		}
-	elseif($groupby)
-		{	$optionname = $groupby.toUpper()
-			$rangestart = "2"	
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,$optionname,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
-		}
-	elseif($Summary)
-		{	$rangestart = "4"	
-			Add-Content -Path $tempFile -Value "Summary,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
-		}
-	else{	$rangestart = "3"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
-		}
-	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	$range1  = $Result.count -3	
-	if($Summary)	{ $range1 = 4 }
-	if($range1 -le "2")
-		{ 	Remove-Item  $tempFile 
-			return "No data available" 
-		}	
-	if($Result.count -gt 4)
-		{	foreach ($s in  $Result[$rangestart..$range1] )
-				{	$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +"," ")
-					$s= [regex]::Replace($s," ",",")
-					Add-Content -Path $tempFile -Value $s
-				}
-			Import-Csv $tempFile	
-			Remove-Item  $tempFile
-		}
-	else{	Remove-Item  $tempFile
-			return $Result
-		}
-}
+	{	$tempFile = [IO.Path]::GetTempFileName()	
+		$srinfocmd = "srstatvlun "
+		if($Summary)	{	$srinfocmd += " -summary $Summary"	}
+		if($btsecs)		{	$srinfocmd += " -btsecs $btsecs"	}
+		if($etsecs)		{	$srinfocmd += " -etsecs $etsecs"	}				
+		if($Hourly)		{	$srinfocmd += " -hourly"			}
+		if($Daily)		{	$srinfocmd += " -daily"				}
+		if($Hires)		{	$srinfocmd += " -hires"				}
+		if($groupby)
+			{	$commarr = "DOM_NAME","VV_NAME","HOST_NAME","LUN","HOST_WWN","PORT_N","PORT_S","PORT_P","VVSET_NAME","HOSTSET_NAME"
+				$lista = $groupby.split(",")
+				foreach($suba in $lista)
+					{	if($commarr -eq $suba.toUpper())
+							{	$srinfocmd += " -groupby $groupby"
+							}
+						else{	Remove-Item  $tempFile
+								return "FAILURE: Invalid groupby option it should be in ( $commarr )"
+							}
+					}			
+			}
+		if($hostE)		{	$srinfocmd += " -host $hostE"		}
+		if($vv)			{	$srinfocmd += " -vv $vv "			}
+		if($lun)		{	$srinfocmd += " -l $lun "			}
+		if($port)		{	$srinfocmd += " -port $port "		}
+		if($vLun)		{	$srinfocmd += " -vlun $vLun "		}	
+		if($vmName)		{	$srinfocmd += " -vmname $vmName "	}
+		if($vmId)		{	$srinfocmd += " -vmid $vmId "		}		
+		if($vmHost)		{	$srinfocmd += " -vmhost $vmHost "	}
+		if($vvoLsc)		{	$srinfocmd += " -vvolsc $vvoLsc "	}
+		if($attime)
+			{	$srinfocmd += " -attime "
+				write-verbose "System reporter command => $srinfocmd"
+				if($groupby)	{	$optionname = $groupby.toUpper()	}
+				else			{	$optionname = "HOST_NAME"			}
+				Add-Content -Path $tempFile -Value "Host_Name,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
+				$rangestart = "4"
+			}
+		elseif($groupby)
+			{	$optionname = $groupby.toUpper()
+				$rangestart = "2"	
+				Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,$optionname,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
+			}
+		elseif($Summary)
+			{	$rangestart = "4"	
+				Add-Content -Path $tempFile -Value "Summary,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
+			}
+		else{	$rangestart = "3"
+				Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
+			}
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
+		$range1  = $Result.count -3	
+		if($Summary)	{ $range1 = 4 }
+		if($range1 -le "2")
+			{ 	Remove-Item  $tempFile 
+				return "No data available" 
+			}	
+		if($Result.count -gt 4)
+			{	foreach ($s in  $Result[$rangestart..$range1] )
+					{	$s= [regex]::Replace($s,"^ +","")
+						$s= [regex]::Replace($s," +"," ")
+						$s= [regex]::Replace($s," ",",")
+						Add-Content -Path $tempFile -Value $s
+					}
+				Import-Csv $tempFile	
+				Remove-Item  $tempFile
+			}
+		else{	Remove-Item  $tempFile
+				return $Result
+			}
+	}
 }
 
 Function Get-A9SRVvSpace
@@ -4103,79 +4099,80 @@ param(	[Parameter()]	[switch]	$attime,
 		[Parameter()]	[String]	$vvolState
 	)
 Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
-}
+	{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+	}
 Process
-{	$srinfocmd = "srvvspace"
-	$tempFile = [IO.Path]::GetTempFileName()
-	if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
-	if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
-	if($Hourly)	{	$srinfocmd += " -hourly"			}
-	if($Daily)	{	$srinfocmd += " -daily"				}
-	if($Hires)	{	$srinfocmd += " -hires"				}
-	if($groupby)
-		{	$commarr = "DOM_NAME","VVID","VV_NAME","BSID","WWN","SNP_CPG_NAME","USR_CPG_NAME","PROV_TYPE","VV_TYPE","VVSET_NAME"
-			$lista = $groupby.split(",")
-			foreach($suba in $lista)
-				{	if( -not ($commarr -eq $suba.toUpper() ) )
-						{	Remove-Item  $tempFile
-							return "FAILURE: Invalid groupby option it should be in ( $commarr )"
-						}
-				}
-			$srinfocmd += " -groupby $groupby"
-		}		
-	if($usrcpg)	{	$srinfocmd +=  " -usr_cpg $usrcpg "	}
-	if($snpcpg)	{	$srinfocmd +=  " -snp_cpg $snpcpg "	}
-	if($provType)
-		{	$provrray = "cpvv","dds","full","peer","snp","tdvv","tpsd","tpvv"
-			if($provrray -eq $provType)		{	$srinfocmd += " -prov $provType"}
-			else	{	Remove-Item  $tempFile
-						return "FAILURE: Invalid provType it should be in ( $provrray )"
-					}			
-		}
-	if($VVName)	{	$srinfocmd += " $VVName "	}		
-	if($vmName)	{	$srinfocmd += " -vmname $vmName "	}
-	if($vmId)	{	$srinfocmd += " -vmid $vmId "	}		
-	if($vmHost)	{	$srinfocmd += " -vmhost $vmHost "	}
-	if($vvoLsc)	{	$srinfocmd += " -vvolsc $vvoLsc "	}
-	if($vvolState){	$srinfocmd += " -vvolstate $vvolState "	}
-	if($attime)
-		{	$srinfocmd += " -attime "	
-			write-verbose "System reporter command => $srinfocmd"
-			if($groupby)	{	$optionname = $groupby.toUpper()	}
-			else			{	$optionname = "VV_NAME"				}
-			$rangestart = "3"
-			Add-Content -Path $tempFile -Value "$optionname,RawRsvd(MB)_User,RawRsvd(MB)_Snap,RawRsvd(MB)_Total,User(MB)_Used,User(MB)_Free,User(MB)_Rsvd,Snap(MB)_Used,Snap(MB)_Free,Snap(MB)_Rsvd,Snap(MB)_Vcopy,Total(MB)_Vcopy,Total(MB)_Used,Total(MB)_Rsvd,Total(MB)_HostWr,Total(MB)_VirtualSize,KB/s)_Compr_GC,Efficiency_Compact,Efficiency_Compress"
-		}
-	elseif($groupby)
-		{	$optionname = $groupby.toUpper()
-			$rangestart = "2"			
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,$optionname,RawRsvd(MB)_User,RawRsvd(MB)_Snap,RawRsvd(MB)_Total,User(MB)_Used,User(MB)_Free,User(MB)_Rsvd,Snap(MB)_Used,Snap(MB)_Free,Snap(MB)_Rsvd,Snap(MB)_Vcopy,Total(MB)_Vcopy,Total(MB)_Used,Total(MB)_Rsvd,Total(MB)_HostWr,Total(MB)_VirtualSize,KB/s)_Compr_GC,Efficiency_Compact,Efficiency_Compress"
-		}
-	else
-		{	$rangestart = "2"
-			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,RawRsvd(MB)_User,RawRsvd(MB)_Snap,RawRsvd(MB)_Total,User(MB)_Used,User(MB)_Free,User(MB)_Rsvd,Snap(MB)_Used,Snap(MB)_Free,Snap(MB)_Rsvd,Snap(MB)_Vcopy,Total(MB)_Vcopy,Total(MB)_Used,Total(MB)_Rsvd,Total(MB)_HostWr,Total(MB)_VirtualSize,(KB/s)_Compr_GC,Efficiency_Compact,Efficiency_Compress"
-		}
-	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	if($Result -contains "FAILURE")
-		{	Remove-Item  $tempFile
-			return "FAILURE : $Result"
-		}
-	$range1  = $Result.count
-	if($range1 -le "3")
-		{	Remove-Item  $tempFile
-			return "No data available"
-		}
-	foreach ($s in  $Result[$rangestart..$range1] )
-		{	$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +"," ")
-			$s= [regex]::Replace($s," ",",")
-			Add-Content -Path $tempFile -Value $s
-		}
-	Import-Csv $tempFile
-	Remove-Item  $tempFile
-}
+	{	$srinfocmd = "srvvspace"
+		$tempFile = [IO.Path]::GetTempFileName()
+		if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
+		if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
+		if($Hourly)	{	$srinfocmd += " -hourly"			}
+		if($Daily)	{	$srinfocmd += " -daily"				}
+		if($Hires)	{	$srinfocmd += " -hires"				}
+		if($groupby)
+			{	$commarr = "DOM_NAME","VVID","VV_NAME","BSID","WWN","SNP_CPG_NAME","USR_CPG_NAME","PROV_TYPE","VV_TYPE","VVSET_NAME"
+				$lista = $groupby.split(",")
+				foreach($suba in $lista)
+					{	if( -not ($commarr -eq $suba.toUpper() ) )
+							{	Remove-Item  $tempFile
+								return "FAILURE: Invalid groupby option it should be in ( $commarr )"
+							}
+					}
+				$srinfocmd += " -groupby $groupby"
+			}		
+		if($usrcpg)	{	$srinfocmd +=  " -usr_cpg $usrcpg "	}
+		if($snpcpg)	{	$srinfocmd +=  " -snp_cpg $snpcpg "	}
+		if($provType)
+			{	$provrray = "cpvv","dds","full","peer","snp","tdvv","tpsd","tpvv"
+				if($provrray -eq $provType)		{	$srinfocmd += " -prov $provType"}
+				else	{	Remove-Item  $tempFile
+							return "FAILURE: Invalid provType it should be in ( $provrray )"
+						}			
+			}
+		if($VVName)	{	$srinfocmd += " $VVName "	}		
+		if($vmName)	{	$srinfocmd += " -vmname $vmName "	}
+		if($vmId)	{	$srinfocmd += " -vmid $vmId "	}		
+		if($vmHost)	{	$srinfocmd += " -vmhost $vmHost "	}
+		if($vvoLsc)	{	$srinfocmd += " -vvolsc $vvoLsc "	}
+		if($vvolState){	$srinfocmd += " -vvolstate $vvolState "	}
+		if($attime)
+			{	$srinfocmd += " -attime "	
+				write-verbose "System reporter command => $srinfocmd"
+				if($groupby)	{	$optionname = $groupby.toUpper()	}
+				else			{	$optionname = "VV_NAME"				}
+				$rangestart = "3"
+				Add-Content -Path $tempFile -Value "$optionname,RawRsvd(MB)_User,RawRsvd(MB)_Snap,RawRsvd(MB)_Total,User(MB)_Used,User(MB)_Free,User(MB)_Rsvd,Snap(MB)_Used,Snap(MB)_Free,Snap(MB)_Rsvd,Snap(MB)_Vcopy,Total(MB)_Vcopy,Total(MB)_Used,Total(MB)_Rsvd,Total(MB)_HostWr,Total(MB)_VirtualSize,KB/s)_Compr_GC,Efficiency_Compact,Efficiency_Compress"
+			}
+		elseif($groupby)
+			{	$optionname = $groupby.toUpper()
+				$rangestart = "2"			
+				Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,$optionname,RawRsvd(MB)_User,RawRsvd(MB)_Snap,RawRsvd(MB)_Total,User(MB)_Used,User(MB)_Free,User(MB)_Rsvd,Snap(MB)_Used,Snap(MB)_Free,Snap(MB)_Rsvd,Snap(MB)_Vcopy,Total(MB)_Vcopy,Total(MB)_Used,Total(MB)_Rsvd,Total(MB)_HostWr,Total(MB)_VirtualSize,KB/s)_Compr_GC,Efficiency_Compact,Efficiency_Compress"
+			}
+		else
+			{	$rangestart = "2"
+				Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,RawRsvd(MB)_User,RawRsvd(MB)_Snap,RawRsvd(MB)_Total,User(MB)_Used,User(MB)_Free,User(MB)_Rsvd,Snap(MB)_Used,Snap(MB)_Free,Snap(MB)_Rsvd,Snap(MB)_Vcopy,Total(MB)_Vcopy,Total(MB)_Used,Total(MB)_Rsvd,Total(MB)_HostWr,Total(MB)_VirtualSize,(KB/s)_Compr_GC,Efficiency_Compact,Efficiency_Compress"
+			}
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
+		if($Result -contains "FAILURE")
+			{	Remove-Item  $tempFile
+				return "FAILURE : $Result"
+			}
+		$range1  = $Result.count
+		if($range1 -le "3")
+			{	Remove-Item  $tempFile
+				return "No data available"
+			}
+		foreach ($s in  $Result[$rangestart..$range1] )
+			{	$s= [regex]::Replace($s,"^ +","")
+				$s= [regex]::Replace($s," +"," ")
+				$s= [regex]::Replace($s," ",",")
+				Add-Content -Path $tempFile -Value $s
+			}
+		$returndata = Import-Csv $tempFile
+		Remove-Item  $tempFile
+		return $returndata
+	}
 }
 
 Function Show-A9SrStatIscsi
@@ -4185,18 +4182,6 @@ Function Show-A9SrStatIscsi
 	The command displays historical performance data reports for iSCSI ports.
 .DESCRIPTION  
 	The command displays historical performance data reports for iSCSI ports.
-.EXAMPLE	
-	PS:> Show-A9SrStatIscsi
-.EXAMPLE
-	PS:> Show-A9SrStatIscsi -Attime
-.EXAMPLE
-	PS:> Show-A9SrStatIscsi -Summary min/max/aug/detail
-.EXAMPLE
-	PS:> Show-A9SrStatIscsi -BTSecs 1
-.EXAMPLE
-	PS:> Show-A9SrStatIscsi -ETSecs 1
-.EXAMPLE
-	PS:> Show-A9SrStatIscsi -Groupby PORT_N
 .PARAMETER Attime
     Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object group described by the
 	-groupby option. Without this option performance is shown versus time, with a row per time interval.
@@ -4244,6 +4229,18 @@ Function Show-A9SrStatIscsi
         PROTOCOL    The protocol type for the port
 .PARAMETER NSP
 	Dode Sloat Port Value 1:2:3
+.EXAMPLE	
+	PS:> Show-A9SrStatIscsi
+.EXAMPLE
+	PS:> Show-A9SrStatIscsi -Attime
+.EXAMPLE
+	PS:> Show-A9SrStatIscsi -Summary min/max/aug/detail
+.EXAMPLE
+	PS:> Show-A9SrStatIscsi -BTSecs 1
+.EXAMPLE
+	PS:> Show-A9SrStatIscsi -ETSecs 1
+.EXAMPLE
+	PS:> Show-A9SrStatIscsi -Groupby PORT_N
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -4276,7 +4273,9 @@ Process
 	if ($NSP)		{	$cmd+=" $NSP "	}
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Show-SrStatIscsi command that displays information iSNS table for iSCSI ports in the system  "	
-	$Flag="True"
+}
+end
+{	$Flag="True"
 	if($Attime -or $Summary)
 		{	$Flag="Fals"
 			if($Result -match "Time")
@@ -4309,8 +4308,9 @@ Process
 							Add-Content -Path $tempFile -Value $s	
 							$incre="false"
 						}			
-					Import-Csv $tempFile 
+					$returndata = Import-Csv $tempFile 
 					Remove-Item  $tempFile
+					return $returndata
 				}
 			else{	return $Result	}
 		}	
@@ -4343,8 +4343,9 @@ Process
 									Add-Content -Path $tempFile -Value $s	
 									$incre="false"
 								}			
-							Import-Csv $tempFile 
+							$returndata = Import-Csv $tempFile 
 							Remove-Item  $tempFile
+							return $returndata
 						}
 					else{	return $Result	}
 				}
@@ -4361,22 +4362,6 @@ Function Show-A9SrStatIscsiSession
 	The command displays historical performance data reports for iSCSI sessions.
 .DESCRIPTION  
 	The command displays historical performance data reports for iSCSI sessions.
-.EXAMPLE	
-	Show-SrStatIscsiSession
-.EXAMPLE
-	PS:> Show-A9SrStatIscsiSession -Attime
-.EXAMPLE
-	PS:> Show-A9SrStatIscsiSession -Attime -NSP 0:2:1
-.EXAMPLE
-	PS:> Show-A9SrStatIscsiSession -Summary min -NSP 0:2:1
-.EXAMPLE
-	PS:> Show-A9SrStatIscsiSession -Btsecs 1 -NSP 0:2:1
-.EXAMPLE
-	PS:> Show-A9SrStatIscsiSession -Hourly -NSP 0:2:1
-.EXAMPLE
-	PS:> Show-A9SrStatIscsiSession -Daily
-.EXAMPLE
-	PS:> Show-A9SrStatIscsiSession -Groupby PORT_N
 .PARAMETER Attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object group described by the
 	-groupby option. Without this option performance is shown versus time, with a row per time interval.
@@ -4437,6 +4422,22 @@ Function Show-A9SrStatIscsiSession
 	TPGT        The TPGT ID for the session
 .PARAMETER NSP
 	Node Sloat Poart Value 1:2:3
+.EXAMPLE	
+	Show-SrStatIscsiSession
+.EXAMPLE
+	PS:> Show-A9SrStatIscsiSession -Attime
+.EXAMPLE
+	PS:> Show-A9SrStatIscsiSession -Attime -NSP 0:2:1
+.EXAMPLE
+	PS:> Show-A9SrStatIscsiSession -Summary min -NSP 0:2:1
+.EXAMPLE
+	PS:> Show-A9SrStatIscsiSession -Btsecs 1 -NSP 0:2:1
+.EXAMPLE
+	PS:> Show-A9SrStatIscsiSession -Hourly -NSP 0:2:1
+.EXAMPLE
+	PS:> Show-A9SrStatIscsiSession -Daily
+.EXAMPLE
+	PS:> Show-A9SrStatIscsiSession -Groupby PORT_N
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -4453,83 +4454,113 @@ param(	[Parameter()]	[switch]	$Attime,
     
 	)	
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process
-{	$cmd= "srstatiscsisession "	
-	if ($Attime)	{	$cmd+=" -attime "	}
-	if ($Summary)	{	$cmd+=" -summary $Summary "	}
-	if ($BTSecs)	{	$cmd+=" -btsecs $BTSecs "	}
-	if ($ETSecs)	{	$cmd+=" -etsecs $ETSecs "	}
-	if ($Hires)		{	$cmd+=" -hires "	}
-	if ($Hourly)	{	$cmd+=" -hourly "	}
-	if ($Daily)		{	$cmd+=" -daily "	}	
-	if ($Groupby)	{	$cmd+=" -groupby $Groupby"	}
-	if ($NSP)	{	$cmd+=" $NSP "	}
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	write-verbose "  Executing  Show-SrStatIscsiSession command that displays information iSNS table for iSCSI ports in the system  "
-	if($Attime)
-		{	if($Result -match "Time")
-				{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
-					$tempFile = [IO.Path]::GetTempFileName()
-					$LastItem = $Result.Count
-					$incre = "true" 		
-					foreach ($s in  $Result[2..$LastItem] )
-						{	$s= [regex]::Replace($s,"^ ","")						
-							$s= [regex]::Replace($s," +",",")			
-							$s= [regex]::Replace($s,"-","")			
-							$s= $s.Trim()			
-							if($incre -eq "true")
-								{	$sTemp1=$s				
-									$sTemp = $sTemp1.Split(',')					
-									$sTemp[3]="Total(PDUs/s)"				
-									$sTemp[6]="Total(KBytes/s)"
-									$newTemp= [regex]::Replace($sTemp,"^ ","")			
-									$newTemp= [regex]::Replace($sTemp," ",",")				
-									$newTemp= $newTemp.Trim()
-									$s=$newTemp							
-								}
-							if($incre -eq "false")	{	$s=$s.Substring(1)	}			
-							Add-Content -Path $tempFile -Value $s	
-							$incre="false"
-						}			
-					Import-Csv $tempFile 
-					Remove-Item  $tempFile
-				}
-			else{	return $Result	}
-		}
-	elseif($Summary)
-		{	if($Result -match "Time")
-				{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
-					$tempFile = [IO.Path]::GetTempFileName()
-					$LastItem = $Result.Count
-					$incre = "true" 		
-					foreach ($s in  $Result[3..$LastItem] )
-						{	$s= [regex]::Replace($s,"^ ","")						
-							$s= [regex]::Replace($s," +",",")			
-							$s= [regex]::Replace($s,"-","")			
-							$s= $s.Trim()			
-							if($incre -eq "true")
-								{	$sTemp1=$s				
-									$sTemp = $sTemp1.Split(',')					
-									$sTemp[3]="Total(PDUs/s)"				
-									$sTemp[6]="Total(KBytes/s)"
-									$newTemp= [regex]::Replace($sTemp,"^ ","")			
-									$newTemp= [regex]::Replace($sTemp," ",",")				
-									$newTemp= $newTemp.Trim()
-									$s=$newTemp							
-								}
-							if($incre -eq "false")	{	$s=$s.Substring(1)	}			
-							Add-Content -Path $tempFile -Value $s	
-							$incre="false"
-						}			
-					Import-Csv $tempFile 
-					Remove-Item  $tempFile
-				}
-			else{	return $Result	}
-		}
-	elseif($Groupby)
-		{	if($Result -match "Time")
+	{	$cmd= "srstatiscsisession "	
+		if ($Attime)	{	$cmd+=" -attime "	}
+		if ($Summary)	{	$cmd+=" -summary $Summary "	}
+		if ($BTSecs)	{	$cmd+=" -btsecs $BTSecs "	}
+		if ($ETSecs)	{	$cmd+=" -etsecs $ETSecs "	}
+		if ($Hires)		{	$cmd+=" -hires "	}
+		if ($Hourly)	{	$cmd+=" -hourly "	}
+		if ($Daily)		{	$cmd+=" -daily "	}	
+		if ($Groupby)	{	$cmd+=" -groupby $Groupby"	}
+		if ($NSP)	{	$cmd+=" $NSP "	}
+		$Result = Invoke-A9CLICommand -cmds  $cmd
+		write-verbose "  Executing  Show-SrStatIscsiSession command that displays information iSNS table for iSCSI ports in the system  "
+		if($Attime)
+			{	if($Result -match "Time")
+					{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
+						$tempFile = [IO.Path]::GetTempFileName()
+						$LastItem = $Result.Count
+						$incre = "true" 		
+						foreach ($s in  $Result[2..$LastItem] )
+							{	$s= [regex]::Replace($s,"^ ","")						
+								$s= [regex]::Replace($s," +",",")			
+								$s= [regex]::Replace($s,"-","")			
+								$s= $s.Trim()			
+								if($incre -eq "true")
+									{	$sTemp1=$s				
+										$sTemp = $sTemp1.Split(',')					
+										$sTemp[3]="Total(PDUs/s)"				
+										$sTemp[6]="Total(KBytes/s)"
+										$newTemp= [regex]::Replace($sTemp,"^ ","")			
+										$newTemp= [regex]::Replace($sTemp," ",",")				
+										$newTemp= $newTemp.Trim()
+										$s=$newTemp							
+									}
+								if($incre -eq "false")	{	$s=$s.Substring(1)	}			
+								Add-Content -Path $tempFile -Value $s	
+								$incre="false"
+							}			
+						Import-Csv $tempFile 
+						Remove-Item  $tempFile
+					}
+				else{	return $Result	}
+			}
+		elseif($Summary)
+			{	if($Result -match "Time")
+					{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
+						$tempFile = [IO.Path]::GetTempFileName()
+						$LastItem = $Result.Count
+						$incre = "true" 		
+						foreach ($s in  $Result[3..$LastItem] )
+							{	$s= [regex]::Replace($s,"^ ","")						
+								$s= [regex]::Replace($s," +",",")			
+								$s= [regex]::Replace($s,"-","")			
+								$s= $s.Trim()			
+								if($incre -eq "true")
+									{	$sTemp1=$s				
+										$sTemp = $sTemp1.Split(',')					
+										$sTemp[3]="Total(PDUs/s)"				
+										$sTemp[6]="Total(KBytes/s)"
+										$newTemp= [regex]::Replace($sTemp,"^ ","")			
+										$newTemp= [regex]::Replace($sTemp," ",",")				
+										$newTemp= $newTemp.Trim()
+										$s=$newTemp							
+									}
+								if($incre -eq "false")	{	$s=$s.Substring(1)	}			
+								Add-Content -Path $tempFile -Value $s	
+								$incre="false"
+							}			
+						Import-Csv $tempFile 
+						Remove-Item  $tempFile
+					}
+				else{	return $Result	}
+			}
+		elseif($Groupby)
+			{	if($Result -match "Time")
+					{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
+						$tempFile = [IO.Path]::GetTempFileName()
+						$LastItem = $Result.Count
+						$incre = "true" 		
+						foreach ($s in  $Result[1..$LastItem] )
+							{	$s= [regex]::Replace($s,"^ ","")						
+								$s= [regex]::Replace($s," +",",")			
+								$s= [regex]::Replace($s,"-","")			
+								$s= $s.Trim() -replace 'Time','Date,Time,Zone'				
+								if($incre -eq "true")
+									{	$sTemp1=$s.Substring(1)					
+										$sTemp2=$sTemp1.Substring(0,$sTemp1.Length - 17)
+										$sTemp2 +="TimeOut"					
+										$sTemp = $sTemp2.Split(',')					
+										$sTemp[7]="Total(PDUs/s)"				
+										$sTemp[10]="Total(KBytes/s)"
+										$newTemp= [regex]::Replace($sTemp,"^ ","")			
+										$newTemp= [regex]::Replace($sTemp," ",",")				
+										$newTemp= $newTemp.Trim()
+										$s=$newTemp							
+									}							
+								Add-Content -Path $tempFile -Value $s	
+								$incre="false"
+							}			
+						Import-Csv $tempFile 
+						Remove-Item  $tempFile
+					}
+				else{	return $Result	}
+			}
+		else{	if($Result -match "Time")
 				{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
 					$tempFile = [IO.Path]::GetTempFileName()
 					$LastItem = $Result.Count
@@ -4538,78 +4569,48 @@ Process
 						{	$s= [regex]::Replace($s,"^ ","")						
 							$s= [regex]::Replace($s," +",",")			
 							$s= [regex]::Replace($s,"-","")			
-							$s= $s.Trim() -replace 'Time','Date,Time,Zone'				
+							$s= $s.Trim()					
 							if($incre -eq "true")
-								{	$sTemp1=$s.Substring(1)					
-									$sTemp2=$sTemp1.Substring(0,$sTemp1.Length - 17)
-									$sTemp2 +="TimeOut"					
-									$sTemp = $sTemp2.Split(',')					
-									$sTemp[7]="Total(PDUs/s)"				
-									$sTemp[10]="Total(KBytes/s)"
+								{	$s=$s.Substring(1)								
+									$sTemp1=$s				
+									$sTemp = $sTemp1.Split(',')							
+									$sTemp[4]="Total(PDUs/s)"				
+									$sTemp[7]="Total(KBytes/s)"
 									$newTemp= [regex]::Replace($sTemp,"^ ","")			
 									$newTemp= [regex]::Replace($sTemp," ",",")				
 									$newTemp= $newTemp.Trim()
 									$s=$newTemp							
-								}							
+								}
+							if($incre -eq "false")
+								{	$sTemp1=$s
+									$sTemp = $sTemp1.Split(',')	
+									$sTemp2=$sTemp[0]+"-"+$sTemp[1]+"-"+$sTemp[2]
+									$sTemp[0]=$sTemp2				
+									$sTemp[1]=$sTemp[3]
+									$sTemp[2]=$sTemp[4]
+									$sTemp[3]=$sTemp[5]
+									$sTemp[4]=$sTemp[6]
+									$sTemp[5]=$sTemp[7]
+									$sTemp[6]=$sTemp[8]
+									$sTemp[7]=$sTemp[9]
+									$sTemp[8]=$sTemp[10]
+									$sTemp[9]=$sTemp[11]
+									$sTemp[10]=""
+									$sTemp[11]=""				
+									$newTemp= [regex]::Replace($sTemp," ",",")	
+									$newTemp= $newTemp.Trim()
+									$s=$newTemp				
+								}
 							Add-Content -Path $tempFile -Value $s	
 							$incre="false"
 						}			
 					Import-Csv $tempFile 
 					Remove-Item  $tempFile
 				}
-			else{	return $Result	}
-		}
-	else{	if($Result -match "Time")
-			{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
-				$tempFile = [IO.Path]::GetTempFileName()
-				$LastItem = $Result.Count
-				$incre = "true" 		
-				foreach ($s in  $Result[1..$LastItem] )
-					{	$s= [regex]::Replace($s,"^ ","")						
-						$s= [regex]::Replace($s," +",",")			
-						$s= [regex]::Replace($s,"-","")			
-						$s= $s.Trim()					
-						if($incre -eq "true")
-							{	$s=$s.Substring(1)								
-								$sTemp1=$s				
-								$sTemp = $sTemp1.Split(',')							
-								$sTemp[4]="Total(PDUs/s)"				
-								$sTemp[7]="Total(KBytes/s)"
-								$newTemp= [regex]::Replace($sTemp,"^ ","")			
-								$newTemp= [regex]::Replace($sTemp," ",",")				
-								$newTemp= $newTemp.Trim()
-								$s=$newTemp							
-							}
-						if($incre -eq "false")
-							{	$sTemp1=$s
-								$sTemp = $sTemp1.Split(',')	
-								$sTemp2=$sTemp[0]+"-"+$sTemp[1]+"-"+$sTemp[2]
-								$sTemp[0]=$sTemp2				
-								$sTemp[1]=$sTemp[3]
-								$sTemp[2]=$sTemp[4]
-								$sTemp[3]=$sTemp[5]
-								$sTemp[4]=$sTemp[6]
-								$sTemp[5]=$sTemp[7]
-								$sTemp[6]=$sTemp[8]
-								$sTemp[7]=$sTemp[9]
-								$sTemp[8]=$sTemp[10]
-								$sTemp[9]=$sTemp[11]
-								$sTemp[10]=""
-								$sTemp[11]=""				
-								$newTemp= [regex]::Replace($sTemp," ",",")	
-								$newTemp= $newTemp.Trim()
-								$s=$newTemp				
-							}
-						Add-Content -Path $tempFile -Value $s	
-						$incre="false"
-					}			
-				Import-Csv $tempFile 
-				Remove-Item  $tempFile
-			}
-			else{	return $Result}
-		}	
-	if($Result -match "Time"){	return  " Success : Executing Show-SrStatIscsiSession"	}
-	else	{	return  $Result	}
-}
+				else{	return $Result}
+			}	
+		if($Result -match "Time"){	return  " Success : Executing Show-SrStatIscsiSession"	}
+		else	{	return  $Result	}
+	}
 }
 

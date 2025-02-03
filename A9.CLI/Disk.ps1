@@ -37,18 +37,19 @@ Function Approve-A9Disk
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Nold,
 		[Parameter()]	[switch]	$NoPatch,
-		[Parameter()]	[String]	$wwn	)	
-	Begin	
-{   Test-A9Connection -ClientType 'SshClient' 
-}
+		[Parameter()]	[String]	$wwn	
+)	
+Begin	
+	{   Test-A9Connection -ClientType 'SshClient' 
+	}
 Process
-{	$cmd= "admitpd -f  "
-	if ($Nold)		{	$cmd+=" -nold "	}
-	if ($NoPatch)	{	$cmd+=" -nopatch " }
-	if($wwn)		{	$cmd += " $wwn"	}
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	return 	$Result	
-} 
+	{	$cmd= "admitpd -f  "
+		if ($Nold)		{	$cmd+=" -nold "	}
+		if ($NoPatch)	{	$cmd+=" -nopatch " }
+		if($wwn)		{	$cmd += " $wwn"	}
+		$Result = Invoke-A9CLICommand -cmds  $cmd
+		return 	$Result	
+	} 
 }
 
 Function Remove-A9Disk
@@ -123,14 +124,17 @@ Begin
 Process
 	{	$cmd= "setpd ldalloc $Ldalloc $PD_ID "
 		$Result = Invoke-A9CLICommand -cmds  $cmd
-		if([string]::IsNullOrEmpty($Result))
-			{	Write-host "Success : Executing Set-PD" -ForegroundColor green 
-				return $Result
-			}
-		else{	write-warning "FAILURE : While Executing Set-PD"
-				return $Result 
-			} 	
+			
 	} 
+end
+	{	if([string]::IsNullOrEmpty($Result))
+		{	Write-host "Success : Executing Set-PD" -ForegroundColor green 
+			return $Result
+		}
+	else{	write-warning "FAILURE : While Executing Set-PD"
+			return $Result 
+		} 
+	}
 }
 
 Function Switch-A9Disk

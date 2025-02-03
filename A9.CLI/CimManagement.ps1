@@ -1,7 +1,7 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
-Function Show-A9CIM
+Function Get-A9CIM
 {
 <#
 .SYNOPSIS
@@ -15,7 +15,7 @@ Function Show-A9CIM
 .EXAMPLE
     The following example shows the current CIM status:
 
-        PS:> Show-A9CIM
+        PS:> Get-A9CIM
 
         -Service- -State-- --SLP-- SLPPort -HTTP-- HTTPPort -HTTPS- HTTPSPort PGVer  CIMVer
         Enabled   Active   Enabled     427 Enabled     5988 Enabled      5989 2.14.1 3.3.1
@@ -23,7 +23,7 @@ Function Show-A9CIM
 .EXAMPLE
     The following example shows the current CIM policy:
 
-        PS:> Show-A9CIM -Pol
+        PS:> Get-A9CIM -Pol
 
         --------------Policy---------------
         replica_entity,one_hwid_per_view,use_pegasus_interop_namespace,no_tls_strict
@@ -32,20 +32,20 @@ Function Show-A9CIM
 
 #>
 [CmdletBinding()]
-param(  [Parameter()]    [Switch]    $Pol
-)	
-	
+param(  [Parameter()]    [Switch]    $Policy
+)		
 Begin 
-{ Test-A9Connection -ClientType 'SshClient' 
-}
+    { Test-A9Connection -ClientType 'SshClient' 
+    }
 process
-{   $cmd = "showcim "
-    if ($Pol) {    $cmd += " -pol "    }	
-    $Result = Invoke-A9CLICommand -cmds $cmd
-    write-verbose " Executed the Show-CIM cmdlet" 
-    return 	$Result	
-
-}
+    {   $cmd = "showcim "
+        if ($Policy) {    $cmd += " -pol "    }	
+        $Result = Invoke-A9CLICommand -cmds $cmd
+    }
+end
+    {   write-verbose " Executed the Get-A9CIM cmdlet" 
+        return 	$Result	
+    }
 }
 
 Function Start-A9CIM
@@ -67,8 +67,8 @@ Function Start-A9CIM
 [CmdletBinding()]
 param()	
 begin
-{   Test-A9Connection -ClientType 'SshClient' 
-}	
+    {   Test-A9Connection -ClientType 'SshClient' 
+    }	
 process 
 {   $cmd = "startcim "
     $Result = Invoke-A9CLICommand  -cmds  $cmd
@@ -85,8 +85,6 @@ Function Set-A9CIM
 .DESCRIPTION
     The cmdlet sets properties of the CIM server, including options to enable/disable the HTTP and HTTPS ports for the CIM server. setcim allows
     a user to enable/disable the SLP port. The command also sets the CIM server policy.
-.PARAMETER F
-    Forces the operation of the setcim command, bypassing the typical confirmation message.
 .PARAMETER Slp
     Enables or disables the SLP port 427.
 .PARAMETER Http
@@ -109,23 +107,23 @@ Function Set-A9CIM
 .EXAMPLE
     To disable the HTTPS ports:
 
-    PS:> Set-A9CIM -F -Https Disable
+    PS:> Set-A9CIM -Https Disable
 .EXAMPLE
     To enable the HTTPS port:
 
-    PS:> Set-A9CIM -F -Https Enable
+    PS:> Set-A9CIM -Https Enable
 .EXAMPLE
     To disable the HTTP port and enable the HTTPS port:
 
-    PS:> Set-A9CIM -F -Http Disable -Https Enable
+    PS:> Set-A9CIM -Http Disable -Https Enable
 .EXAMPLE
     To set the no_use_pegasus_interop_namespace policy:
 
-    PS:> Set-A9CIM -F -Pol no_use_pegasus_interop_namespace
+    PS:> Set-A9CIM -Pol no_use_pegasus_interop_namespace
 .EXAMPLE
     To set the replica_entity policy:
 
-    PS:> Set-A9CIM -F -Pol replica_entity
+    PS:> Set-A9CIM -Pol replica_entity
 .NOTES
     This command requires a SSH type connection.
     Access to all domains is required to run this command.    You cannot disable both of the HTTP and HTTPS ports.
@@ -134,34 +132,29 @@ Function Set-A9CIM
     continue or not. The -F option forces the action without a warning message.
 #>
 [CmdletBinding()]
-param(  [Parameter()]   [Switch]    $F,
-        [Parameter()]   [ValidateSet("enable", "disable")]     
-                        [String]    $Slp,
-        [Parameter()]   [ValidateSet("enable", "disable")]      
-                        [String]    $Http,
-        [Parameter()]   [ValidateSet("enable", "disable")]
-                        [String]    $Https,
-        [Parameter()]   [ValidateSet("replica_entity", "no_replica_entity", "one_hwid_per_view", "no_one_hwid_per_view", "use_pegasus_interop_namespace", "no_use_pegasus_interop_namespace", "tls_strict", "no_tls_strict")]
-                        [String]    $Pol
+param(  [Parameter(parametersetname='SLP',mandatory)]       
+            [ValidateSet("enable", "disable")]          [String]    $Slp,
+        [Parameter(parametersetname='HTTP',mandatory)]
+            [ValidateSet("enable", "disable")]          [String]    $Http,
+        [Parameter(parametersetname='HTTPS',mandatory)]   
+            [ValidateSet("enable", "disable")]          [String]    $Https,
+        [Parameter(parametersetname='Policy',mandatory)]   
+            [ValidateSet("replica_entity", "no_replica_entity", "one_hwid_per_view", "no_one_hwid_per_view", "use_pegasus_interop_namespace", "no_use_pegasus_interop_namespace", "tls_strict", "no_tls_strict")]
+                                                        [String]    $Policy
 )	
 Begin	
-{   Test-A9Connection -ClientType 'SshClient'
-}
+    {   Test-A9Connection -ClientType 'SshClient'
+    }
 Process
-{   $cmd = "setcim "
-    if ($F) {    $cmd += " -f "    }
-    else    {    Return "Force set option is only supported with the Set-CIM cmdlet."    }
-    if (($Slp) -or ($Http) -or ($Https) -or ($Pol)) 
-        {   if ($Slp)   {   $cmd += " -slp $Slp"    }
-            if ($Http)  {   $cmd += " -http $Http"  }
-            if ($Https) {   $cmd += " -https $Https"}
-            if ($Pol)   {   $cmd += " -pol $Pol"    }
-        }
-    else{   Return "At least one of the options -Slp, -Http, -Https, or -Pol are required."
-        }
-    $Result = Invoke-A9CLICommand -cmds  $cmd
-    return 	$Result	
-}
+    {   $cmd = "setcim "
+        $cmd += " -f "
+        if ($Slp)   {   $cmd += " -slp $Slp"    }
+        if ($Http)  {   $cmd += " -http $Http"  }
+        if ($Https) {   $cmd += " -https $Https"}
+        if ($Policy){   $cmd += " -pol $Pol"    }
+        $Result = Invoke-A9CLICommand -cmds  $cmd
+        return 	$Result	
+    }
 }
 
 Function Stop-A9CIM
@@ -173,36 +166,37 @@ Function Stop-A9CIM
     The cmdlet stops the CIM server from servicing CIM requests.
 .PARAMETER F
     Specifies that the operation is forced. If this option is not used, the command requires confirmation before proceeding with its operation.
-.PARAMETER X
+.PARAMETER Immediate
     Specifies that the operation terminates the server immediately without graceful shutdown notice.
 
 .EXAMPLE
     The following example stops the CIM server without confirmation
 
-    PS:> Stop-A9CIM -F        
+    PS:> Stop-A9CIM       
 
     The following example stops the CIM server immediately without graceful shutdown notice and confirmation:
 
-    PS:> Stop-A9CIM -F -X 
+    PS:> Stop-A9CIM -Immediate
 .NOTES
-	This command requires a SSH type connection.      
+	This command requires a SSH type connection. 
+    Authority: Super, Service
+        Any role granted the cim_stop right
+    Usage:  
+    - Access to all domains is required to run this command.
+    - By default, the CIM server is not started until the startcim command is issued.     
 #>
 [CmdletBinding()]
-param(  [Parameter()]
-        [Switch]    $F,
-        [Parameter()]        
-        [Switch]    $X
+param(  [Parameter()]   [Switch]    $Immediate
     )	
 Begin	
-{   Test-A9Connection -ClientType 'SshClient'
-}
+    {   Test-A9Connection -ClientType 'SshClient'
+    }
 Process
-{   $cmd = "setcim "	
-    if ($F)     {    $cmd += " -f " }
-    else        {   Return "Force set option is only supported with the Stop-CIM cmdlet."}
-    if ($X) {    $cmd += " -x "}
-    $Result = Invoke-A9CLICommand -cmds  $cmd
-    return 	$Result	
-}
+    {   $cmd = "setcim "	
+        $cmd += " -f " 
+        if ($Immediate) {    $cmd += " -x "}
+        $Result = Invoke-A9CLICommand -cmds $cmd
+        return 	$Result	
+    }
 }
 

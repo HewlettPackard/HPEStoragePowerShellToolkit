@@ -9,6 +9,32 @@ Function Get-A9Vv
 	Get Single or list of virtual volumes.
 .DESCRIPTION
 	Get Single or list of virtual volumes.
+.PARAMETER VVName
+	Specify name of the volume. This option an be used with either API or SSH connections
+.PARAMETER WWN
+	Querying volumes with Single or multiple WWNs. This option can only be used with a API type connection.
+.PARAMETER UserCPG
+	User CPG Name.  This option can only be used with a API type connection.
+.PARAMETER SnapCPG
+	Snp CPG Name 
+.PARAMETER CopyOf
+	Querying volume copies it required name of the vv to copy.  This option can only be used with a API type connection.
+.PARAMETER ProvisioningType
+	Querying volume with Provisioning Type.  This option can only be used with a API type connection.
+	FULL : 	• FPVV, with no snapshot space or with statically allocated snapshot space.
+			• A commonly provisioned VV with fully provisioned user space and snapshot space associated with the snapCPG property.
+	TPVV : 	• TPVV, with base volume space allocated from the user space associated with the userCPG property.
+			• Old-style, thinly provisioned VV (created on a 2.2.4 release or earlier).
+			Both the base VV and snapshot data are allocated from the snapshot space associated with userCPG.
+	SNP : 	The VV is a snapshot (Type vcopy) with space provisioned from the base volume snapshot space.
+	PEER : 	Remote volume admitted into the local storage system.
+	UNKNOWN : Unknown. 
+	TDVV : 	The volume is a deduplicated volume.
+	DDS : 	A system maintained deduplication storage volume shared by TDVV volumes in a CPG.
+.PARAMETER DomainName 
+    Queries volumes in the domain specified DomainName. The option can only be used with a SSH type connection
+.PARAMETER CPGName
+    Queries volumes that belongs to a given CPG. The option can only be used with a SSH type connection
 .EXAMPLE
 	PS:> Get-A9Vv | format-table
 
@@ -62,32 +88,6 @@ Function Get-A9Vv
 	PS:> Get-A9Vv -useAPI -ProvisioningType TPVV  
 
 	Querying volumes with Provisioning Type TPVV
-.PARAMETER VVName
-	Specify name of the volume. This option an be used with either API or SSH connections
-.PARAMETER WWN
-	Querying volumes with Single or multiple WWNs. This option can only be used with a API type connection.
-.PARAMETER UserCPG
-	User CPG Name.  This option can only be used with a API type connection.
-.PARAMETER SnapCPG
-	Snp CPG Name 
-.PARAMETER CopyOf
-	Querying volume copies it required name of the vv to copy.  This option can only be used with a API type connection.
-.PARAMETER ProvisioningType
-	Querying volume with Provisioning Type.  This option can only be used with a API type connection.
-	FULL : 	• FPVV, with no snapshot space or with statically allocated snapshot space.
-			• A commonly provisioned VV with fully provisioned user space and snapshot space associated with the snapCPG property.
-	TPVV : 	• TPVV, with base volume space allocated from the user space associated with the userCPG property.
-			• Old-style, thinly provisioned VV (created on a 2.2.4 release or earlier).
-			Both the base VV and snapshot data are allocated from the snapshot space associated with userCPG.
-	SNP : 	The VV is a snapshot (Type vcopy) with space provisioned from the base volume snapshot space.
-	PEER : 	Remote volume admitted into the local storage system.
-	UNKNOWN : Unknown. 
-	TDVV : 	The volume is a deduplicated volume.
-	DDS : 	A system maintained deduplication storage volume shared by TDVV volumes in a CPG.
-.PARAMETER DomainName 
-    Queries volumes in the domain specified DomainName. The option can only be used with a SSH type connection
-.PARAMETER CPGName
-    Queries volumes that belongs to a given CPG. The option can only be used with a SSH type connection
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
 Param(	[Parameter(ParameterSetName='API')]		
@@ -121,9 +121,7 @@ Process
 							$Result = Invoke-A9API -uri $uri -type 'GET' 
 							If($Result.StatusCode -eq 200)
 								{	$dataPS = $Result.content | ConvertFrom-Json
-								}		
-							If($Result.StatusCode -eq 200)
-								{	write-host "Cmdlet executed successfully" -foreground green
+									write-host "Cmdlet executed successfully" -foreground green
 									return $dataPS
 								}
 							else
@@ -191,7 +189,10 @@ Process
 					if ($DomainName)	{	$GetvVolumeCmd += " -domain $DomainName"	}	
 					if ($vvName)		{	$GetvVolumeCmd += " $vvName"	}
 					$Result = Invoke-A9CLICommand -cmds $GetvVolumeCmd
-					if($Result -match "no vv listed")	{	return "FAILURE: No vv $vvName found"	}
+					if($Result -match "no vv listed")	
+						{	write-warning "FAILURE: No vv $vvName found"
+							return 
+						}
 					$Result = $Result | where-object 	{ ($_ -notlike '*total*') -and ($_ -notlike '*---*')} ## Eliminate summary lines
 					if ( $Result.Count -gt 1)
 						{	$tempFile = [IO.Path]::GetTempFileName()
@@ -205,7 +206,10 @@ Process
 							else 		{ Import-Csv $tempFile }
 							Remove-Item $tempFile
 						}	
-					else{	return "FAILURE: No vv $vvName found error:$result "	}	
+					else
+						{	write-warning "FAILURE: No vv $vvName found error: " 
+							return $result	
+						}	
 				}
 	}
 }

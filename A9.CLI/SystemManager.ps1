@@ -10,10 +10,6 @@ Function Get-A9Cert
 	The command has two forms. The first is a table with a high level overview of the certificates used by the SSL Services. This table is
 	customizable with the -showcols option. The second form provides detailed certificate information in either human readable format or in PEM (Privacy
 	Enhanced Mail) format. It can also save the certificates in a specified file.
-.EXAMPLE
-	PS:> Get-A9Cert -Service unified-server -Pem
-.EXAMPLE
-	PS:> Get-A9Cert -Service unified-server -Text
 .PARAMETER Listcols
 	Displays the valid table columns.
 .PARAMETER Showcols
@@ -29,6 +25,10 @@ Function Get-A9Cert
 	Displays the certificates in human readable format. When a filename is specified the certificates are exported to the file.
 .PARAMETER File
 	Specifies the export file of the -pem or -text option.
+.EXAMPLE
+	PS:> Get-A9Cert -Service unified-server -Pem
+.EXAMPLE
+	PS:> Get-A9Cert -Service unified-server -Text
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -45,48 +45,50 @@ Begin
 {	Test-A9Connection -ClientType SshClient
 }
 Process	
-{	$Cmd = " showcert "
-	if($Listcols)	{	$Cmd += " -listcols " }
-	if($Showcols)	{	$Cmd += " -showcols $Showcols " }
-	if($Service)	{	$Cmd += " -service $Service " }
-	if($Type)		{	$Cmd += " -type $Type " }
-	if($Pem)		{	$Cmd += " -pem " }
-	if($Text)		{	$Cmd += " -text " }
-	if($File)		{	$Cmd += " -file $File " }
-	if($Listcols -Or $Pem -Or $Text)
-		{	$Result = Invoke-A9CLICommand -cmds  $Cmd
-			Return $Result
-		}
-	else
-		{	$Result = Invoke-A9CLICommand -cmds  $Cmd
-			Write-Verbose "Executing Function : Get-Cert Command -->" 
-			if($Result.count -gt 1)
-				{	$tempFile = [IO.Path]::GetTempFileName()
-					$LastItem = $Result.Count 
-					foreach ($s in  $Result[0..$LastItem] )
-						{	$s= [regex]::Replace($s,"^ ","")			
-							$s= [regex]::Replace($s," +",",")	
-							$s= [regex]::Replace($s,"-","")
-							$s= $s.Trim()			
-							$temp1 = $s -replace 'Enddate','Month,Date,Time,Year,Zone'
-							$s = $temp1
-							$sTemp1=$s				
-							$sTemp = $sTemp1.Split(',')	
-							if ([string]::IsNullOrEmpty($sTemp[3]))	{	$sTemp[3] = "--,--,--,--,---"	}				
-							$newTemp= [regex]::Replace($sTemp,"^ ","")			
-							$newTemp= [regex]::Replace($sTemp," ",",")				
-							$newTemp= $newTemp.Trim()
-							$s=$newTemp
-							Add-Content -Path $tempfile -Value $s				
-						}
-					Import-Csv $tempFile 
-					Remove-Item  $tempFile 	
-				}
-			else{	return  $Result}
-			if($Result.count -gt 1)	{	return  " Success : Executing Get-Cert"	}
-			else					{		return  $Result	} 
-		}
-}
+	{	$Cmd = " showcert "
+		if($Listcols)	{	$Cmd += " -listcols " }
+		if($Showcols)	{	$Cmd += " -showcols $Showcols " }
+		if($Service)	{	$Cmd += " -service $Service " }
+		if($Type)		{	$Cmd += " -type $Type " }
+		if($Pem)		{	$Cmd += " -pem " }
+		if($Text)		{	$Cmd += " -text " }
+		if($File)		{	$Cmd += " -file $File " }
+		if($Listcols -Or $Pem -Or $Text)
+			{	$Result = Invoke-A9CLICommand -cmds  $Cmd
+				Return $Result
+			}
+		else
+			{	$Result = Invoke-A9CLICommand -cmds  $Cmd
+				Write-Verbose "Executing Function : Get-Cert Command -->" 
+			}
+	}
+end
+	{	if($Result.count -gt 1)
+			{	$tempFile = [IO.Path]::GetTempFileName()
+				$LastItem = $Result.Count 
+				foreach ($s in  $Result[0..$LastItem] )
+					{	$s= [regex]::Replace($s,"^ ","")			
+						$s= [regex]::Replace($s," +",",")	
+						$s= [regex]::Replace($s,"-","")
+						$s= $s.Trim()			
+						$temp1 = $s -replace 'Enddate','Month,Date,Time,Year,Zone'
+						$s = $temp1
+						$sTemp1=$s				
+						$sTemp = $sTemp1.Split(',')	
+						if ([string]::IsNullOrEmpty($sTemp[3]))	{	$sTemp[3] = "--,--,--,--,---"	}				
+						$newTemp= [regex]::Replace($sTemp,"^ ","")			
+						$newTemp= [regex]::Replace($sTemp," ",",")				
+						$newTemp= $newTemp.Trim()
+						$s=$newTemp
+						Add-Content -Path $tempfile -Value $s				
+					}
+				$returndata = Import-Csv $tempFile 
+				Remove-Item  $tempFile
+				write-host " Success : Executing Get-Cert" -ForegroundColor Green 
+				return $returndata 	
+			}
+		return 
+	}
 }
 
 Function Get-A9Encryption
@@ -105,35 +107,38 @@ Function Get-A9Encryption
 param(	[Parameter()]	[switch]	$D
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$Cmd = " showencryption "
-	if($D)	{	$Cmd += " -d " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1)
-		{	$LastItem = 0
-			$Fcnt = 0
-			if($D)	{	$Fcnt = 4
-						$LastItem = $Result.Count -2
+	{	$Cmd = " showencryption "
+		if($D)	{	$Cmd += " -d " }
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+	}
+End
+	{	if($Result.count -gt 1)
+			{	$LastItem = 0
+				$Fcnt = 0
+				if($D)	{	$Fcnt = 4
+							$LastItem = $Result.Count -2
+						}
+				else		{	$LastItem = $Result.Count -0	}		
+				$tempFile = [IO.Path]::GetTempFileName	
+				foreach ($s in  $Result[$Fcnt..$LastItem] )
+					{	$s= [regex]::Replace($s,"^ ","")			
+						$s= [regex]::Replace($s," +",",")	
+						$s= [regex]::Replace($s,"-","")
+						$s= $s.Trim() 
+						$temp1 = $s -replace 'AdmissionTime','Date,Time,Zone'
+						$s = $temp1		
+						Add-Content -Path $tempfile -Value $s				
 					}
-			else		{	$LastItem = $Result.Count -0	}		
-			$tempFile = [IO.Path]::GetTempFileName	
-			foreach ($s in  $Result[$Fcnt..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s," +",",")	
-					$s= [regex]::Replace($s,"-","")
-					$s= $s.Trim() 
-					$temp1 = $s -replace 'AdmissionTime','Date,Time,Zone'
-					$s = $temp1		
-					Add-Content -Path $tempfile -Value $s				
-				}
-			Import-Csv $tempFile 
-			Remove-Item  $tempFile 	
-		}
-	if($Result.count -gt 1) {	return  " Success : Executing Get-Encryption" 	}
-	else					{	return  $Result	} 
-}
+				$returndata = Import-Csv $tempFile 
+				Remove-Item  $tempFile
+				write-host " Success : Executing Get-Encryption" -ForegroundColor green 
+				return $returndata	
+			}
+		return
+	}
 }
 
 Function Get-A9SystemReporter
@@ -185,16 +190,16 @@ param(	[Parameter()]	[switch]	$ldrg,
 		[Parameter()]	[String]	$Etsecs
 	)
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$srinfocmd = "showsr "
-	if($ldrg)	{	$srinfocmd += "-ldrg "	}
-	if($Btsecs)	{	$srinfocmd += "-btsecs $Btsecs "	}
-	if($Etsecs)	{	$srinfocmd += "-etsecs $Etsecs "	}
-	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	return  $Result	
-}
+	{	$srinfocmd = "showsr "
+		if($ldrg)	{	$srinfocmd += "-ldrg "	}
+		if($Btsecs)	{	$srinfocmd += "-btsecs $Btsecs "	}
+		if($Etsecs)	{	$srinfocmd += "-etsecs $Etsecs "	}
+		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
+		return  $Result	
+	}
 }
 
 Function Import-A9Cert
@@ -224,17 +229,17 @@ param(
 	[Parameter()]					[String]	$Ca
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$Cmd = " importcert "
-	if($SSL_service)	{	$Cmd += " $SSL_service -f " }
-	if($Service_cert) 	{	$Cmd += " $Service_cert " 	}
-	if($CA_bundle) 		{	$Cmd += " $CA_bundle " 		}
-	if($Ca) 			{	$Cmd += " -ca $Ca " 		}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
+	{	$Cmd = " importcert "
+		if($SSL_service)	{	$Cmd += " $SSL_service -f " }
+		if($Service_cert) 	{	$Cmd += " $Service_cert " 	}
+		if($CA_bundle) 		{	$Cmd += " $CA_bundle " 		}
+		if($Ca) 			{	$Cmd += " -ca $Ca " 		}
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
 }
 
 Function New-A9Cert
@@ -244,10 +249,6 @@ Function New-A9Cert
 	Create self-signed SSL certificate or a certificate signing request (CSR) for the Storage System SSL services.
 .DESCRIPTION
 	The New Cert command creates a self-signed certificate or a certificate signing request for a specified service.
-.EXAMPLE
-	PS:> New-A9Cert -SSL_service unified-server -Selfsigned -Keysize 2048 -Days 365
-.EXAMPLE
-	PS:> New-A9Cert -SSL_service wsapi -Selfsigned -Keysize 2048 -Days 365
 .PARAMETER SSL_service
 	Valid service names are cim, cli, ekm-client, ekm-server, ldap, syslog-gen-client, syslog-gen-server, syslog-sec-client, syslog-sec-server, wsapi, vasa, and unified-server.
 .PARAMETER Csr
@@ -272,6 +273,10 @@ Function New-A9Cert
 	Specifies the value of common name (CN) attribute of the subject of the certificate. Over ssh, -CN must be specified.
 .PARAMETER SAN
 	Subject alternative name is a X509 extension that allows other pieces of information to be associated with the certificate. Multiple SANs may delimited with a comma.
+.EXAMPLE
+	PS:> New-A9Cert -SSL_service unified-server -Selfsigned -Keysize 2048 -Days 365
+.EXAMPLE
+	PS:> New-A9Cert -SSL_service wsapi -Selfsigned -Keysize 2048 -Days 365
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -290,25 +295,25 @@ param(	[Parameter(Mandatory=$true)]						[String]	$SSL_service,
 		[Parameter()]	[String]	$SAN
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$Cmd = " createcert "
-	if($SSL_service)	{	$Cmd += " $SSL_service "}	
-	if($Csr) 			{	$Cmd += " -csr -f" 		}	 
-	if($Selfsigned)		{	$Cmd += " -selfsigned -f" }
-	if($Keysize) 		{	$Cmd += " -keysize $Keysize " } 
-	if($Days)			{	$Cmd += " -days $Days " }
-	if($C)				{	$Cmd += " -C $C " 		}
-	if($ST)				{	$Cmd += " -ST $ST "		}
-	if($L)				{	$Cmd += " -L $L " 		}
-	if($O) 				{	$Cmd += " -O $O " 		}
-	if($OU)				{	$Cmd += " -OU $OU " 	}
-	if($CN)				{	$Cmd += " -CN $CN " 	}
-	if($SAN)			{	$Cmd += " -SAN $SAN " 	}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
+	{	$Cmd = " createcert "
+		if($SSL_service)	{	$Cmd += " $SSL_service "}	
+		if($Csr) 			{	$Cmd += " -csr -f" 		}	 
+		if($Selfsigned)		{	$Cmd += " -selfsigned -f" }
+		if($Keysize) 		{	$Cmd += " -keysize $Keysize " } 
+		if($Days)			{	$Cmd += " -days $Days " }
+		if($C)				{	$Cmd += " -C $C " 		}
+		if($ST)				{	$Cmd += " -ST $ST "		}
+		if($L)				{	$Cmd += " -L $L " 		}
+		if($O) 				{	$Cmd += " -O $O " 		}
+		if($OU)				{	$Cmd += " -OU $OU " 	}
+		if($CN)				{	$Cmd += " -CN $CN " 	}
+		if($SAN)			{	$Cmd += " -SAN $SAN " 	}
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
 }
 
 Function New-A9RCopyGroup_CLI
@@ -318,14 +323,6 @@ Function New-A9RCopyGroup_CLI
 	The New RCopyGroup command creates a remote-copy volume group.
 .DESCRIPTION
     The New RCopyGroup command creates a remote-copy volume group.   
-.EXAMPLE	
-	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST -TargetName CHIMERA03 -Mode sync
-.EXAMPLE
-	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST1 -TargetName CHIMERA03 -Mode async
-.EXAMPLE
-	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST2 -TargetName CHIMERA03 -Mode periodic
-.EXAMPLE
-	PS:> New-A9RCopyGroup_CLI -domain DEMO -GroupName AS_TEST3 -TargetName CHIMERA03 -Mode periodic     
 .PARAMETER domain
 	Creates the remote-copy group in the specified domain.
 .PARAMETER Usr_Cpg_Name
@@ -344,6 +341,14 @@ Function New-A9RCopyGroup_CLI
 	sync—synchronous replication
 	async—asynchronous streaming replication
 	periodic—periodic asynchronous replication
+.EXAMPLE	
+	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST -TargetName CHIMERA03 -Mode sync
+.EXAMPLE
+	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST1 -TargetName CHIMERA03 -Mode async
+.EXAMPLE
+	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST2 -TargetName CHIMERA03 -Mode periodic
+.EXAMPLE
+	PS:> New-A9RCopyGroup_CLI -domain DEMO -GroupName AS_TEST3 -TargetName CHIMERA03 -Mode periodic     
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -353,47 +358,40 @@ param(	[Parameter(Mandatory=$true)]	[String]	$GroupName,
 		[Parameter()][ValidateSet("sync","async","periodic")]
 						[String]	$Mode,
 		[Parameter()]	[String]	$domain,
-		[Parameter()]	[String]	$Usr_Cpg_Name,
-		[Parameter()]	[String]	$Target_TargetCPG,
-		[Parameter()]	[String]	$Snp_Cpg_Name,		
+		[Parameter(ParameterSetName='usrCPG',mandatory)]	[String]	$Usr_Cpg_Name,
+		[Parameter(ParameterSetName='usrCPG',mandatory)]
+		[Parameter(ParameterSetName='snpCPG',mandatory)]	[String]	$Target_TargetCPG,
+		[Parameter(ParameterSetName='snpCPG',mandatory)]	[String]	$Snp_Cpg_Name,		
 		[Parameter()]	[String]	$Target_TargetSNP
 	)	
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$cmd= "creatercopygroup"	
-	if ($domain)	{	$cmd+=" -domain $domain"	}
-	if ($Usr_Cpg_Name)	
-		{	$cmd+=" -usr_cpg $Usr_Cpg_Name "
-			if($Target_TargetCPG)
-				{	$cmd+= " $TargetName"
-					$cmd+= ":$Target_TargetCPG "			
-				}
-			else{	return "Target_TargetCPG is required with Usr CPG option"	}
-		}
-	if ($Snp_Cpg_Name)	
-		{	$cmd+=" -snp_cpg $Snp_Cpg_Name "
-			if($Target_TargetSNP)
-				{	$cmd+= " $TargetName"
-					$cmd+= ":$Target_TargetSNP "			
-				}
-			else
-				{	return "Target_TargetSNP is required with Usr CPG option"
-				}
-		}
-	if ($GroupName)	{	$cmd+=" $GroupName"	}
-	if ($TargetName){	$cmd+=" $TargetName"}
-	if ($Mode)		{	$cmd+=":$Mode "	}
-	$Result = Invoke-A9CLICommand -cmds  $cmd	
-	write-verbose "  The command creates a remote-copy volume group..   " 	
-	if([string]::IsNullOrEmpty($Result))
-		{	return  "Success : Executing  New-RCopyGroup Command $Result"
-		}
-	else
-		{	return  "FAILURE : While Executing  New-RCopyGroup 	$Result "
-		} 	
-}
+	{	$cmd= "creatercopygroup"	
+		if ($domain)	{	$cmd+=" -domain $domain"	}
+		if ($Usr_Cpg_Name)	
+			{	$cmd+=" -usr_cpg $Usr_Cpg_Name $TargetName"
+				$cmd+= ":$Target_TargetCPG "			
+			}
+		if ($Snp_Cpg_Name)	
+			{	$cmd+=" -snp_cpg $Snp_Cpg_Name $TargetName"
+				$cmd+= ":$Target_TargetSNP "			
+			}
+		$cmd+=" $GroupName $TargetName"
+		if ($Mode)		{	$cmd+=":$Mode "	}
+		$Result = Invoke-A9CLICommand -cmds  $cmd	
+	}
+End
+	{	if([string]::IsNullOrEmpty($Result))
+			{	write-host "Success : Executing  New-A9RCopyGroup Command" 
+				return  
+			}
+		else
+			{	write-error "While Executing  New-RCopyGroup" 	
+				return $Result 
+			} 	
+	}
 }
 
 Function New-A9RCopyGroupCPG_CLI
@@ -403,14 +401,14 @@ Function New-A9RCopyGroupCPG_CLI
 	The New-RCopyGroupCPG command creates a remote-copy volume group.
 .DESCRIPTION
     The New-RCopyGroupCPG command creates a remote-copy volume group.   
-.EXAMPLE
-	New-A9RCopyGroupCPG_CLI -GroupName ABC -TargetName XYZ -Mode Sync	
-.EXAMPLE  
-	New-A9RCopyGroupCPG_CLI -UsrCpg -LocalUserCPG BB -UsrTargetName XYZ -TargetUserCPG CC -GroupName ABC -TargetName XYZ -Mode Sync
 .PARAMETER UsrCpg
+	The type of new Copy group will be a UserCPG and will require the LocalUserCPG, the TargetUserCPG:TargetUserCPG. 
 .PARAMETER SnpCpg
+	The type of new Copy group will be a SnapCPG and will require the LocalSnapCPG, the TargetSnapCPG:TargetSnapCPG. 
 .PARAMETER UsrTargetName
+	A required paremeter whe doing a UserCpg type replication. Points to the targets location
 .PARAMETER SnpTargetName
+	A required paremeter whe doing a SnapCpg type replication. Points to the targets location
 .PARAMETER LocalUserCPG
 	Specifies the local user CPG and target user CPG that will be used for volumes that are auto-created.
 .PARAMETER TargetUserCPG
@@ -429,50 +427,54 @@ Function New-A9RCopyGroupCPG_CLI
 	sync—synchronous replication
 	async—asynchronous streaming replication
 	periodic—periodic asynchronous replication
+.EXAMPLE
+	New-A9RCopyGroupCPG_CLI -GroupName ABC -TargetName XYZ -Mode Sync	
+.EXAMPLE  
+	New-A9RCopyGroupCPG_CLI -UsrCpg -LocalUserCPG BB -UsrTargetName XYZ -TargetUserCPG CC -GroupName ABC -TargetName XYZ -Mode Sync
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$GroupName,
-		[Parameter(Mandatory=$true)]	[String]	$TargetName,
+param(	[Parameter(Mandatory=$true)]					[String]	$GroupName,
+		[Parameter(Mandatory=$true)]					[String]	$TargetName,
 		[Parameter(Mandatory=$true)][ValidateSet("sync","async","periodic")]
-										[String]	$Mode,
-		[Parameter()]	[String]	$domain,
-		[Parameter()]	[Switch]	$UsrCpg,
-		[Parameter()]	[String]	$LocalUserCPG,
-		[Parameter()]	[String]	$TargetUserCPG,
-		[Parameter()]	[String]	$UsrTargetName,
-		[Parameter()]	[Switch]	$SnpCpg,
-		[Parameter()]	[String]	$LocalSnapCPG,
-		[Parameter()]	[String]	$TargetSnapCPG,
-		[Parameter()]	[String]	$SnpTargetName
+														[String]	$Mode,
+		[Parameter(ParameterSetName='Dom',mandatory)]	[String]	$domain,
+		[Parameter(parametersetname='usr',mandatory)]	[Switch]	$UsrCpg,
+		[Parameter(parametersetname='usr',mandatory)]	[String]	$LocalUserCPG,
+		[Parameter(parametersetname='usr',mandatory)]	[String]	$TargetUserCPG,
+		[Parameter(parametersetname='usr',mandatory)]	[String]	$UsrTargetName,
+		[Parameter(parametersetname='snp',mandatory)]	[Switch]	$SnpCpg,
+		[Parameter(parametersetname='snp',mandatory)]	[String]	$LocalSnapCPG,
+		[Parameter(parametersetname='snp',mandatory)]	[String]	$TargetSnapCPG,
+		[Parameter(parametersetname='snp',mandatory)]	[String]	$SnpTargetName
 	)		
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$cmd= "creatercopygroup"
-	if ($domain)	{	$cmd+=" -domain $domain"	}	
-	if($UsrCpg)
-		{	$cmd+=" -usr_cpg"
-			if ($LocalUserCPG)	{	$cmd+=" $LocalUserCPG"	}
-			if ($UsrTargetName)	{	$cmd+=" $UsrTargetName"	}
-			if ($TargetUserCPG)	{	$cmd+=":$TargetUserCPG "}
-		}
-	if($SnpCpg)
-		{	$cmd+=" -snp_cpg"
-			if ($LocalSnapCPG)	{	$cmd+=" $LocalSnapCPG"	}
-			if ($SnpTargetName)	{	$cmd+=" $SnpTargetName"	}
-			if ($TargetSnapCPG)	{	$cmd+=":$TargetSnapCPG "}
-		}
-	$cmd+=" $GroupName"	
-	$cmd+=" $TargetName"
-	$cmd+=":$Mode "
-	$Result = Invoke-A9CLICommand -cmds  $cmd	
-	write-verbose "  The command creates a remote-copy volume group..   " 	
-	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing  New-RCopyGroupCPG Command $Result"	}
-	else									{	return  "FAILURE : While Executing  New-RCopyGroupCPG 	$Result "	} 	
-}
+	{	$cmd= "creatercopygroup"
+		if ($domain)	
+			{	$cmd+=" -domain $domain"	
+		}	
+		if($UsrCpg)
+			{	$cmd+=" -usr_cpg $LocalUserCPG $UsrTargetName"
+				$cmd+=":$TargetUserCPG "
+			}
+		if($SnpCpg)
+			{	$cmd+=" -snp_cpg $LocalSnapCPG $SnpTargetName"	
+				$cmd+=":$TargetSnapCPG "
+			}
+		$cmd+=" $GroupName $TargetName"
+		$cmd+=":$Mode "
+		$Result = Invoke-A9CLICommand -cmds  $cmd	
+	}
+end
+	{	if([string]::IsNullOrEmpty($Result))	
+				{	write-host "Success : Executing  New-RCopyGroupCPG Command" -ForegroundColor green
+				} 
+		return $Result
+	}
 }
 
 Function New-A9RCopyTarge_CLI
@@ -482,6 +484,18 @@ Function New-A9RCopyTarge_CLI
 	The New RCopyTarget command creates a remote-copy target definition.
 .DESCRIPTION
     The New RCopyTarget command creates a remote-copy target definition.
+.PARAMETER TargetName
+	The name of the target definition to be created, specified by using up to 23 characters.
+.PARAMETER RCIP
+	remote copy over IP (RCIP).
+.PARAMETER RCFC
+	remote copy over Fibre Channel (RCFC).
+.PARAMETER Node_WWN
+	The node's World Wide Name (WWN) on the target system (Fibre Channel target only).
+.PARAMETER NSP_IP
+	Node number:Slot number:Port Number:IP Address of the Target to be created.
+.PARAMETER NSP_WWN
+	Node number:Slot number:Port Number:World Wide Name (WWN) address on the target system.
 .EXAMPLE  
 	PS:> New-A9RCopyTarget_CLI -TargetName demo1 -RCIP -NSP_IP 1:2:3:10.1.1.1
 
@@ -498,49 +512,41 @@ Function New-A9RCopyTarge_CLI
 	PS:> New-A9RCopyTarget_CLI -TargetName demo1 -RCFC -Node_WWN 1122112211221122 -NSP_WWN "1:2:3:1122112211221122,1:2:3:2244224422442244"
 
 	This Example creates a remote-copy of FC with multiple targets
-.PARAMETER TargetName
-	The name of the target definition to be created, specified by using up to 23 characters.
-.PARAMETER RCIP
-	remote copy over IP (RCIP).
-.PARAMETER RCFC
-	remote copy over Fibre Channel (RCFC).
-.PARAMETER Node_WWN
-	The node's World Wide Name (WWN) on the target system (Fibre Channel target only).
-.PARAMETER NSP_IP
-	Node number:Slot number:Port Number:IP Address of the Target to be created.
-.PARAMETER NSP_WWN
-	Node number:Slot number:Port Number:World Wide Name (WWN) address on the target system.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='IP', Mandatory=$true)]	[switch]	$RCIP,
 		[Parameter(ParameterSetName='FC', Mandatory=$true)]	[switch]	$RCFC,
-		[Parameter()]	[switch]	$Disabled,
-		[Parameter()]	[String]	$TargetName,
+		[Parameter()]										[switch]	$Disabled,
+		[Parameter()]										[String]	$TargetName,
 		[Parameter(ParameterSetName='FC', Mandatory=$true)]	[String]	$Node_WWN,
 		[Parameter(ParameterSetName='IP', Mandatory=$true)]	[String]	$NSP_IP,
 		[Parameter(ParameterSetName='FC', Mandatory=$true)]	[String]	$NSP_WWN
 )	
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$cmd= "creatercopytarget"
-	if ($Disabled)		{		$cmd+=" -disabled "	}
-	$cmd+=" $TargetName "
-	if ($RCIP)		{	$s = $NSP_IP
-						$s= [regex]::Replace($s,","," ")	
-						$cmd+=" IP $s"	
-					}
-	if ($RCFC)		{	$s = $NSP_WWN
-						$s= [regex]::Replace($s,","," ")	
-						$cmd+=" FC $Node_WWN $s"
-					}		
-	$Result = Invoke-A9CLICommand -cmds  $cmd	
-	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing New-RCopyTarget Command "	}
-	else									{	return  "FAILURE : While Executing New-RCopyTarget $Result "	} 	
-}
+	{	$cmd= "creatercopytarget"
+		if ($Disabled)		{		$cmd+=" -disabled "	}
+		$cmd+=" $TargetName "
+		if ($RCIP)		{	$s = $NSP_IP
+							$s= [regex]::Replace($s,","," ")	
+							$cmd+=" IP $s"	
+						}
+		if ($RCFC)		{	$s = $NSP_WWN
+							$s= [regex]::Replace($s,","," ")	
+							$cmd+=" FC $Node_WWN $s"
+						}		
+		$Result = Invoke-A9CLICommand -cmds  $cmd	
+	}
+end
+	{	if([string]::IsNullOrEmpty($Result))	
+			{	Write-host "Success : Executing New-RCopyTarget Command " -ForegroundColor Green	
+			}
+		return $Result
+	}
 }
 
 Function Remove-A9Cert
@@ -551,44 +557,42 @@ Function Remove-A9Cert
 .DESCRIPTION
 	The Remove Cert command is used to remove certificates that are no longer trusted. In most cases it is better to overwrite the offending certificate
 	with importcert. The user specifies which service to have its certificates removed. The removal can be limited to a specific type.
-.EXAMPLE
-	PS:> Remove-A9Cert -SSL_Service_Name "xyz" -Type "xyz"
-.EXAMPLE
-	PS:> Remove-A9Cert -SSL_Service_Name "all" -Type "xyz"
 .PARAMETER SSL_Service_Name
 	Valid service names are cim, cli, ekm-client, ekm-server, ldap, syslog-gen-client, syslog-gen-server, syslog-sec-client,
 	syslog-sec-server, wsapi, vasa, and unified-server. The user may also specify all, which will remove certificates for all services.
-.PARAMETER F
-	Skips the prompt warning the user of which certificates will be removed and which services will be restarted.  
 .PARAMETER Type
 	Allows the user to limit the removal to a specific type. Note that types are cascading. For example, intca will cause the service certificate to
 	also be removed. Valid types are csr, cert, intca, and rootca.
+.EXAMPLE
+	PS:> Remove-A9Cert -SSL_Service_Name "cli" -Type "cert"
+.EXAMPLE
+	PS:> Remove-A9Cert -SSL_Service_Name "all" -Type "intca"
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$SSL_Service_Name,	
-		[Parameter()]	[switch]	$F,
-		[Parameter()][ValidateSet('csr', 'cert','intca','rootca')]	[String]	$Type
+param(	[Parameter(Mandatory=$true)][ValidateSet('cim','cli','dscc','ekm-client','ekm-server','ldap','qw-client','qw-server','syslog-gen-client','syslog-gen-server','syslog-sec-client','syslog-sec-server','wsapi','unified-server','all')]
+																	[String]	$SSL_Service_Name,	
+		[Parameter()][ValidateSet('csr', 'cert','intca','rootca')]	[String]	$CertType
 )
 Begin
-{	Test-A9Connection -ClientType SshClient
-}
+	{	Test-A9Connection -ClientType SshClient
+	}
 Process	
-{	$Cmd = " removecert "
-	if($SSL_Service_Name)	{	$Cmd += " $SSL_Service_Name " }
-	if($F)					{	$Cmd += " -f "}
-	if($Type) 				{	$Cmd += " -type $Type " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-} 
+	{	$Cmd = " removecert "
+		if($SSL_Service_Name)		{	$Cmd += " $SSL_Service_Name " }
+		$Cmd += " -f "
+		if($CertType) 				{	$Cmd += " -type $Type " }
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	} 
 }
 
 Function Measure-A9Upgrade
 {
 <#
 .SYNOPSIS
-	Determine if a system can do an online upgrade. (HIDDEN)
+	Determine if a system can do an online upgrade.
 .PARAMETER Allow_singlepathhost
 	Overrides the default behavior of preventing an online upgrade if a host is at risk of losing connectivity to the array due to only having a
 	single access path to the StoreServ. Use of this option will result in a loss of connectivity for the host when the path to the array disconnects
@@ -632,24 +636,24 @@ param(	[Parameter()]	[switch]	$Allow_singlepathhost,
 		[Parameter()]	[switch]	$Revertnode
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$Cmd = " checkupgrade "
-	if($Allow_singlepathhost)	{	$Cmd += " -allow_singlepathhost " }
-	if($Debug)					{	$Cmd += " -debug " }
-	if($Extraverbose)			{	$Cmd += " -extraverbose " }
-	if($Getpostabortresults)	{	$Cmd += " -getpostabortresults " }
-	if($Getresults) 			{	$Cmd += " -getresults " }
-	if($Getworkarounds)			{	$Cmd += " -getworkarounds " }
-	if($Nopatch)				{	$Cmd += " -nopatch " }
-	if($Offline)				{	$Cmd += " -offline " }
-	if($Phase)					{	$Cmd += " -phase $Phase " }
-	if($Revertnode)				{	$Cmd += " -revertnode " }
-	if($Verbose)				{	$Cmd += " -verbose " }
-$Result = Invoke-A9CLICommand -cmds  $Cmd
-Return $Result
-}
+	{	$Cmd = " checkupgrade "
+		if($Allow_singlepathhost)	{	$Cmd += " -allow_singlepathhost " }
+		if($Debug)					{	$Cmd += " -debug " }
+		if($Extraverbose)			{	$Cmd += " -extraverbose " }
+		if($Getpostabortresults)	{	$Cmd += " -getpostabortresults " }
+		if($Getresults) 			{	$Cmd += " -getresults " }
+		if($Getworkarounds)			{	$Cmd += " -getworkarounds " }
+		if($Nopatch)				{	$Cmd += " -nopatch " }
+		if($Offline)				{	$Cmd += " -offline " }
+		if($Phase)					{	$Cmd += " -phase $Phase " }
+		if($Revertnode)				{	$Cmd += " -revertnode " }
+		if($Verbose)				{	$Cmd += " -verbose " }
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
 }
 
 Function Optimize-A9LogicalDisk
@@ -691,31 +695,31 @@ Function Optimize-A9LogicalDisk
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Waittask,	
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$DR,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Shared,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Regions,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Tunesys,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Tunenodech,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Preserved,
+param(	[Parameter()]	[switch]	$Waittask,	
+		[Parameter()]	[switch]	$DR,
+		[Parameter()]	[switch]	$Shared,
+		[Parameter()]	[String]	$Regions,
+		[Parameter()]	[switch]	$Tunesys,
+		[Parameter()]	[switch]	$Tunenodech,
+		[Parameter()]	[switch]	$Preserved,
 		[Parameter(Mandatory=$true)]			[String]	$LD_name
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$Cmd = " tuneld -f "
-	if($Waittask)	{	$Cmd += " -waittask "}
-	if($DR)			{	$Cmd += " -dr " }
-	if($Shared) 	{	$Cmd += " -shared " }
-	if($Regions)	{	$Cmd += " -regions $Regions " }
-	if($Tunesys)	{	$Cmd += " -tunesys " }
-	if($Tunenodech) {	$Cmd += " -tunenodech " }
-	if($Preserved)	{	$Cmd += " -preserved " }
-	if($LD_name)	{	$Cmd += " $LD_name " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-Return $Result
-}
+	{	$Cmd = " tuneld -f "
+		if($Waittask)	{	$Cmd += " -waittask "}
+		if($DR)			{	$Cmd += " -dr " }
+		if($Shared) 	{	$Cmd += " -shared " }
+		if($Regions)	{	$Cmd += " -regions $Regions " }
+		if($Tunesys)	{	$Cmd += " -tunesys " }
+		if($Tunenodech) {	$Cmd += " -tunenodech " }
+		if($Preserved)	{	$Cmd += " -preserved " }
+		if($LD_name)	{	$Cmd += " $LD_name " }
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
 }
 
 Function Optimize-A9Node
@@ -734,8 +738,7 @@ Function Optimize-A9Node
 	and <percentage> is 10%, then the threshold will be 60%. <percentage> must be between 1 and 100. The default value is 10.
 .PARAMETER Maxchunk 
 	Controls how many chunklets are moved from each PD per move
-	operation. <number> must be between 1 and 8. The default value
-	is 8.
+	operation. <number> must be between 1 and 8. The default value is 8.
 .PARAMETER Fulldiskpct 
 	If a PD has more than <percentage> of its capacity utilized, chunklet movement is used to reduce its usage to <percentage> before LD tuning
 	is used to complete the rebalance. e.g. if a PD is 98% utilized and <percentage> is 90, chunklets will be redistributed to other PDs until the
@@ -750,27 +753,27 @@ Function Optimize-A9Node
 #>
 [CmdletBinding()]
 param(
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Node,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Chunkpct,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Maxchunk,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Fulldiskpct,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Devtype,
-	[Parameter(ValueFromPipeline=$true)]	[switch]	$DR
+	[Parameter()][ValidateRange(0,7)]					[String]	$Node,
+	[Parameter()][ValidateRange(0,100)]					[String]	$Chunkpct,
+	[Parameter()][ValidateRange(1,8)]					[String]	$Maxchunk,
+	[Parameter()][ValidateRange(0,100)]					[String]	$Fulldiskpct,
+	[Parameter()][ValidateSet('SSD','FC','NL','SCM')]	[String]	$Devtype,
+	[Parameter()]										[switch]	$DryRun
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$Cmd = " tunenodech -f "
-	if($Node)		{	$Cmd += " -node $Node " }
-	if($Chunkpct) 	{	$Cmd += " -chunkpct $Chunkpct " }
-	if($Maxchunk)	{	$Cmd += " -maxchunk $Maxchunk " }
-	if($Fulldiskpct){	$Cmd += " -fulldiskpct $Fulldiskpct " }
-	if($Devtype)	{	$Cmd += " -devtype $Devtype " }
-	if($DR) 		{	$Cmd += " -dr " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
+	{	$Cmd = " tunenodech -f "
+		if($Node)		{	$Cmd += " -node $Node " }
+		if($Chunkpct) 	{	$Cmd += " -chunkpct $Chunkpct " }
+		if($Maxchunk)	{	$Cmd += " -maxchunk $Maxchunk " }
+		if($Fulldiskpct){	$Cmd += " -fulldiskpct $Fulldiskpct " }
+		if($Devtype)	{	$Cmd += " -devtype $Devtype " }
+		if($DryRun) 	{	$Cmd += " -dr " }
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
 }
 
 Function Start-A9SystemTeporter
@@ -790,16 +793,21 @@ Function Start-A9SystemTeporter
 [CmdletBinding()]
 param()
 Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
-}
+	{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+	}
 Process	
-{	$srinfocmd = "startsr -f "
-	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	if(-not $Result)	{	return "Success: Started System Reporter $Result"	}
-	elseif($Result -match "Cannot startsr, already started")	{	Return "Command Execute Successfully :- Cannot startsr, already started"	}
-	else	{	return $Result	}		
-}
+	{	$srinfocmd = "startsr -f "
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
+		if(-not $Result)	
+			{	write-host "Success: Started System Reporter" -ForegroundColor green
+			}
+		elseif($Result -match "Cannot startsr, already started")	
+			{	write-warning "Command Execute Successfully :- Cannot startsr, already started"	
+			}
+		else{	return $Result	
+			}		
+	}
 }
 
 Function Stop-A9SSystemReporter
@@ -819,14 +827,16 @@ Function Stop-A9SSystemReporter
 [CmdletBinding()]
 param()
 Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
-}
+	{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+	}
 Process	
-{	$srinfocmd = "stopsr -f "
-	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	if(-not $Result)	{	return "Success: Stopped System Reporter $Result"	}
-	else				{	return $Result	}
-}
+	{	$srinfocmd = "stopsr -f "
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
+		if(-not $Result)	
+			{	write-host "Success: Stopped System Reporter" -ForegroundColor green 	
+			}
+		return $Result
+	}
 }
 

@@ -8,8 +8,10 @@ Function New-A9FlashCache_CLI
 	Creates flash cache for the cluster.
 .DESCRIPTION
 	The command creates flash cache of <size> for each node pair. The flash cache will be created from SSD drives.
-.PARAMETER Sim
+.PARAMETER Simulate
 	Specifies that the Adaptive Flash Cache will be run in simulator mode. The simulator mode does not require the use of SSD drives.
+.PARAMETER NoCheck_SCM_Size
+	Overrides the size comparison check to allow the creation of Adaptive Flash Cache when SCM devices size are mismatched.
 .PARAMETER RAIDType
 	Specifies the RAID type of the logical disks for Flash Cache; r0 for RAID-0 or r1 for RAID-1. If no RAID type is specified, the default is chosen by the storage system.
 .PARAMETER Size
@@ -20,21 +22,24 @@ Function New-A9FlashCache_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Sim,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$RAIDType,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Size
+param(	[Parameter()]									[switch]	$Sim,
+		[Parameter()]									[switch]	$NoCheck_SCM_Size,
+		[Parameter()][ValidateSet('Raid-0','RAID-1')]	[String]	$RAIDType,
+		[Parameter()]									[String]	$Size
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process 
-{	$Cmd = " createflashcache "
-	if($Sim) 	{	$Cmd += " -sim " }
-	if($RAIDType){	$Cmd += " -t $RAIDType " }
-	if($Size)	{	$Cmd += " $Size " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-} 
+	{	$Cmd = " createflashcache "
+		if($Simulate) 			{	$Cmd += " -sim " }
+		if($NoCheck_SCM_Size) 	{	$Cmd += " -nocheck_scm_size " }
+		IF($RAIDtype.ToLower() -eq 'raid-0') 	{$Cmd += " -t r0 " }
+		IF($RAIDtype.ToLower() -eq 'raid-1') 	{$Cmd += " -t r1 " }
+		if($Size)				{	$Cmd += " $Size " }
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	} 
 }
 
 Function Set-A9FlashCache_CLI
@@ -45,8 +50,6 @@ Function Set-A9FlashCache_CLI
 .DESCRIPTION
 	The command allows you to set the policy of the flash cache for virtual volumes. The policy is set by using virtual volume sets(vvset). 
 	The sys:all is used to enable the policy on all virtual volumes in the system.
-.EXAMPLE
-	PS:> Set-A9FlashCache_CLI
 .PARAMETER Enable
 	Will turn on the flash cache policy for the target object.
 .PARAMETER Disable
@@ -58,29 +61,36 @@ Function Set-A9FlashCache_CLI
 	Note(set Name Should de is the same formate Ex:  vvset:vvset1 )
 .PARAMETER All
 	The policy is applied to all virtual volumes.
+.EXAMPLE
+	PS:> Set-A9FlashCache_CLI -Enable -All
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ParameterSetName='Enable', Mandatory=$true, ValueFromPipeline=$true)]	[switch]	$Enable,
-		[Parameter(ParameterSetName='Disable',Mandatory=$true, ValueFromPipeline=$true)]	[switch]	$Disable,
-		[Parameter(ParameterSetName='Clear',  Mandatory=$true, ValueFromPipeline=$true)]	[switch]	$Clear,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$vvSet,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$All
+param(	[Parameter(ParameterSetName='EnableV', Mandatory)]
+		[Parameter(ParameterSetName='EnableA', Mandatory)]	[switch]	$Enable,
+		[Parameter(ParameterSetName='DisableV',Mandatory)]
+		[Parameter(ParameterSetName='DisableA',Mandatory)]	[switch]	$Disable,
+		[Parameter(ParameterSetName='ClearA',  Mandatory)]	[switch]	$Clear,
+		[Parameter(ParameterSetName='EnableV', Mandatory)]
+		[Parameter(ParameterSetName='ClearV', Mandatory)]	[String]	$vvSet,
+		[Parameter(ParameterSetName='EnableV', Mandatory)]
+		[Parameter(ParameterSetName='EnableA', Mandatory)]
+		[Parameter(ParameterSetName='ClearA', Mandatory)]	[switch]	$All
 )
 Begin 
-{	Test-A9Connection -ClientType 'SshClient' 
-}
+	{	Test-A9Connection -ClientType 'SshClient' 
+	}
 Process
-{	$Cmd = " setflashcache "
-	if($Enable) 	{	$Cmd += " enable " }
-	elseif($Disable){	$Cmd += " disable " }
-	elseif($Clear)	{	$Cmd += " clear " }
-	if($vvSet)		{	$Cmd += " $vvSet " }
-	if($All) 		{	$Cmd += " sys:all " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
+	{	$Cmd = " setflashcache "
+		if($Enable) 	{	$Cmd += " enable " }
+		if($Disable){	$Cmd += " disable " }
+		if($Clear)	{	$Cmd += " clear " }
+		if($vvSet)		{	$Cmd += " $vvSet " }
+		if($All) 		{	$Cmd += " sys:all " }
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
 }
 
 Function Remove-A9FlashCache_CLI
@@ -92,8 +102,6 @@ Function Remove-A9FlashCache_CLI
 	The command removes the flash cache from the cluster and will stop use of the extended cache.
 .EXAMPLE
 	PS:> Remove-A9FlashCache_CLI
-.PARAMETER F
-	Specifies that the command is forced. If this option is not used, the command requires confirmation before proceeding with its operation.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -101,13 +109,12 @@ Function Remove-A9FlashCache_CLI
 param(	[Parameter()]	[switch]	$F
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process
-{	$Cmd = " removeflashcache "
-	if($F)	{	$Cmd += " -f " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
+	{	$Cmd = " removeflashcache -f "
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
 }
 

@@ -2,47 +2,52 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Get-A9Wsapi
+Function Get-A9WsApi
 {
 <#
-  .SYNOPSIS
+.SYNOPSIS
   Shows the Web Services API server information.
 .DESCRIPTION
   The command displays the WSAPI server service configuration state as either Enabled or Disabled. It displays the server current running
   status as Active, Inactive or Error. It also displays the current status of the HTTP and HTTPS ports and their port numbers. WSAPI server URL is
   also displayed.
 .EXAMPLE
-    PS:> Get-A9Wsapi -D
-.PARAMETER D
+    PS:> Get-A9Wsapi -TableFormat
+.PARAMETER TableFormat
     Shows WSAPI information in table format.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(  [Parameter()] [switch]	$D
+param(  [Parameter()] [switch]	$TableFormat
 )
 Begin	
-{   Test-A9Connection -ClientType 'SshClient' 
-}
+  {   Test-A9Connection -ClientType 'SshClient' 
+  }
 Process
-{ $Cmd = " showwsapi "
-  if($D)  {	$Cmd += " -d " }
-  $Result = Invoke-A9CLICommand -cmds  $Cmd
-  if($Result -match "-Service-")
-    {	$range = $Result.count
-      $tempFile = [IO.Path]::GetTempFileName()
-      foreach ($s in  $Result[0..$range] )
-        { $s= [regex]::Replace($s,"^ +","")
-          $s= [regex]::Replace($s," +"," ")
-          $s= [regex]::Replace($s," ",",")
-          $s= $s.Trim() -replace '-Service-,-State-,-HTTP_State-,HTTP_Port,-HTTPS_State-,HTTPS_Port,-Version-,-------------API_URL--------------','Service,State,HTTP_State,HTTP_Port,HTTPS_State,HTTPS_Port,ersion,API_URL'			
-          Add-Content -Path $tempFile -Value $s
-        }
-      Import-Csv $tempFile
-      Remove-Item  $tempFile
-    }
-  else{  return $Result  }
-}
+  { $Cmd = " showwsapi "
+    if($TableFormat)  {	$Cmd += " -d " }
+    $Result = Invoke-A9CLICommand -cmds  $Cmd
+  }
+end
+  { if($Result -match "-Service-")
+      {	$range = $Result.count
+        $tempFile = [IO.Path]::GetTempFileName()
+        foreach ($s in  $Result[0..$range] )
+          { $s= [regex]::Replace($s,"^ +","")
+            $s= [regex]::Replace($s," +"," ")
+            $s= [regex]::Replace($s," ",",")
+            $s= $s.Trim() -replace '-Service-,-State-,-HTTP_State-,HTTP_Port,-HTTPS_State-,HTTPS_Port,-Version-,-------------API_URL--------------','Service,State,HTTP_State,HTTP_Port,HTTPS_State,HTTPS_Port,ersion,API_URL'			
+            Add-Content -Path $tempFile -Value $s
+          }
+        $returndata = Import-Csv $tempFile
+        Remove-Item  $tempFile
+        return $returndata
+      }
+    else
+      {  return $Result  
+      }
+  }
 }
 
 Function Get-A9WsapiSession
@@ -66,7 +71,9 @@ Begin
 Process
 { $Cmd = " showwsapisession "
   $Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.Count -gt 2)
+}
+end
+{  if($Result.Count -gt 2)
     { $range = $Result.count - 3
       $tempFile = [IO.Path]::GetTempFileName()
       foreach ($s in  $Result[0..$range] )
@@ -76,8 +83,9 @@ Process
           $s= $s.Trim() -replace 'Id,Node,-Name--,-Role-,-Client_IP_Addr-,----Connected_since----,-State-,-Session_Type-','Id,Node,Name,Role,Client_IP_Addr,Connected_since,State,Session_Type'			
           Add-Content -Path $tempFile -Value $s
         }
-      Import-Csv $tempFile
+      $returndata = Import-Csv $tempFile
       Remove-Item  $tempFile
+      return $returndata
     }
 	else
     {	return $Result
@@ -94,7 +102,7 @@ Function Remove-A9WsapiSession
   The command removes the WSAPI user connections from the current system.
 .EXAMPLE
 	PS:> Remove-A9WsapiSession -Id "1537246327049685" -User_name 3parxyz -IP_address "10.10.10.10"
-.PARAMETER Pat
+.PARAMETER Pattern
   Specifies that the <id>, <user_name> and <IP_address> specifiers are treated as glob-style (shell-style) patterns and all WSAPI user
   connections matching those patterns are removed. By default, confirmation is required to proceed with removing each connection
   unless the -f option is specified.
@@ -112,27 +120,27 @@ Function Remove-A9WsapiSession
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(  [Parameter()]   [switch]   $Pat,
-        [Parameter()]   [switch]   $Dr,
-        [Parameter()]   [switch]   $Close_sse,
-        [Parameter(Mandatory=$true)]  [String]  $Id,
-        [Parameter(Mandatory=$true)]  [String]  $User_name,
-        [Parameter(Mandatory=$true)]  [String]  $IP_address
+param(  [Parameter()]           [switch]   $Pattern,
+        [Parameter()]           [switch]   $DryRun,
+        [Parameter()]           [switch]   $Close_sse,
+        [Parameter(Mandatory)]  [String]  $Id,
+        [Parameter(Mandatory)]  [String]  $User_name,
+        [Parameter(Mandatory)]  [String]  $IP_address
 )
 Begin	
-{   Test-A9Connection -ClientType 'SshClient' 
-}
+  {   Test-A9Connection -ClientType 'SshClient' 
+  }
 Process
-{ $Cmd = " removewsapisession -f"
-  if($Pat)        {  $Cmd += " -pat "       }
-  if($Dr)         {  $Cmd += " -dr "        }
-  if($Close_sse)  {  $Cmd += " $Close_sse " }
-  if($Id)         {  $Cmd += " $Id "        }
-  if($User_name)  {  $Cmd += " $User_name " }
-  if($IP_address) {  $Cmd += " IP_address " }
-  $Result = Invoke-A9CLICommand -cmds  $Cmd
-  Return $Result
-}
+  { $Cmd = " removewsapisession -f"
+    if($Pattern)    {  $Cmd += " -pat "       }
+    if($DryRun)     {  $Cmd += " -dr "        }
+    if($Close_sse)  {  $Cmd += " $Close_sse " }
+    if($Id)         {  $Cmd += " $Id "        }
+    if($User_name)  {  $Cmd += " $User_name " }
+    if($IP_address) {  $Cmd += " $IP_address " }
+    $Result = Invoke-A9CLICommand -cmds  $Cmd
+    Return $Result
+  }
 }
 
 Function Set-A9Wsapi
@@ -142,42 +150,50 @@ Function Set-A9Wsapi
   Set the Web Services API server properties.
 .DESCRIPTION
   The command sets properties of the Web Services API server, including options to enable or disable the HTTP and HTTPS ports.
-.EXAMPLE
-	PS:> Set-A9Wsapi -Force -Enable_Http
-.PARAMETER Force
-  Forces the operation of the setwsapi command, bypassing the typical confirmation message. At least one of the following options are required:
-.PARAMETER Pol
+.PARAMETER Policy
   Sets the WSAPI server policy:
     tls_strict       - only TLS connections using TLS 1.2 with secure ciphers will be accepted if HTTPS is enabled. This is the default policy setting.
     no_tls_strict    - TLS connections using TLS 1.0 - 1.2 will be accepted if HTTPS is enabled.
+    per_user_limit   - The maximum number of sessions allowed per user is 80% of the system resource usage.
+    no_per_user_limit- The maximum number of sessions allowed per user is the system resource usage. This is the default setting.
 .PARAMETER Timeout
   Specifies the value that can be set for the idle session timeout for a WSAPI session. <value> is a positive integer and in the range
   of 3-1440 minutes or (3 minutes to 24 hours). Changing the session timeout takes effect immediately and will affect already opened and
   subsequent WSAPI sessions. The default timeout value is 15 minutes.
 .PARAMETER Evtstream
   Enables or disables the event stream feature. This supports Server Sent Event (SSE) protocol. The default value is enable.
+.EXAMPLE
+	PS:> Set-A9Wsapi -Policy tls_strict
 .NOTES
 	This command requires a SSH type connection.
+  Authority: Super, Service
+    Any role granted the wsapi_set right
+  Usage:
+  - Access to all domains is required to run this command.
+  - When the Web Services API server is active, a warning message showing the current status of the Web Services API server is displayed and 
+    you will be prompted for confirmation before continuing. The -f option forces the action without a warning message and prompt.
+  - Setting the session timeout alone is not service affecting and will not restart the WSAPI server. However, if the timeout option 
+    is specified along with service affecting options like -pol the WSAPI server will restart.
 #>
 [CmdletBinding()]
-param(  [Parameter()]   [switch]	$Force,
-        [Parameter()] 	[ValidateSet('tls_strict','no_tls_strict')]
-                        [String]	$Pol,
-        [Parameter()] 	[String]	$Timeout,
-        [Parameter()] 	[String]	$Evtstream
+param(  [Parameter()] 	[ValidateSet('tls_strict','no_tls_strict')]
+                        [String]	$Policy,
+        [Parameter()] 	[ValidateRange(3,1440)]
+                        [String]	$Timeout,
+        [Parameter()] 	[ValidateSet('enable','disable')]
+                        [String]	$Evtstream
 )
 Begin	
-{   Test-A9Connection -ClientType 'SshClient' 
-}
+  {   Test-A9Connection -ClientType 'SshClient' 
+  }
 Process
-{ $Cmd = " setwsapi "
-  if($Force)    {	$Cmd += " -f "}
-  if($Pol)      {	$Cmd += " -pol $Pol " }
-  if($Timeout)  {	$Cmd += " -timeout $Timeout " }
-  if($Evtstream){	$Cmd += " -evtstream $Evtstream " }
-  $Result = Invoke-A9CLICommand -cmds  $Cmd
-  Return $Result
-}
+  { $Cmd = " setwsapi -f "
+    if($Policy)   {	$Cmd += " -pol $Pol " }
+    if($Timeout)  {	$Cmd += " -timeout $Timeout " }
+    if($Evtstream){	$Cmd += " -evtstream $Evtstream " }
+    $Result = Invoke-A9CLICommand -cmds  $Cmd
+    Return $Result
+  }
 }
 
 Function Start-A9Wsapi
@@ -192,17 +208,23 @@ Function Start-A9Wsapi
   PS:> Start-A9Wsapi
 .NOTES
 	This command requires a SSH type connection.
+  Authority:Super, Service
+    Any role granted the wsapi_start right
+  Usage:
+  - This command requires access to all domains.
+  - Use the stopwsapi command to stop the Web Services API server and the Alletra UI.
+  - The Web Services API server only listens for HTTPS requests.
 #>
 [CmdletBinding()]
 param()
 Begin	
-{   Test-A9Connection -ClientType 'SshClient' 
-}
+  {   Test-A9Connection -ClientType 'SshClient' 
+  }
 Process
-{ $cmd= " startwsapi "
-  $Result = Invoke-A9CLICommand -cmds  $cmd 
-  return $Result	
-}
+  { $cmd= " startwsapi "
+    $Result = Invoke-A9CLICommand -cmds  $cmd 
+    return $Result	
+  }
 }
 
 Function Stop-A9Wsapi
@@ -216,14 +238,16 @@ Function Stop-A9Wsapi
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param()
+param(  [Parameter()] [switch]  $Keep_UI
+)
 Begin	
-{   Test-A9Connection -ClientType 'SshClient' 
-}
+  {   Test-A9Connection -ClientType 'SshClient' 
+  }
 Process
-{ $Cmd = " stopwsapi -f "
-  $Result = Invoke-A9CLICommand -cmds  $Cmd
-  Return $Result
-}
+  { $Cmd = " stopwsapi -f "
+    if ( $Keep_UI)  { $Cmd+= ' -keep_ui'}
+    $Result = Invoke-A9CLICommand -cmds  $Cmd
+    Return $Result
+  }
 }
 
