@@ -82,30 +82,34 @@ Function New-A9Cpg
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory = $true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True)]
+	[Parameter(Mandatory = $true)]
 						[String]	$CPGName,
-	[Parameter()]		[String]	$Domain = $null,
-	[Parameter()]		[String]	$Template = $null,
-	[Parameter()]		[Int]		$GrowthIncrementMiB = $null,
-	[Parameter()]    	[int]		$GrowthLimitMiB = $null,
-	[Parameter()]    	[int]		$UsedLDWarningAlertMiB = $null,
-	[Parameter()][ValidateSet('R0','R1','R5','R6')]    [string]	$RAIDType = $null, 
-	[Parameter()]    	[int]		$SetSize = $null,
-    [Parameter()][ValidateSet('PORT','CAGE','MAG')]    [string]	$HA = $null,
-	[Parameter()][ValidateSet('FIRST','LAST')]    [string]	$Chunklets = $null,
-	[Parameter()]		[String]	$NodeList = $null,
-	[Parameter()]		[String]	$SlotList = $null,
-	[Parameter()]   	[String]	$PortList = $null,
-	[Parameter()]    	[String]	$CageList = $null,
-	[Parameter()]    	[String]	$MagList = $null,
-	[Parameter()]    	[String]	$DiskPosList = $null,
-	[Parameter()]    	[String] 	$DiskList = $null,
-	[Parameter()]    	[int]	$TotalChunkletsGreaterThan = $null,
-	[Parameter()]    	[int]	$TotalChunkletsLessThan = $null,
-	[Parameter()]		[int]	$FreeChunkletsGreaterThan = $null,
-	[Parameter()]    	[int]	$FreeChunkletsLessThan = $null,
-	[Parameter()][ValidateSet('FC','NL','SSD')]	[string]	$DiskType = $null,
-	[Parameter()]		[int]	$Rpm = $null
+	[Parameter()]		[String]	$Domain,
+	[Parameter()]		[String]	$Template,
+	[Parameter()]		[Int]		$GrowthIncrementMiB,
+	[Parameter()]    	[int]		$GrowthLimitMiB,
+	[Parameter()]    	[int]		$UsedLDWarningAlertMiB,
+	[Parameter()][ValidateSet('R0','R1','R5','R6')]   
+						[string]	$RAIDType, 
+	[Parameter()]    	[int]		$SetSize,
+    [Parameter()][ValidateSet('PORT','CAGE','MAG')]    
+						[string]	$HA,
+	[Parameter()][ValidateSet('FIRST','LAST')]    
+						[string]	$Chunklets,
+	[Parameter()]		[String]	$NodeList,
+	[Parameter()]		[String]	$SlotList,
+	[Parameter()]   	[String]	$PortList,
+	[Parameter()]    	[String]	$CageList,
+	[Parameter()]    	[String]	$MagList,
+	[Parameter()]    	[String]	$DiskPosList,
+	[Parameter()]    	[String] 	$DiskList,
+	[Parameter()]    	[int]		$TotalChunkletsGreaterThan,
+	[Parameter()]    	[int]		$TotalChunkletsLessThan,
+	[Parameter()]		[int]		$FreeChunkletsGreaterThan,
+	[Parameter()]    	[int]		$FreeChunkletsLessThan,
+	[Parameter()][ValidateSet('FC','NL','SSD')]	
+						[string]	$DiskType,
+	[Parameter()]		[int]		$Rpm
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -311,39 +315,42 @@ Function Update-A9Cpg
 #>
 [CmdletBinding()]
 	Param(
-	[Parameter(Mandatory = $true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True)]
+	[Parameter(Mandatory)]
 							[String]	$CPGName,
 	[Parameter()]			[String]	$NewName,
-	[Parameter()]			[Boolean]	$DisableAutoGrow = $false,
-	[Parameter()]			[Boolean]	$RmGrowthLimit = $false,	
-	[Parameter()]			[Boolean]	$RmWarningAlert = $false,
-	[Parameter()][ValidateSet('R0','R1','R5','R6')]	[string]	$RAIDType = $null, 
-	[Parameter()]    		[int]		$SetSize = $null,
-    [Parameter()][ValidateSet('CAGE','PORT','MAG')]    		[string]	$HA = $null,
-	[Parameter()]		    [string]	$Chunklets = $null,
-	[Parameter()]			[String]	$NodeList = $null,	
-	[Parameter()]			[String]	$SlotList = $null,
-	[Parameter()]			[String]	$PortList = $null,
-	[Parameter()]			[String]	$CageList = $null,
-	[Parameter()]			[String]	$MagList = $null,
-	[Parameter()]			[String]	$DiskPosList = $null,
-	[Parameter()]			[String]	$DiskList = $null,
-	[Parameter()]			[int]		$TotalChunkletsGreaterThan = $null,
-	[Parameter()]			[int]		$TotalChunkletsLessThan = $null,
-	[Parameter()]			[int]		$FreeChunkletsGreaterThan = $null,
-	[Parameter()]			[int]		$FreeChunkletsLessThan = $null,
-	[Parameter()][ValidateSet('FC','NL','SSD')]	[int]	$DiskType = $null,	
-	[Parameter()]			[int]		$Rpm = $null
+	[Parameter()]			[Boolean]	$DisableAutoGrow,		
+	[Parameter()]			[Boolean]	$RmGrowthLimit,			
+	[Parameter()]			[Boolean]	$RmWarningAlert,		
+	[Parameter()][ValidateSet('R0','R1','R5','R6')]	
+							[string]	$RAIDType, 				
+	[Parameter()]    		[int]		$SetSize,
+    [Parameter()][ValidateSet('CAGE','PORT','MAG')]
+							[string]	$HA,					
+	[Parameter()]		    [string]	$Chunklets,				
+	[Parameter()]			[String]	$NodeList,				
+	[Parameter()]			[String]	$SlotList,				
+	[Parameter()]			[String]	$PortList,				
+	[Parameter()]			[String]	$CageList,				
+	[Parameter()]			[String]	$MagList,				
+	[Parameter()]			[String]	$DiskPosList,			
+	[Parameter()]			[String]	$DiskList,				
+	[Parameter()]			[int]		$TotalChunkletsGreaterThan,
+	[Parameter()]			[int]		$TotalChunkletsLessThan,
+	[Parameter()]			[int]		$FreeChunkletsGreaterThan,
+	[Parameter()]			[int]		$FreeChunkletsLessThan,
+	[Parameter()][ValidateSet('FC','NL','SSD')]	
+							[int]		$DiskType,	
+	[Parameter()]			[int]		$Rpm	
 )
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
 {	$body = @{}
-	If ($NewName) { $body["newName"] ="$($NewName)" } 
-	If($DisableAutoGrow) { $body["disableAutoGrow"] =$DisableAutoGrow } #else { $body["disableAutoGrow"] =$DisableAutoGrow}
-	If($RmGrowthLimit) { $body["rmGrowthLimit"] = $RmGrowthLimit } #else { $body["rmGrowthLimit"] = $RmGrowthLimit } 
-    If($RmWarningAlert) { $body["rmWarningAlert"] = $RmWarningAlert } #else { $body["rmWarningAlert"] = $RmWarningAlert }
+	If ($NewName) 							{ $body["newName"] ="$($NewName)" } 
+	If (-not($null -eq $DisableAutoGrow))	{ $body["disableAutoGrow"] =$DisableAutoGrow } 
+	If (-not($null -eq $RmGrowthLimit)) 	{ $body["rmGrowthLimit"] = $RmGrowthLimit } 
+    If (-not($null -eq $RmWarningAlert)) 	{ $body["rmWarningAlert"] = $RmWarningAlert } 
 	$LDLayoutBody = @{}
 	if ($RAIDType)
 		{	if($RAIDType -eq "R0")		{	$LDLayoutBody["RAIDType"] = 1	}
@@ -351,7 +358,7 @@ Process
 			elseif($RAIDType -eq "R5")	{	$LDLayoutBody["RAIDType"] = 3	}
 			else						{	$LDLayoutBody["RAIDType"] = 4	}
 		}
-    if($SetSize)	{	$LDLayoutBody["setSize"] = $SetSize		}
+    if ($SetSize)			{	$LDLayoutBody["setSize"] = $SetSize		}
 	if ($HA)
 		{	if($HA -eq "PORT")			{	$LDLayoutBody["HA"] = 1			}
 			elseif($HA -eq "CAGE")		{	$LDLayoutBody["HA"] = 2			}
@@ -407,17 +414,16 @@ Process
 			$tclList["totalChunkletsLessThan"] = $TotalChunkletsLessThan	
 			$LDLayoutDiskPatternsBody += $tclList 		
 		}
-	
 	if ($FreeChunkletsGreaterThan)
 		{	$fcgList=@{}
 			$fcgList["freeChunkletsGreaterThan"] = $FreeChunkletsGreaterThan	
 			$LDLayoutDiskPatternsBody += $fcgList 		
 		}
 	if ($FreeChunkletsLessThan)
-	{	$fclList=@{}
-		$fclList["freeChunkletsLessThan"] = $FreeChunkletsLessThan	
-		$LDLayoutDiskPatternsBody += $fclList 		
-	}	
+		{	$fclList=@{}
+			$fclList["freeChunkletsLessThan"] = $FreeChunkletsLessThan	
+			$LDLayoutDiskPatternsBody += $fclList 		
+		}	
 	if ($DiskType)
 		{	$dtList=@{}
 			if		($DiskType -eq "FC")		{	$dtList["diskType"] = 1		}
@@ -430,8 +436,8 @@ Process
 			$rpmList["RPM"] = $Rpm	
 			$LDLayoutDiskPatternsBody += $rpmList
 		}	
-	if($LDLayoutDiskPatternsBody.Count -gt 0)	{$LDLayoutBody["diskPatterns"] = $LDLayoutDiskPatternsBody	}		
-	if($LDLayoutBody.Count -gt 0){$body["LDLayout"] = $LDLayoutBody }
+	if($LDLayoutDiskPatternsBody.Count -gt 0)	{	$LDLayoutBody["diskPatterns"] = $LDLayoutDiskPatternsBody	}		
+	if($LDLayoutBody.Count -gt 0)				{	$body["LDLayout"] = $LDLayoutBody }
     $Result = $null
     $uri = '/cpgs/'+$CPGName	
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body	
@@ -439,10 +445,10 @@ Process
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			if($NewName)
-				{	return Get-Cpg_WSAPI -CPGName $NewName
+				{	return Get-A9Cpg -CPGName $NewName
 				}
 			else
-				{	return Get-Cpg_WSAPI -CPGName $CPGName
+				{	return Get-A9Cpg -CPGName $CPGName
 				}
 		}
 	else
@@ -466,28 +472,29 @@ Function Remove-A9Cpg
 	Removes a Common Provision Group(CPG) "MyCPG".
 .PARAMETER CPGName 
     Specify name of the CPG.
+.NOTES
+	This operation requires access to all domains, as well as Super, or Edit roles, or any role granted cpg_remove permission. 
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory = $true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True)]
-		[String]	$CPGName
+Param(	[Parameter(Mandatory)]		[String]	$CPGName
 	)
 Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{  	$uri = '/cpgs/'+$CPGName
-	$Result = $null
-	$Result = Invoke-A9API -uri $uri -type 'DELETE'
-	$status = $Result.StatusCode
-	if($status -eq 200)
-	{	write-host "Cmdlet executed successfully" -foreground green
-		return		
+	{	Test-A9Connection -ClientType 'API'
 	}
-	else
-	{	write-error "FAILURE : While Removing CPG:$CPGName " 
-		return $Result.StatusDescription
-	}    
-}
+Process 
+	{  	$uri = '/cpgs/'+$CPGName
+		$Result = $null
+		$Result = Invoke-A9API -uri $uri -type 'DELETE'
+		$status = $Result.StatusCode
+		if($status -eq 200)
+		{	write-host "Cmdlet executed successfully" -foreground green
+			return		
+		}
+		else
+		{	write-error "FAILURE : While Removing CPG:$CPGName " 
+			return $Result.StatusDescription
+		}    
+	}
 }
 
 Function Get-A9Cpg 
@@ -509,15 +516,13 @@ Function Get-A9Cpg
 	Specify name of the cpg to be listed
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True)]	[String]	$CPGName
+Param(	[Parameter()]	[String]	$CPGName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
-{	$Result = $null
-	$dataPS = $null	
-	if($CPGName)
+{	if($CPGName)
 		{	$uri = '/cpgs/'+$CPGName
 			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			if($Result.StatusCode -eq 200)

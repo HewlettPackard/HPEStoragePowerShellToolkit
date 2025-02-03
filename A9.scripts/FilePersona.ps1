@@ -14,20 +14,22 @@ Function Get-A9FileServices
 [CmdletBinding()]
 Param()
 Begin
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process
-{	$Result = Invoke-A9API -uri '/fileservices' -type 'GET'
-	if($Result.StatusCode -eq 200)
-		{	$dataPS = ($Result.content | ConvertFrom-Json)
-			write-host "Cmdlet executed successfully" -foreground green
-			return $dataPS
-		}
-	else
-		{	write-error "FAILURE : While Executing Get-A9FileServices."
-			return $Result.StatusDescription
-		}  
-}
+	{	$Result = Invoke-A9API -uri '/fileservices' -type 'GET'
+	}
+End	
+	{	if($Result.StatusCode -eq 200)
+			{	$dataPS = ($Result.content | ConvertFrom-Json)
+				write-host "Cmdlet executed successfully" -foreground green
+				return $dataPS
+			}
+		else
+			{	write-error "FAILURE : While Executing Get-A9FileServices."
+				return $Result.StatusDescription
+			}  
+	}
 }
 
 Function New-A9FPG 
@@ -63,38 +65,39 @@ Function New-A9FPG
 	Specifies any additional information up to 511 characters for the FPG.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]		$FPGName,	  
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]		$CPGName,	
-		[Parameter(ValueFromPipeline=$true)]					[int]			$SizeTiB, 
-		[Parameter(ValueFromPipeline=$true)]		[Boolean]		$FPVV,
-		[Parameter(ValueFromPipeline=$true)]		[Boolean]		$TDVV,
-		[Parameter(ValueFromPipeline=$true)]		[int]			$NodeId,
-		[Parameter(ValueFromPipeline=$true)]		[String]		$Comment
+Param(	[Parameter(Mandatory)]	[String]		$FPGName,	  
+		[Parameter(Mandatory)]	[String]		$CPGName,	
+		[Parameter()]			[int]			$SizeTiB, 
+		[Parameter()]			[Boolean]		$FPVV,
+		[Parameter()]			[Boolean]		$TDVV,
+		[Parameter()]			[int]			$NodeId,
+		[Parameter()]			[String]		$Comment
 	)
 Begin 
-{	Test-A9Connection -ClientType 'API'
-}
+	{	Test-A9Connection -ClientType 'API'
+	}
 Process 
-{	$body = @{}    
-    $body["name"] = "$($FPGName)"
-	$body["cpg"] = "$($CPGName)"
-	$body["sizeTiB"] = $SizeTiB
-	If ($FPVV)  	{	$body["fpvv"] 	= $FPVV 		}  
-	If ($TDVV) 		{	$body["tdvv"] 	= $TDVV   		} 
-	If ($NodeId) 	{	$body["nodeId"] = $NodeId   	}
-	If ($Comment) 	{	$body["comment"] = "$($Comment)"}
-    $Result = $null
-	$Result = Invoke-A9API -uri '/fpgs' -type 'POST' -body $body
-	$status = $Result.StatusCode	
-	if($status -eq 202)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return Get-FPG_WSAPI -FPG $FPGName
-		}
-	else
-		{	write-error "FAILURE : While creating File Provisioning Groups:$FPGName" 
-			return $Result.StatusDescription
-		}	
-}
+	{	$body = @{}    
+		$body["name"] = "$($FPGName)"
+		$body["cpg"] = "$($CPGName)"
+		$body["sizeTiB"] = $SizeTiB
+		If ($FPVV)  	{	$body["fpvv"] 	= $FPVV 		}  
+		If ($TDVV) 		{	$body["tdvv"] 	= $TDVV   		} 
+		If ($NodeId) 	{	$body["nodeId"] = $NodeId   	}
+		If ($Comment) 	{	$body["comment"] = "$($Comment)"}
+		$Result = Invoke-A9API -uri '/fpgs' -type 'POST' -body $body
+	}
+end
+	{	$status = $Result.StatusCode	
+		if($status -eq 202)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return Get-FPG_WSAPI -FPG $FPGName
+			}
+		else
+			{	write-error "FAILURE : While creating File Provisioning Groups:$FPGName" 
+				return $Result.StatusDescription
+			}	
+	}
 }
 
 Function Remove-A9FPG
@@ -110,35 +113,36 @@ Function Remove-A9FPG
 	PS:> Remove-A9FPG -FPGId 123 
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory = $true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True)]
-		[String]	$FPGId
+Param(	[Parameter(Mandatory)]	[String]	$FPGId
 	)
 Begin 
-{	Test-A9Connection -ClientType 'API'
-}
+	{	Test-A9Connection -ClientType 'API'
+	}
 Process 
-{	$uri = '/fpgs/'+$FPGId
-	$Result = $null
-	$Result = Invoke-A9API -uri $uri -type 'DELETE' 
-	$status = $Result.StatusCode
-	if($status -eq 202)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return 
-		}
-	else
-		{	write-error "FAILURE : While Removing File Provisioning Group : $FPGId "
-			return $Result.StatusDescription
-		}    
-}
+	{	$uri = '/fpgs/'+$FPGId
+		$Result = $null
+		$Result = Invoke-A9API -uri $uri -type 'DELETE' 
+	}
+end
+	{	$status = $Result.StatusCode
+		if($status -eq 202)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return 
+			}
+		else
+			{	write-error "FAILURE : While Removing File Provisioning Group : $FPGId "
+				return $Result.StatusDescription
+			}    
+	}
 }
 
 Function Get-A9FPG 
 {
 <#
 .SYNOPSIS
-	Get Single or list of File Provisioning Group.
+	Get Single or all File Provisioning Groups.
 .DESCRIPTION
-	Get Single or list of File Provisioning Group.
+	Get Single or all File Provisioning Groups.
 .PARAMETER FPG
 	Name of File Provisioning Group.
 .EXAMPLE
@@ -149,73 +153,31 @@ Function Get-A9FPG
 	PS:> Get-A9FPG -FPG MyFPG
 
 	Display a Given File Provisioning Group.
-.EXAMPLE
-	PS:> Get-A9FPG -FPG "MyFPG,MyFPG1,MyFPG2,MyFPG3"
-
-	Display Multiple File Provisioning Group.
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$FPG
+Param(	[Parameter()]	[String]	$FPG
 	)
 Begin 
-{	Test-A9Connection -ClientType 'API'
-}
+	{	Test-A9Connection -ClientType 'API'
+	}
 Process 
-{	$Result = $null
-	$dataPS = $null		
-	$Query="?query=""  """
-	if($FPG)
-		{	$count = 1
-			$lista = $FPG.split(",")
-			if($lista.Count -gt 1)
-				{	foreach($sub in $lista)
-						{	$Query = $Query.Insert($Query.Length-3," name EQ $sub")			
-							if($lista.Count -gt 1)
-								{	if($lista.Count -ne $count)
-										{	$Query = $Query.Insert($Query.Length-3," OR ")
-											$count = $count + 1
-										}				
-								}
-						}
-					$uri = '/fpgs/'+$Query
-					$Result = Invoke-A9API -uri $uri -type 'GET' 		
-					If($Result.StatusCode -eq 200)
-						{	$dataPS = ($Result.content | ConvertFrom-Json).members				
-						}
-				}
-			else
-				{	$uri = '/fpgs/'+$FPG
-					$Result = Invoke-A9API -uri $uri -type 'GET' 		
-					If($Result.StatusCode -eq 200)
-						{	$dataPS = $Result.content | ConvertFrom-Json				
-						}		
-				}				
-		}
-	else
-		{	$Result = Invoke-A9API -uri '/fpgs' -type 'GET' 
-			If($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members			
-				}		
-		}
-	If($Result.StatusCode -eq 200)
-		{	if($dataPS.Count -gt 0)
-				{	write-host "Cmdlet executed successfully" -foreground green
-					return $dataPS
-				}
-			else
-				{	Write-Error "Failure : While Executing Get-FPG_WSAPI. Expected Result Not Found with Given Filter Option." 
-					return 
-				}
-		}
-	else
-		{	Write-Error "Failure : While Executing Get-FPG_WSAPI. " 
-			return $Result.StatusDescription
-		}
+	{	$uri='/fpgs'	
+		if($FPG)	{	$uri += '/'+$FPG	}
+		$Result = Invoke-A9API -uri $uri -type 'GET' 		
+		If($Result.StatusCode -eq 200)
+			{	$dataPS = $Result.content | ConvertFrom-Json
+				if ($null -eq $FPG) {	$dataPS = $dataPS.members	}
+				write-host "Cmdlet executed successfully" -foreground green
+				return $dataPS	
+			}						
+		else
+			{	Write-Error "Failure : While Executing" 
+				return $Result.StatusDescription
+			}
+	}
 }
 
-}
-
-Function Get-A9FPGReclamationTasks 
+Function Get-A9FPGReclamationTask
 {
 <#
 .SYNOPSIS
@@ -223,33 +185,35 @@ Function Get-A9FPGReclamationTasks
 .DESCRIPTION
 	Get the reclamation tasks for the FPG.
 .EXAMPLE
-    PS:> Get-A9FPGReclamationTasks
+    PS:> Get-A9FPGReclamationTask
 
 	Get the reclamation tasks for the FPG.
 #>
 [CmdletBinding()]
 Param()
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process
-{	$Result = Invoke-A9API -uri '/fpgs/reclaimtasks' -type 'GET' 
-	if($Result.StatusCode -eq 200)
-		{	$dataPS = ($Result.content | ConvertFrom-Json).members
-			if($dataPS.Count -gt 0)
-				{	write-host "Cmdlet executed successfully" -foreground green
-					return $dataPS
-				}
-			else
-				{	Write-Error "Failure : While Executing Get-FPGReclamationTasks_WSAPI." 
-					return 
-				}
-		}
-	else
-		{	Write-Error "Failure : While Executing Get-FPGReclamationTasks_WSAPI. " 
-			return $Result.StatusDescription
-		}
-}  
+	{	$Result = Invoke-A9API -uri '/fpgs/reclaimtasks' -type 'GET' 	
+	}
+end
+	{	if($Result.StatusCode -eq 200)
+			{	$dataPS = ($Result.content | ConvertFrom-Json).members
+				if($dataPS.Count -gt 0)
+					{	write-host "Cmdlet executed successfully" -foreground green
+						return $dataPS
+					}
+				else
+					{	Write-Error "Failure : While Executing Get-FPGReclamationTask" 
+						return 
+					}
+			}
+		else
+			{	Write-Error "Failure : While Executing Get-FPGReclamationTask" 
+				return $Result.StatusDescription
+			}
+	}  
 }
 
 Function New-A9VFS 
@@ -302,64 +266,65 @@ Function New-A9VFS
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VFSName,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$PolicyId,
-    [Parameter(ValueFromPipeline=$true)]					[String]	$FPG_IPInfo,
-    [Parameter(ValueFromPipeline=$true)]					[String]	$VFS,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$IPAddr,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$Netmask,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$NetworkName,
-	[Parameter(ValueFromPipeline=$true)]					[int]		$VlanTag,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$CPG,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$FPG,
-	[Parameter(ValueFromPipeline=$true)]					[int]		$SizeTiB,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$TDVV,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$FPVV,
-	[Parameter(ValueFromPipeline=$true)]					[int]		$NodeId, 
-	[Parameter(ValueFromPipeline=$true)]					[String]	$Comment,
-	[Parameter(ValueFromPipeline=$true)]					[int]		$BlockGraceTimeSec,
-	[Parameter(ValueFromPipeline=$true)]					[int]		$InodeGraceTimeSec,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$NoCertificate,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$SnapshotQuotaEnabled
+	[Parameter(Mandatory=$true)]	[String]	$VFSName,
+	[Parameter()]					[String]	$PolicyId,
+    [Parameter()]					[String]	$FPG_IPInfo,
+    [Parameter()]					[String]	$VFS,
+	[Parameter()]					[String]	$IPAddr,
+	[Parameter()]					[String]	$Netmask,
+	[Parameter()]					[String]	$NetworkName,
+	[Parameter()]					[int]		$VlanTag,
+	[Parameter()]					[String]	$CPG,
+	[Parameter()]					[String]	$FPG,
+	[Parameter()]					[int]		$SizeTiB,
+	[Parameter()]					[Switch]	$TDVV,
+	[Parameter()]					[Switch]	$FPVV,
+	[Parameter()]					[int]		$NodeId, 
+	[Parameter()]					[String]	$Comment,
+	[Parameter()]					[int]		$BlockGraceTimeSec,
+	[Parameter()]					[int]		$InodeGraceTimeSec,
+	[Parameter()]					[Switch]	$NoCertificate,
+	[Parameter()]					[Switch]	$SnapshotQuotaEnabled
 )
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$body = @{}
-	$IPInfoBody=@{}
-	If($VFSName) 		{	$body["name"] 			= "$($VFSName)"		}
-	If($PolicyId) 		{	$IPInfoBody["policyId"] = "$($PolicyId)"	}
-	If($FPG_IPInfo) 	{	$IPInfoBody["fpg"] 		= "$($FPG_IPInfo)"  }
-	If($VFS) 			{	$IPInfoBody["vfs"] 		= "$($VFS)"    		}
-	If($IPAddr) 		{	$IPInfoBody["IPAddr"] 	= "$($IPAddr)"    	}
-	If($Netmask) 		{	$IPInfoBody["netmask"] 	= $Netmask    		}
-	If($NetworkName) 	{	$IPInfoBody["networkName"] = "$($NetworkName)"}
-	If($VlanTag) 		{	$IPInfoBody["vlanTag"] 	= $VlanTag    		}
-	If($CPG) 			{	$body["cpg"] 			= "$($CPG)"     	}
-	If($FPG) 			{	$body["fpg"] 			= "$($FPG)"     	}
-	If($SizeTiB) 		{	$body["sizeTiB"] 		= $SizeTiB    		}
-	If($TDVV) 			{	$body["tdvv"] 			= $true 			}
-	If($FPVV) 			{	$body["fpvv"] 			= $true    			}
-	If($NodeId) 		{	$body["nodeId"] 		= $NodeId   	 	}
-	If($Comment) 		{	$body["comment"] 		= "$($Comment)"    	}
-	If($BlockGraceTimeSec) {	$body["blockGraceTimeSec"] = $BlockGraceTimeSec    }
-	If($InodeGraceTimeSec) {	$body["inodeGraceTimeSec"] = $InodeGraceTimeSec    }
-	If($NoCertificate) 	{	$body["noCertificate"] 	= $true				}
-	If($SnapshotQuotaEnabled) {	$body["snapshotQuotaEnabled"] = $true   }
-	if($IPInfoBody.Count -gt 0) {	$body["IPInfo"] = $IPInfoBody 		}
-    $Result = $null
-    $Result = Invoke-A9API -uri '/virtualfileservers/' -type 'POST' -body $body 
-	$status = $Result.StatusCode
-	if($status -eq 202)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	Write-Error "Failure : While Creating Virtual File Servers VFS Name : $VFSName." 
-			return $Result.StatusDescription
-		}
-}
+	{	$body = @{}
+		$IPInfoBody=@{}
+		If($VFSName) 		{	$body["name"] 			= "$($VFSName)"		}
+		If($PolicyId) 		{	$IPInfoBody["policyId"] = "$($PolicyId)"	}
+		If($FPG_IPInfo) 	{	$IPInfoBody["fpg"] 		= "$($FPG_IPInfo)"  }
+		If($VFS) 			{	$IPInfoBody["vfs"] 		= "$($VFS)"    		}
+		If($IPAddr) 		{	$IPInfoBody["IPAddr"] 	= "$($IPAddr)"    	}
+		If($Netmask) 		{	$IPInfoBody["netmask"] 	= $Netmask    		}
+		If($NetworkName) 	{	$IPInfoBody["networkName"] = "$($NetworkName)"}
+		If($VlanTag) 		{	$IPInfoBody["vlanTag"] 	= $VlanTag    		}
+		If($CPG) 			{	$body["cpg"] 			= "$($CPG)"     	}
+		If($FPG) 			{	$body["fpg"] 			= "$($FPG)"     	}
+		If($SizeTiB) 		{	$body["sizeTiB"] 		= $SizeTiB    		}
+		If($TDVV) 			{	$body["tdvv"] 			= $true 			}
+		If($FPVV) 			{	$body["fpvv"] 			= $true    			}
+		If($NodeId) 		{	$body["nodeId"] 		= $NodeId   	 	}
+		If($Comment) 		{	$body["comment"] 		= "$($Comment)"    	}
+		If($BlockGraceTimeSec) {	$body["blockGraceTimeSec"] = $BlockGraceTimeSec    }
+		If($InodeGraceTimeSec) {	$body["inodeGraceTimeSec"] = $InodeGraceTimeSec    }
+		If($NoCertificate) 	{	$body["noCertificate"] 	= $true				}
+		If($SnapshotQuotaEnabled) {	$body["snapshotQuotaEnabled"] = $true   }
+		if($IPInfoBody.Count -gt 0) {	$body["IPInfo"] = $IPInfoBody 		}
+		$Result = Invoke-A9API -uri '/virtualfileservers/' -type 'POST' -body $body 
+	}
+end
+	{	$status = $Result.StatusCode
+		if($status -eq 202)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $Result
+			}
+		else
+			{	Write-Error "Failure : While Creating Virtual File Servers VFS Name : $VFSName." 
+				return $Result.StatusDescription
+			}
+	}
 }
 
 Function Remove-A9VFS 
@@ -375,25 +340,27 @@ Function Remove-A9VFS
 	Virtual File Servers id.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]		[int]	$VFSID
+Param(	[Parameter(Mandatory)]		[int]	$VFSID
 	)
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$Result = $null
-	$uri = "/virtualfileservers/"+$VFSID
-    $Result = Invoke-A9API -uri $uri -type 'DELETE' 
-	$status = $Result.StatusCode
-	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	Write-Error "Failure : While Dismissing a Virtual File Servers : $VFSID " 
-			return $Result.StatusDescription
-		}
-}
+	{	$Result = $null
+		$uri = "/virtualfileservers/"+$VFSID
+		$Result = Invoke-A9API -uri $uri -type 'DELETE' 
+	}
+end
+	{	$status = $Result.StatusCode
+		if($status -eq 200)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $Result
+			}
+		else
+			{	Write-Error "Failure : While Dismissing a Virtual File Servers : $VFSID " 
+				return $Result.StatusDescription
+			}
+	}
 }
 
 Function Get-A9VFS 
@@ -420,66 +387,50 @@ Function Get-A9VFS
 #>
 [CmdletBinding(DefaultParameterSetName='None')]
 Param(
-	[Parameter(ParameterSetName='ById', ValueFromPipeline=$true)]		[int]		$VFSID,
-	[Parameter(ParameterSetName='ByOther', ValueFromPipeline=$true)]	[String]	$VFSName,
-	[Parameter(ParameterSetName='ByOther', ValueFromPipeline=$true)]	[String]	$FPGName
+	[Parameter(ParameterSetName='ById')]		[int]		$VFSID,
+	[Parameter(ParameterSetName='ByOther')]		[String]	$VFSName,
+	[Parameter(ParameterSetName='ByOther')]		[String]	$FPGName
 )
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$Result = $null
-	$dataPS = $null	
-	$flg = "Yes"	
-	$Query="?query=""  """
-	if($VFSID)
-		{	$uri = '/virtualfileservers/'+$VFSID
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = $Result.content | ConvertFrom-Json
-				}		
-		}	
-	elseif($VFSName)
-		{	$Query = $Query.Insert($Query.Length-3," name EQ $VFSName")			
-			if($FPGName)
-				{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPGName")
-					$flg = "No"
-				}
-			$uri = '/virtualfileservers/'+$Query
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}
-		}
-	elseif($FPGName)
-		{	if($flg -eq "Yes")
-				{	$Query = $Query.Insert($Query.Length-3," fpg EQ $FPGName")
-				}
-			$uri = '/virtualfileservers/'+$Query
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}		
-		}
-	else
-		{	$Result = Invoke-A9API -uri '/virtualfileservers' -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}	
-		}	
-	if($Result.StatusCode -eq 200)
-		{	if($dataPS.Count -eq 0)
-				{	write-verbose "No data Found." 
-					return 
-				}
-			write-host "Cmdlet executed successfully" -foreground green
-			return $dataPS		
-		}
-	else
-		{	Write-Error "Failure : While Executing Get-VFS_WSAPI." 
-			return $Result.StatusDescription
-		}
-}	
+	{	$Query="?query=""  """
+		$uri = '/virtualfileservers'
+		if($VFSID)
+			{	$uri += '/'+$VFSID
+			}	
+		elseif($VFSName)
+			{	$Query = $Query.Insert($Query.Length-3," name EQ $VFSName")			
+				if($FPGName)
+					{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPGName")
+					}
+				$uri += '/'+$Query
+			}
+		elseif($FPGName)
+			{	if($flg -eq "Yes")
+					{	$Query = $Query.Insert($Query.Length-3," fpg EQ $FPGName")
+					}
+				$uri += '/'+$Query
+			}
+		$Result = Invoke-A9API -uri $uri -type 'GET' 	
+	}	
+end
+	{	if($Result.StatusCode -eq 200)
+			{	$dataPS = $Result.content | convertFrom-Json
+				if ($dataPS.members) { $dataPS = $dataPS.members	}
+				if($dataPS.Count -eq 0)
+					{	write-warning "No data Found." 
+						return 
+					}
+				write-host "Cmdlet executed successfully" -foreground green
+				return $dataPS		
+			}
+		else
+			{	Write-Error "Failure : While Executing Get-VFS" 
+				return $Result.StatusDescription
+			}
+	}
 }
 
 Function New-A9FileStore 
@@ -508,37 +459,40 @@ Function New-A9FileStore
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$FSName,
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VFS,
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$FPG,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$SecurityMode,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$SupressSecOpErr,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$Comment
+	[Parameter(Mandatory)]	[String]	$FSName,
+	[Parameter(Mandatory)]	[String]	$VFS,
+	[Parameter(Mandatory)]	[String]	$FPG,
+	[Parameter()][validateset('LEGACY','NTFS')]
+							[String]	$SecurityMode,
+	[Parameter()]			[Switch]	$SupressSecOpErr,
+	[Parameter()]			[String]	$Comment
 )
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$body = @{}	
-	If($FSName) 					{	$body["name"] = "$($FSName)"	}
-	If($VFS) 						{	$body["vfs"] = "$($VFS)"   }
-	If($FPG) 						{	$body["fpg"] = "$($FPG)"     }
-	if($SecurityMode -eq 'LEGACY')	{	$body["securityMode"] = 2	}
-	if($SecurityMode -eq 'NTFS')	{	$body["securityMode"] = 1	}
-	If($SupressSecOpErr)			{	$body["supressSecOpErr"] = $true    }
-	If($Comment) 					{	$body["comment"] = "$($Comment)"    }
-    $Result = $null
-    $Result = Invoke-A9API -uri '/filestores/' -type 'POST' -body $body 
-	$status = $Result.StatusCode
-	if($status -eq 201)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	Write-Error "Failure : While Creating File Store, Name: $FSName." 
-			return $Result.StatusDescription
-		}
-}
+	{	$body = @{}	
+		If($FSName) 					{	$body["name"] = "$($FSName)"	}
+		If($VFS) 						{	$body["vfs"] = "$($VFS)"   }
+		If($FPG) 						{	$body["fpg"] = "$($FPG)"     }
+		if($SecurityMode -eq 'LEGACY')	{	$body["securityMode"] = 2	}
+		if($SecurityMode -eq 'NTFS')	{	$body["securityMode"] = 1	}
+		If($SupressSecOpErr)			{	$body["supressSecOpErr"] = $true    }
+		If($Comment) 					{	$body["comment"] = "$($Comment)"    }
+		$Result = $null
+		$Result = Invoke-A9API -uri '/filestores/' -type 'POST' -body $body 
+	}
+end
+	{	$status = $Result.StatusCode
+		if($status -eq 201)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $Result
+			}
+		else
+			{	Write-Error "Failure : While Creating File Store, Name: $FSName." 
+				return $Result.StatusDescription
+			}
+	}
 }
 
 Function Update-A9FileStore
@@ -562,34 +516,36 @@ Function Update-A9FileStore
 	PS:> Update-A9FileStore
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$FStoreID,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Comment,
-		[Parameter(ValueFromPipeline=$true)]
-		[ValidateSet('NTFS','LEGACY')]							[Switch]	$SecurityMode,
-		[Parameter(ValueFromPipeline=$true)]					[Switch]	$SupressSecOpErr
+Param(	[Parameter(Mandatory)]			[String]	$FStoreID,
+		[Parameter()]					[String]	$Comment,
+		[Parameter()]
+		[ValidateSet('NTFS','LEGACY')]	[Switch]	$SecurityMode,
+		[Parameter(V)]					[Switch]	$SupressSecOpErr
 )
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$body = @{}		
-	If($Comment) 					{	$body["comment"] 		= "$($Comment)"	}
-	If($SecurityMode -eq 'NTFS') 	{	$body["securityMode"] 	= 1				}
-	If($SecurityMode -eq 'LEGACY')	{	$body["securityMode"] 	= 2				}
-	If($SupressSecOpErr) 			{	$body["supressSecOpErr"]= $true    		}		
-    $Result = $null
-	$uri = '/filestores/'+$FStoreID
-    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
-	$status = $Result.StatusCode
-	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	Write-Error "Failure : While Updating File Store, File Store ID: $FStoreID." 
-			return $Result.StatusDescription
-		}
-}
+	{	$body = @{}		
+		If($Comment) 					{	$body["comment"] 		= "$($Comment)"	}
+		If($SecurityMode -eq 'NTFS') 	{	$body["securityMode"] 	= 1				}
+		If($SecurityMode -eq 'LEGACY')	{	$body["securityMode"] 	= 2				}
+		If($SupressSecOpErr) 			{	$body["supressSecOpErr"]= $true    		}		
+		$Result = $null
+		$uri = '/filestores/'+$FStoreID
+		$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
+	}
+end
+	{	$status = $Result.StatusCode
+		if($status -eq 200)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $Result
+			}
+		else
+			{	Write-Error "Failure : While Updating File Store, File Store ID: $FStoreID." 
+				return $Result.StatusDescription
+			}
+	}
 }
 
 Function Remove-A9FileStore
@@ -605,24 +561,26 @@ Function Remove-A9FileStore
 	File Stores ID.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$FStoreID
+Param(	[Parameter(Mandatory)]	[String]	$FStoreID
 	)
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$uri = '/filestores/'+$FStoreID
-	$Result = Invoke-A9API -uri $uri -type 'DELETE' 
-	$status = $Result.StatusCode
-	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	Write-Error "Failure : While Removing File Store, File Store ID: $FStoreID." 
-			return $Result.StatusDescription
-		}
-}
+	{	$uri = '/filestores/'+$FStoreID
+		$Result = Invoke-A9API -uri $uri -type 'DELETE' 
+	}
+end
+	{	$status = $Result.StatusCode
+		if($status -eq 200)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $Result
+			}
+		else
+			{	Write-Error "Failure : While Removing File Store, File Store ID: $FStoreID." 
+				return $Result.StatusDescription
+			}
+	}
 }
 
 Function Get-A9FileStore 
@@ -650,89 +608,57 @@ Function Get-A9FileStore
 	Get Single File Stores.
 #>
 [CmdletBinding(DefaultParameterSetName='None')]
-Param(	[Parameter(ParameterSetName='ById',	ValueFromPipeline=$true)]		[int]		$FStoreID,
-		[Parameter(ParameterSetName='ByOther',	ValueFromPipeline=$true)]	[String]	$FileStoreName,	  
-		[Parameter(ParameterSetName='ByOther',ValueFromPipeline=$true)]		[String]	$VFSName,
-		[Parameter(ParameterSetName='ByOther',ValueFromPipeline=$true)]		[String]	$FPGName
+Param(	[Parameter(ParameterSetName='ById')]		[int]		$FStoreID,
+		[Parameter(ParameterSetName='ByOther')]		[String]	$FileStoreName,	  
+		[Parameter(ParameterSetName='ByOther')]		[String]	$VFSName,
+		[Parameter(ParameterSetName='ByOther')]		[String]	$FPGName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API' 
 }
 Process 
-{	$Result = $null
-	$dataPS = $null	
-	$flgVFS = "Yes"
-	$flgFPG = "Yes"
-	$Query="?query=""  """
-	if($FStoreID)
-		{	$uri = '/filestores/'+$FStoreID
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = $Result.content | ConvertFrom-Json
-				}
-		}
-	elseif($FileStoreName)
-		{	$Query = $Query.Insert($Query.Length-3," name EQ $FileStoreName")			
-			if($VFSName)
-				{	$Query = $Query.Insert($Query.Length-3," AND vfs EQ $VFSName")
-					$flgVFS = "No"
-				}
-			if($FPGName)
-				{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPGName")
-					$flgFPG = "No"
-				}
-			$uri = '/filestores/'+$Query
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}
-		}	
-	elseif($VFSName)
-		{	if($flgVFS -eq "Yes")
-				{	$Query = $Query.Insert($Query.Length-3," vfs EQ $VFSName")
-				}
-			if($FPGName)
-				{	if($flgFPG -eq "Yes")
-						{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPGName")
-							$flgFPG = "No"
-						}
-				}
-			$uri = '/filestores/'+$Query
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}
-		}
-	elseif($FPGName)
-		{	if($flgFPG -eq "Yes")
-				{	$Query = $Query.Insert($Query.Length-3," fpg EQ $FPGName")
-					$flgFPG = "No"
-				}
-			$uri = '/filestores/'+$Query
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}		
-		}
-	else
-		{	$Result = Invoke-A9API -uri '/filestores' -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}	
-		}			  
-	if($Result.StatusCode -eq 200)
-		{	if($dataPS.Count -eq 0)
-				{	Write-Verbose "No data Found." 
-					return 
-				}
-			write-host "Cmdlet executed successfully" -foreground green
-			return $dataPS		
-		}
-	else
-		{	Write-Error "Failure : While Executing Get-FileStore_WSAPI." 
-			return $Result.StatusDescription
-		}
-}	
+	{	$Query="?query=""  """
+		$uri = '/filestores'
+		if($FStoreID)
+			{	$uri += '/'+$FStoreID
+			}
+		elseif($FileStoreName)
+			{	$Query = $Query.Insert($Query.Length-3," name EQ $FileStoreName")			
+				if($VFSName)
+					{	$Query = $Query.Insert($Query.Length-3," AND vfs EQ $VFSName")
+					}
+				if($FPGName)
+					{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPGName")
+					}
+				$uri += '/'+$Query
+			}	
+		elseif($VFSName)
+			{	$Query = $Query.Insert($Query.Length-3," vfs EQ $VFSName")	
+				if($FPGName)
+					{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPGName")
+					}
+				$uri += '/'+$Query
+			}
+		elseif($FPGName)
+			{	$Query = $Query.Insert($Query.Length-3," fpg EQ $FPGName")	
+				$uri += '/'+$Query
+			}
+		$Result = Invoke-A9API -uri $uri -type 'GET'
+		if($Result.StatusCode -eq 200)
+			{	$dataPS = ($Result.content | ConvertFrom-Json)
+				if ( $dataPS.members ) { $dataPS = $dataPS.members }
+			}	
+	}
+end
+	{	if($Result.StatusCode -eq 200)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $dataPS		
+			}
+		else
+			{	Write-Error "Failure : While Executing Get-A9FileStore." 
+				return $Result.StatusDescription
+			}
+	}	
 }
 
 Function New-A9FileStoreSnapshot 
@@ -759,34 +685,35 @@ Function New-A9FileStoreSnapshot
 	PS:> New-A9FileStoreSnapshot
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TAG,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$FStore, 
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VFS,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$RetainCount,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$FPG
+Param(	[Parameter(Mandatory)]	[String]	$TAG,
+		[Parameter(Mandatory)]	[String]	$FStore, 
+		[Parameter(Mandatory)]	[String]	$VFS,
+		[Parameter()]			[int]		$RetainCount,
+		[Parameter(Mandatory)]	[String]	$FPG
 )
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$body = @{}	
-	If($TAG) 		{	$body["tag"] 	= "$($TAG)"    	}
-	If($FStore) 	{	$body["fstore"] = "$($FStore)"	}
-	If($VFS) 		{	$body["vfs"] 	= "$($VFS)"    	}
-	If($RetainCount){	$body["retainCount"] = $RetainCount }
-	If($FPG) 		{	$body["fpg"] 	= "$($FPG)"     }
-    $Result = $null
-    $Result = Invoke-A9API -uri '/filestoresnapshots/' -type 'POST' -body $body 
-	$status = $Result.StatusCode
-	if($status -eq 201)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	Write-Error "Failure : While Creating File Store snapshot." 
-			return $Result.StatusDescription
-		}
-}
+	{	$body = @{}	
+		$body["tag"] 	= "$($TAG)"
+		$body["fstore"] = "$($FStore)"	
+		$body["vfs"] 	= "$($VFS)"
+		If($RetainCount){	$body["retainCount"] = $RetainCount }
+		$body["fpg"] 	= "$($FPG)"
+		$Result = Invoke-A9API -uri '/filestoresnapshots/' -type 'POST' -body $body 
+	}
+end
+	{	$status = $Result.StatusCode
+		if($status -eq 201)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $Result
+			}
+		else
+			{	Write-Error "Failure : While Creating File Store snapshot." 
+				return $Result.StatusDescription
+			}
+	}
 }
 
 Function Remove-A9FileStoreSnapshot 
@@ -802,24 +729,26 @@ Function Remove-A9FileStoreSnapshot
 	PS:> Remove-A9FileStoreSnapshot
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$ID
+Param(	[Parameter(Mandatory)]	[String]	$ID
 )
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$uri = '/filestoresnapshots/'+$ID
-	$Result = Invoke-A9API -uri $uri -type 'DELETE' 
-	$status = $Result.StatusCode
-	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	Write-Error "Failure : While Removing File Store snapshot, File Store snapshot ID: $ID." 
-			return $Result.StatusDescription
-		}
-}
+	{	$uri = '/filestoresnapshots/'+$ID
+		$Result = Invoke-A9API -uri $uri -type 'DELETE' 
+	}
+end
+	{	$status = $Result.StatusCode
+		if($status -eq 200)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $Result
+			}
+		else
+			{	Write-Error "Failure : While Removing File Store snapshot, File Store snapshot ID: $ID." 
+				return $Result.StatusDescription
+			}
+	}
 }
 
 Function Get-A9FileStoreSnapshot
@@ -849,120 +778,57 @@ Function Get-A9FileStoreSnapshot
 	Get Single File Stores snapshot.
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$ID,
-		[Parameter(ValueFromPipeline=$true)]	[String] 	$FileStoreSnapshotName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$FileStoreName,	  
-		[Parameter(ValueFromPipeline=$true)]	[String] 	$VFSName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$FPGName
+Param(	[Parameter(parametersetname='ById',mandatory)]	[String]	$ID,
+		[Parameter(ParameterSetName='other')]	[String] 	$FileStoreSnapshotName,
+		[Parameter(ParameterSetName='other')]	[String]	$FileStoreName,	  
+		[Parameter(ParameterSetName='other')]	[String] 	$VFSName,
+		[Parameter(ParameterSetName='other')]	[String]	$FPGName
 	)
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$Result = $null
-	$dataPS = $null
-	$flgFSN = "Yes"	
-	$flgVFS = "Yes"
-	$flgFPG = "Yes"
-	$Query="?query=""  """	
-	if($ID)
-		{	if($FileStoreSnapshotName -Or $VFSName -Or $FPGName -Or $FileStoreName)
-				{	Return "we cannot use FileStoreSnapshotName,VFSName,FileStoreName and FPGName with ID as FileStoreSnapshotName,VFSName,FileStoreName and FPGName is use for filtering."
-				}
-			$uri = '/filestoresnapshots/'+$ID
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = $Result.content | ConvertFrom-Json
-				}
-		}
-	elseif($FileStoreSnapshotName)
-		{	$Query = $Query.Insert($Query.Length-3," name EQ $FileStoreSnapshotName")			
-			if($FileStoreName)
-				{	$Query = $Query.Insert($Query.Length-3," AND fstore EQ $FileStoreName")
-					$flgFSN = "No"
-				}
-			if($VFSName)
-				{	$Query = $Query.Insert($Query.Length-3," AND vfs EQ $VFSName")
-					$flgVFS = "No"
-				}
-			if($FPGName)
-				{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPGName")
-					$flgFPG = "No"
-				}
-			$uri = '/filestoresnapshots/'+$Query
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}
-		}	
-	elseif($FileStoreName)
-		{	if($flgFSN -eq "Yes")
-				{	$Query = $Query.Insert($Query.Length-3," fstore EQ $FileStoreName")	
-				}		
-			if($VFSName)
-				{	if($flgVFS -eq "Yes")
-						{	$Query = $Query.Insert($Query.Length-3," AND vfs EQ $VFSName")
-							$flgVFS = "No"
-						}
-				}
-			if($FPGName)
-				{	if($flgFPG -eq "Yes")
-						{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPGName")
-							$flgFPG = "No"
-						}
-				}
-			$uri = '/filestoresnapshots/'+$Query
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}
-		}	
-	elseif($VFSName)
-		{	if($flgVFS -eq "Yes")
-				{	$Query = $Query.Insert($Query.Length-3," vfs EQ $VFSName")
-				}
-			if($FPGName)
-				{	if($flgFPG -eq "Yes")
-						{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPGName")
-							$flgFPG = "No"
-						}
-				}
-			$uri = '/filestoresnapshots/'+$Query
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}
-		}
-	elseif($FPGName)
-		{	if($flgFPG -eq "Yes")
-				{	$Query = $Query.Insert($Query.Length-3," fpg EQ $FPGName")
-					$flgFPG = "No"
-				}
-			$uri = '/filestoresnapshots/'+$Query
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}		
-		}	
-	else
-		{	$Result = Invoke-A9API -uri '/filestoresnapshots' -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}	
-		}	
-	if($Result.StatusCode -eq 200)
-		{	if($dataPS.Count -eq 0)
-				{	write-verbose "No data Found." 
-					return 
-				}
-			write-host "Cmdlet executed successfully" -foreground green
-			return $dataPS		
-		}
-	else
-		{	Write-Error "Failure : While Executing Get-FileStoreSnapshot_WSAPI." 
-			return $Result.StatusDescription
-		}
-}	
+	{	$Query="?query=""  """
+		$uri = '/filestoresnapshots'	
+		if($ID)
+			{	$uri += '/'+$ID	
+			}
+		elseif($FileStoreSnapshotName)
+			{	$Query = $Query.Insert($Query.Length-3," name EQ $FileStoreSnapshotName")			
+				if($FileStoreName)	{	$Query = $Query.Insert($Query.Length-3," AND fstore EQ $FileStoreName")	}
+				if($VFSName)		{	$Query = $Query.Insert($Query.Length-3," AND vfs EQ $VFSName")			}
+				if($FPGName)		{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPGName")			}
+				$uri += '/'+$Query
+			}	
+		elseif($FileStoreName)
+			{	$Query = $Query.Insert($Query.Length-3," fstore EQ $FileStoreName")			
+				if($VFSName)		{	$Query = $Query.Insert($Query.Length-3," AND vfs EQ $VFSName")			}
+				if($FPGName)		{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPGName")			}
+				$uri += '/'+$Query
+			}	
+		elseif($VFSName)
+			{	$Query = $Query.Insert($Query.Length-3," vfs EQ $VFSName")
+				if($FPGName)		{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPGName")			}
+				$uri += '/'+$Query
+			}
+		elseif($FPGName)
+			{	$Query = $Query.Insert($Query.Length-3," fpg EQ $FPGName")
+				$uri += '/'+$Query
+			}	
+		$Result = Invoke-A9API -uri $uri -type 'GET'
+	}
+end
+	{	if($Result.StatusCode -eq 200)
+			{	$dataPS = ($Result.content | ConvertFrom-Json)
+				if ( $dataPS.member ) { $dataPS = $dataPS.members }
+				write-host "Cmdlet executed successfully" -foreground green
+				return $dataPS		
+			}
+		else
+			{	Write-Error "Failure : While Executing Get-FileStoreSnapshot_WSAPI." 
+				return $Result.StatusDescription
+			}
+	}	
 }
 
 Function New-A9FileShare 
@@ -1020,71 +886,72 @@ Function New-A9FileShare
 	PS:> New-A9FileShare
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$FSName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-		[ValidateSet('SMB','NFS')]								[String]	$FSType,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VFS,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$ShareDirectory,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$FStore,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$FPG,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Comment,
-		[Parameter(ValueFromPipeline=$true)]					[Boolean]	$Enables_SSL,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$ObjurlPath,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$NFSOptions,
-		[Parameter(ValueFromPipeline=$true)]					[String[]]	$NFSClientlist,
-		[Parameter(ValueFromPipeline=$true)]					[Switch]	$SmbABE,
-		[Parameter(ValueFromPipeline=$true)]					[String[]]	$SmbAllowedIPs,
-		[Parameter(ValueFromPipeline=$true)]					[String[]]	$SmbDeniedIPs,
-		[Parameter(ValueFromPipeline=$true)]					[Switch]	$SmbContinuosAvailability,
-		[Parameter(ValueFromPipeline=$true)]
-		[ValidateSet("OFF","OPTIMIZED","MANUAL","AUTO")]		[String]	$SmbCache,
-		[Parameter(ValueFromPipeline=$true)]					[String[]]	$FtpShareIPs,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$FtpOptions
+Param(	[Parameter(Mandatory)]		[String]	$FSName,
+		[Parameter(Mandatory)]	[ValidateSet('SMB','NFS')]								
+									[String]	$FSType,
+		[Parameter(Mandatory)]		[String]	$VFS,
+		[Parameter()]				[String]	$ShareDirectory,
+		[Parameter()]				[String]	$FStore,
+		[Parameter()]				[String]	$FPG,
+		[Parameter()]				[String]	$Comment,
+		[Parameter()]				[Boolean]	$Enables_SSL,
+		[Parameter()]				[String]	$ObjurlPath,
+		[Parameter()]				[String]	$NFSOptions,
+		[Parameter()]				[String[]]	$NFSClientlist,
+		[Parameter()]				[Switch]	$SmbABE,
+		[Parameter()]				[String[]]	$SmbAllowedIPs,
+		[Parameter()]				[String[]]	$SmbDeniedIPs,
+		[Parameter()]				[Switch]	$SmbContinuosAvailability,
+		[Parameter()][ValidateSet("OFF","OPTIMIZED","MANUAL","AUTO")]
+									[String]	$SmbCache,
+		[Parameter()]				[String[]]	$FtpShareIPs,
+		[Parameter()]				[String]	$FtpOptions
 )
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$body = @{}	
-	If($FSName) 	{	$body["name"] = "$($FSName)"    }
-	if($FSType)		
-		{	If($FSType -eq 'NFS') 		{	$body["type"] = 1    }
-			elseIf($FSType -eq 'SMB') 	{	$body["type"] = 2    }
-		}
-	If($VFS) 		{	$body["vfs"] 				= "$($VFS)"    			}	
-	If($ShareDirectory){$body["shareDirectory"] 	= "$($ShareDirectory)"  }
-	If($FStore) 	{	$body["fstore"] 			= "$($FStore)"     		}
-	If($FPG) 		{	$body["fpg"] 				= "$($FPG)"     		}
-	If($Comment) 	{	$body["comment"] 			= "$($Comment)"    		}
-	If($Enables_SSL) {	$body["ssl"] 				= $Enables_SSL    		}	
-	If($ObjurlPath) {	$body["objurlPath"] 		= "$($ObjurlPath)"    	}
-	If($NFSOptions) {	$body["nfsOptions"] 		= "$($NFSOptions)"    	}
-	If($NFSClientlist){	$body["nfsClientlist"] 		= "$($NFSClientlist)"   }
-	If($SmbABE) 	{	$body["smbABE"] 			= $true    				}
-	If($SmbAllowedIPs){	$body["smbAllowedIPs"] 		= "$($SmbAllowedIPs)"	}
-	If($SmbDeniedIPs) {	$body["smbDeniedIPs"] 		= "$($SmbDeniedIPs)"    }
-	If($SmbContinuosAvailability) {	$body["smbContinuosAvailability"] = $true    }
-	If($SmbCache) 
-		{	if($SmbCache -Eq "OFF")			{	$body["smbCache"] = 1	}
-			elseif($SmbCache -Eq "MANUAL")	{	$body["smbCache"] = 2	}
-			elseif($SmbCache -Eq "OPTIMIZED"){	$body["smbCache"] = 3	}
-			elseif($SmbCache -Eq "AUTO")	{	$body["smbCache"] = 4	}
-			else							{}		
-		}
-	If($FtpShareIPs){	$body["ftpShareIPs"] = "$($FtpShareIPs)"}
-	If($FtpOptions) {	$body["ftpOptions"] = "$($FtpOptions)"	}
-    $Result = $null
-    $Result = Invoke-A9API -uri '/fileshares/' -type 'POST' -body $body 
-	$status = $Result.StatusCode
-	if($status -eq 201)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	Write-Error "Failure : While Creating File Share, Name: $FSName." 
-			return $Result.StatusDescription
-		}
-}
+	{	$body = @{}	
+		If($FSName) 	{	$body["name"] = "$($FSName)"    }
+		if($FSType)		
+			{	If($FSType -eq 'NFS') 		{	$body["type"] = 1    }
+				elseIf($FSType -eq 'SMB') 	{	$body["type"] = 2    }
+			}
+		If($VFS) 		{	$body["vfs"] 				= "$($VFS)"    			}	
+		If($ShareDirectory){$body["shareDirectory"] 	= "$($ShareDirectory)"  }
+		If($FStore) 	{	$body["fstore"] 			= "$($FStore)"     		}
+		If($FPG) 		{	$body["fpg"] 				= "$($FPG)"     		}
+		If($Comment) 	{	$body["comment"] 			= "$($Comment)"    		}
+		If($Enables_SSL) {	$body["ssl"] 				= $Enables_SSL    		}	
+		If($ObjurlPath) {	$body["objurlPath"] 		= "$($ObjurlPath)"    	}
+		If($NFSOptions) {	$body["nfsOptions"] 		= "$($NFSOptions)"    	}
+		If($NFSClientlist){	$body["nfsClientlist"] 		= "$($NFSClientlist)"   }
+		If($SmbABE) 	{	$body["smbABE"] 			= $true    				}
+		If($SmbAllowedIPs){	$body["smbAllowedIPs"] 		= "$($SmbAllowedIPs)"	}
+		If($SmbDeniedIPs) {	$body["smbDeniedIPs"] 		= "$($SmbDeniedIPs)"    }
+		If($SmbContinuosAvailability) {	$body["smbContinuosAvailability"] = $true    }
+		If($SmbCache) 
+			{	if($SmbCache -Eq "OFF")			{	$body["smbCache"] = 1	}
+				elseif($SmbCache -Eq "MANUAL")	{	$body["smbCache"] = 2	}
+				elseif($SmbCache -Eq "OPTIMIZED"){	$body["smbCache"] = 3	}
+				elseif($SmbCache -Eq "AUTO")	{	$body["smbCache"] = 4	}
+				else							{}		
+			}
+		If($FtpShareIPs){	$body["ftpShareIPs"] = "$($FtpShareIPs)"}
+		If($FtpOptions) {	$body["ftpOptions"]  = "$($FtpOptions)"	}
+		$Result = Invoke-A9API -uri '/fileshares/' -type 'POST' -body $body 
+	}
+end
+	{	$status = $Result.StatusCode
+		if($status -eq 201)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $Result
+			}
+		else
+			{	Write-Error "Failure : While Creating File Share, Name: $FSName." 
+				return $Result.StatusDescription
+			}
+	}
 }
 
 Function Remove-A9FileShare 
@@ -1100,24 +967,26 @@ Function Remove-A9FileShare
 	File Share ID contains the unique identifier of the File Share you want to remove.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$ID
+Param(	[Parameter(Mandatory)]	[String]	$ID
 	)
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$uri = '/fileshares/'+$ID
-    $Result = Invoke-A9API -uri $uri -type 'DELETE' 
-	$status = $Result.StatusCode
-	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	Write-Error "Failure : While Removing File Share, File Share ID: $ID." 
-			return $Result.StatusDescription
-		}
-}
+	{	$uri = '/fileshares/'+$ID
+		$Result = Invoke-A9API -uri $uri -type 'DELETE' 
+	}
+end
+	{	$status = $Result.StatusCode
+		if($status -eq 200)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $Result
+			}
+		else
+			{	Write-Error "Failure : While Removing File Share, File Share ID: $ID." 
+				return $Result.StatusDescription
+			}
+	}
 }
 
 Function Get-A9FileShare 
@@ -1148,80 +1017,66 @@ Function Get-A9FileShare
 .PARAMETER FStore
 	Name of the File Stores.
 #>
-[CmdletBinding(DefaultParameterSetName='None')]
-Param(	[Parameter(ParameterSetName='ByID', ValueFromPipeline=$true)]		[int]		$ID,
-		[Parameter(ParameterSetName='ByOther',ValueFromPipeline=$true)]	[String]	$FSName,
-		[Parameter(ParameterSetName='ByOther',ValueFromPipeline=$true)]
-									[ValidateSet("SMB','NFS','OBJ'")]		[String]	$FSType,
-		[Parameter(ParameterSetName='ByOther',ValueFromPipeline=$true)]		[String]	$VFS,
-		[Parameter(ParameterSetName='ByOther',ValueFromPipeline=$true)]		[String]	$FPG,
-		[Parameter(ParameterSetName='ByOther',ValueFromPipeline=$true)]	[String]	$FStore
+[CmdletBinding(DefaultParameterSetName='none')]
+Param(	[Parameter(ParameterSetName='ByID',mandatory)]	[int]		$ID,
+		[Parameter(ParameterSetName='ByOther')]			[String]	$FSName,
+		[Parameter(ParameterSetName='ByOther')]
+			[ValidateSet("SMB','NFS','OBJ'")]			[String]	$FSType,
+		[Parameter(ParameterSetName='ByOther')]			[String]	$VFS,
+		[Parameter(ParameterSetName='ByOther')]			[String]	$FPG,
+		[Parameter(ParameterSetName='ByOther')]			[String]	$FStore
 	)
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$Result = $null
-	$dataPS = $null	
-	$Query="?query=""  """
-	$flg = "NO"
-	if($ID)
-		{	$uri = '/fileshares/'+$ID
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = $Result.content | ConvertFrom-Json
-				}
-		}
-	elseif($FSName -Or $FSType -Or $VFS -Or $FPG -Or $FStore)	
-		{	if($FSName)
-				{	$Query = $Query.Insert($Query.Length-3," name EQ $FSName")			
-					$flg = "YES"
-				}
-			if($FSType)
-				{	if($flg -eq "NO")	{	$Query = $Query.Insert($Query.Length-3," type EQ $FSType")	}
-					else				{	$Query = $Query.Insert($Query.Length-3," AND type EQ $FSType")	}
-					$flg = "YES"
-				}
-			if($VFS)
-				{	if($flg -eq "NO")	{	$Query = $Query.Insert($Query.Length-3," vfs EQ $VFS")	}
-					else				{	$Query = $Query.Insert($Query.Length-3," AND vfs EQ $VFS")	}
-					$flg = "YES"
-				}
-			if($FPG)
-				{	if($flg -eq "NO")	{	$Query = $Query.Insert($Query.Length-3," fpg EQ $FPG")	}
-					else				{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPG")	}
-					$flg = "YES"
-				}
-			if($FStore)
-				{	if($flg -eq "NO")	{	$Query = $Query.Insert($Query.Length-3," fstore EQ $FStore")	}
-					else				{	$Query = $Query.Insert($Query.Length-3," AND fstore EQ $FStore")	}
-					$flg = "YES"
-				}
-			$uri = '/fileshares/'+$Query
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}
-		}
-	else 
-		{	$Result = Invoke-A9API -uri '/fileshares' -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}	
-		}	
-	if($Result.StatusCode -eq 200)
-		{	if($dataPS.Count -eq 0)
-				{	write-verbose "No data Found."
-					return 
-				}
-			write-host "Cmdlet executed successfully" -foreground green
-			return $dataPS		
-		}
-	else
-		{	Write-Error "Failure : While Executing Get-FileShare_WSAPI." 
-			return $Result.StatusDescription
-		}
-}	
+	{	$Query="?query=""  """
+		$flg = "NO"
+		$uri = '/fileshares'
+		if($ID)
+			{	$uri += '/'+$ID
+			}
+		elseif($FSName -Or $FSType -Or $VFS -Or $FPG -Or $FStore)	
+			{	if($FSName)
+					{	$Query = $Query.Insert($Query.Length-3," name EQ $FSName")			
+						$flg = "YES"
+					}
+				if($FSType)
+					{	if($flg -eq "NO")	{	$Query = $Query.Insert($Query.Length-3," type EQ $FSType")	}
+						else				{	$Query = $Query.Insert($Query.Length-3," AND type EQ $FSType")	}
+						$flg = "YES"
+					}
+				if($VFS)
+					{	if($flg -eq "NO")	{	$Query = $Query.Insert($Query.Length-3," vfs EQ $VFS")	}
+						else				{	$Query = $Query.Insert($Query.Length-3," AND vfs EQ $VFS")	}
+						$flg = "YES"
+					}
+				if($FPG)
+					{	if($flg -eq "NO")	{	$Query = $Query.Insert($Query.Length-3," fpg EQ $FPG")	}
+						else				{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPG")	}
+						$flg = "YES"
+					}
+				if($FStore)
+					{	if($flg -eq "NO")	{	$Query = $Query.Insert($Query.Length-3," fstore EQ $FStore")	}
+						else				{	$Query = $Query.Insert($Query.Length-3," AND fstore EQ $FStore")	}
+						$flg = "YES"
+					}
+				$uri += '/'+$Query
+			}
+		$Result = Invoke-A9API -uri $uri -type 'GET'
+	}
+end
+	{	if($Result.StatusCode -eq 200)
+			{	$dataPS = ($Result.content | ConvertFrom-Json)
+				if ( $dataPS.members ) { $dataPS = $dataPS.members }
+				write-host "Cmdlet executed successfully" -foreground green
+				return $dataPS		
+			}
+		else
+			{	Write-Error "Failure : While Executing Get-A9FileShare" 
+				return $Result.StatusDescription
+			}
+	}	
 }
 
 Function Get-A9DirPermission 
@@ -1237,33 +1092,28 @@ Function Get-A9DirPermission
     File Share ID contains the unique identifier of the File Share you want to Query.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[int]	$ID
+Param(	[Parameter(Mandatory)]	[int]	$ID
 	)
-
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$Result = $null
-	$dataPS = $null	
-	$uri = '/fileshares/'+$ID+'/dirperms'
-	$Result = Invoke-A9API -uri $uri -type 'GET' 
-	if($Result.StatusCode -eq 200)
-		{	$dataPS = $Result.content | ConvertFrom-Json
-		}
-	if($Result.StatusCode -eq 200)
-		{	if($dataPS.Count -eq 0)
-					{	write-verbose "No data Found."
-						return 
-					}
-			write-host "Cmdlet executed successfully" -foreground green
-			return $dataPS		
-		}
-	else
-		{	Write-Error "Failure : While Executing Get-DirPermission_WSAPI." 
-			return $Result.StatusDescription
-		}
-}	
+	{	$uri = '/fileshares/'+$ID+'/dirperms'
+		$Result = Invoke-A9API -uri $uri -type 'GET' 
+	}
+end
+	{	if($Result.StatusCode -eq 200)
+			{	$dataPS = $Result.content | ConvertFrom-Json
+			}
+		if($Result.StatusCode -eq 200)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $dataPS		
+			}
+		else
+			{	Write-Error "Failure : While Executing Get-A9DirPermission" 
+				return $Result.StatusDescription
+			}
+	}	
 }
 
 Function New-A9FilePersonaQuota 
@@ -1296,45 +1146,44 @@ Function New-A9FilePersonaQuota
 	Specifies the hard limit for the number of stored files.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$Name,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-		[ValidateSet("user","group","fstore")]					[String]	$Type,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VFS,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$FPG,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$SoftBlockMiB,	
-		[Parameter(ValueFromPipeline=$true)]					[int]		$HardBlockMiB,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$SoftFileLimit,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$HardFileLimit
+Param(	[Parameter(Mandatory)]	[String]	$Name,
+		[Parameter(Mandatory)]	[ValidateSet("user","group","fstore")]	
+								[String]	$Type,
+		[Parameter(Mandatory)]	[String]	$VFS,
+		[Parameter(Mandatory)]	[String]	$FPG,
+		[Parameter()]			[int]		$SoftBlockMiB,	
+		[Parameter()]			[int]		$HardBlockMiB,
+		[Parameter()]			[int]		$SoftFileLimit,
+		[Parameter()]			[int]		$HardFileLimit
 )
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$body = @{}	
-	If($Name) 		{	$body["name"] = "$($Name)"	}
-	if($Type)	
-		{	if($Type -eq "user")	{	$body["type"] = 1	}
-			if($Type -eq "group")	{	$body["type"] = 2	}
-			if($Type -eq "fstore")	{	$body["type"] = 3	}						
-		}
-	If($VFS) 			{	$body["vfs"] = "$($VFS)"   }
-	If($FPG) 			{	$body["fpg"] = "$($FPG)"     }
-	If($SoftBlockMiB) 	{	$body["softBlockMiB"] = $SoftBlockMiB    }
-	If($HardBlockMiB) 	{	$body["hardBlockMiB"] = $HardBlockMiB    }
-	If($SoftFileLimit) 	{	$body["softFileLimit"] = $SoftFileLimit}
-	If($HardFileLimit) 	{	$body["hardFileLimit"] = $HardFileLimit	}
-    $Result = $null
-    $Result = Invoke-A9API -uri '/filepersonaquotas/' -type 'POST' -body $body 
-	$status = $Result.StatusCode
-	if($status -eq 201)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	Write-Error "Failure : While Creating File Persona quota." 
-			return $Result.StatusDescription
-		}
-}
+	{	$body = @{}	
+		$body["name"] = "$($Name)"
+		if($Type -eq "user")	{	$body["type"] = 1	}
+		if($Type -eq "group")	{	$body["type"] = 2	}
+		if($Type -eq "fstore")	{	$body["type"] = 3	}						
+		$body["vfs"] = "$($VFS)"  
+		$body["fpg"] = "$($FPG)"
+		If($SoftBlockMiB) 	{	$body["softBlockMiB"] = $SoftBlockMiB    }
+		If($HardBlockMiB) 	{	$body["hardBlockMiB"] = $HardBlockMiB    }
+		If($SoftFileLimit) 	{	$body["softFileLimit"] = $SoftFileLimit}
+		If($HardFileLimit) 	{	$body["hardFileLimit"] = $HardFileLimit	}
+		$Result = Invoke-A9API -uri '/filepersonaquotas/' -type 'POST' -body $body 
+	}
+end
+	{	$status = $Result.StatusCode
+		if($status -eq 201)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $Result
+			}
+		else
+			{	Write-Error "Failure : While Creating File Persona quota." 
+				return $Result.StatusDescription
+			}
+	}
 }
 
 Function Update-A9FilePersonaQuota
@@ -1377,22 +1226,22 @@ Function Update-A9FilePersonaQuota
 	• If false , and hardBlockMiB is a positive value, then set to that limit.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$ID,
-		[Parameter(ValueFromPipeline=$true)]	[Int]	$SoftFileLimit,
-		[Parameter(ValueFromPipeline=$true)]	[Int]	$RMSoftFileLimit,	
-		[Parameter(ValueFromPipeline=$true)]	[Int]	$HardFileLimit,
-		[Parameter(ValueFromPipeline=$true)]	[Int]	$RMHardFileLimit,
-		[Parameter(ValueFromPipeline=$true)]	[Int]	$SoftBlockMiB,
-		[Parameter(ValueFromPipeline=$true)]	[Int]	$RMSoftBlockMiB,
-		[Parameter(ValueFromPipeline=$true)]	[Int]	$HardBlockMiB,
-		[Parameter(ValueFromPipeline=$true)]	[Int]	$RMHardBlockMiB
+Param(	[Parameter(Mandatory)]	[String]	$ID,
+		[Parameter()]			[Int]	$SoftFileLimit,
+		[Parameter()]			[Int]	$RMSoftFileLimit,	
+		[Parameter()]			[Int]	$HardFileLimit,
+		[Parameter()]			[Int]	$RMHardFileLimit,
+		[Parameter()]			[Int]	$SoftBlockMiB,
+		[Parameter()]			[Int]	$RMSoftBlockMiB,
+		[Parameter()]			[Int]	$HardBlockMiB,
+		[Parameter()]			[Int]	$RMHardBlockMiB
 	)
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$body = @{}
-		
+{	$uri = '/filepersonaquotas/'+$ID
+	$body = @{}		
 	If($SoftFileLimit) 	{	$body["softFileLimit"] = $SoftFileLimit     }	
 	If($RMSoftFileLimit) {	$body["rmSoftFileLimit"] = $RMSoftFileLimit    }
 	If($HardFileLimit) {	$body["hardFileLimit"] = $HardFileLimit     }
@@ -1401,10 +1250,10 @@ Process
 	If($RMSoftBlockMiB) {	$body["rmSoftBlockMiB"] = $RMSoftBlockMiB     }
 	If($HardBlockMiB) 	{	$body["hardBlockMiB"] = $HardBlockMiB }	
 	If($RMHardBlockMiB) {	$body["rmHardBlockMiB"] = $RMHardBlockMiB     }
-    $Result = $null
-	$uri = '/filepersonaquotas/'+$ID
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
-	$status = $Result.StatusCode
+}
+end
+{	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return $Result
@@ -1429,24 +1278,26 @@ Function Remove-A9FilePersonaQuota
 	The <id> variable contains the unique ID of the File Persona you want to Remove.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$ID
+Param(	[Parameter(Mandatory)]	[String]	$ID
 	)
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$uri = '/filepersonaquotas/'+$ID
-	$Result = Invoke-A9API -uri $uri -type 'DELETE' 
-	$status = $Result.StatusCode
-	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	Write-Error "Failure : While Removing File Persona quota, File Persona quota ID: $ID." 
-			return $Result.StatusDescription
-		}
-}
+	{	$uri = '/filepersonaquotas/'+$ID
+		$Result = Invoke-A9API -uri $uri -type 'DELETE' 
+	}
+end
+	{	$status = $Result.StatusCode
+		if($status -eq 200)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $Result
+			}
+		else
+			{	Write-Error "Failure : While Removing File Persona quota, File Persona quota ID: $ID." 
+				return $Result.StatusDescription
+			}
+	}
 }
 
 Function Get-A9FilePersonaQuota
@@ -1478,94 +1329,62 @@ Function Get-A9FilePersonaQuota
 	File Provisioning Groups name.
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[int]		$ID,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Name,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Key,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$QType,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$VFS,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$FPG
+Param(	[Parameter(ParameterSetName='ByID', mandatory)]	[int]		$ID,
+		[Parameter(ParameterSetName='Other')]			[String]	$Name,
+		[Parameter(ParameterSetName='Other')]			[String]	$Key,
+		[Parameter(ParameterSetName='Other')]			[String]	$QType,
+		[Parameter(ParameterSetName='Other')]			[String]	$VFS,
+		[Parameter(ParameterSetName='Other')]			[String]	$FPG
 	)
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$Result = $null
-	$dataPS = $null
-	$Query="?query=""  """
-	$flg = "NO"	
-	if($ID)
-		{	$uri = '/filepersonaquota/'+$ID
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = $Result.content | ConvertFrom-Json
-				}
-		}
-	elseif($Name -Or $Key -Or $QType -Or $VFS -Or $FPG)
-		{	if($Name)
-				{	$Query = $Query.Insert($Query.Length-3," name EQ $Name")			
-					$flg = "YES"
-				}
-			if($Key)
-				{	if($flg -eq "NO")
-						{	$Query = $Query.Insert($Query.Length-3," key EQ $Key")
-						}
-					else
-						{	$Query = $Query.Insert($Query.Length-3," AND key EQ $Key")
-						}
-					$flg = "YES"
-				}
-			if($QType)
-				{	if($flg -eq "NO")
-						{	$Query = $Query.Insert($Query.Length-3," type EQ $QType")
-						}
-					else
-						{	$Query = $Query.Insert($Query.Length-3," AND type EQ $QType")
-						}
-					$flg = "YES"
-				}
-			if($VFS)
-				{	if($flg -eq "NO")
-						{	$Query = $Query.Insert($Query.Length-3," vfs EQ $VFS")
-						}
-					else
-						{	$Query = $Query.Insert($Query.Length-3," AND vfs EQ $VFS")
-						}
-					$flg = "YES"
-				}
-			if($FPG)
-				{	if($flg -eq "NO")
-						{	$Query = $Query.Insert($Query.Length-3," fpg EQ $FPG")
-						}
-					else
-						{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPG")
-						}
-					$flg = "YES"
-				}
-			$uri = '/filepersonaquota/'+$Query
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}
-		}	
-	else
-		{	$Result = Invoke-A9API -uri '/filepersonaquota' -type 'GET' 
-			if($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members
-				}	
-		}	
-	if($Result.StatusCode -eq 200)
-		{	if($dataPS.Count -eq 0)
-				{	write-verbose "No data Found." 
-					return 
-				}
-			write-host "Cmdlet executed successfully" -foreground green
-			return $dataPS		
-		}
-	else
-		{	Write-Error "Failure : While Executing Get-FilePersonaQuota_WSAPI." 
-			return $Result.StatusDescription
-		}
-}	
+	{	$uri = '/filepersonaquota'
+		$Query="?query=""  """
+		$flg = "NO"
+		if($ID)	{	$uri += '/'+$ID		}
+		elseif($Name -Or $Key -Or $QType -Or $VFS -Or $FPG)
+			{	if($Name)
+					{	$Query = $Query.Insert($Query.Length-3," name EQ $Name")			
+						$flg = "YES"
+					}
+				if($Key)
+					{	if($flg -eq "NO")	{	$Query = $Query.Insert($Query.Length-3," key EQ $Key")		}
+						else				{	$Query = $Query.Insert($Query.Length-3," AND key EQ $Key")	}
+						$flg = "YES"
+					}
+				if($QType)
+					{	if($flg -eq "NO")	{	$Query = $Query.Insert($Query.Length-3," type EQ $QType")	}
+						else				{	$Query = $Query.Insert($Query.Length-3," AND type EQ $QType")}
+						$flg = "YES"
+					}
+				if($VFS)
+					{	if($flg -eq "NO")	{	$Query = $Query.Insert($Query.Length-3," vfs EQ $VFS")		}
+						else				{	$Query = $Query.Insert($Query.Length-3," AND vfs EQ $VFS")	}
+						$flg = "YES"
+					}
+				if($FPG)
+					{	if($flg -eq "NO")	{	$Query = $Query.Insert($Query.Length-3," fpg EQ $FPG")		}
+						else				{	$Query = $Query.Insert($Query.Length-3," AND fpg EQ $FPG")	}
+						$flg = "YES"
+					}
+				$uri += '/'+$Query
+			}	
+		$Result = Invoke-A9API -uri $uri -type 'GET' 
+	}
+end
+	{	if($Result.StatusCode -eq 200)
+			{	$dataPS = ($Result.content | ConvertFrom-Json)
+				if ( $dataPS.members) { $dataPS = $dataPS.members }
+				write-host "Cmdlet executed successfully" -foreground green
+				return $dataPS		
+			}
+		else
+			{	Write-Error "Failure : While Executing Get-FilePersonaQuota_WSAPI." 
+				return $Result.StatusDescription
+			}
+	}	
 }
 
 Function Restore-A9FilePersonaQuota 
@@ -1583,29 +1402,31 @@ Function Restore-A9FilePersonaQuota
 	The path to the archived file from which the file persona quotas are to be restored.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VFSUUID,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$ArchivedPath
+Param(	[Parameter(Mandatory)]	[String]	$VFSUUID,
+		[Parameter()]			[String]	$ArchivedPath
 )
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$body = @{}
-	$body["action"] = 2 
-	If($VFSUUID) 		{	$body["vfsUUID"] = "$($VFSUUID)"	}	
-	If($ArchivedPath) 	{	$body["archivedPath"] = "$($ArchivedPath)"	}
-    $Result = $null
-    $Result = Invoke-A9API -uri '/filepersonaquotas/' -type 'POST' -body $body 
-	$status = $Result.StatusCode
-	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result		
-		}
-	else
-		{	Write-Error "Failure : While Restoring a File Persona quota, VFSUUID: $VFSUUID." 
-			return $Result.StatusDescription
-		}
-}
+	{	$uri = '/filepersonaquotas/'
+		$body = @{}
+		$body["action"] = 2 
+		$body["vfsUUID"] = "$($VFSUUID)"
+		If($ArchivedPath) 	{	$body["archivedPath"] = "$($ArchivedPath)"	}
+		$Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
+	}
+end
+	{	$status = $Result.StatusCode
+		if($status -eq 200)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $Result		
+			}
+		else
+			{	Write-Error "Failure : While Restoring a File Persona quota, VFSUUID: $VFSUUID." 
+				return $Result.StatusDescription
+			}
+	}
 }
 
 Function Group-A9FilePersonaQuota 
@@ -1621,27 +1442,24 @@ Function Group-A9FilePersonaQuota
 	VFS UUID.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$QuotaArchiveParameter
+Param(	[Parameter(Mandatory)]	[String]	$QuotaArchiveParameter
 )
 Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
+	{	Test-A9Connection -ClientType 'API' 
+	}
 Process 
-{	$body = @{}
-	$body["action"] = 1 
-	If($QuotaArchiveParameter) 
-		{	$body["quotaArchiveParameter"] = "$($QuotaArchiveParameter)"
-		}
-    $Result = $null
-    $Result = Invoke-A9API -uri '/filepersonaquotas/' -type 'POST' -body $body 
-	$status = $Result.StatusCode
-	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	Write-Error "Failure : While Restoring a File Persona quota, VFSUUID: $VFSUUID." 
-			return $Result.StatusDescription
-		}
-}
+	{	$body = @{}
+		$body["action"] = 1 
+		$body["quotaArchiveParameter"] = "$($QuotaArchiveParameter)"
+		$Result = Invoke-A9API -uri '/filepersonaquotas/' -type 'POST' -body $body 
+		$status = $Result.StatusCode
+		if($status -eq 200)
+			{	write-host "Cmdlet executed successfully" -foreground green
+				return $Result
+			}
+		else
+			{	Write-Error "Failure : While Restoring a File Persona quota, VFSUUID: $VFSUUID." 
+				return $Result.StatusDescription
+			}
+	}
 }
