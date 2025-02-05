@@ -23,7 +23,7 @@ Process
 	$ip = $WsapiConnection.IPAddress
 	$key = $WsapiConnection.Key
 	if 		($ArrayType -eq "3par") 		{	$APIurl = 'https://' + $ip + ':8080/api/v1' }
-	Elseif (($ArrayType -eq "Primera") -or ($ArrayType -eq "Alletra9000")) 
+	Elseif (($ArrayType -eq "Primera") -or ($ArrayType -eq "Alletra9000") -or ($ArrayType -eq 'AlletraMP-B10000')) 
 			{	$APIurl = 'https://' + $ip + ':443/api/v1'
 			}
 	else {	return "Invoke-A9API: Array type is Null."	}

@@ -166,11 +166,14 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 		{	Write-error "Stop: No key Generated"
 			return 		
 		}
-	write-verbose "New-Connection: Initiating Get-System_WSAPI call to test the offered key"	
+	write-verbose "New-Connection: Initiating Get-System call to test the offered key"	
 	if 		($ArrayType -eq "3par") 		
 			{	$APIurl = 'https://' + $ArrayFQDNorIPAddress + ':8080/api/v1' 
 			}
-	Elseif (($ArrayType -eq "Primera") -or ($ArrayType -eq "Alletra9000") -or ($ArrayType -eq "AlletraMP-B10000")) 
+	Elseif (($ArrayType -eq "Primera") -or ($ArrayType -eq "Alletra9000") ) 
+			{	$APIurl = 'https://' + $ArrayFQDNorIPAddress + ':443/api/v1'
+			}
+	Elseif (($ArrayType -eq "AlletraMP-B10000")) 
 			{	$APIurl = 'https://' + $ArrayFQDNorIPAddress + ':443/api/v1'
 			}
 	$url = $APIurl + '/system'

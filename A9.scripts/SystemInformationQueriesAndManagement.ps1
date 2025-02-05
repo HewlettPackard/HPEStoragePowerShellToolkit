@@ -30,7 +30,7 @@ Process
 			return $dataPS
 		}
 	else
-		{	Write-Error "Failure:  While Executing Get-System_WSAPI" 
+		{	Write-Error "Failure:  While Executing Get-System" 
 			return $Result.StatusDescription
 		}
 }	
