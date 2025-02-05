@@ -741,7 +741,7 @@ Param(
 	)
 Begin 
 {	if ( $PSCmdlet.ParameterSetName -eq 'API' )
-		{	if ( Test-A9Connection -CLientType 'API' -returnBoolean -and -not $UseSSH )
+		{	if ( (Test-A9Connection -CLientType 'API' -returnBoolean ) -and -not $UseSSH )
 				{	$PSetName = 'API'
 				}
 			else{	if ( Test-A9Connection -ClientType 'SSH' -returnBoolean )

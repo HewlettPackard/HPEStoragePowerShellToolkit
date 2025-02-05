@@ -21,7 +21,7 @@ Begin
 Process
 {	Write-Host "--------------------------------------`n"
 	Write-host "Controller,WWN"	
-	$ListofPorts = Get-HostPorts -SANConnection $SANConnection| where-object { ( $_.Type -eq "host" ) -and ($_.Protocol -eq "FC")}
+	$ListofPorts = Get-A9HostPorts_cli -SANConnection $SANConnection| where-object { ( $_.Type -eq "host" ) -and ($_.Protocol -eq "FC")}
 	$Port_Pattern = "(\d):(\d):(\d)"							# Pattern matches value of port: 1:2:3
 	$WWN_Pattern = "([0-9a-f][0-9a-f])" * 8						# Pattern matches value of WWN
 	foreach ($Port in $ListofPorts)

@@ -9,11 +9,11 @@ Function Find-A9Node
 	Locate a node by blinking its LEDs.
 .DESCRIPTION
 	The command helps locate a particular node or its components by illuminating LEDs on the node.
-.PARAMETER T
+.PARAMETER Time
 	Specifies the number of seconds to illuminate the LEDs. For HPE 3PAR 7000 and HPE 3PAR 8000 storage systems, the default time to illuminate the LEDs is 15
 	minutes with a maximum time of one hour. For STR (Safe to Remove) systems, the default time is one hour with a maximum time of one week. For all
 	other systems, the default time is 60 seconds with a maximum time of 255 seconds. Issuing "Find-Node -t 0 <nodeid>" will turn off LEDs immediately.
-.PARAMETER Ps
+.PARAMETER PowerSupply
 	Only the service LED for the specified power supply will blink. Accepted values for <psid> are 0 and 1.
 .PARAMETER Pci
 	Only the service LED corresponding to the PCI card in the specified slot will blink. Accepted values for <slot> are 0 through 8.
@@ -22,21 +22,23 @@ Function Find-A9Node
 	Accepted values for <fanid> are 0, 1 and 2 for HPE 3PAR 20000 systems.
 .PARAMETER Drive
 	Only the service LED corresponding to the node's internal drive will blink.
-.PARAMETER Bat
+.PARAMETER Battery
 	Only the service LED on the battery backup unit will blink.
 .PARAMETER NodeID
 	Indicates which node the locatenode operation will act on. Accepted
 	values are 0 through 7.
+.EXAMPLE
+	PS:> Fine-A9Node -Time 360 -PowerSupply 0
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$T,
-		[Parameter()]	[String]	$Ps,
+param(	[Parameter()]	[String]	$Time,
+		[Parameter()]	[String]	$PowerSupply,
 		[Parameter()]	[String]	$Pci,
 		[Parameter()]	[String]	$Fan,
 		[Parameter()]	[switch]	$Drive,
-		[Parameter()]	[switch]	$Bat,
+		[Parameter()]	[switch]	$Battery,
 		[Parameter()]	[String]	$NodeID
 )
 Begin
@@ -44,13 +46,14 @@ Begin
 }
 process
 {	$Cmd = " locatenode "
-	if($T)	{	$Cmd += " -t $T " }
-	if($Ps)		{	$Cmd += " -ps $Ps " 	}
-	if($Pci) 	{	$Cmd += " -pci $Pci " 	}
-	if($Fan)	{	$Cmd += " -fan $Fan " 	}
-	if($Drive)	{	$Cmd += " -drive " 		}
-	if($Bat)	{	$Cmd += " -bat " 		}
-	if($NodeID) {	$Cmd += " $NodeID " 	}
+	if($Time)		{	$Cmd += " -t $T " }
+	if($PowerSupply){	$Cmd += " -ps $Ps " 	}
+	if($Pci) 		{	$Cmd += " -pci $Pci " 	}
+	if($Fan)		{	$Cmd += " -fan $Fan " 	}
+	if($Drive)		{	$Cmd += " -drive " 		}
+	if($Battery)	{	$Cmd += " -bat " 		}
+	if($NodeID) 	{	$Cmd += " $NodeID " 	}
+	write-verbose "The following command will be sent `n $Cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -64,7 +67,7 @@ Function Find-A9System
 .DESCRIPTION
     The command helps locate a storage system by illuminating the blue UID LEDs or by alternating the node status LEDs amber and green on all
     nodes of the storage system. By default, the LEDs in all connected cages will illuminate blue or will oscillate green and amber, depending on the system or cage model.
-.PARAMETER T
+.PARAMETER Time
 	Specifies the number of seconds to illuminate or blink the LEDs. default may vary depending on the system model. For example, the default time 
 	for HPE 3PAR 7000 and HPE 3PAR 8000 storage systems is 15 minutes, with a maximum time of one hour. The default time for 9000 and 20000 systems 
 	is 60 minutes, with a maximum of 604,800 seconds (one week).
@@ -75,12 +78,12 @@ Function Find-A9System
 .EXAMPLE
 	In the following example, a storage system is identified by illuminating or blinking the LEDs on all drive cages in the system for 90 seconds. 
 	
-	PS:> Find-A9System_CLI -T 90
+	PS:> Find-A9System -Time 90
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$T,
+param(	[Parameter()]	[String]	$Time,
 		[Parameter()]	[String]	$NodeList,
 		[Parameter()]	[switch]	$NoCage
 )
@@ -89,9 +92,10 @@ Begin
 }
 process
 {	$Cmd = " locatesys "
-	if($T) 			{	$Cmd += " -t $T " }
+	if($Time) 		{	$Cmd += " -t $T " }
 	if($NodeList) 	{	$Cmd += " -nodes $NodeList " }
 	if($NoCage)		{	$Cmd += " -nocage " }
+	write-verbose "The following command will be sent `n $Cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -158,18 +162,18 @@ process
     if ($DomainSpace) 		{    $sysinfocmd += " -domainspace "}
     if ($Descriptor) 		{	$sysinfocmd += " -desc "	}
     if ($DevType) 			{    $sysinfocmd += " -devtype $DevType"}
-    write-verbose "Get system information " 
-    $Result3 = Invoke-A9CLICommand -cmds  $sysinfocmd	
+	write-verbose "The following command will be sent `n $Cmd"
+    $Result = Invoke-A9CLICommand -cmds  $sysinfocmd	
     if ($Fan -or $DomainSpace -or $sysinfocmd -eq "showsys ") 
 		{	$incre = "True"
 			$FirstCnt = 1
-			$rCount = $Result3.Count
+			$rCount = $Result.Count
 			$noOfColumns = 0        
 			if ($Fan) {		$FirstCnt = 0 }
-			if ($DomainSpace) {    $rCount = $Result3.Count - 3   }
+			if ($DomainSpace) {    $rCount = $Result.Count - 3   }
 			$tempFile = [IO.Path]::GetTempFileName()
-			if ($Result3.Count -gt 1) 
-				{	foreach ($s in  $Result3[$FirstCnt..$rCount] ) 
+			if ($Result.Count -gt 1) 
+				{	foreach ($s in  $Result[$FirstCnt..$rCount] ) 
 						{	$s = [regex]::Replace($s, "^ +", "")
 							if (!$DomainSpace) {    $s = [regex]::Replace($s, "-", "")    }				
 							$s = [regex]::Replace($s, " +", ",")
@@ -194,7 +198,7 @@ process
 							if ($DomainSpace) 
 								{	if ($incre -eq "True") 
 										{	$sTemp = $s.Split(',')											
-											$sTemp[1] = "Used_Legacy(MiB)"				
+											<# $sTemp[1] = "Used_Legacy(MiB)"				
 											$sTemp[2] = "Snp_Legacy(MiB)"
 											$sTemp[3] = "Base_Private(MiB)"				
 											$sTemp[4] = "Snp_Private(MiB)"
@@ -206,24 +210,26 @@ process
 											$sTemp[10] = "Dedup_Efficiency"
 											$sTemp[11] = "Compress_Efficiency"
 											$sTemp[12] = "DataReduce_Efficiency"
-											$sTemp[13] = "Overprov_Efficiency"
+											$sTemp[13] = "Overprov_Efficiency" #>
 											$newTemp = [regex]::Replace($sTemp, "^ ", "")			
 											$newTemp = [regex]::Replace($sTemp, " ", ",")				
 											$newTemp = $newTemp.Trim()
-											$s = $newTemp							
+											$s = $newTemp 					
 										}
 								}				
-							Add-Content -Path $tempFile -Value $s				
+							Add-Content -Path $tempFile -Value $s 			
 							$incre = "False"
 						}
-					Import-Csv $tempFile			
+					return $Result
+					# $Result = Import-Csv $tempFile			
 					Remove-Item $tempFile
+					return $Result
 				}
 			else{	Remove-Item $tempFile
 					return	$Result3			
 				}
 		}		
-    else{    return	$Result3    }	
+    else{    return	$Result    }	
 }
 }
 
@@ -1934,18 +1940,15 @@ process
 					$s= [regex]::Replace($s,"-","")
 					$s= [regex]::Replace($s,"\s+",",") 		
 					$s= [regex]::Replace($s,"/HW_Addr","") 
-					$s= [regex]::Replace($s,"N:S:P","Device")
+					# $s= [regex]::Replace($s,"N:S:P","Device")
 					$s= $s.Trim() 	
 					Add-Content -Path $tempFile -Value $s				
 				}
-			Import-Csv $tempFile
+			$Result = Import-Csv $tempFile
 			remove-item $tempFile
+			write-host 'Success : Executing Get-HostPorts' -ForegroundColor green
 		}
-	else	{	return  $Result	}
-	if($Result -match "N:S:P")
-		{	return  " Success : Executing Get-HostPorts"
-		}
-	else	{	return  $Result	}	
+	return $Result	
 }
 }
 
@@ -1958,7 +1961,7 @@ Function Get-A9Node
 	The command displays an overview of the node-specific properties
 	and its component information. Various command options can be used to
 	display the properties of PCI cards, CPUs, Physical Memory, IDE drives,
-	and Power Supplies.
+	and Power Supplies. For the Alletra MP B10000, no options are valid.
 .PARAMETER Listcols
 	List the columns available to be shown with the -showcols option
 	described below (see 'clihelp -col Get-Node' for help on each column).
@@ -2082,7 +2085,7 @@ process
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -1  
 			$incre = "True"
-			foreach ($s in  $Result[1..$LastItem] )
+			foreach ($s in  $Result[0..$LastItem] )
 				{	$s= [regex]::Replace($s,"^ ","")
 					$s= [regex]::Replace($s,"^ ","")
 					$s= [regex]::Replace($s,"^ ","")		
@@ -2092,8 +2095,8 @@ process
 					if($incre -eq "True")
 						{	$sTemp1=$s				
 							$sTemp = $sTemp1.Split(',')							
-							$sTemp[6] = "Control-Mem(MB)"
-							$sTemp[7] = "Data-Mem(MB)"
+							# $sTemp[6] = "Control-Mem(MB)"
+							# $sTemp[7] = "Data-Mem(MB)"
 							$newTemp= [regex]::Replace($sTemp,"^ ","")			
 							$newTemp= [regex]::Replace($sTemp," ",",")				
 							$newTemp= $newTemp.Trim()
@@ -2102,11 +2105,12 @@ process
 					Add-Content -Path $tempfile -Value $s
 					$incre = "False"		
 				}
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			remove-item $tempFile	
+
 		}
-	if($Result.count -gt 1)	{	return  " Success : Executing Get-Node"}
-	else					{	return  $Result	}
+	if($Result.count -gt 1)	{	write-host " Success : Executing Get-Node" -ForegroundColor green }
+	return  $Result
 }
 }
 
