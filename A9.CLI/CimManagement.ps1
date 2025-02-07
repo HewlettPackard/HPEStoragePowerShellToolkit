@@ -5,31 +5,25 @@ Function Get-A9CIM
 {
 <#
 .SYNOPSIS
-    Show the CIM server information
+    Show the CIM server information including policy
 .DESCRIPTION
     This cmdlet displays the CIM server service state being configured, either enabled or disabled. It also displays the server current running
     status, either active or inactive. It displays the current status of the HTTP and HTTPS ports and their port numbers. In addition, it shows the
     current status of the SLP port, that is either enabled or disabled.
-.PARAMETER Pol
-    Show CIM server policy information
 .EXAMPLE
     The following example shows the current CIM status:
-
-        PS:> Get-A9CIM
-
-        -Service- -State-- --SLP-- SLPPort -HTTP-- HTTPPort -HTTPS- HTTPSPort PGVer  CIMVer
-        Enabled   Active   Enabled     427 Enabled     5988 Enabled      5989 2.14.1 3.3.1
-
-.EXAMPLE
-    The following example shows the current CIM policy:
-
-        PS:> Get-A9CIM -Pol
-
-        --------------Policy---------------
-        replica_entity,one_hwid_per_view,use_pegasus_interop_namespace,no_tls_strict
+        PS:> Get-A9Cim
+        CIMVer    : 10.4.2
+        PGVer     : 2.14.1
+        SLP       : Disabled
+        SLPPort   : 427
+        HTTPS     : Disabled
+        Service   : Disabled
+        Policy    : {replica_entity, one_hwid_per_view, use_pegasus_interop_namespace, tls_strict}
+        HTTPSPort : 5989
+        State     : Inactive
 .NOTES
 	This command requires a SSH type connection.
-
 #>
 [CmdletBinding()]
 param(  [Parameter()]    [Switch]    $Policy
@@ -39,12 +33,31 @@ Begin
     }
 process
     {   $cmd = "showcim "
-        if ($Policy) {    $cmd += " -pol "    }	
-        $Result = Invoke-A9CLICommand -cmds $cmd
+        write-verbose "Executing the following SSH command `n $cmd"
+        $Result1 = Invoke-A9CLICommand -cmds $cmd
+        $cmd += " -pol " 	
+        write-verbose "Executing the following SSH command `n $cmd"
+        $Result2 = Invoke-A9CLICommand -cmds $cmd
     }
 end
-    {   write-verbose " Executed the Get-A9CIM cmdlet" 
-        return 	$Result	
+    {   if ( $Result1.count -gt 1)
+            {   $Result2 = @{Policy = @($Result2[1].split(',')) }                 
+                $tempFile = [IO.Path]::GetTempFileName()
+                        $Head = (($Result1[0].split(' ') | where-object {$_ -ne ''}).trim('-')) -join ","
+                        $Data = (($Result1[1].split(' ') | where-object {$_ -ne ''}).trim(' ')) -join ","
+                        $tempFile = [IO.Path]::GetTempFileName()
+                        Add-Content -Path $tempFile -Value $Head
+                        Add-Content -Path $tempFile -Value $Data
+                        $Result1 = Import-Csv $tempFile
+                        Remove-Item  $tempFile
+                        # Must force import as a Hashtable instead of a PSCustom Object or else I cant add them together
+                        $Result3 = ($result1 | convertto-json | convertfrom-json -asHashTable) + ($result2 | convertto-json | convertfrom-json -asHashTable)
+                        $Result3 = $Result3 | convertto-json | convertfrom-json
+            }
+        else 
+            {  Write-Warning "The Command did not complete properly"
+            }
+        return 	$Result3
     }
 }
 
@@ -71,8 +84,8 @@ begin
     }	
 process 
 {   $cmd = "startcim "
+    write-verbose "Executing the following SSH command `n $cmd"
     $Result = Invoke-A9CLICommand  -cmds  $cmd
-    write-verbose " Executed the Start-CIM cmdlet" 
     return 	$Result	
 }
 }
@@ -152,6 +165,7 @@ Process
         if ($Http)  {   $cmd += " -http $Http"  }
         if ($Https) {   $cmd += " -https $Https"}
         if ($Policy){   $cmd += " -pol $Pol"    }
+        write-verbose "Executing the following SSH command `n $cmd"
         $Result = Invoke-A9CLICommand -cmds  $cmd
         return 	$Result	
     }
@@ -195,6 +209,7 @@ Process
     {   $cmd = "setcim "	
         $cmd += " -f " 
         if ($Immediate) {    $cmd += " -x "}
+        write-verbose "Executing the following SSH command `n $cmd"
         $Result = Invoke-A9CLICommand -cmds $cmd
         return 	$Result	
     }

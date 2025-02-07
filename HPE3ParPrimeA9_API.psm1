@@ -4,11 +4,10 @@
 . $PSScriptRoot\A9.GLOBAL\Host.ps1
 . $PSScriptRoot\A9.GLOBAL\Task.ps1
 . $PSScriptRoot\A9.GLOBAL\Disk.ps1
+. $PSScriptRoot\A9.GLOBAL\CPGManagement.ps1
 
 . $PSScriptRoot\A9.scripts\AvailableSpace.ps1 
 . $PSScriptRoot\A9.scripts\CopyOperations.ps1 
-. $PSScriptRoot\A9.scripts\CpgManagement.ps1 
-
 . $PSScriptRoot\A9.scripts\FlashCacheOperations.ps1 
 . $PSScriptRoot\A9.scripts\HostManagement.ps1
 . $PSScriptRoot\A9.scripts\HostSetsAndVirtualVolumeSets.ps1 

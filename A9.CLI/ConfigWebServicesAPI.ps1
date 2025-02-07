@@ -12,41 +12,50 @@ Function Get-A9WsApi
   status as Active, Inactive or Error. It also displays the current status of the HTTP and HTTPS ports and their port numbers. WSAPI server URL is
   also displayed.
 .EXAMPLE
-    PS:> Get-A9Wsapi -TableFormat
-.PARAMETER TableFormat
-    Shows WSAPI information in table format.
+    PS:> Get-A9WsApi
+
+    service State                            : Enabled
+    HPE GreenLake for Block Storage UI State : Active
+    server State                             : Active
+    HTTPS Port                               : 443
+    Number of Sessions Created               : 0
+    System Resource Usage                    : 192
+    Number of Sessions Active                : 0
+    Version                                  : 1.14.0
+    Event Stream State                       : Enabled
+    Max Number of SSE Sessions Allowed       : 5
+    Number of SSE Sessions Created           : 0
+    Number of SSE Sessions Active            : 0
+    Session Timeout                          : 15 Minutes
+    Policy                                   : no_per_user_limit
+    API URL                                  : https://192.168.1.12/api/v1
+
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(  [Parameter()] [switch]	$TableFormat
+param(  
 )
 Begin	
-  {   Test-A9Connection -ClientType 'SshClient' 
+  { Test-A9Connection -ClientType 'SshClient' 
   }
 Process
-  { $Cmd = " showwsapi "
-    if($TableFormat)  {	$Cmd += " -d " }
+  { $Cmd = " showwsapi -d "
+    write-verbose "Executing the following SSH command `n $cmd"
     $Result = Invoke-A9CLICommand -cmds  $Cmd
   }
 end
-  { if($Result -match "-Service-")
-      {	$range = $Result.count
-        $tempFile = [IO.Path]::GetTempFileName()
-        foreach ($s in  $Result[0..$range] )
-          { $s= [regex]::Replace($s,"^ +","")
-            $s= [regex]::Replace($s," +"," ")
-            $s= [regex]::Replace($s," ",",")
-            $s= $s.Trim() -replace '-Service-,-State-,-HTTP_State-,HTTP_Port,-HTTPS_State-,HTTPS_Port,-Version-,-------------API_URL--------------','Service,State,HTTP_State,HTTP_Port,HTTPS_State,HTTPS_Port,ersion,API_URL'			
-            Add-Content -Path $tempFile -Value $s
-          }
-        $returndata = Import-Csv $tempFile
-        Remove-Item  $tempFile
-        return $returndata
+  { $Data = $Result[1..$Result.count]
+    $ReturnTable=[ordered]@{}
+    foreach( $Line in $Data)
+      {   $LabelName = ($Line.split(' : '))[0]
+          $LabelName = $LabelName.trim(' ')
+          $DataValue = ($Line.split(' : '))[1]
+          $DataVAlue = $DataValue.trim(' ')
+          $ReturnTable["$LabelName"] = $DataValue
       }
-    else
-      {  return $Result  
-      }
+    $Result = $ReturnTable | convertto-json | convertfrom-json
+    return $Result
   }
 }
 
@@ -70,6 +79,7 @@ Begin
 }
 Process
 { $Cmd = " showwsapisession "
+  write-verbose "Executing the following SSH command `n $cmd"
   $Result = Invoke-A9CLICommand -cmds  $Cmd
 }
 end
@@ -138,6 +148,7 @@ Process
     if($Id)         {  $Cmd += " $Id "        }
     if($User_name)  {  $Cmd += " $User_name " }
     if($IP_address) {  $Cmd += " $IP_address " }
+    write-verbose "Executing the following SSH command `n $cmd"
     $Result = Invoke-A9CLICommand -cmds  $Cmd
     Return $Result
   }
@@ -176,7 +187,7 @@ Function Set-A9Wsapi
     is specified along with service affecting options like -pol the WSAPI server will restart.
 #>
 [CmdletBinding()]
-param(  [Parameter()] 	[ValidateSet('tls_strict','no_tls_strict')]
+param(  [Parameter()] 	[ValidateSet('tls_strict','no_tls_strict','per_user_limit','no_per_user_limit')]
                         [String]	$Policy,
         [Parameter()] 	[ValidateRange(3,1440)]
                         [String]	$Timeout,
@@ -191,6 +202,7 @@ Process
     if($Policy)   {	$Cmd += " -pol $Pol " }
     if($Timeout)  {	$Cmd += " -timeout $Timeout " }
     if($Evtstream){	$Cmd += " -evtstream $Evtstream " }
+    write-verbose "Executing the following SSH command `n $cmd"
     $Result = Invoke-A9CLICommand -cmds  $Cmd
     Return $Result
   }
@@ -222,6 +234,7 @@ Begin
   }
 Process
   { $cmd= " startwsapi "
+    write-verbose "Executing the following SSH command `n $cmd"
     $Result = Invoke-A9CLICommand -cmds  $cmd 
     return $Result	
   }
@@ -246,6 +259,7 @@ Begin
 Process
   { $Cmd = " stopwsapi -f "
     if ( $Keep_UI)  { $Cmd+= ' -keep_ui'}
+    write-verbose "Executing the following SSH command `n $cmd"
     $Result = Invoke-A9CLICommand -cmds  $Cmd
     Return $Result
   }

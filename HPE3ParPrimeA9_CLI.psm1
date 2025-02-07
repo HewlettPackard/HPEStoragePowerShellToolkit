@@ -4,15 +4,12 @@
 . $PSScriptRoot\A9.GLOBAL\Host.ps1
 . $PSScriptRoot\A9.GLOBAL\Task.ps1
 . $PSScriptRoot\A9.GLOBAL\Disk.ps1
-
-
+. $PSScriptRoot\A9.GLOBAL\CPGManagement.ps1
 
 . $PSScriptRoot\A9.CLI\ConfigWebServicesAPI.ps1
-. $PSScriptRoot\A9.CLI\CPGManagement.ps1
 . $PSScriptRoot\A9.CLI\Cage.ps1
 . $PSScriptRoot\A9.CLI\Disk.ps1
 . $PSScriptRoot\A9.CLI\DomainManagement.ps1
-
 . $PSScriptRoot\A9.CLI\Flashcache.ps1
 . $PSScriptRoot\A9.CLI\HealthAndAlertManagement.ps1
 . $PSScriptRoot\A9.CLI\HostManagement.ps1

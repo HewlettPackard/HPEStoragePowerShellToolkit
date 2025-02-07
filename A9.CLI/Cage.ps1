@@ -84,6 +84,7 @@ Process
 	{	$cmd= "locatecage "	
 		if ($time)	{	$cmd+=" -t $time"	}
 		$cmd2="showcage "
+		write-verbose "Executing the following SSH command `n $cmd"
 		$Result2 = Invoke-A9CLICommand -cmds  $cmd2
 		if($Result2 -match $CageName)
 			{	$cmd+=" $CageName"
@@ -98,7 +99,7 @@ Process
 			{	if ($Mag)		{	$cmd +=" $Mag"		}
 				if ($PortName)	{	$cmd +=" $PortName"	}				
 			}	
-			write-verbose "  Executing Find-Cage Command , surface scans or diagnostics on physical disks with the command   " 	
+			write-verbose "Executing the following SSH command `n $cmd"
 			$Result = Invoke-A9CLICommand -cmds  $cmd	
 	}
 end
@@ -167,10 +168,6 @@ Function Get-A9Cage
 	
 	This examples display information for a single system’s drive cages.
 .EXAMPLE  
-	PS:> Get-A9Cage -D -CageName cage2	
-	
-	Specifies that more detailed information about the drive cage is displayed
-.EXAMPLE  
 	PS:> Get-A9Cage -I -CageName cage2
 	
 	Specifies that inventory information about the drive cage is displayed. 
@@ -196,7 +193,7 @@ param(	[Parameter(parametersetname='3Par')]			[Switch]	$ErrorInformation,
 		[Parameter(ParameterSetName='A9Power')]			[Switch]	$Power,
 		[Parameter(ParameterSetName='A9Sep')]			[Switch]	$Sep,
 		[Parameter(ParameterSetName='A9Temp')]			[Switch]	$Temperature,
-		[Parameter(mandatory)]							[String]	$CageName,
+		[Parameter(mandatory=$false)]					[String]	$CageName,
 		[Parameter(ParameterSetName='3Par')]			[switch]	$3ParOnly
 	)		
 Begin	
@@ -233,22 +230,25 @@ Process
 		if($sep)		{ 	$cmd +=" -sep " }
 		if($temperature){ 	$cmd +=" -temp " }
 		$cmd+=" $CageName "
-		write-verbose "  Executing  Get-Cage command that displays information about drive cages. with the command   " 
+		write-verbose "Executing the following SSH command `n $cmd" 
 		$Result = Invoke-A9CLICommand -cmds $cmd
 	}
 end
 	{	if($Result.Count -gt 1)
-			{	$tempFile = [IO.Path]::GetTempFileName()
-				$LastItem = $Result.Count 
-				foreach ($s in  $Result[0..$LastItem] )
-					{	$s= [regex]::Replace($s,"^ ","")			
-						$s= [regex]::Replace($s," +",",")	
-						$s= $s.Trim() 	
-						Add-Content -Path $tempFile -Value $s
+			{	if ( $PSBoundParameters.count -eq 0 )
+					{ 	write-verbose "Since the command was run without arguments, can format it."
+						$tempFile = [IO.Path]::GetTempFileName()
+						$LastItem = $Result.Count 
+						foreach ($s in  $Result[0..$LastItem] )
+							{	$s= [regex]::Replace($s,"^ ","")			
+								$s= [regex]::Replace($s," +",",")	
+								$s= $s.Trim() 	
+								Add-Content -Path $tempFile -Value $s
+							}
+						$Result = Import-Csv $tempFile 
+						Remove-Item  $tempFile
 					}
-				$returndata = Import-Csv $tempFile 
-				Remove-Item  $tempFile
-				Return $returndata
+				Return $Result
 			}
 		else{	write-warning "FAILURE : While Executing Get-Cage"
 				Return $Result
@@ -300,6 +300,7 @@ Process
 		if ($Position ){	$cmd+=" position $Position "}		
 		if ($PSModel)
 			{	$cmd2="showcage -d"
+				write-verbose "Executing the following SSH command `n $cmd"
 				$Result2 = Invoke-A9CLICommand -cmds  $cmd2
 				if($Result2 -match $PSModel)	{	$cmd+=" ps $PSModel "	}	
 				else{	return "Failure: -PSModel $PSModel is Not available."
@@ -307,11 +308,13 @@ Process
 			}		
 		if ($CageName)
 			{	$cmd1="showcage"
+				write-verbose "Executing the following SSH command `n $cmd"
 				$Result1 = Invoke-A9CLICommand -cmds  $cmd1
 				if($Result1 -match $CageName)	{	$cmd +="$CageName "	}
 				else{	return "Failure:  -CageName $CageName is Not available."
 					}	
 			}	
+		write-verbose "Executing the following SSH command `n $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $cmd
 		write-verbose " The Set-Cage command enables service personnel to set or modify parameters for a drive cage  " 		
 		if($Result)
