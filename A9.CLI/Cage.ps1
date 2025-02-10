@@ -99,8 +99,8 @@ Process
 			{	if ($Mag)		{	$cmd +=" $Mag"		}
 				if ($PortName)	{	$cmd +=" $PortName"	}				
 			}	
-			write-verbose "Executing the following SSH command `n $cmd"
-			$Result = Invoke-A9CLICommand -cmds  $cmd	
+		write-verbose "Executing the following SSH command `n $cmd"
+		$Result = Invoke-A9CLICommand -cmds  $cmd	
 	}
 end
 	{	if($Result)
@@ -163,6 +163,8 @@ Function Get-A9Cage
 	Displays the temperature sensor status information, e.g., temperature, threshold, status.
 .PARAMETER CageName  
 	Specifies a drive cage name for which information is displayed. This specifier can be repeated to display information for multiple cages
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning object. 
 .EXAMPLE
 	PS:> Get-A9Cage
 	
@@ -194,7 +196,8 @@ param(	[Parameter(parametersetname='3Par')]			[Switch]	$ErrorInformation,
 		[Parameter(ParameterSetName='A9Sep')]			[Switch]	$Sep,
 		[Parameter(ParameterSetName='A9Temp')]			[Switch]	$Temperature,
 		[Parameter(mandatory=$false)]					[String]	$CageName,
-		[Parameter(ParameterSetName='3Par')]			[switch]	$3ParOnly
+		[Parameter(ParameterSetName='3Par')]			[switch]	$3ParOnly,
+		[Parameter()]									[Switch]	$ShowRaw
 	)		
 Begin	
 	{   Test-A9Connection -ClientType 'SshClient' 
@@ -234,32 +237,37 @@ Process
 		$Result = Invoke-A9CLICommand -cmds $cmd
 	}
 end
-	{	if($Result.Count -gt 1)
-			{	if ( $PSBoundParameters.count -eq 0 )
-					{ 	write-verbose "Since the command was run without arguments, can format it."
-						$tempFile = [IO.Path]::GetTempFileName()
-						$LastItem = $Result.Count 
-						foreach ($s in  $Result[0..$LastItem] )
-							{	$s= [regex]::Replace($s,"^ ","")			
-								$s= [regex]::Replace($s," +",",")	
-								$s= $s.Trim() 	
-								Add-Content -Path $tempFile -Value $s
-							}
-						$Result = Import-Csv $tempFile 
-						Remove-Item  $tempFile
-					}
-				Return $Result
-			}
+	{	if($ShowRaw -or $i -or $svc -or $all) { return $Result }
+		if($Result.Count -gt 1)
+				{	if ( ($PSBoundParameters.count -eq 0) -or $Cooling)
+						{ 	$HeaderLine = 0
+							$StartIndex=1
+							$EndIndex=$Result.count-1
+						}
+					elseif ($Connector -or $IOM -or $mag -or $Power -or $Sep -or $Enclosure)
+						{	$HeaderLine = 0
+							$StartIndex=1
+							$EndIndex=$Result.count-3
+						}
+					elseif ($Env -or $Temperature -or $sfp)
+						{	$HeaderLine = 1
+							$StartIndex=2
+							$EndIndex=$Result.count-3
+						}
+				}
 		else{	write-warning "FAILURE : While Executing Get-Cage"
 				Return $Result
-			}		
-		if($Result -match "Cage" )
-			{	write-host " Success : Executing Get-Cage" -ForegroundColor green	
-				Return $result 
-			} 
-		else{	write-warning " FAILURE : While Executing Get-Cage" 
-				Return $Result
-			} 
+			}	
+		$tempFile = [IO.Path]::GetTempFileName()	
+		$ResultHeader = ((($Result[$HeaderLine].split(' ')).trim()).trim('-') | where-object { $_ -ne '' } ) -join ','
+		Add-Content -Path $tempFile -Value $ResultHeader
+		foreach ($s in $Result[$StartIndex..$EndIndex])
+			{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+				Add-Content -Path $tempFile -Value $s
+			}	
+		$returndata = Import-Csv $tempFile
+		Remove-Item $tempFile
+		return $returndata
 	}
 }
 

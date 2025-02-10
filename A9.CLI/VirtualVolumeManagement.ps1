@@ -1239,7 +1239,7 @@ Function Remove-A9LogicalDisk
 .PARAMETER Pat
 	Specifies glob-style patterns. All LDs matching the specified pattern are removed. By default, confirmation is required to proceed
 	with the command unless the -f option is specified. This option must be	used if the pattern specifier is used.
-.PARAMETER Dr
+.PARAMETER DryRun
 	Specifies that the operation is a dry run and no LDs are removed.
 .PARAMETER LD_Name
 	Specifies the LD name, using up to 31 characters. Multiple LDs can be specified.
@@ -1253,7 +1253,7 @@ Function Remove-A9LogicalDisk
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Pat,
-		[Parameter()]	[switch]	$Dr,
+		[Parameter()]	[switch]	$DryRun,
 		[Parameter()]	[switch]	$Rmsys,
 		[Parameter()]	[switch]	$Unused,
 		[Parameter(Mandatory=$True)][String]	$LD_Name
@@ -1264,7 +1264,7 @@ Begin
 process
 {	$Cmd = " removeld -f "
 	if($Pat) 	{	$Cmd += " -pat " }
-	if($Dr) 	{	$Cmd += " -dr " }
+	if($DryRun) {	$Cmd += " -dr " }
 	if($Rmsys) 	{	$Cmd += " -rmsys " }
 	if($Unused) {	$Cmd += " -unused " }
 	if($LD_Name){	$Cmd += " $LD_Name " }
@@ -1812,21 +1812,21 @@ Function Start-A9LD_CLI
 	Start-A9LD_CLI -LD_Name xxx
 .PARAMETER LD_Name
 	Specifies the LD name, using up to 31 characters.
-.PARAMETER Ovrd
+.PARAMETER Override
 	Specifies that the LD is forced to start, even if some underlying data is missing.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]					[switch]	$Ovrd,
-		[Parameter(Mandatory=$True)]	[String]	$LD_Name
+param(	[Parameter()]					[switch]	$Override,
+		[Parameter(Mandatory)]	[String]	$LD_Name
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
 { 	$Cmd = " startld "
-	if($Ovrd)		{	$Cmd += " -ovrd " }
+	if($Override)	{	$Cmd += " -ovrd " }
 	if($LD_Name) 	{	$Cmd += " $LD_Name " }
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
@@ -1850,7 +1850,7 @@ Function Start-A9Vv_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]				[switch]	$Ovrd,
+param(	[Parameter()]				[switch]	$Override,
 		[Parameter(Mandatory=$True)][String]	$VV_Name
 )
 Begin	
@@ -1858,7 +1858,7 @@ Begin
 }
 process
 {	$Cmd = " startvv "
-	if($Ovrd)	{	$Cmd += " -ovrd "	}
+	if($Override)	{	$Cmd += " -ovrd "	}
 	if($VV_Name)	{	$Cmd += " $VV_Name "	}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result

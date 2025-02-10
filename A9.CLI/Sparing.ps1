@@ -31,7 +31,7 @@ Function Get-A9Spare
 	Usage: The showpdch command is a more general and versatile command that can be used instead of showspare
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$used	
+param(	[Parameter()]	[Switch]	$used	
 	)
 Begin
 	{	Test-A9Connection -ClientType 'SshClient'
@@ -44,8 +44,7 @@ process
 	}
 end
 	{	$tempFile = [IO.Path]::GetTempFileName()
-		$range1 = $Result.count - 3 
-		$range = $Result.count		
+		$range1 = $Result.count - 3 	
 		if($Result.count -eq 3)
 			{	remove-item $tempFile
 				write-warning "No data available"

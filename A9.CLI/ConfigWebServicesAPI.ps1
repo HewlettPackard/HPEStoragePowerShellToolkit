@@ -84,13 +84,11 @@ Process
 }
 end
 {  if($Result.Count -gt 2)
-    { $range = $Result.count - 3
-      $tempFile = [IO.Path]::GetTempFileName()
-      foreach ($s in  $Result[0..$range] )
-        { $s= [regex]::Replace($s,"^ +","")
-          $s= [regex]::Replace($s," +"," ")
-          $s= [regex]::Replace($s," ",",")
-          $s= $s.Trim() -replace 'Id,Node,-Name--,-Role-,-Client_IP_Addr-,----Connected_since----,-State-,-Session_Type-','Id,Node,Name,Role,Client_IP_Addr,Connected_since,State,Session_Type'			
+    { $tempFile = [IO.Path]::GetTempFileName()
+      $ResultHeader = 'Id,Node,Name,Role,Client_IP_Addr,Connected_since,State,Session_Type'
+      Add-Content -Path $tempFile -Value $ResultHeader
+      foreach ($s in  $Result[1..($Result.count-1)] )
+        { $s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
           Add-Content -Path $tempFile -Value $s
         }
       $returndata = Import-Csv $tempFile
@@ -112,11 +110,7 @@ Function Remove-A9WsapiSession
   The command removes the WSAPI user connections from the current system.
 .EXAMPLE
 	PS:> Remove-A9WsapiSession -Id "1537246327049685" -User_name 3parxyz -IP_address "10.10.10.10"
-.PARAMETER Pattern
-  Specifies that the <id>, <user_name> and <IP_address> specifiers are treated as glob-style (shell-style) patterns and all WSAPI user
-  connections matching those patterns are removed. By default, confirmation is required to proceed with removing each connection
-  unless the -f option is specified.
-.PARAMETER Dr
+.PARAMETER DryRun
   Specifies that the operation is a dry run and no connections are removed.
 .PARAMETER Close_sse
   Specifies that the Server Sent Event (SSE) connection channel will be closed. WSAPI session credential for SSE will not be removed.
@@ -130,8 +124,7 @@ Function Remove-A9WsapiSession
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(  [Parameter()]           [switch]   $Pattern,
-        [Parameter()]           [switch]   $DryRun,
+param(  [Parameter()]           [switch]   $DryRun,
         [Parameter()]           [switch]   $Close_sse,
         [Parameter(Mandatory)]  [String]  $Id,
         [Parameter(Mandatory)]  [String]  $User_name,
@@ -142,7 +135,6 @@ Begin
   }
 Process
   { $Cmd = " removewsapisession -f"
-    if($Pattern)    {  $Cmd += " -pat "       }
     if($DryRun)     {  $Cmd += " -dr "        }
     if($Close_sse)  {  $Cmd += " $Close_sse " }
     if($Id)         {  $Cmd += " $Id "        }
