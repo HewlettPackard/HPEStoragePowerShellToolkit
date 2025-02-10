@@ -903,11 +903,7 @@ Process
 	if ($iteration)	{ 	$Cmd += " -iter $iteration"	}	
 	else			{	return "Error : -Iteration is mandatory. "	}
 	if ($domain)	{ 	$Cmd += " -domain $domain"	}	
-	if($hostE)		{	$objType = "host"
-						$objMsg  = "hosts"		
-						if ( -not (Test-A9CLIObject -objectType $objType -objectName $host -objectMsg $objMsg))	{	return "FAILURE : No host $host found"	}		
-						$Cmd += " -host $host "		
-					}
+	if($hostE)		{	$Cmd += " -host $host "		}
 	if ($vvname)	{	$GetvVolumeCmd="showvv"
 						$Res = Invoke-A9CLICommand -cmds  $GetvVolumeCmd
 						if ($Res -match $vvname)

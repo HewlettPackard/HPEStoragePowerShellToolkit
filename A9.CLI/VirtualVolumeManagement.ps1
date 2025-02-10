@@ -174,13 +174,6 @@ Function Get-A9LogicalDisk
 	repeated using a comma separated list .
 .PARAMETER Degraded
 	Only shows LDs with degraded availability.
-.PARAMETER Sortcol
-	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
-	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
-		inc: Sort in increasing order (default).
-		dec: Sort in decreasing order.
-	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted
-	by values in later columns.
 .PARAMETER Detailed
 	Requests that more detailed layout information is displayed.
 .PARAMETER CheckLD
@@ -207,6 +200,38 @@ Function Get-A9LogicalDisk
 	10  pdsld0.2        6    normal         1/0 53120  0      P   0         Y     N
 	163 tp0sa0.3        1    normal         1/0 5120   4224   C   SA   0          N
 	158 tp0sa0.5        1    normal         0/1 16384  13056  C   SA   0          N
+.EXAMPLE
+	PS:> (Get-A9logicalDisk -Cpg SSD_r6 ).LDForSD| ft *
+
+	Id  Name          RAID -Detailed_State- Own     SizeMB UsedMB Use  WThru MapV
+	--  ----          ---- ---------------- ---     ------ ------ ---  ----- ----
+	8   tp-0-sd-0.1   6    normal           1/2/3/0 102375 8925   C,SD Y     Y
+	11  tp-0-sd-0.2   6    normal           2/3/0/1 102375 7350   C,SD Y     Y
+	14  tp-0-sd-0.3   6    normal           3/0/1/2 102375 5775   C,SD Y     Y
+	17  tp-0-sd-0.4   6    normal           0/2/1/3 102375 8400   C,SD Y     Y
+	20  tp-0-sd-0.5   6    normal           1/3/2/0 102375 8925   C,SD Y     Y
+	23  tp-0-sd-0.6   6    normal           2/0/3/1 102375 8925   C,SD Y     Y
+	26  tp-0-sd-0.7   6    normal           3/1/0/2 102375 6300   C,SD Y     Y
+.EXAMPLE
+	PS:> Get-A9logicalDisk -Cpg SSD_r6
+
+	Name                           Value
+	----                           -----
+	LDForSA                        {@{Id=5; Name=tp-0-sa-0.0; RAID=1; -Detailed_State-=normal; Own=0/1/2/3; SizeMB=8192; UsedMB=5120; Use=C,SA; WThru=Y; MapV=Y}, @{Id=7; Name=tp-0-sa-0.1; RAID=1; -Detailed_State-=normal; Own=1/2/3/0; SizeMB=5120; UsedMB=5…
+	LDforSD                        {@{Id=8; Name=tp-0-sd-0.1; RAID=6; -Detailed_State-=normal; Own=1/2/3/0; SizeMB=102375; UsedMB=8925; Use=C,SD; WThru=Y; MapV=Y}, @{Id=11; Name=tp-0-sd-0.2; RAID=6; -Detailed_State-=normal; Own=2/3/0/1; SizeMB=102375; Use…
+.EXAMPLE
+	PS:> Get-A9logicalDisk -LD_Name tp-0-sd-0.97
+
+	Id             : 490
+	Name           : tp-0-sd-0.97
+	RAID           : 6
+	Detailed_State : normal
+	Own            : 0/1/2/3
+	SizeMB         : 245700
+	UsedMB         : 1575
+	Use            : C,SD
+	WThru          : Y
+	MapV           : Y
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -215,12 +240,12 @@ param(	[Parameter()]	[String]	$Cpg,
 		[Parameter()]	[String]	$Vv,
 		[Parameter()]	[String]	$Domain,
 		[Parameter()]	[switch]	$Degraded,
-		[Parameter()]	[String]	$Sortcol,
 		[Parameter()]	[switch]	$Detailed,
 		[Parameter()]	[switch]	$CheckLD,
 		[Parameter()]	[switch]	$Policy,
 		[Parameter()]	[switch]	$State,
-		[Parameter()]	[String]	$LD_Name
+		[Parameter()]	[String]	$LD_Name,
+		[Parameter()]	[switch]	$ShowRaw
 )
 Begin
 	{	Test-A9Connection -ClientType 'SshClient'
@@ -231,7 +256,6 @@ process
 		if($Vv)		{	$Cmd += " -vv $Vv "}
 		if($Domain)	{	$Cmd += " -domain $Domain "}
 		if($Degraded){	$Cmd += " -degraded " }
-		if($Sortcol){	$Cmd += " -sortcol $Sortcol " }
 		if($Detailed){	$Cmd += " -d " }
 		if($CheckLD){	$Cmd += " -ck " }
 		if($Policy)	{	$Cmd += " -p "	}
@@ -240,24 +264,66 @@ process
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 	}
 end
-	{	if($Result.count -gt 1)
-			{	if($Cpg)	
-					{	Return  $Result	
+	{	if($ShowRaw) {	Return $Result }
+		if($Result.count -gt 1)
+			{	if ( $Cpg )	
+					{	#	Need to split the dataset into two collections
+						$EndOfFirstDataSet = ($Result | Select-String 'total').linenumber[0]
+						$Result1 = $Result[0..$EndOfFirstDataSet]	
+						$Result2 = $Result[($EndOfFirstDataSet+1)..($Result.count-1)]
+						$tempFile = [IO.Path]::GetTempFileName()
+						$ResultHeader = (($Result1[1].split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
+						Add-Content -Path $tempfile -Value $ResultHeader				
+						foreach ($S in  $Result1[2..($Result1.Count - 4)] )
+								{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
+									Add-Content -Path $tempfile -Value $s				
+								}
+						$Result1 = Import-Csv -Delimiter 'Z'  $tempFile 
+						Remove-Item $tempFile
+						$tempFile = [IO.Path]::GetTempFileName()
+						Add-Content -Path $tempfile -Value $ResultHeader				
+						foreach ($S in  $Result2[2..($Result2.Count - 4)] )
+								{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
+									Add-Content -Path $tempfile -Value $s				
+								}
+						$Result2 = Import-Csv -Delimiter 'Z'  $tempFile 
+						Remove-Item $tempFile
+						$ResultFinal = $( @{LDForSA = $Result1}, @{LDforSD = $Result2} )
+						return $ResultFinal
 					}
-				else
+				if($Detailed)
 					{	$tempFile = [IO.Path]::GetTempFileName()
-						$LastItem = $Result.Count - 3   
-						foreach ($S in  $Result[0..$LastItem] )
-							{	$s= [regex]::Replace($s,"^ ","")			
-								$s= [regex]::Replace($s,"^ ","")
-								$s= [regex]::Replace($s,"^ ","")			
-								$s= [regex]::Replace($s,"^ ","")		
-								$s= [regex]::Replace($s," +",",")			
-								$s= [regex]::Replace($s,"-","")			
-								$s= $s.Trim()			
+						$ResultHeader = 'IdZNameZCPGZRAIDZOwnZSizeMBZRSizeMBZRowSzZStepKBZSetSzZRefcntZAvailZCAvailZCreationDateZCreationTimeZCreationzoneZDev_Type'
+						Add-Content -Path $tempfile -Value $ResultHeader				
+						foreach ($S in  $Result[1..($Result.Count - 3)] )
+							{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
 								Add-Content -Path $tempfile -Value $s				
 							}
-						$Result = Import-Csv $tempFile 
+						$Result = Import-Csv -Delimiter 'Z'  $tempFile 
+						Remove-Item $tempFile
+						return $Result
+					}	
+				if($CheckLD)
+					{	$tempFile = [IO.Path]::GetTempFileName()
+						$ResultHeader = 'Id,Name,Detailed_State,Total,Checked,Invalid,Last_Date_Checked,Last_Time_Checked,Last_TimeZone_Checked'
+						Add-Content -Path $tempfile -Value $ResultHeader				
+						foreach ($S in  $Result[1..($Result.Count - 3)] )
+							{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+								Add-Content -Path $tempfile -Value $s				
+							}
+						$Result = Import-Csv  $tempFile 
+						Remove-Item $tempFile
+						return $Result
+					}	
+				else
+					{	$tempFile = [IO.Path]::GetTempFileName()
+						$ResultHeader = ((($Result[0].split(' ')).trim()).trim('-') | where-object { $_ -ne '' } ) -join 'Z'
+						Add-Content -Path $tempfile -Value $ResultHeader				
+						foreach ($S in  $Result[1..($Result.Count - 3)] )
+							{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
+								Add-Content -Path $tempfile -Value $s				
+							}
+						$Result = Import-Csv -Delimiter 'Z'  $tempFile 
 						Remove-Item $tempFile
 						return $Result
 					}
@@ -367,18 +433,8 @@ Function Get-A9Space
 	Specifies the RAID type of the logical disk: r0 for RAID-0, r1 for RAID-1, r5 for RAID-5, or r6 for
 	RAID-6. If no RAID type is specified, the default is r1 for FC and SSD device types and r6 is for
 	the NL device types
-.PARAMETER Cage 
-	Specifies one or more drive cages. Drive cages are identified by one or more integers (item).
-	Multiple drive cages are separated with a single comma (1,2,3). A range of drive cages is
-	separated with a hyphen (0–3). The specified drive cage(s) must contain disks.
-.PARAMETER Disk
-	Specifies one or more disks. Disks are identified by one or more integers (item). Multiple disks
-	are separated with a single comma (1,2,3). A range of disks is separated with a hyphen (0–3).
-	Disks must match the specified ID(s).
 .PARAMETER History
 	Specifies that free space history over time for CPGs specified
-.PARAMETER SSZ
-	Specifies the set size in terms of chunklets.
 .EXAMPLE
 	PS:> Get-A9Space -cpgName 'rancher2023'
 
@@ -395,140 +451,79 @@ Function Get-A9Space
 	Compress     : -
 	DataReduce   : -
 	Overprov     : 0.23
+.EXAMPLE
+	PS:> get-a9space
+
+	RawFree  UsableFree
+	-------  ----------
+	55307064 43016610
+.EXAMPLE
+	PS:> get-a9space -cpg SSD_r6 -History | format-table *
+
+	TimeMonth TimeDay TimeHMS  HrsAgo EstFree_RawFree EstFree_LDFree EstFree_OPFree RawFree_ReduceRatePerHour LDFree_ReduceRatePerHour Used     Free     Total    Compact Dedup Compress DataReduce Overprov
+	--------- ------- -------  ------ --------------- -------------- -------------- ------------------------- ------------------------ ----     ----     -----    ------- ----- -------- ---------- --------
+	Feb       08      18:39:52 0      55307064        43016610       -              -                         -                        3782100  19293225 23075325 15.63   1.01  0.04     1.18       0.62
+	Feb       08      03:37:07 15     66350964        51606310       -              734017                    570902                   8864625  5017425  13882050 6.50    1.01  0.04     1.18       0.62
+.EXAMPLE
+	PS:> get-a9space -cpg SSD_r6 | format-table *
+
+	CPGName EstFree_RawFree(MiB) EstFree_LDFree(MiB) EstFree_OPFree(MiB) Used(MiB) Free(MiB) Total(MiB) Compact DeDup Compress DataReduce OverProv
+	------- -------------------- ------------------- ------------------- --------- --------- ---------- ------- ----- -------- ---------- --------
+	SSD_r6  55307064             43016610            -                   3792600   19282725  23075325   15.53   1.01  0.04     1.18       0.62
 .NOTES
 	This command requires a SSH type connection.
 #>
-[CmdletBinding(DefaultParameterSetName='CPGName')]
-param(	[Parameter(parametersetname='CPGName')]	[String]	$cpgName,
-		[Parameter(parametersetname='RaidType')]
-		[ValidateSet('r0','r1','r5','r6')]		[String]	$RaidType,
-		[Parameter(parametersetname='Cage')]	[String]	$Cage,
-		[Parameter(parametersetname='Disk')]	[String]	$Disk,
-		[Parameter(parametersetname='History')]	[Switch]	$History,
-		[Parameter(parametersetname='SSZ')]		
-		[ValidateRange(0,65536)]				[String]	$SSZ
+[CmdletBinding(DefaultParameterSetName='default')]
+param(	[Parameter(parametersetname='CPGName',Mandatory)]	[String]	$cpgName,
+		[Parameter(parametersetname='CPGName')]				[Switch]	$History,
+		[Parameter()]										[switch]	$ShowRaw
 )
 Begin
 	{	Test-A9Connection -ClientType 'SshClient'
 	}
 process	
 	{	$sysspacecmd = "showspace "
-		$sysinfo = @{}	
-		if($cpgName)
-			{	$sysspacecmd += " -cpg $cpgName"
-				$Result = Invoke-A9CLICommand -cmds  $sysspacecmd
-				if ($Result -match "FAILURE :")	{	return "FAILURE : no CPGs found or matched"	}
-				if( $Result -match "There is no free space information")	{	return "FAILURE : There is no free space information"		}
-				if( $Result.Count -lt 4 )		{	return "$Result"	}
-				$tempFile = [IO.Path]::GetTempFileName()
-				$3parosver = Get-A9Version -S 
-				$incre = "true" 
-				foreach ($s in  $Result[2..$Result.Count] )
-					{	$s= [regex]::Replace($s,"^ +","")
-						$s= [regex]::Replace($s," +"," ")
-						$s= [regex]::Replace($s," ",",")
-						if($3parosver -eq "3.1.1")	{	$s= $s.Trim() -replace 'Name,RawFree,LDFree,Total,Used,Total,Used,Total,Used','CPG_Name,EstFree_RawFree(MB),EstFree_LDFree(MB),Usr_Total(MB),Usr_Used(MB),Snp_Total(MB),Snp_Used(MB),Adm_Total(MB),Adm_Used(MB)'	}
-						if($3parosver -eq "3.1.2")	{	$s= $s.Trim() -replace 'Name,RawFree,LDFree,Total,Used,Total,Used,Total,Used','CPG_Name,EstFree_RawFree(MB),EstFree_LDFree(MB),Usr_Total(MB),Usr_Used(MB),Snp_Total(MB),Snp_Used(MB),Adm_Total(MB),Adm_Used(MB)' 	}
-						else						{	$s= $s.Trim() -replace 'Name,RawFree,LDFree,Total,Used,Total,Used,Total,Used,Compaction,Dedup','CPG_Name,EstFree_RawFree(MB),EstFree_LDFree(MB),Usr_Total(MB),Usr_Used(MB),Snp_Total(MB),Snp_Used(MB),Adm_Total(MB),Adm_Used(MB),Compaction,Dedup'	}
-						if($incre -eq "true")
-							{	$sTemp = $s.Split(',')							
-								$sTemp[1]="RawFree(MiB)"				
-								$sTemp[2]="LDFree(MiB)"
-								$sTemp[3]="OPFree(MiB)"				
-								$sTemp[4]="Base(MiB)"
-								$sTemp[5]="Snp(MiB)"				
-								$sTemp[6]="Free(MiB)"
-								$sTemp[7]="Total(MiB)"		
-								$newTemp= [regex]::Replace($sTemp,"^ ","")			
-								$newTemp= [regex]::Replace($sTemp," ",",")				
-								$newTemp= $newTemp.Trim()
-								$s=$newTemp							
-							}			
-						Add-Content -Path $tempFile -Value $s
-						$incre="false"
-					}		
-				$returndata = Import-Csv $tempFile
-				Remove-Item $tempFile
-				return $returndata
-			}		
-		if($RaidType)
-			{	$RaidType = $RaidType.toLower()
-				$sysspacecmd += " -t $RaidType"
-				foreach ($s in $Result[2..$Result.count])
-					{	$s= [regex]::Replace($s,"^ +","")
-						$s= [regex]::Replace($s," +",",")
-						$s = $s.split(",")
-						$sysinfo.add("RawFree(MB)",$s[0])
-						$sysinfo.add("UsableFree(MB)",$s[1])
-						$sysinfo
-					}
+		$tempFile = [IO.Path]::GetTempFileName()
+		if($cpgName)		{	$sysspacecmd += " -cpg $cpgName"	}		
+		if($History)		{	$sysspacecmd += " -hist "		}
+		write-Verbose "The following command will be sent via SSH `n`t$sysspacecmd"
+		$Result = Invoke-A9CLICommand -cmds  $sysspacecmd
+	}
+end{	$tempFile = [IO.Path]::GetTempFileName()
+		if ($ShowRaw) {	return $result }
+		if ($Result -match "FAILURE :" -or $Result -match "ERROR :")	
+			{	write-warning "FAILURE : The command reported a failure. Use the -showraw option if you wish to see the return data."	
 				return
-			}
-		if($Cage)
-			{	if(($RaidType) -or ($cpgName) -or($Disk))	{	return "FAILURE : Use only One parameter at a time."	}
-				$sysspacecmd += " -p -cg $Cage"
-				$Result = Invoke-A9CLICommand -cmds  $sysspacecmd
-				if ($Result -match "Illegal pattern integer or range")	{	return "FAILURE : $Result "	}
-				foreach ($s in $Result[2..$Result.count])
-					{	$s= [regex]::Replace($s,"^ +","")
-						$s= [regex]::Replace($s," +",",")
-						$s = $s.split(",")
-						$sysinfo.add("RawFree(MB)",$s[0])
-						$sysinfo.add("UsableFree(MB)",$s[1])
-						$sysinfo
-					}
-				return
-			}
-		if($Disk)
-			{	$sysspacecmd += "-p -dk $Disk"
-				$Result = Invoke-A9CLICommand -cmds  $sysspacecmd
-				if ($Result -match "Illegal pattern integer or range")	{	return "FAILURE : Illegal pattern integer or range: $Disk"	}
-				foreach ($s in $Result[2..$Result.count])
-					{	$s= [regex]::Replace($s,"^ +","")
-						$s= [regex]::Replace($s," +",",")
-						$s = $s.split(",")
-						$sysinfo.add("RawFree(MB)",$s[0])
-						$sysinfo.add("UsableFree(MB)",$s[1])
-						$sysinfo
-					}
-			}
+			}	
 		if($History)
-			{	$sysspacecmd += " -hist "
+			{	$ResultHeader = 'TimeMonth,TimeDay,TimeHMS,HrsAgo,EstFree_RawFree,EstFree_LDFree,EstFree_OPFree,RawFree_ReduceRatePerHour,LDFree_ReduceRatePerHour,Used,Free,Total,Compact,Dedup,Compress,DataReduce,Overprov'
+				$StartIndex=3
+				$EndIndex=$Result.count-2	
+			}		
+		elseif($cpgName)
+			{	if( $Result.Count -lt 4 )		{	return "$Result"	}
+				$ResultHeader = 'CPGName,EstFree_RawFree(MiB),EstFree_LDFree(MiB),EstFree_OPFree(MiB),Used(MiB),Free(MiB),Total(MiB),Compact,DeDup,Compress,DataReduce,OverProv'
+				$StartIndex=3
+				$EndIndex=$Result.count-1		
+			}		
+		else
+			{	$ResultHeader = (($Result[1].split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+				$StartIndex=2
+				$EndIndex=$Result.count-1	
 			}
-		if($SSZ)
-		{	$sysspacecmd += " -ssz $SSZ "
-			$Result = Invoke-A9CLICommand -cmds  $sysspacecmd
-			if ($Result -match "Invalid setsize")
-				{	return "FAILURE : $Result"
-				}		
-			foreach ($s in $Result[2..$Result.count])
-				{	$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +",",")
-					$s = $s.split(",")
-					$sysinfo.add("RawFree(MB)",$s[0])
-					$sysinfo.add("UsableFree(MB)",$s[1])
-					$sysinfo
-				}
-			return
-		}
-		if(-not(( ($Disk) -or ($Cage)) -or (($RaidType) -or ($cpg))))
-			{	$Result = Invoke-A9CLICommand -cmds  $sysspacecmd
-				if ($Result -match "Illegal pattern integer or range")
-					{	return "FAILURE : Illegal pattern integer or range: $Disk"
-					}
-				foreach ($s in $Result[2..$Result.count])
-					{	$s= [regex]::Replace($s,"^ +","")
-						$s= [regex]::Replace($s," +",",")
-						$s = $s.split(",")
-						$sysinfo.add("RawFree(MB)",$s[0])
-						$sysinfo.add("UsableFree(MB)",$s[1])
-						$sysinfo
-					}
+		Add-Content -Path $tempFile -Value $ResultHeader
+		foreach ($s in $Result[$StartIndex..$EndIndex])
+			{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+				Add-Content -Path $tempFile -Value $s
 			}
+		$returndata = Import-Csv $tempFile
+		Remove-Item $tempFile
+		return $returndata
+		
 	}
 }
 
-Function Get-A9VvList_CLI
+Function Get-A9VvList
 {
 <#
 .SYNOPSIS
@@ -551,7 +546,7 @@ Function Get-A9VvList_CLI
 	Note: For snapshot (vcopy) VVs, the Adm_Used_MB, Snp_Used_MB, Usr_Used_MB and the corresponding _Perc columns have a '*' before
 	the number for two reasons: to indicate that the number is an estimate that must be updated using the updatesnapspace command, and to indicate
 	that the number is not included in the total for the column since the corresponding number for the snapshot's base VV already includes that number.
-.PARAMETER R
+.PARAMETER RawSpace
 	Displays raw space use by the VVs.  The following columns are shown: Id Name Prov Compr Dedup Type Adm_RawRsvd_MB Adm_Rsvd_MB Snp_RawRsvd_MB
 	Snp_Rsvd_MB Usr_RawRsvd_MB Usr_Rsvd_MB Tot_RawRsvd_MB Tot_Rsvd_MB VSize_MB
 .PARAMETER Zone
@@ -590,289 +585,161 @@ Function Get-A9VvList_CLI
 .PARAMETER Domain
     Shows only VVs that are in domains with names matching one or more of the specified domain_name or patterns. This option does not allow
 	listing objects within a domain of which the user is not a member.
-.PARAMETER Pattern
-	Pattern for matching VVs to show (see below for description of <pattern>) If the -p option is specified multiple times, each
-	instance of <pattern> adds additional candidate VVs that match that pattern.        
-.PARAMETER CPG
-    Show only VVs whose UsrCPG or SnpCPG matches the one or more of the cpgname_or_patterns.
-.PARAMETER Prov
-    Show only VVs with Prov (provisioning) values that match the prov_or_pattern.
-.PARAMETER Type
-	Show only VVs of types that match the type_or_pattern.
-.PARAMETER HostV
-    Show only VVs that are exported as VLUNs to hosts with names that match one or more of the hostname_or_patterns.
-.PARAMETER Baseid
-    Show only VVs whose BsId column matches one more of the baseid_or_patterns.
-.PARAMETER Copyof
-    Show only VVs whose CopyOf column matches one more of the vvname_or_patterns.
-.PARAMETER Rcopygroup
-	Show only VVs that are in Remote Copy groups that match one or more of the groupname_or_patterns.
-.PARAMETER Policy
-	Show only VVs whose policy matches the one or more of the policy_or_pattern.
-.PARAMETER vmName
-	Show only VVs whose vmname matches one or more of the vvname_or_patterns.
-.PARAMETER vmId
-	Show only VVs whose vmid matches one or more of the vmids.
-.PARAMETER vmHost
-	Show only VVs whose vmhost matches one or more of the vmhost_or_patterns.
-.PARAMETER vvolState
-	Show only VVs whose vvolstate matches the specified state - bound or unbound.
-.PARAMETER vvolsc
-	Show only VVs whose storage container (vvset) name matches one or more of the vvset_name_or_patterns.
-.PARAMETER vvName 
-    Specify name of the volume.  If prefixed with 'set:', the name is a volume set name.	
-.PARAMETER Prov 
-    Specify name of the Prov type (full | tpvv |tdvv |snp |cpvv ). 
-.PARAMETER Type 
-    Specify name of the Prov type ( base | vcopy ).
 .PARAMETER ShowCols 
-        Explicitly select the columns to be shown using a comma-separated list of column names.  For this option the full column names are shown in the header.
-        Run 'showvv -listcols' to list the available columns.
-        Run 'clihelp -col showvv' for a description of each column.
+    Explicitly select the columns to be shown using a comma-separated list of column names.  For this option the full column names are shown in the header.
+    Run 'showvv -listcols' to list the available columns.
+    Run 'clihelp -col showvv' for a description of each column.
 .EXAMPLE
-	PS:> Get-A9VvList_CLI | format-table
+	PS:> Get-A9VvList | format-table *
 
-	Id    Name                            Prov Compr Dedup Type  CopyOf                          BsId  Rd -Detailed_State-
-	--    ----                            ---- ----- ----- ----  ------                          ----  -- ----------------
-	2     .mgmtdata                       full NA    NA    base  -                               2     RW normal
-	420   tmaas_cluster1_veeam12_vol.0    tdvv v1    Yes   base  -                               420   RW normal
-	424   vsa-ds1                         tdvv v1    Yes   base  -                               424   RW normal
-	425   vsa-ds2                         tdvv v1    Yes   base  -                               425   RW normal
-	606   BackupVol                       tdvv v1    Yes   base  -                               606   RW normal
-	652   virt-Alletra9050-orai1db1-v.0   tdvv v1    Yes   base  -                               652   RW normal
-.EXAMPLE
-    PS:> Get-A9VvList_CLI
+	Id   Name             Prov Compr Dedup Type CopyOf BsId Rd Detailed_State
+	--   ----             ---- ----- ----- ---- ------ ---- -- --------------
+	2    .mgmtdata        full NA    NA    base ---    2    RW normal
+	2047 .shared.SSD_r6_0 dds  v2    NA    base ---    2047 RW normal
+	2048 .shared.SSD_r6_1 dds  v2    NA    base ---    2048 RW normal
+	2049 .shared.SSD_r6_2 dds  v2    NA    base ---    2049 RW normal
 
-	List all virtual volumes
 .EXAMPLE	
-	PS:> Get-A9VvList_CLI -vvName xyz 
+	PS:> Get-A9VvList -space | format-table *
 
-	List virtual volume xyz
+	Id   Name             Prov Compr DeDupe Type Used(MiB) Rsvd(MiB) HostWr VSize
+	--   ----             ---- ----- ------ ---- --------- --------- ------ -----
+	2047 .shared.SSD_r6_0 dds  v2    NA     base 314       6300      --     4194304
+	2048 .shared.SSD_r6_1 dds  v2    NA     base 310       8400      --     4194304
+	2049 .shared.SSD_r6_2 dds  v2    NA     base 310       8400      --     4194304
 .EXAMPLE	
-	PS:> Get-A9VvList_CLI -Space -vvName xyz 
-.EXAMPLE	
-	PS:> Get-A9VvList_CLI -Pattern -Prov full
+	PS:> Get-A9VvList_CLI -showcols 'Type,Name,Dedup' | ft *
 
-	List virtual volume  provision type as "tpvv"
-.EXAMPLE	
-	PS:> Get-A9VvList_CLI -Pattern -Type base
-
-	List snapshot(vitual copy) volumes 
-.EXAMPLE	
-	PS:> Get-A9VvList_CLI -R -Pattern -Prov tp* -Host TTest -Baseid 50
-.EXAMPLE	
-	PS:> Get-A9VvList_CLI -Showcols "Id,Name"
+	Type Name             Dedup
+	---- ----             -----
+	base .mgmtdata        --
+	base .shared.SSD_r6_0 --
+	base .shared.SSD_r6_1 --
+	base elastic-07       1.08
+	base elastic-12       1.02
 .NOTES
 	This command requires a SSH type connection.
 #>
-[CmdletBinding()]
+[CmdletBinding(DefaultParameterSetName='default')]
 	param(
 		[Parameter(parametersetname='listcols',mandatory)]	[switch]	$Listcols,
-		[Parameter(parametersetname='default')]				[switch]	$D,
-		[Parameter(parametersetname='default')]				[switch]	$Pol,
-		[Parameter(parametersetname='default')]				[switch]	$Space,
-		[Parameter(parametersetname='default')]				[switch]	$R,
-		[Parameter(parametersetname='default')]				[switch]	$Zone,
-		[Parameter(parametersetname='default')]				[switch]	$G,
-		[Parameter(parametersetname='default')]				[switch]	$Alert,
-		[Parameter(parametersetname='default')]				[switch]	$AlertTime,
-		[Parameter(parametersetname='default')]				[switch]	$CPProg,	
-		[Parameter(parametersetname='default')]				[switch]	$CpgAlloc,	
-		[Parameter(parametersetname='default')]				[switch]	$State,	
-		[Parameter(parametersetname='default')]				[switch]	$Hist,	
-		[Parameter(parametersetname='default')]				[switch]	$RCopy,	
-		[Parameter(parametersetname='default')]				[switch]	$NoTree,	
+		[Parameter(parametersetname='Details')]				[switch]	$Details,
+		[Parameter(parametersetname='Policy')]				[switch]	$Pol,
+		[Parameter(parametersetname='Space')]				[switch]	$Space,
+		[Parameter(parametersetname='RawSpace')]			[switch]	$RawSpace,
+		[Parameter(parametersetname='Zone')]				[switch]	$Zone,
+		[Parameter(parametersetname='Geometry')]			[switch]	$Geometry,
+		[Parameter(parametersetname='Alert')]				[switch]	$Alert,
+		[Parameter(parametersetname='AlertTime')]			[switch]	$AlertTime,
+		[Parameter(parametersetname='CPProg')]				[switch]	$CPProg,	
+		[Parameter(parametersetname='CPGAlloc')]			[switch]	$CpgAlloc,	
+		[Parameter(parametersetname='State')]				[switch]	$State,	
+		[Parameter(parametersetname='Hist')]				[switch]	$Hist,	
+		[Parameter(parametersetname='RCopy')]				[switch]	$RCopy,	
+		[Parameter(parametersetname='NoTree')]				[switch]	$NoTree,	
 		[Parameter(parametersetname='default')]				[String]	$Domain,	
-		[Parameter(parametersetname='default')]				[switch]	$Expired,	
-		[Parameter(parametersetname='default')]				[switch]	$Retained,	
-		[Parameter(parametersetname='default')]				[switch]	$Failed,		
 		[Parameter(parametersetname='default')]				[String]	$vvName,
-		[Parameter(parametersetname='Pattern')]				[String]	$Type,	
-		[Parameter(parametersetname='Pattern')]				[String]	$Prov,	
-		[Parameter(parametersetname='Pattern',mandatory)]	[switch]	$Pattern,	
-		[Parameter(parametersetname='Pattern')]				[String]	$CPG,	
-		[Parameter(parametersetname='Pattern')]				[String]	$HostV,
-		[Parameter(parametersetname='Pattern')]				[String]	$Baseid,
-		[Parameter(parametersetname='Pattern')]				[String]	$Copyof,
-		[Parameter(parametersetname='Pattern')]				[String]	$Rcopygroup,
-		[Parameter(parametersetname='Pattern')]				[String]	$Policy,
-		[Parameter(parametersetname='Pattern')]				[String]	$vmName,
-		[Parameter(parametersetname='Pattern')]				[String]	$vmId,
-		[Parameter(parametersetname='Pattern')]				[String]	$vmHost,	
-		[Parameter(parametersetname='Pattern')]				[String]	$vvolState,
-		[Parameter(parametersetname='Pattern')]				[String]	$vvolsc,
-		[Parameter(parametersetname='default')]				[String]	$ShowCols
+		[Parameter()]										[String]	$ShowCols,
+		[Parameter()]										[switch]	$ShowRaw
 	)	
 Begin
 	{	Test-A9Connection -ClientType 'SshClient'
 	}	
 process	
 	{	$GetvVolumeCmd = "showvv "
-		$cnt=1
 		if ($Listcols)	{	$GetvVolumeCmd += "-listcols "
 							$Result = Invoke-A9CLICommand -cmds  $GetvVolumeCmd
 							return $Result				
 						}
-		if($D)			{	$GetvVolumeCmd += "-d "; 		$cnt=0	}	
-		if($Pol)		{	$GetvVolumeCmd += "-pol ";		$cnt=0	}
-		if($Space)		{	$GetvVolumeCmd += "-space ";	$cnt=2	}	
-		if($R)			{	$GetvVolumeCmd += "-r ";		$cnt=2	}
-		if($Zone)		{	$GetvVolumeCmd += "-zone ";		$cnt=1	}
-		if($G)			{	$GetvVolumeCmd += "-g ";		$cnt=0	}
-		if($Alert)		{	$GetvVolumeCmd += "-alert ";	$cnt=2	}
-		if($AlertTime)	{	$GetvVolumeCmd += "-alerttime ";$cnt=2	}
-		if($CPProg)		{	$GetvVolumeCmd += "-cpprog ";	$cnt=0	}
-		if($CpgAlloc)	{	$GetvVolumeCmd += "-cpgalloc ";	$cnt=0	}
-		if($State)		{	$GetvVolumeCmd += "-state ";	$cnt=0	}
-		if($Hist)		{	$GetvVolumeCmd += "-hist ";		$cnt=0	}
-		if($RCopy)		{	$GetvVolumeCmd += "-rcopy ";	$cnt=1	}
-		if($NoTree)		{	$GetvVolumeCmd += "-notree ";	$cnt=1	}
-		if($Domain)		{	$GetvVolumeCmd += "-domain $Domain ";	$cnt=0	}
-		if($Expired)	{	$GetvVolumeCmd += "-expired ";	$cnt=1	}
-		if($Retained)	{	$GetvVolumeCmd += "-retained ";	$cnt=0	}
-		if($Failed)		{	$GetvVolumeCmd += "-failed ";	$cnt=1	}
-		if($pattern)
-			{	if($CPG)	{	$GetvVolumeCmd += "-p -cpg $CPG "	}
-				if($Prov)	{	$GetvVolumeCmd += "-p -prov $Prov "	}
-				if($Type)	{	$GetvVolumeCmd += "-p -type $Type "	}
-				if($HostV)	{	$GetvVolumeCmd += "-p -host $Host "	}
-				if($Baseid)	{	$GetvVolumeCmd += "-p -baseid $Baseid "	}
-				if($Copyof)	{	$GetvVolumeCmd += "-p -copyof $Copyof "	}
-				if($Rcopygroup)	{$GetvVolumeCmd += "-p -rcopygroup $Rcopygroup "}
-				if($Policy)	{	$GetvVolumeCmd += "-p -policy $Policy "	}
-				if($vmName)	{	$GetvVolumeCmd += "-p -vmname $vmName "	}
-				if($vmId)	{	$GetvVolumeCmd += "-p -vmid $vmId "	}
-				if($vmHost)	{	$GetvVolumeCmd += "-p -vmhost $vmHost "	}
-				if($vvolState){	$GetvVolumeCmd += "-p -vvolstate $vvolState "	}		
-				if($vvolsc)	{	$GetvVolumeCmd += "-p -vvolsc $vvolsc "	}
-			}
-		if($ShowCols)	{	$GetvVolumeCmd += "-showcols $ShowCols ";	$cnt=0	}	
+		if($Details)	{	$GetvVolumeCmd += "-d "	}	
+		if($Pol)		{	$GetvVolumeCmd += "-pol "	}
+		if($Space)		{	$GetvVolumeCmd += "-space "	}	
+		if($RawSpace)	{	$GetvVolumeCmd += "-r "	}
+		if($Zone)		{	$GetvVolumeCmd += "-zone "	}
+		if($Geometry)	{	$GetvVolumeCmd += "-g "	}
+		if($Alert)		{	$GetvVolumeCmd += "-alert "	}
+		if($AlertTime)	{	$GetvVolumeCmd += "-alerttime "	}
+		if($CPProg)		{	$GetvVolumeCmd += "-cpprog "	}
+		if($CpgAlloc)	{	$GetvVolumeCmd += "-cpgalloc "	}
+		if($State)		{	$GetvVolumeCmd += "-state "	}
+		if($Hist)		{	$GetvVolumeCmd += "-hist "	}
+		if($RCopy)		{	$GetvVolumeCmd += "-rcopy "	}
+		if($NoTree)		{	$GetvVolumeCmd += "-notree "	}
+		if($Domain)		{	$GetvVolumeCmd += "-domain $Domain "	}
+		if($ShowCols)	{	$GetvVolumeCmd += "-showcols $ShowCols "	}	
 		if ($vvName)	{	$GetvVolumeCmd += " $vvName"	}
 		$Result = Invoke-A9CLICommand -cmds  $GetvVolumeCmd
 	}
 end
-	{	if($Result -match "no vv listed")	{	return "FAILURE : No vv $vvName found"	}
+	{	if ( $ShowRaw ) { return $Result }
+		if($Result -match "no vv listed")	
+			{	write-warning "FAILURE : No Results found. To see details choose the ShowRaw Option."
+				return
+			}
 		if ( $Result.Count -gt 1)
-			{	$incre = "true"
+			{	if ( $hist ) { return $result }
 				$tempFile = [IO.Path]::GetTempFileName()
-				$LastItem = $Result.Count -3  
-				foreach ($s in  $Result[$cnt..$LastItem] )
-					{	$s= [regex]::Replace($s,"^ +","")
-						$s= [regex]::Replace($s,"-+","-")
-						$s= [regex]::Replace($s," +",",")		
-						$s= $s.Trim()
-						$temp1 = $s -replace 'Adm,Snp,Usr,VSize','Adm(MB),Snp(MB),Usr(MB),VSize(MB)' 
-						$s = $temp1			
-						$temp2 = $s -replace '-CreationTime-','Date(Creation),Time(Creation),Zone(Creation)'
-						$s = $temp2	
-						$temp3 = $s -replace '-SpaceCalcTime-','Date,Time,Zone'
-						$s = $temp3	
-						if($Space)
-							{	if($incre -eq "true")
-									{	$sTemp1=$s				
-										$sTemp = $sTemp1.Split(',')	
-										$sTemp[6]="Rsvd(MiB/Snp)"					
-										$sTemp[7]="Used(MiB/Snp)"				
-										$sTemp[8]="Used(VSize/Snp)"
-										$sTemp[9]="Wrn(VSize/Snp)"
-										$sTemp[10]="Lim(VSize/Snp)"  
-										$sTemp[11]="Rsvd(MiB/Usr)"					
-										$sTemp[12]="Used(MiB/Usr)"				
-										$sTemp[13]="Used(VSize/Usr)"
-										$sTemp[14]="Wrn(VSize/Usr)"
-										$sTemp[15]="Lim(VSize/Usr)"
-										$sTemp[16]="Rsvd(MiB/Total)"					
-										$sTemp[17]="Used(MiB/Total)"
-										$newTemp= [regex]::Replace($sTemp,"^ ","")			
-										$newTemp= [regex]::Replace($sTemp," ",",")				
-										$newTemp= $newTemp.Trim()
-										$s=$newTemp							
-									}
+				if ($Pol )
+					{	$CustomHeader = (($Result[0].split(' ')).trim()).trim('-') | where-object { $_ -ne '' }
+						foreach ($s in  $Result[1..($Result.count-3)] )
+							{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
+								Add-Content -Path $tempFile -Value $s
 							}
-						if($R)
-							{	if($incre -eq "true")
-									{	$sTemp1=$s				
-										$sTemp = $sTemp1.Split(',')	
-										$sTemp[6]="RawRsvd(Snp)"					
-										$sTemp[7]="Rsvd(Snp)"				
-										$sTemp[8]="RawRsvd(Usr)"
-										$sTemp[9]="Rsvd(Usr)"
-										$sTemp[10]="RawRsvd(Tot)"  
-										$sTemp[11]="Rsvd(Tot)"					
-										$newTemp= [regex]::Replace($sTemp,"^ ","")			
-										$newTemp= [regex]::Replace($sTemp," ",",")				
-										$newTemp= $newTemp.Trim()
-										$s=$newTemp							
-									}
-							}
-						if($Zone)
-							{	if($incre -eq "true")
-									{	$sTemp1=$s				
-										$sTemp = $sTemp1.Split(',')											
-										$sTemp[7]="Zn(Adm)"				
-										$sTemp[8]="Free_Zn(Adm)"
-										$sTemp[9]="Zn(Snp)"	
-										$sTemp[10]="Free_Zn(Snp)"
-										$sTemp[11]="Zn(Usr)"		
-										$sTemp[12]="Free_Zn(Usr)"					
-										$newTemp= [regex]::Replace($sTemp,"^ ","")			
-										$newTemp= [regex]::Replace($sTemp," ",",")				
-										$newTemp= $newTemp.Trim()
-										$s=$newTemp				
-									}
-							}
-						if($Alert)
-							{	if($incre -eq "true")
-									{	$sTemp1=$s				
-										$sTemp = $sTemp1.Split(',')											
-										$sTemp[7]="Used(Snp(%VSize))"				
-										$sTemp[8]="Wrn(Snp(%VSize))"
-										$sTemp[9]="Lim(Snp(%VSize))"	
-										$sTemp[10]="Used(Usr(%VSize))"				
-										$sTemp[11]="Wrn(Usr(%VSize))"
-										$sTemp[12]="Lim(Usr(%VSize))"	
-										$sTemp[13]="Fail(Adm)"	
-										$sTemp[14]="Fail(Snp)"	
-										$sTemp[15]="Wrn(Snp)"	
-										$sTemp[16]="Lim(Snp)"	
-										$sTemp[17]="Fail(Usr)"	
-										$sTemp[18]="Wrn(Usr)"	
-										$sTemp[19]="Lim(Usr)"					
-										$newTemp= [regex]::Replace($sTemp,"^ ","")			
-										$newTemp= [regex]::Replace($sTemp," ",",")				
-										$newTemp= $newTemp.Trim()
-										$s=$newTemp							
-									}
-							}
-						if($AlertTime)
-							{	if($incre -eq "true")
-									{	$sTemp1=$s				
-										$sTemp = $sTemp1.Split(',')											
-										$sTemp[2]="Fail(Adm))"				
-										$sTemp[3]="Fail(Snp)"
-										$sTemp[4]="Wrn(Snp)"	
-										$sTemp[5]="Lim(Snp)"				
-										$sTemp[6]="Fail(Usr)"
-										$sTemp[7]="Wrn(Usr)"	
-										$sTemp[8]="Lim(Usr)"										
-										$newTemp= [regex]::Replace($sTemp,"^ ","")			
-										$newTemp= [regex]::Replace($sTemp," ",",")				
-										$newTemp= $newTemp.Trim()
-										$s=$newTemp							
-									}
-							}
+						$returndata = Import-Csv -Delimiter "Z" -header $CustomHeader $tempFile
+						Remove-Item $tempFile
+						return $returndata
+					}
+				if ($PSBoundParameters.count -lt 1 -or $Geometry -or $CPProg -or $CPGAlloc -or $state -or $rcopy -or $NoTree -or $vvName -or $ShowCols)
+					{	$s = ( (($Result[0].split(' ')).trim() ).trim('-') | where-object { $_ -ne '' } ) -join ','
+						$StartIndex=1
+						$EndIndex=$Result.count-3
+					}
+				if ($Details)
+					{	$s = 'Id,Name,Rd,Mstr,Prnt,Roch,Rwch,PPrnt,SPrnt,PBlkRemain,VV_WWN,CreationMonth,CreationDat,CreationTime,Udid'
+						$StartIndex=1
+						$EndIndex=$Result.count-3
+					}
+				if ($Zone)
+					{	$s = 'Id,Prov,Compr,DeDupe,Type,VVSize(MiB),Zn(adm),Free_Zn(Adm),Zn(Data),Free_Zn(Data)'
+						$StartIndex=2
+						$EndIndex=$Result.count-3
+					}
+				if ($Alert)
+					{	$s = @('Id,Name,Prov,Compr,DeDupe,Type,VVSize(MiB),Rsvd(%VSize),Wrn(%VSize),Lim(VSize),Fail(Adm(Alerts)),Fail(Data(Alerts)),Wrn(Data(Alerts)),Lim(Data(Alerts))')
+						$StartIndex=3
+						$EndIndex=$Result.count-3
+					}
+				if ($AlertTime)
+					{	$s = ( @('Id','Name','Fasl(adm(AlertTime)','Fail(Data(AlertTime))','Wrn(Data(AlertTIme))','Lim(Data(AlertTime))') ) -join ','
+						$StartIndex=3
+						$EndIndex=$Result.count-3
+					}
+				if ($Space)
+					{	$s = 'Id,Name,Prov,Compr,DeDupe,Type,Used(MiB),Rsvd(MiB),HostWr,VSize,Used(%VSize),Wrn(%VSize),Lim(%VSize),Used(MiB(Branch)),VSize(MiB(Branch)),Used(%VSize(Branch)),Compact(Efficiency),Compress(Efficiency)'
+						$StartIndex=4
+						$EndIndex=$Result.count-3
+					}
+				if ($RawSpace)
+					{	$s = ((($Result[1].split(' ')).trim()).trim('-') | where-object { $_ -ne '' } ) -join ','
+						$StartIndex=2
+						$EndIndex=$Result.count-3
+					}
+				Add-Content -Path $tempFile -Value $s
+				foreach ($s in  $Result[$StartIndex..$EndIndex] )
+					{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' }) -join ','
 						Add-Content -Path $tempFile -Value $s
-						$incre="false"
 					}
 				$returndata = Import-Csv $tempFile
 				Remove-Item $tempFile
 				return $returndata
 			}	
-		else{	return "FAILURE : No vv $vvName found Error : $Result"	}	
+		else{	write-warning "FAILURE : No Results found"
+				return $result	
+			}	
 	}
 }
 
-Function Get-A9VvSet_CLI
+Function Get-A9VvSet
 {
 <#
 .SYNOPSIS
@@ -898,6 +765,15 @@ Function Get-A9VvSet_CLI
 	1 51d61280-2ef2-4fdc-88a5-9e1b4b0d97a7 vvset_dscc-test    {dscc-test}                                          1                       False      False
 	5 2f00cefc-b14d-4098-a9c9-d4cd6cbcb044 vvset_Oradata1     {MySQLData}                                          1                       False      False
 	7 b8f1a3e6-81ff-47da-887f-5fd529427789 AppSet_SAP_HANA    {HANA_data, HANA_log, HANA_shared, Veeam_datastore}  4                       False      False
+.EXAMPLE
+	PS:> Get-A9VvSet_CLI -vvname vvsnodes
+
+	Id Name     Members
+	-- ----     -------
+	27 vvsnodes elastic-01
+	27 vvsnodes elastic-02
+	27 vvsnodes elastic-03
+	27 vvsnodes elastic-04
 .NOTES
 	This command requires a SSH type connection
 #>
@@ -906,7 +782,8 @@ param(	[Parameter()]	[switch]	$Detailed,
 		[Parameter()]	[switch]	$VV,
 		[Parameter()]	[switch]	$Summary,
 		[Parameter(parametersetname='vvset',mandatory)]	[String]	$vvSetName,
-		[Parameter(parametersetname='vvname',mandatory)]	[String]	$vvName
+		[Parameter(parametersetname='vvname',mandatory)]	[String]	$vvName,
+		[Parameter()]	[Switch]	$ShowRaw
 	)	
 Begin
 	{	Test-A9Connection -ClientType 'SshClient'
@@ -922,14 +799,43 @@ process
 		$Result = Invoke-A9CLICommand -cmds  $GetVVSetCmd
 	}
 end
-	{	if($Result -match "No vv set listed")	{	return "FAILURE : No vv set listed"	}
-		if($Result -match "total")
+	{	if($ShowRaw)	{	Return $Result }
+		if($Result -match "No vv set listed")	{	return "FAILURE : No vv set listed"	}
+		if($Result -match "total" -and $Detailed )
 			{	$tempFile = [IO.Path]::GetTempFileName()
-				$LastItem = $Result.Count -3		
-				foreach ($s in  $Result[0..$LastItem] )
-					{	$s= [regex]::Replace($s,"^ ","")			
-						$s= [regex]::Replace($s," +",",")	
-						$s= $s.Trim()			
+				$s = ( (($Result[0].split(' ')).trim() ).trim('-') | where-object { $_ -ne '' } ) -join ','
+				Add-Content -Path $tempFile -Value $s
+				$LastItem = $Result.Count -3
+				foreach ($s in  $Result[1..$LastItem] )
+					{	$s = ( ($s.split(' ')).trim()  | where-object { $_ -ne '' } ) 
+						if ($s.count -eq 1)	
+							{	$TempFullLine = $FullLine
+								$TempFullLine[2] = $s
+								$s = $TempFullLine -join ',' 
+							}
+						else{	$FullLine = $s
+								$s = $s -join ','
+							}
+						Add-Content -Path $tempFile -Value $s
+					}
+				$returndata = Import-Csv $tempFile 
+				Remove-Item $tempFile
+				return $returndata
+			}
+		
+		elseif($Result -match "total" )
+			{	$tempFile = [IO.Path]::GetTempFileName()
+				$s = ( (($Result[0].split(' ')).trim() ).trim('-') | where-object { $_ -ne '' } ) -join ','
+				Add-Content -Path $tempFile -Value $s
+				$LastItem = $Result.Count -3
+				foreach ($s in  $Result[1..$LastItem] )
+					{	$s = ( ($s.split(' ')).trim() )| where-object { $_ -ne '' } 
+						if ($s.count -eq 1)	
+							{	$s=$FullLine[0]+','+$FullLine[1]+','+$s 
+							}
+						else{	$FullLine = $s
+								$s = $s -join ','
+							}
 						Add-Content -Path $tempFile -Value $s
 					}
 				$returndata = Import-Csv $tempFile 
