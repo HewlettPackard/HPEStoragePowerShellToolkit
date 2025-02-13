@@ -25,14 +25,15 @@ Function Get-A9UserConnection
 	Shows all information about the current connection only.
 .PARAMETER Detailed
 	Specifies the more detailed information about the user connection.
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-PoshSshConnection or New-CLIConnection
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning object. 
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Current ,		
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Detailed 
+param(	[Parameter()]	[switch]	$Current ,		
+		[Parameter()]	[switch]	$Detailed,
+		[Parameter()]	[Switch]	$ShowRaw 
 	)
 Begin
 { Test-A9Connection -CLientType 'SshClient'
@@ -40,23 +41,25 @@ Begin
 process	
 {	$cmd2 = "showuserconn "
 	if ($Current)	{	$cmd2 += " -current " }
-	if($Detailed)	{	$cmd2 += " -d "
+	if ($Detailed)	{	$cmd2 += " -d "
 						$result = Invoke-A9CLICommand -cmds  $cmd2
 						return $result
 					}
 	$result = Invoke-A9CLICommand -cmds  $cmd2
-	$count = $result.count - 3
-	$tempFile = [IO.Path]::GetTempFileName()
-	Add-Content -Path $tempFile -Value "Id,Name,IP_Addr,Role,Connected_since_Date,Connected_since_Time,Connected_since_TimeZone,Current,Client,ClientName"
-	foreach($s in $result[1..$count])
-		{	$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +"," ")
-			$s= [regex]::Replace($s," ",",")
-			$s = $s.trim()
-			Add-Content -Path $tempFile -Value $s
+}
+End
+{	if (-not $ShowRaw)
+		{	$tempFile = [IO.Path]::GetTempFileName()
+			Add-Content -Path $tempFile -Value "Id,Name,IP_Addr,Role,Connected_since_Date,Connected_since_Time,Connected_since_TimeZone,Current,Client,ClientName"
+			foreach($s in $result[1..($result.count - 3)])
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+					Add-Content -Path $tempFile -Value $s
+				}
+			$Result = Import-CSV $tempFile
+			remove-item $tempFile
 		}
-	Import-CSV $tempFile
-	remove-item $tempFile
+	return $Result
+
 }
 }
 

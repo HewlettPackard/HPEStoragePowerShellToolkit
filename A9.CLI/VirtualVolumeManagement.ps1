@@ -1194,8 +1194,8 @@ param(	[Parameter(Mandatory=$true)]			[String]	$vvSetName,
 		[Parameter()]	[switch]	$Add,
 		[Parameter()]	[String]	$Count,
 		[Parameter()]	[String]	$Comment,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Domain,		
-		[Parameter(ValueFromPipeline=$true)]	[String]	$vvName
+		[Parameter()]	[String]	$Domain,		
+		[Parameter()]	[String]	$vvName
 	)	
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
@@ -2171,17 +2171,17 @@ Function Set-A9Host_CLI
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]		[String]	$hostName,		
-		[Parameter(ValueFromPipeline=$true)][String[]]	$Address,
-		[Parameter(ValueFromPipeline=$true)][Switch]    $iSCSI=$false,
-		[Parameter(ValueFromPipeline=$true)][Switch]    $Add,
-		[Parameter(ValueFromPipeline=$true)][String[]]  $Domain,
-		[Parameter(ValueFromPipeline=$true)][String[]]	$Loc,
-		[Parameter(ValueFromPipeline=$true)][String[]]	$IP,
-		[Parameter(ValueFromPipeline=$true)][String[]]	$OS,
-		[Parameter(ValueFromPipeline=$true)][String[]]	$Model,
-		[Parameter(ValueFromPipeline=$true)][String[]]	$Contact,
-		[Parameter(ValueFromPipeline=$true)][String[]]	$Comment,
-		[Parameter(ValueFromPipeline=$true)][String[]]	$Persona		
+		[Parameter()][String[]]	$Address,
+		[Parameter()][Switch]    $iSCSI=$false,
+		[Parameter()][Switch]    $Add,
+		[Parameter()][String[]]  $Domain,
+		[Parameter()][String[]]	$Loc,
+		[Parameter()][String[]]	$IP,
+		[Parameter()][String[]]	$OS,
+		[Parameter()][String[]]	$Model,
+		[Parameter()][String[]]	$Contact,
+		[Parameter()][String[]]	$Comment,
+		[Parameter()][String[]]	$Persona		
 )		
 Begin
 {	Test-A9Connection -ClientType 'SshClient' 

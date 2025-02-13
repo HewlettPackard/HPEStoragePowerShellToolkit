@@ -64,7 +64,7 @@ Function New-A9Host_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$HostName,	
+param(	[Parameter(Mandatory)]	[String]	$HostName,	
 		[Parameter()]	[switch]	$Iscsi,
 		[Parameter()]	[switch]	$Add,	
 		[Parameter()]	[String]	$Domain,
@@ -102,10 +102,9 @@ Process
 	if ($IscsiName)	{	$cmd +="$IscsiName "		}
 	$Result = Invoke-A9CLICommand -cmds $cmd	
 	if([string]::IsNullOrEmpty($Result))
-		{	return "Success : New-Host command executed Host Name : $HostName is created."
+		{	Write-host "Success : New-Host command executed Host Name : $HostName is created." -ForegroundColor green
 		}
-	else{	return $Result
-		}	   
+	return $Result	   
 }
 }
 
@@ -116,6 +115,19 @@ Function New-A9HostSet_CLI
     Creates a new host set.
 .DESCRIPTION
 	Creates a new host set.
+.PARAMETER HostSetName
+    Specify new name of the host set
+.PARAMETER hostName
+    Specify new name of the host
+.PARAMETER Add
+	Specifies that the hosts listed should be added to an existing set. At least one host must be specified.
+.PARAMETER Comment
+	Specifies any comment or additional information for the set. The comment can be up to 255 characters long. Unprintable characters are not allowed.
+.PARAMETER Domain
+	Create the host set in the specified domain. For an empty set the default is to create it in the current domain, or no domain if the
+	current domain is not set. A host set must be in the same domain as its members; if hosts are specified as part of the creation then
+	the set will be created in their domain. The -domain option should still be used to specify which domain to use for the set when the
+	hosts are members of domain sets. A domain cannot be specified when adding a host to an existing set with the -add option.
 .EXAMPLE
     PS:> New-A9HostSet_CLI -HostSetName xyz
 	
@@ -148,58 +160,38 @@ Function New-A9HostSet_CLI
 	Creates an empty host set and  named "HV01C-HostSet" and adds host "MyHost" to hostset
 			(or)
 	Adds host "MyHost" to hostset "HV01C-HostSet" if hostset already exists
-.PARAMETER HostSetName
-    Specify new name of the host set
-.PARAMETER hostName
-    Specify new name of the host
-.PARAMETER Add
-	Specifies that the hosts listed should be added to an existing set. At least one host must be specified.
-.PARAMETER Comment
-	Specifies any comment or additional information for the set. The comment can be up to 255 characters long. Unprintable characters are not allowed.
-.PARAMETER Domain
-	Create the host set in the specified domain. For an empty set the default is to create it in the current domain, or no domain if the
-	current domain is not set. A host set must be in the same domain as its members; if hosts are specified as part of the creation then
-	the set will be created in their domain. The -domain option should still be used to specify which domain to use for the set when the
-	hosts are members of domain sets. A domain cannot be specified when adding a host to an existing set with the -add option.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$HostSetName,
-		[Parameter()]	[String]	$hostName,
-		[Parameter()]	[switch]	$Add,
-		[Parameter()]	[String]	$Comment,
-		[Parameter()]	[String]	$Domain
+param(	[Parameter(Mandatory)]	[String]	$HostSetName,
+		[Parameter()]			[String]	$hostName,
+		[Parameter()]			[switch]	$Add,
+		[Parameter()]			[String]	$Comment,
+		[Parameter()]			[String]	$Domain
 )		
 Begin	
 {	Test-A9Connection -ClientType 'SshClient' 	
 }
 Process
 {	$cmdCrtHostSet =" createhostset "	
-	if($Add)			{	$cmdCrtHostSet +="-add "	}
+	if($Add)			{	$cmdCrtHostSet +="-add "				}
 	if($Comment)		{	$cmdCrtHostSet +="-comment $Comment "	}
-	if($Domain)			{	$cmdCrtHostSet +="-domain $Domain "	}	
-	if ($HostSetName)	{	$cmdCrtHostSet +=" $HostSetName "	}
-	else	{	write-verbose "No name specified for new host set. Skip creating host set"
-				Get-help New-HostSet
-				return	
-			}
-	if($hostName)	{	$cmdCrtHostSet +=" $hostName "	}	
+	if($Domain)			{	$cmdCrtHostSet +="-domain $Domain "		}	
+	$cmdCrtHostSet +=" $HostSetName "
+	if($hostName)		{	$cmdCrtHostSet +=" $hostName "			}	
 	$Result = Invoke-A9CLICommand -cmds  $cmdCrtHostSet
 	if($Add)
 		{	if([string]::IsNullOrEmpty($Result))
-				{	return "Success : New-HostSet command executed Host Name : $hostName is added to Host Set : $HostSetName"
-				}
-			else{	return $Result
-				}
+				{	write-host "Success : New-HostSet command executed Host Name : $hostName is added to Host Set : $HostSetName" -ForegroundColor green
+				}			
 		}	
 	else
 		{	if([string]::IsNullOrEmpty($Result))
-				{	return "Success : New-HostSet command executed Host Set : $HostSetName is created with Host : $hostName"
-				}
-			else{	return $Result
+				{	Write-host "Success : New-HostSet command executed Host Set : $HostSetName is created with Host : $hostName" -ForegroundColor green
 				}			
 		}	
+	return $Result
 }
 }
 
@@ -210,6 +202,18 @@ Function Remove-A9Host_CLI
     Removes a host.
 .DESCRIPTION
 	Removes a host.
+.PARAMETER hostName
+    Specify name of the host.
+.PARAMETER Address
+    Specify the list of addresses to be removed.
+.PARAMETER Rvl
+    Remove WWN(s) or iSCSI name(s) even if there are VLUNs exported to the host.
+.PARAMETER iSCSI
+    Specify twhether the address is WWN or iSCSI
+.PARAMETER Pattern
+	Specifies that host name will be treated as a glob-style pattern and that all hosts matching the specified pattern are removed. T
+.PARAMETER  Port 
+	Specifies the NSP(s) for the zones, from which the specified WWN will be removed in the target driven zoning. 
 .EXAMPLE
     PS:> Remove-A9Host_CLI -hostName HV01A 
 
@@ -222,48 +226,29 @@ Function Remove-A9Host_CLI
 	PS:> Remove-A9Host_CLI -hostName HV01B -iSCSI -Address  iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com
 
 	Remove the iSCSI address of the host named HV01B
-.PARAMETER hostName
-    Specify name of the host.
-.PARAMETER Address
-    Specify the list of addresses to be removed.
-.PARAMETER Rvl
-    Remove WWN(s) or iSCSI name(s) even if there are VLUNs exported to the host.
-.PARAMETER iSCSI
-    Specify twhether the address is WWN or iSCSI
-.PARAMETER Pat
-	Specifies that host name will be treated as a glob-style pattern and that all hosts matching the specified pattern are removed. T
-.PARAMETER  Port 
-	Specifies the NSP(s) for the zones, from which the specified WWN will be removed in the target driven zoning. 
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]			[String]	$hostName,
-		[Parameter(ValueFromPipeline=$true)]	[switch] 	$Rvl,
-		[Parameter(ValueFromPipeline=$true)]	[switch] 	$ISCSI = $false,
-		[Parameter(ValueFromPipeline=$true)]	[switch] 	$Pat = $false,
-		[Parameter()]	[String]	$Port,		
-		[Parameter(ValueFromPipeline=$true)]	[System.String[]]	$Address
+param(	[Parameter(Mandatory)]	[String]	$hostName,
+		[Parameter()]	[switch] 			$Rvl,
+		[Parameter()]	[switch] 			$ISCSI = $false,
+		[Parameter()]	[switch] 			$Pattern = $false,
+		[Parameter()]	[String]			$Port,		
+		[Parameter()]	[System.String[]]	$Address
 	)		
 Begin	
 {	Test-A9Connection -ClientType 'SshClient' 
 }
 Process
-{	$objType = "host"
-	$objMsg  = "hosts"
-	$RemoveCmd = "removehost "			
+{	$RemoveCmd = "removehost "			
 	if ($address)
-		{	if($Rvl)	{	$RemoveCmd += " -rvl "	}	
-			if($ISCSI)	{	$RemoveCmd += " -iscsi "	}
-			if($Pat)	{	$RemoveCmd += " -pat "	}
-			if($Port)	{	$RemoveCmd += " -port $Port "	}
+		{	if($Rvl)		{	$RemoveCmd += " -rvl "	}	
+			if($ISCSI)		{	$RemoveCmd += " -iscsi "	}
+			if($Patterm)	{	$RemoveCmd += " -pat "	}
+			if($Port)		{	$RemoveCmd += " -port $Port "	}
 		}			
-	if ( -not ( Test-A9CLIObject -objectType $objType -objectName $hostName -objectMsg $objMsg )) 
-		{	write-verbose " Host $hostName does not exist. Nothing to remove"   
-			return "FAILURE : No host $hostName found"
-		}
-	else
-		{	$Addr = [string]$address 
+	$Addr = [string]$address 
 			$RemoveCmd += " $hostName $Addr"
 			$Result1 = Get-HostSet -hostName $hostName 			
 			if(($Result1 -match "No host set listed"))
@@ -280,8 +265,6 @@ Process
 				{	$Result3 = Invoke-A9CLICommand -cmds $RemoveCmd
 					return "FAILURE : Host $hostName is still a member of set $Result3"
 				}			
-		}				
-		
 }
 }
 
@@ -292,14 +275,6 @@ Function Remove-A9HostSet_CLI
     Remove a host set or remove hosts from an existing set
 .DESCRIPTION
 	Remove a host set or remove hosts from an existing set
-.EXAMPLE
-    PS:> Remove-A9HostSet_CLI -hostsetName "MyHostSet"  -force 
-
-	Remove a hostset  "MyHostSet"
-.EXAMPLE
-	PS:> Remove-A9HostSet_CLI -hostsetName "MyHostSet" -hostName "MyHost" -force
-
-	Remove a single host "MyHost" from a hostset "MyHostSet"
 .PARAMETER hostsetName 
     Specify name of the hostsetName
 .PARAMETER hostName 
@@ -308,52 +283,42 @@ Function Remove-A9HostSet_CLI
 	If present, perform forcible delete operation
 .PARAMETER Pat
 	Specifies that both the set name and hosts will be treated as glob-style patterns.
+.EXAMPLE
+    PS:> Remove-A9HostSet_CLI -hostsetName "MyHostSet"  -force 
+
+	Remove a hostset  "MyHostSet"
+.EXAMPLE
+	PS:> Remove-A9HostSet_CLI -hostsetName "MyHostSet" -hostName "MyHost" -force
+
+	Remove a single host "MyHost" from a hostset "MyHostSet"
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$hostsetName,
-		[Parameter()]					[String]	$hostName,
-		[Parameter()]					[switch]	$force,
-		[Parameter()]					[switch]	$Pat
+param(	[Parameter(Mandatory)]	[String]	$hostsetName,
+		[Parameter()]			[String]	$hostName,
+		[Parameter()]			[switch]	$Pattern
 )		
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$RemovehostsetCmd = "removehostset "
-	if ($hostsetName)
-		{	if (!($force))
-				{	write-verbose "no force option selected to remove hostset, Exiting...."
-					return "FAILURE : no -force option selected to remove hostset"
+	$RemovehostsetCmd += " -f "	
+	if($Pattern)	{	$RemovehostsetCmd += " -pat "	}
+	$RemovehostsetCmd += " $hostsetName "
+	if($hostName)	{	$RemovehostsetCmd +=" $hostName"	}
+	$Result2 = Invoke-A9CLICommand -cmds  $RemovehostsetCmd
+	if([string]::IsNullOrEmpty($Result2))
+		{	if($hostName)
+				{	Write-host "Success : Removed host $hostName from hostset $hostsetName " -ForegroundColor green 
 				}
-			$objType = "hostset"
-			$objMsg  = "host set"
-			if ( -not ( Test-A9CLIObject -objectType $objType -objectName $hostsetName -objectMsg $objMsg )) 
-				{	write-verbose " hostset $hostsetName does not exist. Nothing to remove"   
-					return "FAILURE : No hostset $hostsetName found"
-				}
-			else
-				{	if($force)		{	$RemovehostsetCmd += " -f "	}
-					if($Pat)		{	$RemovehostsetCmd += " -pat "	}
-					$RemovehostsetCmd += " $hostsetName "
-					if($hostName)	{	$RemovehostsetCmd +=" $hostName"	}
-					$Result2 = Invoke-A9CLICommand -cmds  $RemovehostsetCmd
-					if([string]::IsNullOrEmpty($Result2))
-						{	if($hostName)
-								{	return "Success : Removed host $hostName from hostset $hostsetName "
-								}
-							else{	return "Success : Removed hostset $hostsetName "
-								}
-						}
-					else{	return "FAILURE : While removing hostset $hostsetName"
-						}			
+			else{	Write-host "Success : Removed hostset $hostsetName "
 				}
 		}
-	else
-		{	write-verbose  "No hostset name mentioned to remove"
-			Get-help Remove-HostSet
+	else{	write-host "FAILURE : While removing hostset $hostsetName" -ForegroundColor green
 		}
+	return			
 }
 } 
 
@@ -374,9 +339,9 @@ Function Update-A9HostSet_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$Comment,
-		[Parameter()]	[String]	$NewName,
-		[Parameter(Mandatory=$true)]	[String]    $Setname
+param(	[Parameter()]					[String]	$Comment,
+		[Parameter()]					[String]	$NewName,
+		[Parameter(Mandatory)]			[String]    $Setname
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'  

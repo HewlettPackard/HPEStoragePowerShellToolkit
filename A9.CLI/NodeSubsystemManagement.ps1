@@ -101,137 +101,6 @@ process
 }
 }
 
-Function Get-A9System_CLI
-{
-<#
-.SYNOPSIS
-    Displays the Storage system information. 
-.DESCRIPTION
-    Command displays the Storage system information.
-.EXAMPLE
-    PS:> Get-A9System_CLI 
-
-	Command displays the Storage system information.such as system name, model, serial number, and system capacity information.
-.EXAMPLE
-    PS:> Get-A9System_CLI -SystemCapacity
-
-	Lists Storage system space information in MB(1024^2 bytes)
-.EXAMPLE	
-	PS:> Get-A9System_CLI -DevType FC
-.PARAMETER Detailed
-	Specifies that more detailed information about the system is displayed.
-.PARAMETER SystemParameters
-	Specifies that the system parameters are displayed.
-.PARAMETER Fan
-	Displays the system fan information.
-.PARAMETER SystemCapacity
-	Displays the system capacity information in MiB.
-.PARAMETER vvSpace
-	Displays the system capacity information in MiB with an emphasis on VVs.
-.PARAMETER Domainspace
-	Displays the system capacity information broken down by domain in MiB.
-.PARAMETER Descriptor
-	Displays the system descriptor properties.
-.PARAMETER DevType FC|NL|SSD
-	Displays the system capacity information where the disks must have a device type string matching the specified device type; either Fast
-	Class (FC), Nearline (NL), Solid State Drive (SSD). This option can only be issued with -space or -vvspace.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	
-        [Parameter()]	[switch]    $Detailed,
-        [Parameter()]   [switch]    $SystemParameters,
-        [Parameter()]   [switch]    $Fan,
-        [Parameter()]   [switch]    $SystemCapacity,
-        [Parameter()]   [switch]    $vvSpace,
-        [Parameter()]   [switch]    $DomainSpace,
-        [Parameter()]   [switch]    $Descriptor,
-        [Parameter()]   [String]    $DevType
-    )
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$sysinfocmd = "showsys "
-    if ($Detailed) 			{    $sysinfocmd += " -d " 		}
-    if ($SystemParameters) 	{    $sysinfocmd += " -param "	}
-    if ($Fan) 				{    $sysinfocmd += " -fan "	}
-    if ($SystemCapacity) 	{    $sysinfocmd += " -space " 	}
-    if ($vvSpace) 			{    $sysinfocmd += " -vvspace "}
-    if ($DomainSpace) 		{    $sysinfocmd += " -domainspace "}
-    if ($Descriptor) 		{	$sysinfocmd += " -desc "	}
-    if ($DevType) 			{    $sysinfocmd += " -devtype $DevType"}
-	write-verbose "The following command will be sent `n $Cmd"
-    $Result = Invoke-A9CLICommand -cmds  $sysinfocmd	
-    if ($Fan -or $DomainSpace -or $sysinfocmd -eq "showsys ") 
-		{	$incre = "True"
-			$FirstCnt = 1
-			$rCount = $Result.Count
-			$noOfColumns = 0        
-			if ($Fan) {		$FirstCnt = 0 }
-			if ($DomainSpace) {    $rCount = $Result.Count - 3   }
-			$tempFile = [IO.Path]::GetTempFileName()
-			if ($Result.Count -gt 1) 
-				{	foreach ($s in  $Result[$FirstCnt..$rCount] ) 
-						{	$s = [regex]::Replace($s, "^ +", "")
-							if (!$DomainSpace) {    $s = [regex]::Replace($s, "-", "")    }				
-							$s = [regex]::Replace($s, " +", ",")
-							if ($noOfColumns -eq 0) 
-								{    $noOfColumns = $s.Split(",").Count;    }
-							else{	$noOfValues = $s.Split(",").Count;
-									if ($noOfValues -ge $noOfColumns) 
-										{  	[System.Collections.ArrayList]$CharArray1 = $s.Split(",");
-											if ($noOfValues -eq 12) 
-												{	$CharArray1[2] = $CharArray1[2] + " " + $CharArray1[3];
-													$CharArray1.RemoveAt(3);
-													$s = $CharArray1 -join ',';
-												}
-											elseif ($noOfValues -eq 13) 
-												{	$CharArray1[2] = $CharArray1[2] + " " + $CharArray1[3] + " " + $CharArray1[4];
-													$CharArray1.RemoveAt(4);
-													$CharArray1.RemoveAt(3);
-													$s = $CharArray1 -join ',';
-												}
-										}
-								}
-							if ($DomainSpace) 
-								{	if ($incre -eq "True") 
-										{	$sTemp = $s.Split(',')											
-											<# $sTemp[1] = "Used_Legacy(MiB)"				
-											$sTemp[2] = "Snp_Legacy(MiB)"
-											$sTemp[3] = "Base_Private(MiB)"				
-											$sTemp[4] = "Snp_Private(MiB)"
-											$sTemp[5] = "Shared_CPG(MiB)"				
-											$sTemp[6] = "Free_CPG(MiB)"
-											$sTemp[7] = "Unmapped(MiB)"	
-											$sTemp[8] = "Total(MiB)"
-											$sTemp[9] = "Compact_Efficiency"
-											$sTemp[10] = "Dedup_Efficiency"
-											$sTemp[11] = "Compress_Efficiency"
-											$sTemp[12] = "DataReduce_Efficiency"
-											$sTemp[13] = "Overprov_Efficiency" #>
-											$newTemp = [regex]::Replace($sTemp, "^ ", "")			
-											$newTemp = [regex]::Replace($sTemp, " ", ",")				
-											$newTemp = $newTemp.Trim()
-											$s = $newTemp 					
-										}
-								}				
-							Add-Content -Path $tempFile -Value $s 			
-							$incre = "False"
-						}
-					return $Result
-					# $Result = Import-Csv $tempFile			
-					Remove-Item $tempFile
-					return $Result
-				}
-			else{	Remove-Item $tempFile
-					return	$Result3			
-				}
-		}		
-    else{    return	$Result    }	
-}
-}
 
 Function Ping-A9RCIPPorts
 {
@@ -240,16 +109,6 @@ Function Ping-A9RCIPPorts
 	Verifying That the Servers Are Connected
 .DESCRIPTION
 	Verifying That the Servers Are Connected.
-.EXAMPLE	
-	PS:> Ping-A9RCIPPorts -IP_address 192.168.245.5 -NSP 0:3:1
-.EXAMPLE
-	PS:> Ping-A9RCIPPorts -count 2 -IP_address 192.168.245.5 -NSP 0:3:1
-.EXAMPLE
-	PS:> Ping-A9RCIPPorts -wait 2 -IP_address 192.168.245.5 -NSP 0:3:1
-.EXAMPLE
-	PS:> Ping-A9RCIPPorts -size 2 -IP_address 192.168.245.5 -NSP 0:3:1
-.EXAMPLE
-	PS:> Ping-A9RCIPPorts -PF -IP_address 192.168.245.5 -NSP 0:3:1
 .PARAMETER IP_address
 	IP address on the secondary system to ping
 .PARAMETER NSP
@@ -267,6 +126,16 @@ Function Ping-A9RCIPPorts
 .PARAMETER count
 	Specifies the number of replies accepted by the system before
 	terminating the command. The default is 1; the maximum value is 25.
+.EXAMPLE	
+	PS:> Ping-A9RCIPPorts -IP_address 192.168.245.5 -NSP 0:3:1
+.EXAMPLE
+	PS:> Ping-A9RCIPPorts -count 2 -IP_address 192.168.245.5 -NSP 0:3:1
+.EXAMPLE
+	PS:> Ping-A9RCIPPorts -wait 2 -IP_address 192.168.245.5 -NSP 0:3:1
+.EXAMPLE
+	PS:> Ping-A9RCIPPorts -size 2 -IP_address 192.168.245.5 -NSP 0:3:1
+.EXAMPLE
+	PS:> Ping-A9RCIPPorts -PF -IP_address 192.168.245.5 -NSP 0:3:1
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -302,12 +171,6 @@ Function Set-A9Battery
 .DESCRIPTION
 	The command may be used to set battery information such as the battery's expiration date, its recharging 
 	time, and its serial number. This information gives the system administrator a record or log of the battery age and battery charge status.
-.EXAMPLE
-	The following example resets the battery test log and the recharging time
-	for a newly installed battery on node 2, power supply 1, and battery 0, with
-	an expiration date of July 4, 2006:
-	
-	PS:> Set-A9Battery -X " 07/04/2006" -Node_ID 2 -Powersupply_ID 1 -Battery_ID 0	
 .PARAMETER S
 	Specifies the serial number of the battery using a limit of 31 alphanumeric characters.
 	This option is not supported on HPE 3PAR 10000 and 20000 systems.
@@ -323,6 +186,12 @@ Function Set-A9Battery
 	Specifies the power supply number on the node using either 0 (left side from the rear of the node) or 1 (right side from the rear of the node).
 .PARAMETER Battery_ID
 	Specifies the battery number on the power supply where 0 is the first battery.
+.EXAMPLE
+	The following example resets the battery test log and the recharging time
+	for a newly installed battery on node 2, power supply 1, and battery 0, with
+	an expiration date of July 4, 2006:
+	
+	PS:> Set-A9Battery -X " 07/04/2006" -Node_ID 2 -Powersupply_ID 1 -Battery_ID 0	
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -418,6 +287,24 @@ Function Set-A9HostPorts
 	Configure settings of the array
 .DESCRIPTION
 	Configures with settings specified in the text file
+.PARAMETER FCConfigFile
+	Specify the config file containing FC host controllers information
+.PARAMETER iSCSIConfigFile
+	Specify the config file containing iSCSI host controllers information
+.PARAMETER LDConfigFile
+	Specify the config file containing Logical Disks information
+.PARAMETER Demo
+	Switch to list the commands to be executed 
+.PARAMETER RCIPConfiguration
+	Go for  RCIP Configuration
+.PARAMETER RCFCConfiguration
+	Go for  RCFC Configuration
+.PARAMETER Port_IP
+	port ip address
+.PARAMETER NetMask
+	Net Mask Name
+.PARAMETER NSP
+	NSP Name 
 .EXAMPLE
 	PS:> Set-A9HostPorts -FCConfigFile FC-Nodes.CSV
 
@@ -440,24 +327,6 @@ Function Set-A9HostPorts
 	PS:> Set-A9HostPorts -RCFCConfiguration -NSP 1:2:3>
 	
 	For RCFC port  
-.PARAMETER FCConfigFile
-	Specify the config file containing FC host controllers information
-.PARAMETER iSCSIConfigFile
-	Specify the config file containing iSCSI host controllers information
-.PARAMETER LDConfigFile
-	Specify the config file containing Logical Disks information
-.PARAMETER Demo
-	Switch to list the commands to be executed 
-.PARAMETER RCIPConfiguration
-	Go for  RCIP Configuration
-.PARAMETER RCFCConfiguration
-	Go for  RCFC Configuration
-.PARAMETER Port_IP
-	port ip address
-.PARAMETER NetMask
-	Net Mask Name
-.PARAMETER NSP
-	NSP Name 
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -563,7 +432,7 @@ Function Set-A9NodeProperties
 	The command sets properties of the node components such as serial number of the power supply.
 .EXAMPLE
 	PS:> Set-A9NodeProperties -PS_ID 1 -S xxx -Node_ID 1
-.PARAMETER S
+.PARAMETER Serial
 	Specify the serial number. It is up to 8 characters in length.
 .PARAMETER PS_ID
 	Specifies the power supply ID.
@@ -573,9 +442,9 @@ Function Set-A9NodeProperties
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param( 	[Parameter(Mandatory=$True)]	[String]	$PS_ID,
-		[Parameter(Mandatory=$True)]	[String]	$S,
-		[Parameter()]					[String]	$Node_ID	
+param( 	[Parameter(Mandatory)]	[String]	$PS_ID,
+		[Parameter(Mandatory)]	[String]	$Serial,
+		[Parameter()]			[String]	$Node_ID	
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -583,7 +452,7 @@ Begin
 process
 {	$Cmd = " setnode ps "
 	if($PS_ID)		{	$Cmd += " $PS_ID "	}	
-	if($S) 			{	$Cmd += " -s $S " 	} 
+	if($Serial) 	{	$Cmd += " -s $S " 	} 
 	if($Node_ID) 	{	$Cmd += " $Node_ID "}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
@@ -597,6 +466,11 @@ Function Set-A9NodesDate
 	Sets date and time information.
 .DESCRIPTION
 	The command allows you to set the system time and date on all nodes.
+
+.PARAMETER Tzlist
+	Displays a timezone within a group, if a group is specified. If a group is not specified, displays a list of valid groups.
+.PARAMETER TzGroup
+	Displays a timezone within a group, if a group is specified. it alwase use with -Tzlist.
 .EXAMPLE
 	The following example displays the timezones with the -tzlist option:
 	
@@ -609,10 +483,6 @@ Function Set-A9NodesDate
 	The following example shows the timezone being set:
 
 	PS:> Set-A9NodesDate  -Tzlist -TzGroup "Etc/GMT"
-.PARAMETER Tzlist
-	Displays a timezone within a group, if a group is specified. If a group is not specified, displays a list of valid groups.
-.PARAMETER TzGroup
-	Displays a timezone within a group, if a group is specified. it alwase use with -Tzlist.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -846,7 +716,9 @@ Function Get-A9SystemInformation
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$Option
+param(	[Parameter()]	
+		[ValidateSet("d","param","fan","space","vvspace","domainspace","desc","devtype","date")]
+						[String]	$Option
 	)	
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -855,44 +727,35 @@ process
 {	$sysinfocmd = "showsys "
 	$Option = $Option.toLower()
 	if ($Option)
-		{	$a = "d","param","fan","space","vvspace","domainspace","desc","devtype","date"
-			$l=$Option
-			if($a -eq $l)
-				{	$sysinfocmd+=" -$option "
-					if($Option -eq "date")
-						{	$Result = Invoke-A9CLICommand -cmds  "showdate"
-							write-verbose "Get system date information " 
-							write-verbose "Get system fan information cmd -> showdate " 
-							$tempFile = [IO.Path]::GetTempFileName()
-							Add-Content -Path $tempFile -Value "Node,Date"
-							foreach ($s in  $Result[1..$Result.Count] )
-								{	$splits = $s.split(" ")
-									$var1 = $splits[0].trim()
-									$var2 = ""
-									foreach ($t in $splits[1..$splits.Count])
-										{	if(-not $t)	{	continue	}
-											$var2 += $t+" "	
-										}
-									$var3 = $var1+","+$var2
-									Add-Content -Path $tempFile -Value $var3
+		{	$sysinfocmd+=" -$option "
+			if($Option -eq "date")
+				{	$Result = Invoke-A9CLICommand -cmds  "showdate"
+					write-verbose "Get system date information " 
+					write-verbose "Get system fan information cmd -> showdate " 
+					$tempFile = [IO.Path]::GetTempFileName()
+					Add-Content -Path $tempFile -Value "Node,Date"
+					foreach ($s in  $Result[1..$Result.Count] )
+						{	$splits = $s.split(" ")
+							$var1 = $splits[0].trim()
+							$var2 = ""
+							foreach ($t in $splits[1..$splits.Count])
+								{	if(-not $t)	{	continue	}	
+									$var2 += $t+" "	
 								}
-							Import-Csv $tempFile
-							Remove-Item $tempFile
-							return
-						}	
-					else
-						{	$Result = Invoke-A9CLICommand -cmds  $sysinfocmd
-							return $Result
+							$var3 = $var1+","+$var2
+							Add-Content -Path $tempFile -Value $var3
 						}
-				}
+					$Result = Import-Csv $tempFile
+					Remove-Item $tempFile
+				}	
 			else
-				{	Return "FAILURE : -option :- $option is an Incorrect option  [d,param,fan,space,vvspace,domainspace,desc,devtype]  can be used only . "
+				{	$Result = Invoke-A9CLICommand -cmds  $sysinfocmd
 				}
 		}
 	else
-		{	$Result = Invoke-A9CLICommand -cmds  $sysinfocmd
-			return $Result 
-		}		
+		{	$Result = Invoke-A9CLICommand -cmds  $sysinfocmd 
+		}
+	return $Result		
 }
 }
 
@@ -967,6 +830,12 @@ Function Show-A9Firmwaredb
 	Show database of current firmware levels.
 .DESCRIPTION
 	Displays the current database of firmware levels for possible upgrade. If issued without any options, the firmware for all vendors is displayed.
+.PARAMETER VendorName
+	Specifies that the firmware vendor from the SCSI database file is displayed.
+.PARAMETER L
+	Reloads the SCSI database file into the system.
+.PARAMETER All
+	Specifies current and past firmware entries are displayed. If not specified, only current entries are displayed.
 .EXAMPLE
 	PS:> Show-A9Firmwaredb
 .EXAMPLE
@@ -974,14 +843,7 @@ Function Show-A9Firmwaredb
 .EXAMPLE
 	PS:> Show-A9Firmwaredb -All
 .EXAMPLE
-	PS:> Show-A9Firmwaredb -L
-.PARAMETER VendorName
-	Specifies that the firmware vendor from the SCSI database file is displayed.
-.PARAMETER L
-	Reloads the SCSI database file into the system.
-.PARAMETER All
-	Specifies current and past firmware entries are displayed. If not specified, only current entries are displayed.
-.NOTES
+	PS:> Show-A9Firmwaredb -L.NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -1031,20 +893,6 @@ Function Show-A9iSCSISessionStatistics
 	The Show-iSCSISessionStatistics command displays the iSCSI session statistics.
 .DESCRIPTION  
 	The Show-iSCSISessionStatistics command displays the iSCSI session statistics.
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -Delay 2
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -NodeList 1
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -SlotList 1
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -PortList 1
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -Prev
 .PARAMETER Iterations 
 	The command stops after a user-defined <number> of iterations.
 .PARAMETER Delay
@@ -1060,6 +908,20 @@ Function Show-A9iSCSISessionStatistics
 	Shows the differences from the previous sample.
 .PARAMETER Begin
 	Shows the values from when the system was last initiated.
+.EXAMPLE
+	PS:> Show-A9iSCSISessionStatistics
+.EXAMPLE
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1
+.EXAMPLE
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -Delay 2
+.EXAMPLE
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -NodeList 1
+.EXAMPLE
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -SlotList 1
+.EXAMPLE
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -PortList 1
+.EXAMPLE
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -Prev
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1159,24 +1021,6 @@ Function Show-A9iSCSIStatistics
 	The command displays the iSCSI statistics.
 .DESCRIPTION  
 	The command displays the iSCSI statistics.
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -Delay 2
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -NodeList 1
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -SlotList 1
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -PortList 1
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -Fullcounts
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -Prev
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -Begin
 .PARAMETER Iterations 
 	The command stops after a user-defined <number> of iterations.
 .PARAMETER Delay
@@ -1204,6 +1048,24 @@ Function Show-A9iSCSIStatistics
 	Shows the values from when the system was last initiated.
 .PARAMETER SANConnection 
     Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -Delay 2
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -NodeList 1
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -SlotList 1
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -PortList 1
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -Fullcounts
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -Prev
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -Begin
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1284,23 +1146,23 @@ Function Show-A9NetworkDetail
 	Show the network configuration and status
 .DESCRIPTION
 	The command displays the configuration and status of the administration network interfaces, including the configured gateway and network time protocol (NTP) server.
+.PARAMETER Detailed
+	Show detailed information.
 .EXAMPLE 
 	The following example displays the status of the system administration network interfaces:
 	PS:> Show-A9NetworkDetail -D
-.PARAMETER D
-	Show detailed information.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[switch]	$D
+param(	[Parameter()]	[switch]	$Detailed
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
 {	$Cmd = " shownet "
-	if($D)	{	$Cmd += " -d "}
+	if($Detailed)	{	$Cmd += " -d "}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1313,14 +1175,14 @@ Function Show-A9NodeEnvironmentStatus
 	Show node environmental status (voltages, temperatures).
 .DESCRIPTION
 	The command displays the node operating environment status, including voltages and temperatures.
+.PARAMETER Node_ID
+	Specifies the ID of the node whose environment status is displayed. Multiple node IDs can be specified as a series of integers separated by
+	a space (1 2 3). If no option is used, then the environment status of all nodes is displayed.
 .EXAMPLE
 	The following example displays the operating environment status for all nodes
 	in the system:
 
 	PS:> Show-A9NodeEnvironmentStatus
-.PARAMETER Node_ID
-	Specifies the ID of the node whose environment status is displayed. Multiple node IDs can be specified as a series of integers separated by
-	a space (1 2 3). If no option is used, then the environment status of all nodes is displayed.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1345,12 +1207,6 @@ Function Show-A9iSCSISession
 	Shows the iSCSI sessions.
 .DESCRIPTION  
 	The command shows the iSCSI sessions.
-.EXAMPLE
-	PS:> Show-A9iSCSISession
-.EXAMPLE
-	PS:> Show-A9iSCSISession -NSP 1:2:1
-.EXAMPLE
-	PS:> Show-A9iSCSISession -Detailed -NSP 1:2:1
 .PARAMETER Detailed
     Specifies that more detailed information about the iSCSI session is displayed. If this option is not used, then only summary information
     about the iSCSI session is displayed.
@@ -1358,6 +1214,12 @@ Function Show-A9iSCSISession
     Specifies the connection state of current iSCSI sessions. If this option is not used, then only summary information about the iSCSI session is displayed.
 .PARAMETER NSP
 	Requests that information for a specified port is displayed.
+.EXAMPLE
+	PS:> Show-A9iSCSISession
+.EXAMPLE
+	PS:> Show-A9iSCSISession -NSP 1:2:1
+.EXAMPLE
+	PS:> Show-A9iSCSISession -Detailed -NSP 1:2:1
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1404,19 +1266,6 @@ Function Show-A9NodeProperties
 .DESCRIPTION
 	The command displays an overview of the node-specific properties and its component information. Various command options can be used to
 	display the properties of PCI cards, CPUs, Physical Memory, IDE drives, and Power Supplies.
-.EXAMPLE
-	The following example displays the operating environment status for all
-	nodes in the system:
-	
-	PS:> Show-A9NodeProperties
-.EXAMPLE
-	The following examples display detailed information (-d option) for the nodes including their components in a table format. The shownode -d command
-	can be used to display the tail information of the nodes including their components in name and value pairs.
-
-	PS:> Show-A9NodeProperties - Mem
-	PS:> Show-A9NodeProperties - Mem -Node_ID 1	
-    
-	The following options are for node summary and inventory information:
 .PARAMETER Listcols
 	List the columns available to be shown with the -showcols option described below (see 'clihelp -col Show-NodeProperties' for help on each column).
 	By default (if none of the information selection options below are specified) the following columns are shown:
@@ -1470,6 +1319,19 @@ Function Show-A9NodeProperties
 	Displays inventory information with HPE serial number, spare part etc. This option must be used with -i option and it is not supported on HPE 3PAR 10000 systems
 .PARAMETER Node_ID
 	Displays the node information for the specified node ID(s). This specifier is not required. Node_ID is an integer from 0 through 7.
+.EXAMPLE
+	The following example displays the operating environment status for all
+	nodes in the system:
+	
+	PS:> Show-A9NodeProperties
+.EXAMPLE
+	The following examples display detailed information (-d option) for the nodes including their components in a table format. The shownode -d command
+	can be used to display the tail information of the nodes including their components in name and value pairs.
+
+	PS:> Show-A9NodeProperties - Mem
+	PS:> Show-A9NodeProperties - Mem -Node_ID 1	
+    
+	The following options are for node summary and inventory information:
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1729,31 +1591,71 @@ process
 }	
 } 
 
-Function Show-A9SystemManager
+Function Get-A9SystemManager
 {
 <#
 .SYNOPSIS
 	Show system manager startup state.
 .DESCRIPTION
 	The displays startup state information about the system manager.
-.PARAMETER D
+.PARAMETER Detailed
 	Shows additional detailed information if available.
-.PARAMETER L
+.PARAMETER Locks
 	Shows field service diagnostics for System Manager specific Config Locks and MCALLs, and system-wide ioctl system calls.
+.EXAMPLE 
+	PS:> Show-A9SystemManager -Detailed
+
+	System is up and running from 2024-10-28 13:57:01 MDT
+.EXAMPLE
+	PS:> Show-A9SystemManager -Locks
+
+	Config lock hold PID:        0
+	Config lock hold seconds:    0
+	System Manager ioctl count:  7
+	System ioctl count:          10
+	System ioctl detail counts:
+		-All ioctl Count- ------------------Barrier ioctl Counts-------------------
+	Node             Total Not Defined System Manager TOC Server PD Scrub DAR Server
+		0                 3           0              0          0        0          0
+		1                 1           0              0          0        0          0
+		2                 3           0              0          0        0          0
+		3                 3           0              0          0        0          0
+	----------------------------------------------------------------------------------
+	Totals                10           0              0          0        0          0
+	System ioctl detail:
+	Node Sec Outstanding     PID Source PID Source Node Type      Number Name
+	0               0 8401245         na          na NA      c056141d VVCMD_GET_NEXT_DDS_REQ
+	0               0 8399248         na          na NA      c056141e VVCMD_GET_NEXT_DDS_REP
+	0               0 8401453       7627           1 Sys Mgr c0561462 SCCMD_GETINFO_IOCTL
+	1               0 8390406       7627           1 Sys Mgr c0561462 SCCMD_GETINFO_IOCTL
+	2               0 8399235         na          na NA      c056141e VVCMD_GET_NEXT_DDS_REP
+	2               0 8389784         na          na NA      c056141d VVCMD_GET_NEXT_DDS_REQ
+	2               0 8389780       7627           1 Sys Mgr c0561462 SCCMD_GETINFO_IOCTL
+	3               0 8389846         na          na NA      c056141d VVCMD_GET_NEXT_DDS_REQ
+	3               0 8401202         na          na NA      c056141e VVCMD_GET_NEXT_DDS_REP
+	3               0 8401403       7627           1 Sys Mgr c0561462 SCCMD_GETINFO_IOCTL
+	-------------------------------------------------------------------------------------------
+	10 Total Count
+	System Manager mcall count:  2
+	System Manager mcall detail:
+		PID mSec Outstanding Name
+	2533668                0 MC_LOCKINFO
+	------------------------------------
+		1 Total Count
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[switch]	$D,
-		[Parameter()]	[switch]	$L
+param(	[Parameter()]	[switch]	$Detailed,
+		[Parameter()]	[switch]	$Locks
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
 {	$Cmd = " showsysmgr "
-	if($D)	{	$Cmd += " -d "	}
-	if($L)	{	$Cmd += " -l "}
+	if($Detailed)	{	$Cmd += " -d "	}
+	if($Locks)		{	$Cmd += " -l "}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }

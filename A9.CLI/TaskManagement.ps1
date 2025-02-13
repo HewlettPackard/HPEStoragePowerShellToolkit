@@ -52,7 +52,7 @@ process
     if ($Details) {   $cmd += " -d"		  }
     if ($Time)    {   $cmd += " -t $T"  }	
     $Result = Invoke-A9CLICommand -cmds  $cmd
-    return 	$Result	
+    return $Result	
   }
 }
 

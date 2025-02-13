@@ -361,3 +361,74 @@ process
 		Return $Result
 	} 
 }
+
+Function Get-A9SystemReportAOMoves
+{
+<#
+.SYNOPSIS
+    The command shows the space that AO has moved between tiers.	
+.DESCRIPTION
+    The command shows the space that AO has moved between tiers.
+.EXAMPLE
+	PS:> Get-A9SystemReportAOMoves -btsecs 7200
+.EXAMPLE
+	PS:> Get-A9SystemReportAOMoves -etsecs 7200
+.EXAMPLE
+	PS:> Get-A9SystemReportAOMoves -oneline 
+.EXAMPLE
+	PS:> Get-A9SystemReportAOMoves -withvv 
+.EXAMPLE
+	PS:> Get-A9SystemReportAOMoves -VV_name XYZ
+.PARAMETER btsecs 
+	Select the begin time in seconds for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the time at which the report begins is 12 ho                                                          urs ago.
+	If -btsecs 0 is specified then the report begins at the earliest sample.
+.PARAMETER etsecs 
+	Select the end time in seconds for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the report ends with the most recent sample.
+.PARAMETER oneline
+	Show data in simplified format with one line per AOCFG.
+.PARAMETER VV_name
+	Limit the analysis to VVs with names that match one or more of the specified names or glob-style patterns. VV set names must be
+	prefixed by "set:".  Note that snapshot VVs will not be considered since only base VVs have region space.
+.PARAMETER withvv
+	Show the data for each VV.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[String]	$btsecs,
+		[Parameter()]	[String]	$etsecs,
+		[Parameter()]	[switch]	$oneline,
+		[Parameter()]	[String]	$VV_name,
+		[Parameter()]	[switch]	$withvv		
+)	
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process	
+{	$cmd= "sraomoves "
+	if ($btsecs)	{	$cmd+=" -btsecs $btsecs "		}	
+	if ($etsecs)	{	$cmd+=" -etsecs $etsecs "		}
+	if ($oneline)	{	$cmd+=" -oneline "		}
+	if ($VV_name)	{	$cmd+=" -vv $VV_name "		}
+	if ($withvv)	{	$cmd+=" -withvv "		}	
+	$Result = Invoke-A9CLICommand -cmds  $cmd
+	write-verbose " The Get-SRAOMoves command creates and admits physical disk definitions to enable the use of those disks  " 
+	return 	$Result	
+} 
+}

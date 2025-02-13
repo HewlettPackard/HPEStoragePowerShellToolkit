@@ -9,57 +9,47 @@ Function Get-A9Alert
 	Display system alerts.
 .DESCRIPTION
 	The command displays the status of system alerts. When issued without options, all new customer alerts are displayed.
-.EXAMPLE
-	PS:> Get-A9Alert -N
-.EXAMPLE
-	PS:> Get-A9Alert -F
-.EXAMPLE
-	PS:> Get-A9Alert -All
-.PARAMETER N
-	Specifies that only new customer alerts are displayed. This is the default.
-.PARAMETER A
-	Specifies that only acknowledged alerts are displayed.
-.PARAMETER F
-	Specifies that only fixed alerts are displayed.
-.PARAMETER All
-	Specifies that all customer alerts are displayed.
-	The format of the alert display is controlled by the following options:
-.PARAMETER D
+.PARAMETER EventTypes
+	Dispays only the eventypes that are specified from the following selections; 'New','Acknowledged','Fixed','All','Service'
+	The Default selection is new, but this allows you to override this default behaviour.
+.PARAMETER Detailed
 	Specifies that detailed information is displayed. Cannot be specified
 	with the -oneline option.
 .PARAMETER Oneline
 	Specifies that summary information is displayed in a tabular form with one line per alert. For customer alerts, the message text will be
 	truncated if it is too long unless the -wide option is also specified.
-.PARAMETER Svc
-	Specifies that only service alerts are displayed. This option can only be used with the -d or -oneline formatting options.
 .PARAMETER Wide
 	Do not truncate the message text. Only valid for customer alerts and if the -oneline option is also specified.
+.EXAMPLE
+	PS:> Get-A9Alert -EventTypes New
+.EXAMPLE
+	PS:> Get-A9Alert -EventTypes Acknowledged
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$N,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$A,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$F,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$All,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$D,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Oneline,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Svc,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Wide
+param(	[Parameter()]							
+			[ValidateSet('New','Acknowledged','Fixed','All','Service')]
+												[string]	$EventTypes,
+		[Parameter()]							[switch]	$Detailed,
+		[Parameter()]							[switch]	$Oneline,
+		[Parameter()]							[switch]	$Wide
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " showalert "
-	if($N) 		{	$Cmd += " -n " 		}
-	if($A) 		{	$Cmd += " -a " 		}
-	if($F)		{	$Cmd += " -f " 		}
-	if($All)	{	$Cmd += " -all " 	}
-	if($D) 		{	$Cmd += " -d " 		}
-	if($Svc)	{	$Cmd += " -svc " 	}
-	if($Wide)	{	$Cmd += " -wide " 	}
-	if($Oneline){	$Cmd += " -oneline "}
+	switch($EventTypes)
+		{	'New'			{	$Cmd += " -n " 		}
+			'Acknowledged'	{	$Cmd += " -a " 		}
+			'Fixed'			{	$Cmd += " -f " 		}
+			'All'			{	$Cmd += " -all " 	}
+			'Service'		{	$Cmd += " -svc " 	}
+		}
+	if($Detailed) 		{	$Cmd += " -d " 		}
+	if($Wide)			{	$Cmd += " -wide " 	}
+	if($Oneline)		{	$Cmd += " -oneline "}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -72,21 +62,17 @@ Function Get-A9EventLog_CLI
 	Show the system event log.
 .DESCRIPTION
 	The command displays the current system event log.
-.PARAMETER Min
+.PARAMETER Minutes
 	Specifies that only events occurring within the specified number of minutes are shown. The <number> is an integer from 1 through 2147483647.
-.PARAMETER More
-	Specifies that you can page through several events at a time.
-.PARAMETER Oneline
-	Specifies that each event is formatted as one line.
-.PARAMETER D
+.PARAMETER Detailed
 	Specifies that detailed information is displayed.
-.PARAMETER Startt
+.PARAMETER StartTime
 	Specifies that only events after a specified time are to be shown. The time argument can be specified as either <timespec>, <datespec>, or
 	both. If you would like to specify both a <timespec> and <datespec>, you must place quotation marks around them; for example, -startt "2012-10-29 00:00".
 		<timespec> Specified as the hour (hh), as interpreted on a 24 hour clock, where minutes (mm) and seconds (ss) can be optionally specified. Acceptable formats are hh:mm:ss or hhmm.
 		<datespec> Specified as the month (mm or month_name) and day (dd), where the year (yy) can be optionally specified. Acceptable formats are
 					mm/dd/yy, month_name dd, dd month_name yy, or yy-mm-dd. If the syntax yy-mm-dd is used, the year must be specified.
-.PARAMETER Endt
+.PARAMETER EndTime
 	Specifies that only events before a specified time are to be shown. The time argument can be specified as either <timespec>, <datespec>, or both.
 	See -startt for descriptions of <timespec> and <datespec>.
 
@@ -96,79 +82,105 @@ Function Get-A9EventLog_CLI
 
 	showeventlog -type Disk.* -type <tpdtcl client> -sev Major
 	The "-sev Major" displays all events of severity Major and with a type that matches either the regular expression Disk.* or <tpdtcl client>.
-.PARAMETER Sev
+.PARAMETER Severity
 	Specifies that only events with severities that match the specified pattern(s) are displayed. The supported severities include Fatal Critical, Major, Minor, Degraded, Informational and Debug
-.PARAMETER Nsev
+.PARAMETER NoSevevrity
 	Specifies that only events with severities that do not match the specified pattern(s) are displayed. The supported severities
 	include Fatal, Critical, Major, Minor, Degraded, Informational and Debug.
 .PARAMETER Class
 	Specifies that only events with classes that match the specified pattern(s) are displayed.
-.PARAMETER Nclass
+.PARAMETER NoClass
 	Specifies that only events with classes that do not match the specified pattern(s) are displayed.
 .PARAMETER Node
 	Specifies that only events from nodes that match the specified pattern(s) are displayed.
-.PARAMETER Nnode
+.PARAMETER NoNode
 	Specifies that only events from nodes that do not match the specified pattern(s) are displayed.
-.PARAMETER Type
+.PARAMETER Typed
 	Specifies that only events with types that match the specified pattern(s) are displayed.
-.PARAMETER Ntype
+.PARAMETER NoTyped
 	Specifies that only events with types that do not match the specified pattern(s) are displayed.
-.PARAMETER Msg
+.PARAMETER Message
 	Specifies that only events, whose messages match the specified pattern(s), are displayed.
-.PARAMETER Nmsg
+.PARAMETER NoMessage
 	Specifies that only events, whose messages do not match the specified pattern(s), are displayed.
-.PARAMETER Comp
+.PARAMETER Component
 	Specifies that only events, whose components match the specified pattern(s), are displayed.
-.PARAMETER Ncomp
+.PARAMETER NoComponent
 	Specifies that only events, whose components do not match the specified pattern(s), are displayed.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Min,
-	[Parameter(ValueFromPipeline=$true)]	[switch]	$More,
-	[Parameter(ValueFromPipeline=$true)]	[switch]	$Oneline,
-	[Parameter(ValueFromPipeline=$true)]	[switch]	$D,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Startt,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Endt,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Sev,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Nsev,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Class,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Nclass,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Node,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Nnode,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Type,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Ntype,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Msg,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Nmsg,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Comp,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Ncomp
+	[Parameter()]	[String]	$Min,
+	[Parameter()]	[switch]	$Detailed,
+	[Parameter()]	[String]	$StartTime,
+	[Parameter()]	[String]	$EndTime,
+	[Parameter()]
+		[ValidateSet('Fatal','Critical','Major','Minor','Degraded','Informational','Debug')]	
+											[String]	$Severity,
+	[Parameter()]	
+	[ValidateSet('Fatal','Critical','Major','Minor','Degraded','Informational','Debug')]	
+											[String]	$NoSevevrity,
+	[Parameter()]	[String]	$Class,
+	[Parameter()]	[String]	$NoClass,
+	[Parameter()]	[String]	$Node,
+	[Parameter()]	[String]	$NoNode,
+	[Parameter()]	[String]	$Typed,
+	[Parameter()]	[String]	$Notyped,
+	[Parameter()]	[String]	$Message,
+	[Parameter()]	[String]	$NoMessage,
+	[Parameter()]	[String]	$Component,
+	[Parameter()]	[String]	$NoComponent,
+	[Parameter()]	[switch]	$ShowRaw
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " showeventlog "
-	if($Min)	{	$Cmd += " -min $Min " }
-	if($More)	{	$Cmd += " -more " }
-	if($Oneline){	$Cmd += " -oneline " }
-	if($D) 		{	$Cmd += " -d " }
-	if($Startt)	{	$Cmd += " -startt $Startt " }
-	if($Endt)	{	$Cmd += " -endt $Endt " }
-	if($Sev)	{	$Cmd += " -sev $Sev " }
-	if($Nsev)	{	$Cmd += " -nsev $Nsev " }
-	if($Class)	{	$Cmd += " -class $Class " }
-	if($Nclass)	{	$Cmd += " -nclass $Nclass " }
-	if($Node)	{	$Cmd += " -node $Node " }
-	if($Nnode)	{	$Cmd += " -nnode $Nnode " }
-	if($Type)	{	$Cmd += " -type $Type " }
-	if($Ntype)	{	$Cmd += " -ntype $Ntype " }
-	if($Msg)	{	$Cmd += " -msg $Msg "	}
-	if($Nmsg)	{	$Cmd += " -nmsg $Nmsg " }
-	if($Comp)	{	$Cmd += " -comp $Comp " }
-	if($Ncomp)	{	$Cmd += " -ncomp $Ncomp " }
+	if($Minutes)		{	$Cmd += " -min $Minutes " }
+	if($Detailed)		{	$Cmd += " -d " }
+	if($StartTime)		{	$Cmd += " -startt $Starttime " }
+	if($EndTime)		{	$Cmd += " -endt $Endtime " }
+	if($Sevevrity)		{	$Cmd += " -sev $Severity " }
+	if($NoSevevrity)	{	$Cmd += " -nsev $Noseverity " }
+	if($Class)			{	$Cmd += " -class $Class " }
+	if($NoClass)		{	$Cmd += " -nclass $Nclass " }
+	if($Node)			{	$Cmd += " -node $Node " }
+	if($NoNode)			{	$Cmd += " -nnode $NoNode " }
+	if($Typed)			{	$Cmd += " -type $Typed " }
+	if($NoTyped)		{	$Cmd += " -ntype $NoTyped " }
+	if($Message)		{	$Cmd += " -msg $Message "	}
+	if($NoMessage)		{	$Cmd += " -nmsg $NoMessage " }
+	if($Component)		{	$Cmd += " -comp $Component " }
+	if($NoComponent)	{	$Cmd += " -ncomp $NoComponent " }
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
+}
+end
+{	$RunningIndex = 0
+	if ($ShowRaw) { return $Result }
+	$EventList = @()
+	$SingleEvent = @{}
+	write-verbose "The number of lines to process = $($Result.count)"
+	while($RunningIndex -lt $Result.count)
+	{	if( $Result[$RunningIndex].StartsWith('Time:'))
+			{	$result[$RunningIndex]
+				$V = $Result[$RunningIndex].split(":")
+				$SingleEvent[$V[0].trim()] = $V[1] 
+			}
+		elseif( $Result[$RunningIndex].trim() -ne '')
+			{	$V = $Result[$RunningIndex].split(":")
+				$SingleEvent[$V[0].trim()] = $V[1] 
+			}
+		else 
+			{ 	$EventList+=$SingleEvent
+				$SingleEvent=@{}
+				
+			}
+		$RunningIndex += 1
+	}
+	$Result = ( $EventList | Convertto-json | convertfrom-json )
 	Return $Result
 }
 }
@@ -184,7 +196,7 @@ Function Get-A9Health
 	Indicates the component to check. Use -list option to get the list of components.
 .PARAMETER Lite
 	Perform a minimal health check.
-.PARAMETER Svc
+.PARAMETER Service
 	Perform a thorough health check. This is the default option.
 .PARAMETER Full
 	Perform the maximum health check. This option cannot be used with the -lite option.
@@ -192,32 +204,32 @@ Function Get-A9Health
 	List all components that will be checked.
 .PARAMETER Quiet
 	Do not display which component is currently being checked. Do not display the footnote with the -list option.
-.PARAMETER D
+.PARAMETER Detailed
 	Display detailed information regarding the status of the system.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Lite,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Svc,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Full,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$List,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Quiet,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$D,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Component
+param(	[Parameter(ParameterSetName='Lite')]		[switch]	$Lite,
+		[Parameter(ParameterSetName='Service')]		[switch]	$Service,
+		[Parameter(ParameterSetName='Full')]		[switch]	$Full,
+		[Parameter()]								[switch]	$List,
+		[Parameter()]								[switch]	$Quiet,
+		[Parameter()]								[switch]	$Detailed,
+		[Parameter(ParameterSetName='Component')]	[String]	$Component
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " checkhealth "
-	if($Lite) 	{	$Cmd += " -lite " 	}
-	if($Svc)	{	$Cmd += " -svc "	}
-	if($Full)	{	$Cmd += " -full " 	}
-	if($List)	{	$Cmd += " -list " 	}
-	if($Quiet)	{	$Cmd += " -quiet " 	}
-	if($D)		{	$Cmd += " -d " 		}
-	if($Component){	$Cmd += " $Component "}
+	if($Lite) 		{	$Cmd += " -lite " 	}
+	if($Service)	{	$Cmd += " -svc "	}
+	if($Full)		{	$Cmd += " -full " 	}
+	if($List)		{	$Cmd += " -list " 	}
+	if($Quiet)		{	$Cmd += " -quiet " 	}
+	if($Detailed)	{	$Cmd += " -d " 		}
+	if($Component)	{	$Cmd += " $Component "}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 Return $Result
 }
@@ -234,25 +246,21 @@ Function Remove-A9Alerts
 	Indicates a specific alert to be removed from the system. This specifier can be repeated to remove multiple alerts. If this specifier is not used, the -a option must be used.
 .PARAMETER All
 	Specifies all alerts from the system and prompts removal for each alert. If this option is not used, then the <alert_ID> specifier must be used.
-.PARAMETER F
-	Specifies that the command is forced. If this option is not used and there are alerts in the "new" state, the command requires confirmation
-	before proceeding with the operation.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ParameterSetName='All', Mandatory=$true, ValueFromPipeline=$true)]	[switch]	$All,
-		[Parameter(ValueFromPipeline=$true)]											[switch]	$F,
-		[Parameter(ParameterSetName='Id',  Mandatory=$true, ValueFromPipeline=$true)]	[String]	$Alert_ID
+param(	[Parameter(ParameterSetName='All', Mandatory)]	[switch]	$All,
+		[Parameter(ParameterSetName='Id',  Mandatory)]	[String]	$Alert_ID
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " removealert "
-	if($F) 			{	$Cmd += " -f "	}
+	$Cmd += " -f "
 	if($All)		{	$Cmd += " -a "	}
-	if($Alert_ID){	$Cmd += " $Alert_ID "}
+	if($Alert_ID)	{	$Cmd += " $Alert_ID "}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }

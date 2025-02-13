@@ -45,13 +45,10 @@ Process
     $Result = Invoke-A9CLICommand -cmds  $Cmd
   }
 end
-  { $Data = $Result[1..$Result.count]
-    $ReturnTable=[ordered]@{}
-    foreach( $Line in $Data)
-      {   $LabelName = ($Line.split(' : '))[0]
-          $LabelName = $LabelName.trim(' ')
-          $DataValue = ($Line.split(' : '))[1]
-          $DataVAlue = $DataValue.trim(' ')
+  { $ReturnTable=[ordered]@{}
+    foreach( $Line in $Result[1..$Result.count])
+      {   $LabelName = (($Line.split(' : '))[0]).trim(' ')
+          $DataValue = (($Line.split(' : '))[1]).trim(' ')
           $ReturnTable["$LabelName"] = $DataValue
       }
     $Result = $ReturnTable | convertto-json | convertfrom-json

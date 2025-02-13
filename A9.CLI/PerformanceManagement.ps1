@@ -2255,8 +2255,8 @@ Function Set-A9StatisticsCollectionPhysicalDiskChunklets
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]					[switch]	$Start,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$Stop,
+param(	[Parameter()]					[switch]	$Start,
+		[Parameter()]					[switch]	$Stop,
 		[Parameter(ValueFromPipeline=$true, Mandatory=$true)]	[String]	$PD_ID
 	)			
 Begin

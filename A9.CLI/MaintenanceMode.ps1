@@ -36,24 +36,20 @@ Process
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count -2  
-			foreach ($s in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")
-					$s= [regex]::Replace($s,"^ ","")		
-					$s= [regex]::Replace($s," +",",")		
-					$s= [regex]::Replace($s,"-","")		
-					$s= $s.Trim()	
-					$temp1 = $s -replace 'StartTime','S-Date,S-Time,S-Zone'
-					$temp2 = $temp1 -replace 'EndTime','E-Date,E-Time,E-Zone'
-					$s = $temp2
+			foreach ($s in  $Result[0..($Result.Count -2)] )
+				{	$s = ((($Result[$HeaderLine].split(' ')).trim()).trim('-') | where-object { $_ -ne '' } ) -join ','
+					$s = $s -replace 'StartTime','S-Date,S-Time,S-Zone'
+					$s = $s -replace 'EndTime','E-Date,E-Time,E-Zone'
 					Add-Content -Path $tempfile -Value $s				
 				}
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			Remove-Item  ve-Item  $tempFile	
 		}
-	if($Result.count -gt 1)	{	return  " Success : Executing Get-Maint"	}
-	else					{	return  $Result								}
-} 
+	if($Result.count -gt 1)	
+		{	write-host " Success : Executing Get-Maint"	-ForegroundColor green 
+		}
+	return  $Result								
+}
 }
 
 Function New-A9Maintenance

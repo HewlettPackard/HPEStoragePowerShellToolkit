@@ -2,7 +2,7 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Show-A9vVolvm_CLI
+Function Show-A9VVolStorageContainerVM_CLI
 {
 <#
 .SYNOPSIS
@@ -13,18 +13,6 @@ Function Show-A9vVolvm_CLI
     The Show-vVolvm command displays information about all virtual machines (VVol-based) or a specific virtual machine in a system.  This command
     can be used to determine the association between virtual machines and their associated virtual volumes. showvvolvm will also show the
     accumulation of space usage information for a virtual machine.
-.EXAMPLE
-	PS:> Show-A9vVolvm_CLI -container_name XYZ -option listcols 
-.EXAMPLE
-	PS:> Show-A9vVolvm_CLI -container_name XYZ -Detailed 
-.EXAMPLE
-	PS:> Show-A9vVolvm_CLI -container_name XYZ -StorageProfiles
-.EXAMPLE
-	PS:> Show-A9vVolvm_CLI -container_name XYZ -Summary 
-.EXAMPLE
-	PS:> Show-A9vVolvm_CLI -container_name XYZ -Binding
-.EXAMPLE
-	PS:> Show-A9vVolvm_CLI -container_name XYZ -VVAssociatedWithVM	
 .PARAMETER container_name
     The name of the virtual volume storage container. May be "sys:all" to display all VMs.
 .PARAMETER Listcols
@@ -65,11 +53,23 @@ Function Show-A9vVolvm_CLI
 .PARAMETER VM_name 
 	Specifies the VMs with the specified name (up to 80 characters in length). This specifier can be repeated to display information about multiple VMs.
 	This specifier is not required. If not specified, showvvolvm displays information for all VMs in the specified storage container.
+.EXAMPLE
+	PS:> Show-A9VVolStorageContainerVM_CLI -container_name XYZ -option listcols 
+.EXAMPLE
+	PS:> Show-A9VVolStorageContainerVM_CLI -container_name XYZ -Detailed 
+.EXAMPLE
+	PS:> Show-A9VVolStorageContainerVM_CLI -container_name XYZ -StorageProfiles
+.EXAMPLE
+	PS:> Show-A9VVolStorageContainerVM_CLI -container_name XYZ -Summary 
+.EXAMPLE
+	PS:> Show-A9VVolStorageContainerVM_CLI -container_name XYZ -Binding
+.EXAMPLE
+	PS:> Show-A9VVolStorageContainerVM_CLI -container_name XYZ -VVAssociatedWithVM	
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$container_name,
+param(	[Parameter(Mandatory)]	[String]	$container_name,
 		[Parameter()]	[switch]	$ListCols,
 		[Parameter()]	[String]	$ShowCols,
 		[Parameter()]	[switch]	$Detailed,
@@ -79,7 +79,7 @@ param(	[Parameter()]	[String]	$container_name,
 		[Parameter()]	[switch]	$VVAssociatedWithVM,
 		[Parameter()]	[switch]	$RemoteCopy,
 		[Parameter()]	[switch]	$AutoDismissed,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$VM_name
+		[Parameter()]	[String]	$VM_name
 	)	
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -100,15 +100,14 @@ process
 	if ($VVAssociatedWithVM){	$cmd +=" -vv "	}
 	if ($RemoteCopy)		{	$cmd +=" -rcopy "	}
 	if ($AutoDismissed)		{	$cmd +=" -autodismissed "	}	
-	if ($container_name)	{	$cmd+="  -sc $container_name "	}	
-	else					{	return " FAILURE :  container_name is mandatory to execute Show-vVolvm command "	}	
+	$cmd+="  -sc $container_name "		
 	if ($VM_name)			{	$cmd+=" $VM_name "	}	
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	return 	$Result	
 }
 }
 
-Function Get-A9vVolSc_CLI
+Function Get-A9VolStorageContainer_CLI
 {
 <#
 .SYNOPSIS
@@ -117,10 +116,6 @@ Function Get-A9vVolSc_CLI
 .DESCRIPTION
     The command displays VVol storage containers, used to contain
     VMware Volumes for Virtual Machines (VVols).
-.EXAMPLE
-	PS:> Get-A9vVolSc_CLI 
-.EXAMPLE
-	PS:> Get-A9vVolSc_CLI -Detailed -SC_name test
 .PARAMETER Listcols
 	List the columns available to be shown in the -showcols option described below.
 .PARAMETER Detailed
@@ -128,6 +123,10 @@ Function Get-A9vVolSc_CLI
 	VVols that have been auto-dismissed by remote copy DR operations.
 .PARAMETER SC_name  
 	Storage Container
+.EXAMPLE
+	PS:> Get-A9vVolSc_CLI 
+.EXAMPLE
+	PS:> Get-A9vVolSc_CLI -Detailed -SC_name test
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -162,10 +161,6 @@ Function Set-A9VVolStorageContainer
 
     VVols are managed by the vSphere environment, and storage containers are used to maintain a logical collection of them. No physical space is
     pre-allocated for a storage container. The special VV sets (see showvvset) are used to manage VVol storage containers.
-.EXAMPLE
-	PS:> Set-A9VVolStorageContainer -vvset XYZ (Note: set: already include in code please dont add with vvset)
-.EXAMPLE
-	PS:> Set-A9VVolStorageContainer -Create -vvset XYZ
 .PARAMETER Create
 	An empty existing <vvset> not already marked as a VVol Storage Container will be updated. The VV set should not contain any
 	existing volumes (see -keep option below), must not be already marked as a storage container, nor may it be in use for other
@@ -179,6 +174,10 @@ Function Set-A9VVolStorageContainer
 	are VVols.
 .PARAMETER vvset
 	The Virtual Volume set (VV set) name, which is used, or to be used, as a VVol storage container.
+.EXAMPLE
+	PS:> Set-A9VVolStorageContainer -vvset XYZ (Note: set: already include in code please dont add with vvset)
+.EXAMPLE
+	PS:> Set-A9VVolStorageContainer -Create -vvset XYZ
 .NOTES
 	This command requires a SSH type connection.
 #>

@@ -53,7 +53,7 @@ Function Get-A9Vv
 	pvc-96e135f0-3736-447d-988a-75b mongok8s-dml 256     1024    1024    0           0           0
 	pvc-e3c5a4f0-e58b-400c-81a9-6b5 mongok8s-dml 256     1024    1024    0
 .EXAMPLE
-	PS:> Get-A9Vv -useAPI 
+	PS:> Get-A9Vv 
 
 	Get the list of virtual volumes using a SSH methof
 .EXAMPLE
@@ -92,9 +92,7 @@ Function Get-A9Vv
 [CmdletBinding(DefaultParameterSetName='API')]
 Param(	[Parameter(ParameterSetName='API')]		
 		[Parameter(ParameterSetName='SSH')]	[String]	$VVName,
-
-		[Parameter(ParameterSetName='API',Mandatory=$true)]	[Switch]	$UseAPI,
-		[Parameter(ParameterSetName='SSH',Mandatory=$true)]	[Switch]	$UseSSH,
+		[Parameter(ParameterSetName='SSH')]	[Switch]	$UseSSH,
 		[Parameter(ParameterSetName='API')]	[String]	$WWN,
 		[Parameter(ParameterSetName='API')]	[String]	$UserCPG,
 		[Parameter(ParameterSetName='API')]	[String]	$SnapCPG,
@@ -107,11 +105,26 @@ Param(	[Parameter(ParameterSetName='API')]
 		[Parameter(ParameterSetName='SSH')]	[String[]]	$CPGName
 )
 Begin 
-{	if ( $UseAPI ) { Test-A9Connection -ClientType 'API'} 	 
-	if ( $UseSSH ) { Test-A9Connection -ClientType 'SshClient'} 	 
-}
+{	if ( $PSCmdlet.ParameterSetName -eq 'API' )
+            {	if ( Test-A9Connection -CLientType 'API' -returnBoolean )
+                    {	$PSetName = 'API'
+                    }
+                else{	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
+                            {	$PSetName = 'SSH'
+                            }
+                    }
+            }
+            elseif ($PSCmdlet.ParameterSetName -eq 'ssh' )	
+            {	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
+                    {	$PSetName = 'SSH'
+                    }
+                else{	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
+                        return
+                    }
+            }
+    }
 Process 
-{	switch($PSCmdlet.ParameterSetName)
+{	switch($PSetName)
 	{	'API'	
 				{	$Result = $null
 					$dataPS = $null	
@@ -189,27 +202,22 @@ Process
 					if ($DomainName)	{	$GetvVolumeCmd += " -domain $DomainName"	}	
 					if ($vvName)		{	$GetvVolumeCmd += " $vvName"	}
 					$Result = Invoke-A9CLICommand -cmds $GetvVolumeCmd
-					if($Result -match "no vv listed")	
-						{	write-warning "FAILURE: No vv $vvName found"
-							return 
-						}
-					$Result = $Result | where-object 	{ ($_ -notlike '*total*') -and ($_ -notlike '*---*')} ## Eliminate summary lines
+					write-verbose "The Raw output is `n$Result"
+					# $Result = $Result | where-object 	{ ($_ -notlike '*total*') -and ($_ -notlike '*---*')} ## Eliminate summary lines
 					if ( $Result.Count -gt 1)
 						{	$tempFile = [IO.Path]::GetTempFileName()
-							$LastItem = $Result.Count -2  
-							foreach ($s in  $Result[0..$LastItem] )
+							$s = 'Name,CPG,Adm(MiB),Data(MiB),New_Adm(Mib),New_Data(MiB)'
+							Add-Content -Path $tempFile -Value $s
+							foreach ($s in  $Result[2..($Result.count -3)] )
 								{	$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
-									$s= $s.Trim() -replace ',Adm,Snp,Usr,Adm,Snp,Usr',',Adm(MB),Snp(MB),Usr(MB),New_Adm(MB),New_Snp(MB),New_Usr(MB)' 	
+									$s= $s.Trim()	
 									Add-Content -Path $tempFile -Value $s
 								}
-							if($CPGName){ Import-Csv $tempFile | where-object {$_.CPG -like $CPGName} }
-							else 		{ Import-Csv $tempFile }
+							$Result=Import-Csv $tempFile
 							Remove-Item $tempFile
+							if($CPGName){ $Result = $Result | where-object {$_.CPG -like $CPGName} }
 						}	
-					else
-						{	write-warning "FAILURE: No vv $vvName found error: " 
-							return $result	
-						}	
+					return $Result	
 				}
 	}
 }
@@ -239,8 +247,6 @@ Function Remove-A9Vv
     Specify name of the volume to be removed. This parrameter is the only allowed parameter if using the API. All other variables require the usage of a SSH type connection
 .PARAMETER whatif
     If present, perform a dry run of the operation and no VLUN is removed. Only valid for SSH type connections	
-.PARAMETER force
-	If present, perform forcible delete operation. Only valid for SSH type connections	
 .PARAMETER Pat
     Specifies that specified patterns are treated as glob-style patterns and that all VVs matching the specified pattern are removed. Only valid for SSH type connections	
 .PARAMETER Stale
@@ -256,10 +262,9 @@ Function Remove-A9Vv
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
 	param(
-		[Parameter(Mandatory=$true, ParameterSetName='API')]
-		[Parameter(Mandatory=$true, ParameterSetName='SSH')]	[String]	$vvName,
+		[Parameter(Mandatory, ParameterSetName='API')]
+		[Parameter(Mandatory, ParameterSetName='SSH')]			[String]	$vvName,
 		[Parameter(ParameterSetName='SSH')]						[Switch]	$whatif, 
-		[Parameter(ParameterSetName='SSH')]						[Switch]	$force, 
 		[Parameter(ParameterSetName='SSH')]						[Switch]	$Pat, 
 		[Parameter(ParameterSetName='SSH')]						[Switch]	$Stale, 
 		[Parameter(ParameterSetName='SSH')]						[Switch]	$Expired, 
@@ -301,12 +306,7 @@ process
 									return $Result.StatusDescription
 								}    	
 						}
-			'SSH'		{	if (!(($force) -or ($whatif)))
-								{	return "FAILURE : Specify -force or -whatif options to delete or delete dryrun of a virtual volume"
-								}
-							$ListofLuns = Get-VvList -vvName $vvName -SANConnection $SANConnection
-							if($ListofLuns -match "FAILURE")	{	return "FAILURE : No vv $vvName found"	}
-							$ActionCmd = "removevv "
+			'SSH'		{	$ActionCmd = "removevv "
 							if ($Nowait)	{	$ActionCmd += "-nowait "	}
 							if ($Cascade)	{	$ActionCmd += "-cascade "	}
 							if ($Snaponly)	{	$ActionCmd += "-snaponly "	}
@@ -316,6 +316,7 @@ process
 							if ($whatif)	{	$ActionCmd += "-dr "		}
 							else			{	$ActionCmd += "-f "			}
 							$successmsglist = @()
+							$ListofLuns = Get-VvList -vvName $vvName
 							if ($ListofLuns)
 								{	foreach ($vVolume in $ListofLuns)
 										{	$vName = $vVolume.Name

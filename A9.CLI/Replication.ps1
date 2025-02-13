@@ -2,6 +2,239 @@
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
+Function New-A9RCopyGroup_CLI
+{
+<#
+.SYNOPSIS
+	The New RCopyGroup command creates a remote-copy volume group.
+.DESCRIPTION
+    The New RCopyGroup command creates a remote-copy volume group.   
+.PARAMETER domain
+	Creates the remote-copy group in the specified domain.
+.PARAMETER Usr_Cpg_Name
+	Specify the local user CPG and target user CPG that will be used for volumes that are auto-created.
+.PARAMETER Target_TargetCPG
+	Specify the local user CPG and target user CPG that will be used for volumes that are auto-created.
+.PARAMETER Snp_Cpg_Name
+	Specify the local snap CPG and target snap CPG that will be used for volumes that are auto-created.
+.PARAMETER Target_TargetSNP
+	Specify the local snap CPG and target snap CPG that will be used for volumes that are auto-created.
+.PARAMETER GroupName
+	Specifies the name of the volume group, using up to 22 characters if the mirror_config policy is set, or up to 31 characters otherwise. This name is assigned with this command.	
+.PARAMETER TargetName	
+	Specifies the target name associated with this group.
+.PARAMETER Mode 	
+	sync = synchronous replication
+	async = asynchronous streaming replication
+	periodic = periodic asynchronous replication
+.EXAMPLE	
+	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST -TargetName CHIMERA03 -Mode sync
+.EXAMPLE
+	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST1 -TargetName CHIMERA03 -Mode async
+.EXAMPLE
+	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST2 -TargetName CHIMERA03 -Mode periodic
+.EXAMPLE
+	PS:> New-A9RCopyGroup_CLI -domain DEMO -GroupName AS_TEST3 -TargetName CHIMERA03 -Mode periodic     
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter(Mandatory=$true)]	[String]	$GroupName,
+		[Parameter(Mandatory=$true)]	[String]	$TargetName,	
+		[Parameter()][ValidateSet("sync","async","periodic")]
+						[String]	$Mode,
+		[Parameter()]	[String]	$domain,
+		[Parameter(ParameterSetName='usrCPG',mandatory)]	[String]	$Usr_Cpg_Name,
+		[Parameter(ParameterSetName='usrCPG',mandatory)]
+		[Parameter(ParameterSetName='snpCPG',mandatory)]	[String]	$Target_TargetCPG,
+		[Parameter(ParameterSetName='snpCPG',mandatory)]	[String]	$Snp_Cpg_Name,		
+		[Parameter()]	[String]	$Target_TargetSNP
+	)	
+Begin
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
+Process	
+	{	$cmd= "creatercopygroup"	
+		if ($domain)	{	$cmd+=" -domain $domain"	}
+		if ($Usr_Cpg_Name)	
+			{	$cmd+=" -usr_cpg $Usr_Cpg_Name $TargetName"
+				$cmd+= ":$Target_TargetCPG "			
+			}
+		if ($Snp_Cpg_Name)	
+			{	$cmd+=" -snp_cpg $Snp_Cpg_Name $TargetName"
+				$cmd+= ":$Target_TargetSNP "			
+			}
+		$cmd+=" $GroupName $TargetName"
+		if ($Mode)		{	$cmd+=":$Mode "	}
+		$Result = Invoke-A9CLICommand -cmds  $cmd	
+	}
+End
+	{	if([string]::IsNullOrEmpty($Result))
+			{	write-host "Success : Executing  New-A9RCopyGroup Command" 
+				return  
+			}
+		else
+			{	write-error "While Executing  New-RCopyGroup" 	
+				return $Result 
+			} 	
+	}
+}
+
+Function New-A9RCopyGroupCPG_CLI
+{
+<#
+.SYNOPSIS
+	The New-RCopyGroupCPG command creates a remote-copy volume group.
+.DESCRIPTION
+    The New-RCopyGroupCPG command creates a remote-copy volume group.   
+.PARAMETER UsrCpg
+	The type of new Copy group will be a UserCPG and will require the LocalUserCPG, the TargetUserCPG:TargetUserCPG. 
+.PARAMETER SnpCpg
+	The type of new Copy group will be a SnapCPG and will require the LocalSnapCPG, the TargetSnapCPG:TargetSnapCPG. 
+.PARAMETER UsrTargetName
+	A required paremeter whe doing a UserCpg type replication. Points to the targets location
+.PARAMETER SnpTargetName
+	A required paremeter whe doing a SnapCpg type replication. Points to the targets location
+.PARAMETER LocalUserCPG
+	Specifies the local user CPG and target user CPG that will be used for volumes that are auto-created.
+.PARAMETER TargetUserCPG
+	-TargetUserCPG target:Targetcpg The local CPG will only be used after fail-over and recovery.
+.PARAMETER LocalSnapCPG
+	Specifies the local snap CPG and target snap CPG that will be used for volumes that are auto-created. 
+.PARAMETER TargetSnapCPG
+	-LocalSnapCPG  target:Targetcpg
+	.PARAMETER domain
+	Creates the remote-copy group in the specified domain.
+.PARAMETER GroupName
+	Specifies the name of the volume group, using up to 22 characters if the mirror_config policy is set, or up to 31 characters otherwise. This name is assigned with this command.	
+.PARAMETER TargetName
+	Specifies the target name associated with this group.
+.PARAMETER Mode 	
+	sync—synchronous replication
+	async—asynchronous streaming replication
+	periodic—periodic asynchronous replication
+.EXAMPLE
+	New-A9RCopyGroupCPG_CLI -GroupName ABC -TargetName XYZ -Mode Sync	
+.EXAMPLE  
+	New-A9RCopyGroupCPG_CLI -UsrCpg -LocalUserCPG BB -UsrTargetName XYZ -TargetUserCPG CC -GroupName ABC -TargetName XYZ -Mode Sync
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter(Mandatory=$true)]					[String]	$GroupName,
+		[Parameter(Mandatory=$true)]					[String]	$TargetName,
+		[Parameter(Mandatory=$true)][ValidateSet("sync","async","periodic")]
+														[String]	$Mode,
+		[Parameter(ParameterSetName='Dom',mandatory)]	[String]	$domain,
+		[Parameter(parametersetname='usr',mandatory)]	[Switch]	$UsrCpg,
+		[Parameter(parametersetname='usr',mandatory)]	[String]	$LocalUserCPG,
+		[Parameter(parametersetname='usr',mandatory)]	[String]	$TargetUserCPG,
+		[Parameter(parametersetname='usr',mandatory)]	[String]	$UsrTargetName,
+		[Parameter(parametersetname='snp',mandatory)]	[Switch]	$SnpCpg,
+		[Parameter(parametersetname='snp',mandatory)]	[String]	$LocalSnapCPG,
+		[Parameter(parametersetname='snp',mandatory)]	[String]	$TargetSnapCPG,
+		[Parameter(parametersetname='snp',mandatory)]	[String]	$SnpTargetName
+	)		
+Begin
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
+Process	
+	{	$cmd= "creatercopygroup"
+		if ($domain)	
+			{	$cmd+=" -domain $domain"	
+		}	
+		if($UsrCpg)
+			{	$cmd+=" -usr_cpg $LocalUserCPG $UsrTargetName"
+				$cmd+=":$TargetUserCPG "
+			}
+		if($SnpCpg)
+			{	$cmd+=" -snp_cpg $LocalSnapCPG $SnpTargetName"	
+				$cmd+=":$TargetSnapCPG "
+			}
+		$cmd+=" $GroupName $TargetName"
+		$cmd+=":$Mode "
+		$Result = Invoke-A9CLICommand -cmds  $cmd	
+	}
+end
+	{	if([string]::IsNullOrEmpty($Result))	
+				{	write-host "Success : Executing  New-RCopyGroupCPG Command" -ForegroundColor green
+				} 
+		return $Result
+	}
+}
+
+Function New-A9RCopyTarge_CLI
+{
+<#
+.SYNOPSIS
+	The New RCopyTarget command creates a remote-copy target definition.
+.DESCRIPTION
+    The New RCopyTarget command creates a remote-copy target definition.
+.PARAMETER TargetName
+	The name of the target definition to be created, specified by using up to 23 characters.
+.PARAMETER RCIP
+	remote copy over IP (RCIP).
+.PARAMETER RCFC
+	remote copy over Fibre Channel (RCFC).
+.PARAMETER Node_WWN
+	The node's World Wide Name (WWN) on the target system (Fibre Channel target only).
+.PARAMETER NSP_IP
+	Node number:Slot number:Port Number:IP Address of the Target to be created.
+.PARAMETER NSP_WWN
+	Node number:Slot number:Port Number:World Wide Name (WWN) address on the target system.
+.EXAMPLE  
+	PS:> New-A9RCopyTarget_CLI -TargetName demo1 -RCIP -NSP_IP 1:2:3:10.1.1.1
+
+	This Example creates a remote-copy target, with option N_S_P_IP Node ,Slot ,Port and IP address. as 1:2:3:10.1.1.1 for Target Name demo1
+.EXAMPLE
+	PS:> New-A9RCopyTarget_CLI -TargetName demo1 -RCIP -NSP_IP "1:2:3:10.1.1.1,1:2:3:10.20.30.40"
+
+	This Example creates a remote-copy with multiple targets
+.EXAMPLE 
+	PS:> New-A9RCopyTarget_CLI -TargetName demo1 -RCFC -Node_WWN 1122112211221122 -NSP_WWN 1:2:3:1122112211221122
+
+	This Example creates a remote-copy target, with option NSP_WWN Node ,Slot ,Port and WWN as 1:2:3:1122112211221122 for Target Name demo1
+.EXAMPLE 
+	PS:> New-A9RCopyTarget_CLI -TargetName demo1 -RCFC -Node_WWN 1122112211221122 -NSP_WWN "1:2:3:1122112211221122,1:2:3:2244224422442244"
+
+	This Example creates a remote-copy of FC with multiple targets
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter(ParameterSetName='IP', Mandatory=$true)]	[switch]	$RCIP,
+		[Parameter(ParameterSetName='FC', Mandatory=$true)]	[switch]	$RCFC,
+		[Parameter()]										[switch]	$Disabled,
+		[Parameter()]										[String]	$TargetName,
+		[Parameter(ParameterSetName='FC', Mandatory=$true)]	[String]	$Node_WWN,
+		[Parameter(ParameterSetName='IP', Mandatory=$true)]	[String]	$NSP_IP,
+		[Parameter(ParameterSetName='FC', Mandatory=$true)]	[String]	$NSP_WWN
+)	
+Begin
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
+Process	
+	{	$cmd= "creatercopytarget"
+		if ($Disabled)		{		$cmd+=" -disabled "	}
+		$cmd+=" $TargetName "
+		if ($RCIP)		{	$s = $NSP_IP
+							$s= [regex]::Replace($s,","," ")	
+							$cmd+=" IP $s"	
+						}
+		if ($RCFC)		{	$s = $NSP_WWN
+							$s= [regex]::Replace($s,","," ")	
+							$cmd+=" FC $Node_WWN $s"
+						}		
+		$Result = Invoke-A9CLICommand -cmds  $cmd	
+	}
+end
+	{	if([string]::IsNullOrEmpty($Result))	
+			{	Write-host "Success : Executing New-RCopyTarget Command " -ForegroundColor Green	
+			}
+		return $Result
+	}
+}
+
 Function Add-A9RCopyTarget_CLI
 {
 <#
@@ -243,8 +476,8 @@ Function Disable-A9RCopyTarget_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Target_name,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Group_name
+param(	[Parameter()]	[String]	$Target_name,
+		[Parameter()]	[String]	$Group_name
 	)	
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -344,12 +577,12 @@ Function Get-A9RCopy_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Detailed,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$QW,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Domain,
+param(	[Parameter()]	[switch]	$Detailed,
+		[Parameter()]	[switch]	$QW,
+		[Parameter()]	[String]	$Domain,
 		[Parameter()]							[switch]	$Links,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groups,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Targets
+		[Parameter()]	[String]	$Groups,
+		[Parameter()]	[String]	$Targets
 )		
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -490,8 +723,8 @@ Function Remove-A9RCopyTarget_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$ClearGroups,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$TargetName
+param(	[Parameter()]	[switch]	$ClearGroups,
+		[Parameter()]	[String]	$TargetName
 )		
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -999,10 +1232,10 @@ Function Set-A9RCopyTargetWitness_CLI
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]			[ValidateSet('witness','create','start','stop','remove','check')]	
 												[String]	$SubCommand,		
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Remote,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Witness_ip,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Target,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Node_id
+		[Parameter()]	[switch]	$Remote,
+		[Parameter()]	[String]	$Witness_ip,
+		[Parameter()]	[String]	$Target,
+		[Parameter()]	[String]	$Node_id
 )		
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -1198,8 +1431,8 @@ Function Stop-A9RCopy_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$StopGroups,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Clear
+param(	[Parameter()]	[switch]	$StopGroups,
+		[Parameter()]	[switch]	$Clear
 )	
 Begin
 {	Test-A9Connection -ClientType 'SshClient'

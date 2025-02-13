@@ -1,115 +1,18 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
-Function Get-A9SystemReportAlertCrit
+
+# General System Rerporter Commands
+Function Get-A9SystemReporter
 {
 <#
 .SYNOPSIS
-    Shows the criteria that System Reporter evaluates to determine if a performance alert should be generated.
+    Displays the amount of space consumed by the various System Reporter databases on the System Reporter volume.
 .DESCRIPTION
-    Shows the criteria that System Reporter evaluates to determine if a performance alert should be generated.       
-.EXAMPLE
-    PS:> Get-A9SystemReportAlertCrit 
-
-	shows the criteria that System Reporter evaluates to determine if a performance alert should be generated.
-.EXAMPLE
-    PS:> Get-A9SystemReportAlertCrit -Daily
-
-	Example displays all the criteria evaluated on an hourly basis:
-.EXAMPLE
-	PS:> Get-A9SystemReportAlertCrit -Hires
-.PARAMETER Daily
-	This criterion will be evaluated on a daily basis at midnight.
-.PARAMETER Hourly
-	This criterion will be evaluated on an hourly basis.
-.PARAMETER Hires
-	This criterion will be evaluated on a high resolution (5 minute) basis. This is the default.
-.PARAMETER Major
-	This alert should require urgent action.
-.PARAMETER Minor
-	This alert should require not immediate action.
-.PARAMETER Info
-	This alert is informational only. This is the default.
-.PARAMETER Enabled
-	Displays only criteria that are enabled.
-.PARAMETER Disabled
-	Displays only criteria that are disabled.
-.PARAMETER Critical
-	Displays only criteria that have critical severity.
-.NOTES
-	Authority:Any role in the system
-	Usage:
-	- Both options and conditions are displayed in the Conditions column. The only exception is that frequency options (-daily, -hourly, or -hires) are only displayed under the Freq column.
-	- By default, all criteria are shown (all frequencies, enabled, disabled and all severities).
-#>
-[CmdletBinding(DefaultParameterSetName='default')]
-param(	[Parameter(ParameterSetName='Hourly',mandatory)]	[switch]	$Hourly ,
-		[Parameter(ParameterSetName='Daily',mandatory)]		[switch]    $Daily ,
-		[Parameter(ParameterSetName='Hires',mandatory)]		[switch]    $Hires ,
-		[Parameter()]	[switch]    $Major ,
-		[Parameter()]	[switch]    $Minor ,
-		[Parameter()]	[switch]    $Info ,
-		[Parameter()]	[switch]    $Enabled ,
-		[Parameter()]	[switch]    $Disabled ,
-		[Parameter()]	[switch]    $Critical
-	)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$version1 = Get-Version -S  -SANConnection $SANConnection
-	if( $version1 -lt "3.2.1")	{	return "Current OS version $version1 does not support these cmdlet"	}
-	$srinfocmd = 'showsralertcrit '
-	if($Hourly)		{	$srinfocmd += ' -hourly '	}
-	if($Daily)		{	$srinfocmd += ' -daily '	}
-	if($Hires)		{	$srinfocmd += ' -hires '	}
-	if($Major)		{	$srinfocmd += ' -major '	}
-	if($Minor)		{	$srinfocmd += ' -minor '	}
-	if($Info)		{	$srinfocmd += ' -info '		}
-	if($Enabled)	{	$srinfocmd += ' -enabled '	}
-	if($Disabled)	{	$srinfocmd += ' -disabled '	}
-	if($Critical)	{	$srinfocmd += ' -critical '	}
-	write-verbose "Get alert criteria command => $srinfocmd"
-	$Result = Invoke-A9CLICommand -cmds  $srinfocmd	
-
-	if(( $Result -match "Invalid") -or ($Result -match "Error"))	
-		{	write-error "FAILURE : $Result" 
-			return 	
-		}
-	if($Result -match "No criteria listed")	
-		{	write-warning "No srcriteria listed"
-			return 	}
-	$tempFile = [IO.Path]::GetTempFileName()
-	$range1 = $Result.count-3
-	foreach ($s in  $Result[0..$range1] )
-		{	$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +"," ")
-			$s= [regex]::Replace($s," ",",")
-			Add-Content -Path $tempFile -Value $s
-		}
-	Import-Csv $tempFile
-	Remove-Item  $tempFile
-}
-}
-
-Function Get-A9SystemReportAOMoves
-{
-<#
-.SYNOPSIS
-    The command shows the space that AO has moved between tiers.	
-.DESCRIPTION
-    The command shows the space that AO has moved between tiers.
-.EXAMPLE
-	PS:> Get-A9SystemReportAOMoves -btsecs 7200
-.EXAMPLE
-	PS:> Get-A9SystemReportAOMoves -etsecs 7200
-.EXAMPLE
-	PS:> Get-A9SystemReportAOMoves -oneline 
-.EXAMPLE
-	PS:> Get-A9SystemReportAOMoves -withvv 
-.EXAMPLE
-	PS:> Get-A9SystemReportAOMoves -VV_name XYZ
-.PARAMETER btsecs 
+    Displays the amount of space consumed by the various System Reporter databases on the System Reporter volume.
+.PARAMETER ldrg
+	Displays which LD region statistic samples are available.  This is used with the -btsecs and -etsecs options.
+.PARAMETER Btsecs
 	Select the begin time in seconds for the report. The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
 	- The absolute time as a text string in one of the following formats:
@@ -119,50 +22,126 @@ Function Get-A9SystemReportAOMoves
 		- Time string: "11:00:00" or 11:00:00
 	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
 		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the time at which the report begins is 12 ho                                                          urs ago.
+	If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):
+		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
+		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
+		- For daily, the default begin time is 90 days ago (-btsecs -90d).
+	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
 	If -btsecs 0 is specified then the report begins at the earliest sample.
-.PARAMETER etsecs 
-	Select the end time in seconds for the report. The value can be specified as either
+.PARAMETER Etsecs
+	Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
 	- The absolute time as a text string in one of the following formats:
 		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
 		- Full time string excluding time zone: "2012-10-26 11:00:00"
 		- Date string: "2012-10-26" or 2012-10-26
 		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+	- A negative number indicating the number of seconds before the	current time. Instead of a number representing seconds, <secs> can
 		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the report ends with the most recent sample.
-.PARAMETER oneline
-	Show data in simplified format with one line per AOCFG.
-.PARAMETER VV_name
-	Limit the analysis to VVs with names that match one or more of the specified names or glob-style patterns. VV set names must be
-	prefixed by "set:".  Note that snapshot VVs will not be considered since only base VVs have region space.
-.PARAMETER withvv
-	Show the data for each VV.
+.EXAMPLE
+	PS:> Get-A9SystemReporter
+
+	Node Total(MiB) Used(MiB) Used%
+	-------------------------------
+	2     110302     23312    23
+
+	Filetype info:
+					-(MiB)- -Target- --------Retention---------
+	FileType   Count   Usage   Period Target Max Estimate Actual EarliestDate        EndEstimate
+	----------------------------------------------------------------------------------------------------
+	ai             4    1528      30s    10d 31d    1.34y   110d 2024-10-24 17:03:30 356 days from now
+	aomoves        0       0      ---    --- ---      ---    --- ---                 ---
+	baddb          0       0      ---    --- ---      ---    --- ---                 ---
+	daily          1      69       1d     5y ---     10y+   110d 2024-10-25 00:00:00 10+ years from now
+	hires         20   19979       5m    10d ---      89d   110d 2024-10-24 17:05:00 12 days from now
+	hourly         2    1709       1h    90d ---    2.20y   110d 2024-10-24 18:00:00 1.99 years from now
+.EXAMPLE
+    Get-A9SystemReporter -Btsecs 10
+.NOTES
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$btsecs,
-		[Parameter()]	[String]	$etsecs,
-		[Parameter()]	[switch]	$oneline,
-		[Parameter()]	[String]	$VV_name,
-		[Parameter()]	[switch]	$withvv		
-)	
+param(	[Parameter()]	[switch]	$ldrg,
+		[Parameter()]	[String]	$Btsecs,
+		[Parameter()]	[String]	$Etsecs
+	)
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$cmd= "sraomoves "
-	if ($btsecs)	{	$cmd+=" -btsecs $btsecs "		}	
-	if ($etsecs)	{	$cmd+=" -etsecs $etsecs "		}
-	if ($oneline)	{	$cmd+=" -oneline "		}
-	if ($VV_name)	{	$cmd+=" -vv $VV_name "		}
-	if ($withvv)	{	$cmd+=" -withvv "		}	
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	write-verbose " The Get-SRAOMoves command creates and admits physical disk definitions to enable the use of those disks  " 
-	return 	$Result	
-} 
+	{	$srinfocmd = "showsr "
+		if($ldrg)	{	$srinfocmd += "-ldrg "	}
+		if($Btsecs)	{	$srinfocmd += "-btsecs $Btsecs "	}
+		if($Etsecs)	{	$srinfocmd += "-etsecs $Etsecs "	}
+		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
+		return  $Result	
+	}
 }
 
+Function Start-A9SystemReporter
+{
+<#
+.SYNOPSIS
+    To start System reporter.
+.DESCRIPTION
+    To start System reporter.
+.EXAMPLE
+    PS:> Start-A9SystemReporter
+
+	Starts System Reporter
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param()
+Begin
+	{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+	}
+Process	
+	{	$srinfocmd = "startsr -f "
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
+		if(-not $Result)	
+			{	write-host "Success: Started System Reporter" -ForegroundColor green
+			}
+		elseif($Result -match "Cannot startsr, already started")	
+			{	write-warning "Command Execute Successfully :- Cannot startsr, already started"	
+			}
+		else{	return $Result	
+			}		
+	}
+}
+
+Function Stop-A9SSystemReporter
+{
+<#
+.SYNOPSIS
+    To stop System reporter.
+.DESCRIPTION
+    To stop System reporter.
+.EXAMPLE
+    PS:> Stop-A9SSystemReporter
+
+	Stop System Reporter
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param()
+Begin
+	{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+	}
+Process	
+	{	$srinfocmd = "stopsr -f "
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
+		if(-not $Result)	
+			{	write-host "Success: Stopped System Reporter" -ForegroundColor green 	
+			}
+		return $Result
+	}
+}
+# Inventory Logical Constructs, Logical Disks, CPG, Host Ports
 Function Get-A9SystemReportCpgSpace
 {
 <#
@@ -170,14 +149,6 @@ Function Get-A9SystemReportCpgSpace
     Command displays historical space data reports for common provisioning groups (CPGs).
 .DESCRIPTION
     Command displays historical space data reports for common provisioning groups (CPGs).	
-.EXAMPLE
-    PS:> Get-A9SystemReportCpgSpace
-
-	Command displays historical space data reports for common provisioning groups (CPGs).
-.EXAMPLE
-    PS:> Get-A9SystemReportCpgSpace -Option hourly -btsecs -24h fc*
-
-	example displays aggregate hourly CPG space information for CPGs with names that match the pattern "fc*" beginning 24 hours ago:
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
@@ -218,6 +189,19 @@ Function Get-A9SystemReportCpgSpace
 	Limit the data to RAID of the specified types. Allowed types are 0, 1, 5 and 6
 .PARAMETER CpgName
 	CPGs matching either the specified CPG_name or glob-style pattern are included. This specifier can be repeated to display information for multiple CPGs. If not specified, all CPGs are included.
+.EXAMPLE
+    PS:> Get-A9SystemReportCpgSpace | ft *
+
+	Date       Time     TimeZone Secs       PrivateBase(MB) PrivateSnap(MB) Shared(MB) Free(MB) Total(MB) UsableFree(MB)
+	----       ----     -------- ----       --------------- --------------- ---------- -------- --------- --------------
+	2025-02-11 04:55:00 MST      1739274900 12667725        1137150         8287650    22092525 47082000  4.14
+	2025-02-11 05:00:00 MST      1739275200 12737550        1137150         8217825    22092525 47082000  4.11
+	2025-02-11 05:05:00 MST      1739275500 12798450        1137150         8156925    22092525 47082000  4.1
+	2025-02-11 05:10:00 MST      1739275800 12843075        1137150         8112300    22092525 47
+.EXAMPLE
+    PS:> Get-A9SystemReportCpgSpace -Option hourly -btsecs -24h fc*
+
+	example displays aggregate hourly CPG space information for CPGs with names that match the pattern "fc*" beginning 24 hours ago:
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$attime,
@@ -234,7 +218,7 @@ param(	[Parameter()]	[switch]	$attime,
 		[Parameter()]	[String]	$CpgName
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$srinfocmd = "srcpgspace"
@@ -272,6 +256,9 @@ Process
 		}
 	write-verbose "System reporter command => $srinfocmd"
 	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
+}
+End
+{
 	if($Result -contains "FAILURE")
 		{	Remove-Item  $tempFile
 			return "FAILURE : $Result"
@@ -282,34 +269,120 @@ Process
 			return "No data available"
 		}
 	foreach ($s in  $Result[$rangestart..$range1] )
-		{	$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +"," ")
-			$s= [regex]::Replace($s," ",",")
+		{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 			Add-Content -Path $tempFile -Value  $s
 		}
-	Import-Csv $tempFile
+	$Result = Import-Csv $tempFile
 	Remove-Item  $tempFile
+	return $Result
 }
 }
+
+# Inventory Hardware Components Physical Disks, Nodes, 
+
+# Events and Alerts for System Reporter
+Function Get-A9SystemReportAlertCrit
+{
+<#
+.SYNOPSIS
+    Shows the criteria that System Reporter evaluates to determine if a performance alert should be generated.
+.DESCRIPTION
+    Shows the criteria that System Reporter evaluates to determine if a performance alert should be generated.       
+.PARAMETER Daily
+	This criterion will be evaluated on a daily basis at midnight.
+.PARAMETER Hourly
+	This criterion will be evaluated on an hourly basis.
+.PARAMETER Hires
+	This criterion will be evaluated on a high resolution (5 minute) basis. This is the default.
+.PARAMETER Major
+	This alert should require urgent action.
+.PARAMETER Minor
+	This alert should require not immediate action.
+.PARAMETER Info
+	This alert is informational only. This is the default.
+.PARAMETER Enabled
+	Displays only criteria that are enabled.
+.PARAMETER Disabled
+	Displays only criteria that are disabled.
+.PARAMETER Critical
+	Displays only criteria that have critical severity.
+.EXAMPLE
+    PS:> Get-A9SystemReportAlertCrit 
+
+	shows the criteria that System Reporter evaluates to determine if a performance alert should be generated.
+.EXAMPLE
+    PS:> Get-A9SystemReportAlertCrit -Daily
+
+	Example displays all the criteria evaluated on an hourly basis:
+.EXAMPLE
+	PS:> Get-A9SystemReportAlertCrit -Hires
+.NOTES
+	Authority:Any role in the system
+	Usage:
+	- Both options and conditions are displayed in the Conditions column. The only exception is that frequency options (-daily, -hourly, or -hires) are only displayed under the Freq column.
+	- By default, all criteria are shown (all frequencies, enabled, disabled and all severities).
+#>
+[CmdletBinding(DefaultParameterSetName='default')]
+param(	[Parameter(ParameterSetName='Hourly',mandatory)]	[switch]	$Hourly ,
+		[Parameter(ParameterSetName='Daily',mandatory)]		[switch]    $Daily ,
+		[Parameter(ParameterSetName='Hires',mandatory)]		[switch]    $Hires ,
+		[Parameter()]	[switch]    $Major ,
+		[Parameter()]	[switch]    $Minor ,
+		[Parameter()]	[switch]    $Info ,
+		[Parameter()]	[switch]    $Enabled ,
+		[Parameter()]	[switch]    $Disabled ,
+		[Parameter()]	[switch]    $Critical,
+		[Parameter()]	[switch]    $ShowRaw
+		
+	)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process	
+{	$srinfocmd = 'showsralertcrit '
+	if($Hourly)		{	$srinfocmd += ' -hourly '	}
+	if($Daily)		{	$srinfocmd += ' -daily '	}
+	if($Hires)		{	$srinfocmd += ' -hires '	}
+	if($Major)		{	$srinfocmd += ' -major '	}
+	if($Minor)		{	$srinfocmd += ' -minor '	}
+	if($Info)		{	$srinfocmd += ' -info '		}
+	if($Enabled)	{	$srinfocmd += ' -enabled '	}
+	if($Disabled)	{	$srinfocmd += ' -disabled '	}
+	if($Critical)	{	$srinfocmd += ' -critical '	}
+	write-verbose "Get alert criteria command => $srinfocmd"
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd	
+}
+End
+{	if ($ShowRaw) { Return $Result }
+	if(( $Result -match "Invalid") -or ($Result -match "Error"))	
+		{	write-warning "FAILURE :" 
+		}
+	elseif($Result -match "No criteria listed")	
+		{	write-warning "No srcriteria listed"
+		}
+	else{
+			$tempFile = [IO.Path]::GetTempFileName()
+			foreach ( $s in  $Result[0..($Result.count-3)] )
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+					Add-Content -Path $tempFile -Value $s
+				}
+			$Result = Import-Csv $tempFile
+			Remove-Item  $tempFile
+		}
+	return $Result
+}
+}
+
+# Performance Histograms
+
 
 Function Get-A9SystemReportHistogramLogicalDisk
 {
 <#
 .SYNOPSIS
     Displays historical histogram performance data reports for logical disks.
-	
 .DESCRIPTION
     Displays historical histogram performance data reports for logical disks.
-.EXAMPLE
-    PS:> Get-A9SystemReportHistogramLogicalDisk
-
-	Displays historical histogram performance data reports for logical disks.
-.EXAMPLE
-    PS:> Get-A9SystemReportHistogramLogicalDisk -Hourly -btsecs -24h
-
-	example displays aggregate hourly histogram performance statistics for all logical disks beginning 24 hours ago:
-.EXAMPLE
-    PS:> Get-A9SystemReportHistogramLogicalDisk -Metric Both
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
@@ -357,6 +430,22 @@ Function Get-A9SystemReportHistogramLogicalDisk
 	both - (Default)Display both I/O time and I/O size histograms
 	time - Display only the I/O time histogram
 	size - Display only the I/O size histogram
+.EXAMPLE
+    PS:> Get-A9SystemReportHistogramLogicalDisk -LDName tp-0-sd-0.108 | ft *
+
+	Date       Time     TimeZone Secs       0.50(millisec) 1(millisec) 2(millisec) 4(millisec) 8(millisec) 16(millisec) 32(millisec) 64(millisec) 128(millisec) 256(millisec) 4k(bytes) 8k(bytes) 16k(bytes) 32k(bytes)
+	----       ----     -------- ----       -------------- ----------- ----------- ----------- ----------- ------------ ------------ ------------ ------------- ------------- --------- --------- ---------- ----------
+	2025-02-11 12:45:00 MST      1739303100 3588           5124        7506        4960        6738        3899         3907         1336         394           38            12        172       3          0
+	2025-02-11 12:50:00 MST      1739303400 2676           643         595         373         499         79           24           0            2             0             31        501       12         0
+	2025-02-11 12:55:00 MST      1739303700 1433           913         624         427         523         113          9            1            0             1             94        296       3          0
+	2025-02-11 13:00:00 MST      1739304000 509            113         147         94          203         99           15           5            0             0             32        237       3          0
+		...
+.EXAMPLE
+    PS:> Get-A9SystemReportHistogramLogicalDisk -Hourly -btsecs -24h
+
+	example displays aggregate hourly histogram performance statistics for all logical disks beginning 24 hours ago:
+.EXAMPLE
+    PS:> Get-A9SystemReportHistogramLogicalDisk -Metric Both
 #>
 [CmdletBinding()]
 param(	[Parameter()]		[switch]		$attime,
@@ -366,44 +455,40 @@ param(	[Parameter()]		[switch]		$attime,
 		[Parameter()]		[switch]        $Daily ,
 		[Parameter()]		[switch]        $Hires ,
 		[Parameter()]		[switch]		$rw,
-		[Parameter()]		[String]		$groupby,
+		[Parameter()][ValidateSet('DOM_NAME','LDID','LD_NAME','CPG_NAME','NODE')]		
+							[String]		$groupby,
 		[Parameter()]		[String]		$cpgName,
 		[Parameter()]		[String]		$node,
 		[Parameter()]		[String]		$LDName,
-		[Parameter()]		[String]		$Metric    
+		[Parameter()][ValidateSet('both','time','size')]
+							[String]		$Metric,
+		[Parameter()]		[Switch]		$ShowRaw
 	)
 Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$srinfocmd = "srhistld "
 	if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
 	if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
-	if($rw)		{	$srinfocmd +=  " -rw "	}
-	if($groupby){	$commarr =  "DOM_NAME","LDID","LD_NAME","CPG_NAME","NODE"
-					$lista = $groupby.split(",")
-					foreach($suba in $lista)
-						{	if(-not ($commarr -eq $suba.toUpper()) )	{	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
-						}
-					$srinfocmd += " -groupby $groupby"
-				}		
-	if($Hourly)	{	$srinfocmd += " -hourly"	}
-	if($Daily)	{	$srinfocmd += " -daily"		}
-	if($Hires)	{	$srinfocmd += " -hires"		}
+	if($rw)		{	$srinfocmd +=  " -rw "				}
+	if($groupby){	$srinfocmd += " -groupby $groupby"	}		
+	if($Hourly)	{	$srinfocmd += " -hourly"			}
+	if($Daily)	{	$srinfocmd += " -daily"				}
+	if($Hires)	{	$srinfocmd += " -hires"				}
 	if($cpgName){	$srinfocmd +=  " -cpg $cpgName "	}
-	if($node)	{	$nodes = $node.split(",")
-					$srinfocmd +=  " -node $nodes "			
-				}
-	if($LDName)	{	$srinfocmd += " $LDName "	}
-	if($Metric)	{	$a = "both","time","size"
-					$l=$Metric
-					if($a -eq $l)	{	$srinfocmd += " -metric $Metric"				}
-					else			{ 	Return "FAILURE : Metric :- $Metric is an Incorrect [ both | time | size ]  can be used only . "	}
-				}
+	if($node)	{	$srinfocmd +=  " -node $node "		}
+	if($LDName)	{	$srinfocmd += " $LDName "			}
+	if($Metric)	{	$srinfocmd += " -metric $Metric"	}
+	if($attime)	{	$srinfocmd += " -attime "			}
+	write-verbose "System reporter command => $srinfocmd"
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd	
+}
+End
+{	
 	$tempFile = [IO.Path]::GetTempFileName()
 	if($attime)
-		{	$srinfocmd += " -attime "
-			write-verbose "System reporter command => $srinfocmd"
+		{	write-verbose "System reporter command => $srinfocmd"
 			if($groupby)	{	$optionname = $groupby.toUpper()	}
 			else			{	$optionname = "LD_NAME"				}
 			Add-Content -Path $tempFile -Value "$optionname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
@@ -421,21 +506,19 @@ Process
 		{	$rangestart = "2"
 			Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
 		}
-	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	$range1  = $Result.count
-	if($range1 -le "3")
+	if ($ShowRaw)	{ return $Result }
+	if( ($Result.count) -le "3")
 		{	Remove-Item  $tempFile
-			return "No data available"
+			Write-warning "No data available"
+			return
 		}
-	foreach ($s in  $Result[$rangestart..$range1] )
-		{	$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +"," ")
-			$s= [regex]::Replace($s," ",",")
+	foreach ($s in  $Result[$rangestart..($Result.count-1)] )
+		{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 			Add-Content -Path $tempFile -Value $s
 		}
-	Import-Csv $tempFile
+	$Result = Import-Csv $tempFile
 	Remove-Item  $tempFile
+	return $Result
 }
 }
 
@@ -446,19 +529,6 @@ Function Get-A9SystemReportRHistogramPhysicalDisk
     Command displays historical histogram performance data reports for physical disks. 
 .DESCRIPTION
     Command displays historical histogram performance data reports for physical disks. 
-.EXAMPLE
-    PS:> Get-A9SystemReportRHistogramPhysicalDisk
-
-	Command displays historical histogram performance data reports for physical disks. 
-.EXAMPLE
-    PS:> Get-A9SystemReportRHistogramPhysicalDisk -Hourly -btsecs -24h
-
-	Example displays aggregate hourly histogram performance statistics for all physical disks beginning 24 hours ago:
-.EXAMPLE
-    PS:> Get-A9SystemReportRHistogramPhysicalDisk -Groupby SPEED
-	
-.EXAMPLE
-    PS:> Get-A9SystemReportRHistogramPhysicalDisk -Metric both 
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
@@ -507,6 +577,19 @@ Function Get-A9SystemReportRHistogramPhysicalDisk
 	size - Display only the I/O size histogram
 .PARAMETER PDID
 	LDs matching either the specified LD_name or glob-style pattern are included. This specifier can be repeated to display information for multiple LDs. If not specified, all LDs are included.
+.EXAMPLE
+    PS:> Get-A9SystemReportRHistogramPhysicalDisk
+
+	Command displays historical histogram performance data reports for physical disks. 
+.EXAMPLE
+    PS:> Get-A9SystemReportRHistogramPhysicalDisk -Hourly -btsecs -24h
+
+	Example displays aggregate hourly histogram performance statistics for all physical disks beginning 24 hours ago:
+.EXAMPLE
+    PS:> Get-A9SystemReportRHistogramPhysicalDisk -Groupby SPEED
+	
+.EXAMPLE
+    PS:> Get-A9SystemReportRHistogramPhysicalDisk -Metric both 
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$attime,
@@ -516,11 +599,20 @@ param(	[Parameter()]	[switch]	$attime,
 		[Parameter()]	[switch]    $Daily ,
 		[Parameter()]	[switch]    $Hires ,
 		[Parameter()]	[switch]	$rw,
-		[Parameter()]	[String]	$groupby,
-		[Parameter()]	[String]	$diskType,
-		[Parameter()]	[String]	$rpmSpeed,
+		[Parameter()]	
+			[ValidateSet("PDID","PORT_N","PORT_S","PORT_P","DISK_TYPE","SPEED")]
+						[String]	$groupby,
+		[Parameter()]	
+			[ValidateSet("FC","NL","SSD")]
+						[String]	$diskType,
+		[Parameter()]
+			[ValidateSet("7","10","15","100","150")]	
+						[String]	$rpmSpeed,
 		[Parameter()]	[String]	$PDID,
-		[Parameter()]	[String]	$Metric
+		[Parameter()]
+			[ValidateSet("both","time","size")]	
+						[String]	$Metric,
+		[Parameter()]	[switch]	$ShowRaw
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
@@ -530,31 +622,13 @@ Process
 	if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
 	if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
 	if($rw)		{	$srinfocmd +=  " -rw "	}
-	if($groupby){	$commarr =  "PDID","PORT_N","PORT_S","PORT_P","DISK_TYPE","SPEED"
-					$lista = $groupby.split(",")
-					foreach($suba in $lista)
-						{	if(-not ($commarr -eq $suba.toUpper() ) )	{	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
-						}
-					$srinfocmd += " -groupby $groupby"
-				}		
+	if($groupby){	$srinfocmd += " -groupby $groupby"	}		
 	if($Hourly)	{	$srinfocmd += " -hourly"	}
 	if($Daily)	{	$srinfocmd += " -daily"		}
 	if($Hires)	{	$srinfocmd += " -hires"		}
-	if($diskType)
-				{	$diskarr1 = "FC","NL","SSD"
-					if($diskarr1 -eq $diskType.toUpper())		{	$srinfocmd +=  " -disk_type $diskType "	}
-					else	{	return "FAILURE: Invalid diskType it should be in ( $diskarr1 )"	}			
-				}
-	if($Metric)	{	$a = "both","time","size"
-					$l=$Metric
-					if($a -eq $l)	{	$srinfocmd += " -metric $Metric"	}
-					else			{ 	Return "FAILURE : Metric :- $Metric is an Incorrect [ both | time | size ]  can be used only . "	}
-				}
-	if($rpmSpeed)
-		{	$rpmarr1 = "7","10","15","100","150"
-			if($rpmarr1 -eq $rpmSpeed)	{	$srinfocmd +=  " -rpm $rpmSpeed "	}
-			else	{	return "FAILURE: Invalid rpmSpeed it should be in ( $rpmarr1 )"	}		
-		}
+	if($diskType){	$srinfocmd += " -disk_type $diskType "	}
+	if($Metric)	{	$srinfocmd += " -metric $Metric"	}					
+	if($rpmSpeed)	{	$srinfocmd +=  " -rpm $rpmSpeed "	}
 	if($PDID)	{	$srinfocmd += " $PDID "	}
 	$tempFile = [IO.Path]::GetTempFileName()
 	if($attime)
@@ -578,19 +652,20 @@ Process
 		}
 	write-verbose "System reporter command => $srinfocmd"
 	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	$range1  = $Result.count
-	if($range1 -le "3")
+}
+End{
+	if ($ShowRaw) { return $result }
+	if(($Result.count) -le "3")
 		{	Remove-Item  $tempFile
 			return "No data available"
 		}
-	foreach ($s in  $Result[$rangestart..$range1] )
-		{	$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +"," ")
-			$s= [regex]::Replace($s," ",",")
+	foreach ($s in  $Result[$rangestart..($Result.count)] )
+		{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 			Add-Content -Path $tempFile -Value $s
 		}
-	Import-Csv $tempFile	
+	$Result = Import-Csv $tempFile	
 	Remove-Item  $tempFile
+	return $Result
 }
 }
 
@@ -601,18 +676,6 @@ Function Get-A9SystemReportHistogramPort
     Command displays historical histogram performance data reports for ports.
 .DESCRIPTION
     Command displays historical histogram performance data reports for ports. 	
-.EXAMPLE
-    PS:> Get-A9SystemReportHistogramPort 
-
-	Command displays historical histogram performance data reports for ports.	
-.EXAMPLE
-    PS:> Get-A9SystemReportHistogramPort -Metric_Val size
-.EXAMPLE
-    PS:> Get-A9SystemReportHistogramPort -Groupby PORT_N	
-.EXAMPLE
-    PS:> Get-A9SystemReportHistogramPort -Hurly -btsecs -24h -portType "host,disk" -port "0:*:* 1:*:*"
-	
-	example displays aggregate hourly histogram performance statistics for disk and host ports on nodes 0 and 1 beginning 24 hours ago:
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
@@ -668,6 +731,18 @@ Function Get-A9SystemReportHistogramPort
 	rcfc  -  Remote copy FC port
 .PARAMETER Port	
 	Ports with <port_n>:<port_s>:<port_p> that match any of the specified[<npat>:<spat>:<ppat>...] patterns are included, where each of the patterns is a glob-style pattern. If not specified, all ports are included.
+.EXAMPLE
+    PS:> Get-A9SystemReportHistogramPort 
+
+	Command displays historical histogram performance data reports for ports.	
+.EXAMPLE
+    PS:> Get-A9SystemReportHistogramPort -Metric_Val size
+.EXAMPLE
+    PS:> Get-A9SystemReportHistogramPort -Groupby PORT_N	
+.EXAMPLE
+    PS:> Get-A9SystemReportHistogramPort -Hurly -btsecs -24h -portType "host,disk" -port "0:*:* 1:*:*"
+	
+	example displays aggregate hourly histogram performance statistics for disk and host ports on nodes 0 and 1 beginning 24 hours ago:
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$attime,
@@ -683,7 +758,8 @@ param(	[Parameter()]	[switch]	$attime,
 						[String[]]	$portType,
 		[Parameter()]	[String]	$Port,
 		[Parameter()][ValidateSet('both','time','size' )]
-						[String]	$Metric_Val
+						[String]	$Metric_Val,
+		[Parameter()]	[switch]	$ShowRaw
 	)
 Begin
 {	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
@@ -723,18 +799,16 @@ Process
 		}
 	write-verbose "System reporter command => $srinfocmd"
 	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	$range1  = $Result.count		
-	if($range1 -le "3")
+	if ($ShowRaw) { return $Result }
+	if(($Result.count) -le "3")
 		{	Remove-Item  $tempFile
 			return "No data available "
 		}
-	foreach ($s in  $Result[$rangestart..$range1] )
-		{	$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +"," ")
-			$s= [regex]::Replace($s," ",",")
+	foreach ($s in  $Result[$rangestart..($Result.count)] )
+		{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 			Add-Content -Path $tempFile -Value $s
 		}
-	Import-Csv $tempFile
+	$Result = Import-Csv $tempFile
 	Remove-Item  $tempFile
 }
 }
@@ -820,8 +894,8 @@ Function Get-A9SystemReportHistogramVLun
 	both - (Default)Display both I/O time and I/O size histograms
 	time - Display only the I/O time histogram
 	size - Display only the I/O size histogram
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection	
+.PARAMETER ShowRaw
+    This option will return the raw SSH output instead of trying to extract a PowerShell Object	
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$attime,
@@ -831,80 +905,67 @@ param(	[Parameter()]	[switch]	$attime,
 		[Parameter()]	[switch]    $Daily ,
 		[Parameter()]	[switch]    $Hires ,
 		[Parameter()]	[switch]	$rw,
-		[Parameter()]	[String]	$groupby,
+		[Parameter()]	[ValidateSet("DOM_NAME","VV_NAME","HOST_NAME","LUN","HOST_WWN","PORT_N","PORT_S","PORT_P","VVSET_NAME","HOSTSET_NAME")]
+						[String]	$groupby,
 		[Parameter()]	[String]	$hostE,
 		[Parameter()]	[String]	$vv,
 		[Parameter()]	[String]	$lun,
 		[Parameter()]	[String]	$Port,
-		[Parameter()]	[String]	$Metric_Val
+		[Parameter()]	[ValidateSet("both","time","size")]	
+						[String]	$Metric_Val,
+		[Parameter()]	[Switch]	$ShowRaw		
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$srinfocmd = "srhistvlun "
-		if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
-			if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
-			if($rw)		{	$srinfocmd +=  " -rw "				}
-			if($groupby){	$commarr =  "DOM_NAME","VV_NAME","HOST_NAME","LUN","HOST_WWN","PORT_N","PORT_S","PORT_P","VVSET_NAME","HOSTSET_NAME"
-							$lista = $groupby.split(",")
-							foreach($suba in $lista)
-								{	if(-not $commarr -eq $suba.toUpper())	{	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
-								}
-							$srinfocmd += " -groupby $groupby"
-						}		
-			if($Hourly)	{	$srinfocmd += " -hourly"			}	
-			if($Daily)	{	$srinfocmd += " -daily"				}
-			if($Hires)	{	$srinfocmd += " -hires"				}
-			if($hostE)	{	$srinfocmd +=  " -host $hostE "		}
-			if($vv)		{	$srinfocmd +=  " -vv $vv "		}
-			if($lun)	{	$srinfocmd +=  " -l $lun "		}		
-			if($Port)	{	$srinfocmd += " -port $Port "	}
-			if($Metric_Val)
-						{	$a = "both","time","size"
-							$l=$Metric_Val
-							if($a -eq $l)
-								{	$srinfocmd += " -metric $Metric_Val"			
-								}
-							else
-								{ 	Return "FAILURE : Metric :- $Metric_Val is an Incorrect [ both | time | size ]  can be used only . "
-								}
-						}
-			$tempFile = [IO.Path]::GetTempFileName()
-			if($attime)	{	$srinfocmd += " -attime "
-							write-verbose "System reporter command => $srinfocmd"
-							if($groupby)	{	$optionname = $groupby.toUpper()	}
-							else			{	$optionname = "HOST_NAME"			}
-							Add-Content -Path $tempFile -Value "$optionname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
-							$rangestart = "3"
-						}
-			elseif($Metric_Val -eq "time")
+	if($btsecs)		{	$srinfocmd += " -btsecs $btsecs"	}
+	if($etsecs)		{	$srinfocmd += " -etsecs $etsecs"	}
+	if($rw)			{	$srinfocmd +=  " -rw "				}
+	if($groupby)	{	$srinfocmd += " -groupby $groupby"	}		
+	if($Hourly)		{	$srinfocmd += " -hourly"			}	
+	if($Daily)		{	$srinfocmd += " -daily"				}
+	if($Hires)		{	$srinfocmd += " -hires"				}
+	if($hostE)		{	$srinfocmd +=  " -host $hostE "		}
+	if($vv)			{	$srinfocmd +=  " -vv $vv "		}
+	if($lun)		{	$srinfocmd +=  " -l $lun "		}		
+	if($Port)		{	$srinfocmd += " -port $Port "	}
+	if($Metric_Val)	{	$srinfocmd += " -metric $Metric_Val"	}
+	$tempFile = [IO.Path]::GetTempFileName()
+	if($attime)	{	$srinfocmd += " -attime "
+					write-verbose "System reporter command => $srinfocmd"
+					if($groupby)	{	$optionname = $groupby.toUpper()	}
+					else			{	$optionname = "HOST_NAME"			}
+					Add-Content -Path $tempFile -Value "$optionname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
+					$rangestart = "3"
+				}
+	elseif($Metric_Val -eq "time")
 				{	$rangestart = "2"
 					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec)"
 				}
-			elseif($Metric_Val -eq "size")
+	elseif($Metric_Val -eq "size")
 				{	$rangestart = "2"
 					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
 				}
-			else{	$rangestart = "2"
+	else{	$rangestart = "2"
 					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes)"
 				}
-			write-verbose "System reporter command => $srinfocmd"
-			$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-			$range1  = $Result.count
-			if($range1 -le "3")
-				{	Remove-Item  $tempFile
-					return "No data available"
-				}
-			foreach ($s in  $Result[$rangestart..$range1] )
-				{	$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +"," ")
-					$s= [regex]::Replace($s," ",",")
+	write-verbose "System reporter command => $srinfocmd"
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
+}
+End
+{	if(($Result.count) -le "3")	{	write-warning "No data available" }
+	elseif( -not $ShowRaw )
+		{	foreach ($s in  $Result[$rangestart..($Result.count)] )
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 					Add-Content -Path $tempFile -Value $s
 				}
-			Import-Csv $tempFile
-			Remove-Item  $tempFile
+			$Result = Import-Csv $tempFile
 		}
+	Remove-Item  $tempFile	
+	return $Result
+}
 }
 
 Function Get-A9SystemReportLogicalDiskSpace
@@ -914,18 +975,6 @@ Function Get-A9SystemReportLogicalDiskSpace
     Command displays historical space data reports for logical disks (LDs).
 .DESCRIPTION
     Command displays historical space data reports for logical disks (LDs).
-.EXAMPLE
-    PS:> Get-A9SystemReportLogicalDiskSpace
-.EXAMPLE
-    PS:> Get-A9SystemReportLogicalDiskSpace -groupby OWNER 
-
-	Command displays historical space data reports for logical disks (LDs).
-.EXAMPLE
-    PS:> Get-A9SystemReportLogicalDiskSpace -DiskType FC
-
-.EXAMPLE
-    PS:> Get-A9SystemReportLogicalDiskSpace -raidType 5 -Hourly -btsecs 24h -LDName fc*
-
 	Example displays aggregate hourly LD space information for all RAID 5 LDs with names that match either "fc*" patterns beginning 24 hours ago:
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	
@@ -978,6 +1027,20 @@ Function Get-A9SystemReportLogicalDiskSpace
 	Limit data to LDs owned by the specified nodes.
 .PARAMETER LDname
 	CPGs matching either the specified CPG_name or glob-style pattern are included. This specifier can be repeated to display information for multiple CPGs. If not specified, all CPGs are included.
+.PARAMETER ShowRaw
+	This option will show the raw resut from the SSH output instead of attempting to return a PowerShell Object.
+.EXAMPLE
+    PS:> Get-A9SystemReportLogicalDiskSpace
+.EXAMPLE
+    PS:> Get-A9SystemReportLogicalDiskSpace -groupby OWNER 
+
+	Command displays historical space data reports for logical disks (LDs).
+.EXAMPLE
+    PS:> Get-A9SystemReportLogicalDiskSpace -DiskType FC
+
+.EXAMPLE
+    PS:> Get-A9SystemReportLogicalDiskSpace -raidType 5 -Hourly -btsecs 24h -LDName fc*
+
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -988,97 +1051,67 @@ param(	[Parameter()]	[switch]	$attime,
 		[Parameter()]	[switch]    $Hourly ,
 		[Parameter()]	[switch]    $Daily ,
 		[Parameter()]	[switch]    $Hires ,
-		[Parameter()]	[String]	$groupby,
+		[Parameter()]	[ValidateSet("DOM_NAME","CPG_NAME","LDID","LD_NAME","DISK_TYPE","RAID_TYPE","SET_SIZE","STEP_SIZE","ROW_SIZE","OWNER")]
+						[String]	$groupby,
 		[Parameter()]	[String]	$cpgName,
-		[Parameter()]	[String]	$DiskType,
-		[Parameter()]	[String]	$RaidType,
+		[Parameter()]	[ValidateSet("FC","NL","SSD")]
+						[String]	$DiskType,
+		[Parameter()]	[ValidateSet('0','1','5','6')]
+						[String]	$RaidType,
 		[Parameter()]	[String]	$ownernode,
-		[Parameter()]	[String]	$LDname
+		[Parameter()]	[String]	$LDname,
+		[Parameter()]	[switch]	$ShowRaw
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$srinfocmd = "srldspace"
-		if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
-			if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
-			if($groupby)
-				{	$commarr = "DOM_NAME","CPG_NAME","LDID","LD_NAME","DISK_TYPE","RAID_TYPE","SET_SIZE","STEP_SIZE","ROW_SIZE","OWNER"
-					$lista = $groupby.split(",")
-					foreach($suba in $lista)
-						{	if(-not ($commarr -eq $suba.toUpper() ) )	{	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
-						}
-					$srinfocmd += " -groupby $groupby"
-				}		
-			if($Hourly)	{	$srinfocmd += " -hourly"			}
-			if($Daily)	{	$srinfocmd += " -daily"				}
-			if($Hires)	{	$srinfocmd += " -hires"				}		
-			if($RaidType)
-				{	$raidarray = "0","1","5","6"
-					if($raidarray -eq $RaidType)	{	$srinfocmd += " -raid_type $RaidType"				}
-					else{	return "FAILURE: Invalid raid option, it should be in ( $raidarray )"}			
-				}
-			if($DiskType)
-				{	$diskarray = "FC","NL","SSD"
-					if($diskarray -eq $DiskType.toUpper()){	$srinfocmd += " -disk_type $DiskType"	}
-					else{	return "FAILURE: Invalid disktype option, it should be in ( $diskarray )"}
-				}
-			if($cpgName)	{	$srinfocmd += " -cpg $cpgName"	}
-			if($ownernode)	{	$srinfocmd +=  " -owner $ownernode"	}
-			if($LDname)		{	$srinfocmd += " $LDName"	}
-			$tempFile = [IO.Path]::GetTempFileName()
-			if($attime)
-				{	$srinfocmd += " -attime "
-					write-verbose "System reporter command => $srinfocmd"
-					if($groupby)	{	$optionname = $groupby.toUpper()	}
-					else			{	$optionname = "LD_NAME"		}
-					Add-Content -Path $tempFile -Value "$optionname,Raw(MB),Used(MB),Free(MB),Total(MB)"
-					$rangestart = "3"
-				}
-			else{	Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,Raw(MB),Used(MB),Free(MB),Total(MB)"
-					$rangestart = "2"
-				}
-			write-verbose "System reporter command => $srinfocmd"
-			$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-			if($Result -contains "FAILURE")
-				{	Remove-Item  $tempFile
-					return "FAILURE : $Result"
-				}
-			$range1  = $Result.count
-			if($range1 -le "3")
-				{	Remove-Item  $tempFile
-					return "No data available"
-				}		
-			foreach ($s in  $Result[$rangestart..$range1] )
-				{	$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +"," ")
-					$s= [regex]::Replace($s," ",",")
+	if($btsecs)		{	$srinfocmd += " -btsecs $btsecs"		}
+	if($etsecs)		{	$srinfocmd += " -etsecs $etsecs"		}
+	if($groupby)	{	$srinfocmd += " -groupby $groupby"		}			
+	if($Hourly)		{	$srinfocmd += " -hourly"				}
+	if($Daily)		{	$srinfocmd += " -daily"					}
+	if($Hires)		{	$srinfocmd += " -hires"					}		
+	if($RaidType)	{	$srinfocmd += " -raid_type $RaidType"	}
+	if($DiskType)	{	$srinfocmd += " -disk_type $DiskType"	}
+	if($cpgName)	{	$srinfocmd += " -cpg $cpgName"			}
+	if($ownernode)	{	$srinfocmd +=  " -owner $ownernode"		}
+	if($LDname)		{	$srinfocmd += " $LDName"				}
+	$tempFile = [IO.Path]::GetTempFileName()
+	if($attime)
+		{	$srinfocmd += " -attime "
+			if($groupby)	{	$optionname = $groupby.toUpper()	}
+			else			{	$optionname = "LD_NAME"		}
+			Add-Content -Path $tempFile -Value "$optionname,Raw(MB),Used(MB),Free(MB),Total(MB)"
+			$rangestart = "3"
+		}
+	else{	Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,Raw(MB),Used(MB),Free(MB),Total(MB)"
+			$rangestart = "2"
+		}
+	write-verbose "System reporter command => $srinfocmd"
+	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
+}
+End
+{	if (-not $ShowRaw -or $Result.count -le 3)
+		{	foreach ($s in  $Result[$rangestart..($Result.count)] )
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 					Add-Content -Path $tempFile -Value $s
 				}
-			Import-Csv $tempFile
-			Remove-Item  $tempFile
+			$Result = Import-Csv $tempFile
+		}
+	Remove-Item  $tempFile
+	return $Result
 }
 }
 
-Function Get-A9SRPhysicalDiskSpace
+Function Get-A9SystemReporterPhysicalDiskSpace
 {
 <#
 .SYNOPSIS
     Command displays historical space data reports for physical disks (PDs).
 .DESCRIPTION
     Command displays historical space data reports for physical disks (PDs).
-.EXAMPLE
-    PS:> Get-A9SRPhysicalDiskSpace 
-
-	Command displays historical space data reports for physical disks (PDs).
-.EXAMPLE
-    PS:> Get-A9SRPhysicalDiskSpace -Hourly -btsecs -24h
-
-	Example displays aggregate hourly PD space information for all PDs beginning 24 hours ago:
-.EXAMPLE
-    PS:> Get-A9SRPhysicalDiskSpace -capacity -attime -diskType SSD
-
-	Displays current system capacity values of SSD PDs:
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object group described by the -groupby option. 
 	Without this option, performance is shown versus time with a row per time interval.
@@ -1125,23 +1158,38 @@ Function Get-A9SRPhysicalDiskSpace
 	Limit the data to disks of the specified RPM. Allowed speeds are  7, 10, 15, 100 and 150
 .PARAMETER PDID
 	PDs with IDs that match either the specified PDID or glob-style  pattern are included. This specifier can be repeated to include multiple PDIDs or patterns.  If not specified, all PDs are included.
+.EXAMPLE
+    PS:> Get-A9SRPhysicalDiskSpace 
+
+	Command displays historical space data reports for physical disks (PDs).
+.EXAMPLE
+    PS:> Get-A9SRPhysicalDiskSpace -Hourly -btsecs -24h
+
+	Example displays aggregate hourly PD space information for all PDs beginning 24 hours ago:
+.EXAMPLE
+    PS:> Get-A9SRPhysicalDiskSpace -capacity -attime -diskType SSD
+
+	Displays current system capacity values of SSD PDs:
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]		[switch]	$attime,
-		[Parameter(ValueFromPipeline=$true)]		[String]	$btsecs,
-		[Parameter(ValueFromPipeline=$true)]		[String]	$etsecs,
-		[Parameter(ValueFromPipeline=$true)]		[switch]    $Hourly ,
-		[Parameter(ValueFromPipeline=$true)]		[switch]    $Daily ,
-		[Parameter(ValueFromPipeline=$true)]		[switch]    $Hires ,
-		[Parameter(ValueFromPipeline=$true)]		[String]	$groupby,
-		[Parameter(ValueFromPipeline=$true)]
-		[ValidateSet("FC","NL","SSD")]				[String]	$DiskType,
-		[Parameter(ValueFromPipeline=$true)]		[switch]	$capacity,
-		[Parameter(ValueFromPipeline=$true)]
-		[ValidateSet("7","10","15","100","150")]	[String]	$rpmspeed,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$PDID
+param(	[Parameter()]		[switch]	$attime,
+		[Parameter()]		[String]	$btsecs,
+		[Parameter()]		[String]	$etsecs,
+		[Parameter()]		[switch]    $Hourly ,
+		[Parameter()]		[switch]    $Daily ,
+		[Parameter()]		[switch]    $Hires ,
+		[Parameter()]		[String]	$groupby,
+		[Parameter()]
+		[ValidateSet("FC","NL","SSD")]				
+							[String]	$DiskType,
+		[Parameter()]		[switch]	$capacity,
+		[Parameter()]
+		[ValidateSet("7","10","15","100","150")]	
+							[String]	$rpmspeed,
+		[Parameter()]		[String]	$PDID,
+		[Oarameter()]		[switch]	$ShowRaw
 	)
 Begin
 {	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
@@ -1181,27 +1229,21 @@ Process
 				}
 			write-verbose "System reporter command => $srinfocmd"
 			$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-			if($Result -contains "FAILURE")
-				{	Remove-Item  $tempFile
-					return "FAILURE : $Result"
-				}
-			$range1  = $Result.count
-			if($range1 -le "3")
-				{	Remove-Item  $tempFile
-					return "No data available"
-				}		
-			foreach ($s in  $Result[$rangestart..$range1] )
-				{	$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +"," ")
-					$s= [regex]::Replace($s," ",",")
+}
+End
+{	if ($Result.count -le "3" -or -not $ShowRaw )
+		{	foreach ($s in  $Result[$rangestart..($Result.count)] )
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 					Add-Content -Path $tempFile -Value $s
 				}
-			Import-Csv $tempFile
-			Remove-Item  $tempFile
+			$Result = Import-Csv $tempFile
 		}
+	return $Result
+	Remove-Item  $tempFile
+}
 }
 
-Function Get-A9SRrgiodensity
+Function Get-A9SystemReporterRegionIODensity
 {
 <#
 .SYNOPSIS
@@ -1248,6 +1290,8 @@ Function Get-A9SRrgiodensity
 	Show the data for each VV.
 .PARAMETER Rw
 	Specifies that the display includes separate read and write data. If not specified, the total is displayed.
+.PARAMETER ShowRaw
+	Returns the raw SSH output instead of trying to return a PowerShell Object
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1262,7 +1306,8 @@ param(	[Parameter()]	[String]	$Btsecs,
 		[Parameter()]	[switch]	$Totpct,
 		[Parameter()]	[switch]	$Withvv,
 		[Parameter()]	[switch]	$Rw,
-		[Parameter()]	[String]	$Aocfg_name
+		[Parameter()]	[String]	$Aocfg_name,
+		[Parameter()]	[swtich]	$ShowRaw
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -1280,30 +1325,20 @@ Process
 	if($Withvv)	{	$Cmd += " -withvv " 		}
 	if($Rw)		{	$Cmd += " -rw " 			}
 	if($Aocfg_name){$Cmd += " $Aocfg_name " 	}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
+}
+End
+{	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Get-A9SystemReportStatCache
+Function Get-A9SystemReporterStatCache
 {
 <#
 .SYNOPSIS
     Command displays historical performance data reports for flash cache and data cache.
 .DESCRIPTION
     Command displays historical performance data reports for flash cache and data cache.
-.EXAMPLE
-    PS:> Get-A9SystemReportStatCache
-
-	Command displays historical performance data reports for flash cache and data cache.
-.EXAMPLE
-    PS:> Get-A9SystemReportStatCache -Hourly -btsecs -24h
-	
-	Example displays aggregate hourly performance statistics for flash cache and data cache beginning 24 hours ago:
-.EXAMPLE
-    PS:> Get-A9SystemReportStatCache -Daily -attime -groupby node     
-
-	Example displays daily flash cache and data cache performance aggregated by nodes
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
@@ -1343,22 +1378,37 @@ Function Get-A9SystemReportStatCache
 .PARAMETER Node
 	Only the specified node numbers are included, where each node is a number from 0 through 7. If want to display information for multiple nodes specift <nodenumber>,<nodenumber2>,etc. 
 	If not specified, all nodes are included. Get-SRStatCache  -Node 0,1,2
+.PARAMETER ShowRaw
+	Returns the raw SSH output instead of trying to return a PowerShell Object
+.EXAMPLE
+    PS:> Get-A9SystemReportStatCache
+
+	Command displays historical performance data reports for flash cache and data cache.
+.EXAMPLE
+    PS:> Get-A9SystemReportStatCache -Hourly -btsecs -24h
+	
+	Example displays aggregate hourly performance statistics for flash cache and data cache beginning 24 hours ago:
+.EXAMPLE
+    PS:> Get-A9SystemReportStatCache -Daily -attime -groupby node     
+
+	Example displays daily flash cache and data cache performance aggregated by nodes
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$attime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$btsecs,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$etsecs,
-		[Parameter(ValueFromPipeline=$true)]	[switch]    $Hourly ,
-		[Parameter(ValueFromPipeline=$true)]	[switch]    $Daily ,	
-		[Parameter(ValueFromPipeline=$true)]	[switch]    $Hires ,
-		[Parameter(ValueFromPipeline=$true)]	[switch]     $InternalFlashCache ,	
-		[Parameter(ValueFromPipeline=$true)]	[switch]    $FmpQueue ,	
-		[Parameter(ValueFromPipeline=$true)]	[switch]    $CmpQueue ,
-		[Parameter(ValueFromPipeline=$true)]	[switch]    $Full ,	
-		[Parameter(ValueFromPipeline=$true)]	[String]	$groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Node
+param(	[Parameter()]	[switch]	$attime,
+		[Parameter()]	[String]	$btsecs,
+		[Parameter()]	[String]	$etsecs,
+		[Parameter()]	[switch]    $Hourly ,
+		[Parameter()]	[switch]    $Daily ,	
+		[Parameter()]	[switch]    $Hires ,
+		[Parameter()]	[switch]    $InternalFlashCache ,	
+		[Parameter()]	[switch]    $FmpQueue ,	
+		[Parameter()]	[switch]    $CmpQueue ,
+		[Parameter()]	[switch]    $Full ,	
+		[Parameter()]	[String]	$groupby,
+		[Parameter()]	[String]	$Node,
+		[Parameter()]	[swtich]	$ShowRaw
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
@@ -1404,23 +1454,17 @@ Process
 		}
 	write-verbose "System reporter command => $srinfocmd"
 	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	if($Result -contains "FAILURE")
-		{	Remove-Item  $tempFile
-			return "FAILURE : $Result"
+}
+End
+{	if ( (-not $ShowRaw) -or ( ($Result.count) -le "3") )	
+		{	foreach ($s in  $Result[$rangestart..($Result.count)] )
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+					Add-Content -Path $tempFile -Value $s
+				}
+			$Result = Import-Csv $tempFile	
 		}
-	$range1  = $Result.count
-	if($range1 -le "3")
-		{	Remove-Item  $tempFile
-			return "No data available"
-		}
-	foreach ($s in  $Result[$rangestart..$range1] )
-		{	$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +"," ")
-			$s= [regex]::Replace($s," ",",")
-			Add-Content -Path $tempFile -Value $s
-		}
-	Import-Csv $tempFile	
 	Remove-Item  $tempFile
+	return $Result
 }
 }
 
@@ -1431,18 +1475,6 @@ Function Get-A9SystemReporterStatCacheMemoryPages
     Command displays historical performance data reports for cache memory
 .DESCRIPTION
     Command displays historical performance data reports for cache memory
-.EXAMPLE
-    PS:> Get-A9SystemReporterStatCacheMemoryPages
-
-	Command displays historical performance data reports for cache memory
-.EXAMPLE
-    PS:> Get-A9SystemReporterStatCacheMemoryPages -Hourly -btsecs -24h
-
-	Example displays aggregate hourly performance statisticsfor all node caches beginning 24 hours ago:
-.EXAMPLE
-    PS:> Get-A9SystemReporterStatCacheMemoryPages -Daily -attime -groupby node     
-
-	Example displays daily node cache performance aggregated by nodes
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
@@ -1480,20 +1512,35 @@ Function Get-A9SystemReporterStatCacheMemoryPages
 .PARAMETER Node
 	Only the specified node numbers are included, where each node is a number from 0 through 7. If want to display information for multiple nodes specift <nodenumber>,<nodenumber2>,etc. 
 	If not specified, all nodes are included. Get-SRStatCMP  -Node 0,1,2
+.PARAMETER ShowRaw
+	Returns the raw SSH output instead of trying to return a PowerShell Object
+.EXAMPLE
+    PS:> Get-A9SystemReporterStatCacheMemoryPages
+
+	Command displays historical performance data reports for cache memory
+.EXAMPLE
+    PS:> Get-A9SystemReporterStatCacheMemoryPages -Hourly -btsecs -24h
+
+	Example displays aggregate hourly performance statisticsfor all node caches beginning 24 hours ago:
+.EXAMPLE
+    PS:> Get-A9SystemReporterStatCacheMemoryPages -Daily -attime -groupby node     
+
+	Example displays daily node cache performance aggregated by nodes
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$attime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$btsecs,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$etsecs,
-		[Parameter(ValueFromPipeline=$true)]	[switch]    $Hourly ,
-		[Parameter(ValueFromPipeline=$true)]	[switch]    $Daily ,
-		[Parameter(ValueFromPipeline=$true)]	[switch]    $Hires ,
-		[Parameter(ValueFromPipeline=$true)]	[switch]    $Full ,	
-		[Parameter(ValueFromPipeline=$true)]	[switch]    $Page ,	
-		[Parameter(ValueFromPipeline=$true)]	[String]	$groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Node
+param(	[Parameter()]	[switch]	$attime,
+		[Parameter()]	[String]	$btsecs,
+		[Parameter()]	[String]	$etsecs,
+		[Parameter()]	[switch]    $Hourly ,
+		[Parameter()]	[switch]    $Daily ,
+		[Parameter()]	[switch]    $Hires ,
+		[Parameter()]	[switch]    $Full ,	
+		[Parameter()]	[switch]    $Page ,	
+		[Parameter()]	[String]	$groupby,
+		[Parameter()]	[String]	$Node,
+		[Parameter()]	[switch]	$ShowRaw
 	)
 Begin
 {	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
@@ -1538,52 +1585,29 @@ Process
 		else{	$rangestart = "2"
 				Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,rhit(count/sec),whit(count/sec),r(count/sec),w(count/sec),r+w(count/sec),lockblk(count/sec),r(hit%),w(hit%),NL(dack/sec),FC(dack/sec),SSD(dack/sec)"			
 			}
-		#write-host " cmd = $srinfocmd"
 		write-verbose "System reporter command => $srinfocmd"
 		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-		if($Result -contains "FAILURE")
-			{	Remove-Item  $tempFile
-				return "FAILURE : $Result"
+}
+End
+{		if ( (-not $ShowRaw) -or (($Result.count) -le "3"))
+			{	foreach ($s in  $Result[$rangestart..($Result.count)] )
+					{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+						Add-Content -Path $tempFile -Value $s
+					}
+				$Result = Import-Csv $tempFile
 			}
-		$range1  = $Result.count
-		if($range1 -le "3")
-			{	Remove-Item  $tempFile
-				return "No data available"
-			}
-		foreach ($s in  $Result[$rangestart..$range1] )
-			{	$s= [regex]::Replace($s,"^ +","")
-				$s= [regex]::Replace($s," +"," ")
-				$s= [regex]::Replace($s," ",",")
-				Add-Content -Path $tempFile -Value $s
-			}
-		Import-Csv $tempFile
 		Remove-Item  $tempFile
+		return $Result
 }
 }
 
-Function Get-A9SRStatCPU
+Function Get-A9SystemReporterStatCPU
 {
 <#
 .SYNOPSIS
     Command displays historical performance data reports for CPUs.
 .DESCRIPTION
     Command displays historical performance data reports for CPUs.
-.EXAMPLE
-    PS:> Get-A9SRStatCPU_CLI 
-
-	Command displays historical performance data reports for CPUs.
-.EXAMPLE
-    PS:> Get-A9SRStatCPU_CLI -Groupby CPU
-.EXAMPLE
-    PS:> Get-A9SRStatCPU_CLI -btsecs 24h
-.EXAMPLE
-    PS:> Get-A9SRStatCPU_CLI -Hourly -btsecs 24h
-	
-	Example displays aggregate hourly performance statistics for all CPUs beginning 24 hours ago:
-.EXAMPLE
-    PS:> Get-A9SRStatCPU_CLI -option daily -attime -groupby node     
-
-	Example displays daily node cpu performance aggregated by nodes
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.	
 .PARAMETER btsecs
@@ -1617,876 +1641,84 @@ Function Get-A9SRStatCPU
 .PARAMETER Node
 	Only the specified node numbers are included, where each node is a number from 0 through 7. If want to display information for multiple nodes specift <nodenumber>,<nodenumber2>,etc. If not specified, all nodes are included.
 	Get-SRStatCPU  -Node 0,1,2
+.PARAMETER ShowRaw
+	Returns the raw SSH output instead of trying to return a PowerShell Object
+.EXAMPLE
+    PS:> Get-A9SRStatCPU_CLI 
+
+	Command displays historical performance data reports for CPUs.
+.EXAMPLE
+    PS:> Get-A9SRStatCPU_CLI -Groupby CPU
+.EXAMPLE
+    PS:> Get-A9SRStatCPU_CLI -btsecs 24h
+.EXAMPLE
+    PS:> Get-A9SRStatCPU_CLI -Hourly -btsecs 24h
+	
+	Example displays aggregate hourly performance statistics for all CPUs beginning 24 hours ago:
+.EXAMPLE
+    PS:> Get-A9SRStatCPU_CLI -option daily -attime -groupby node     
+
+	Example displays daily node cpu performance aggregated by nodes
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$attime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$btsecs,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$etsecs,
-		[Parameter(ValueFromPipeline=$true)]	[switch]    $Hourly ,
-		[Parameter(ValueFromPipeline=$true)]	[switch]    $Daily ,
-		[Parameter(ValueFromPipeline=$true)]	[switch]    $Hires ,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Node
+param(	[Parameter()]	[switch]	$attime,
+		[Parameter()]	[String]	$btsecs,
+		[Parameter()]	[String]	$etsecs,
+		[Parameter()]	[switch]    $Hourly ,
+		[Parameter()]	[switch]    $Daily ,
+		[Parameter()]	[switch]    $Hires ,
+		[Parameter()][ValidateSet('CPU','NODE')]	
+						[String]	$groupby,
+		[Parameter()]	[String]	$Node,
+		[Parameter()]	[switch]	$ShowRaw
 	)
 Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
 {	$srinfocmd = "srstatcpu "
-		if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
-			if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
-			if($groupby)
-				{	$commarr = "CPU","NODE"
-					$lista = $groupby.split(",")
-					foreach($suba in $lista)
-						{	if(-not ($commarr -eq $suba.toUpper() ) )	{	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
-						}
-					$srinfocmd += " -groupby $groupby"
-				}		
-			if($Hourly)		{	$srinfocmd += " -hourly"	}
-			if($Daily)		{	$srinfocmd += " -daily"		}
-			if($Hires)		{	$srinfocmd += " -hires"		}
-			if($Node)		{	$nodes = $Node.split(",")
-								$srinfocmd += " $nodes"
-							}
-			$tempFile = [IO.Path]::GetTempFileName()
-			if($attime)		{	$srinfocmd += " -attime "
-								write-verbose "System reporter command => $srinfocmd"
-								if($groupby)	{	$optionname = $groupby.toUpper()	}
-								else			{	$optionname = "NODE"	}
-								$rangestart = "1"			
-							}
-			elseif($groupby)
-				{	$optionname = $groupby.toUpper()
-					$rangestart = "2"
-					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,$optionname,User%,Sys%,Idle%,Intr/s,CtxtSw/s"
+	if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
+	if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
+	if($groupby){	$srinfocmd += " -groupby $groupby"}		
+	if($Hourly)	{	$srinfocmd += " -hourly"	}
+	if($Daily)	{	$srinfocmd += " -daily"		}
+	if($Hires)	{	$srinfocmd += " -hires"		}
+	if($Node)	{	$nodes = $Node.split(",")
+					$srinfocmd += " $nodes"
 				}
-			else
-				{	$rangestart = "1"
+	$tempFile = [IO.Path]::GetTempFileName()
+	if($attime)	{	$srinfocmd += " -attime "
+					if($groupby)	{	$optionname = $groupby.toUpper()	}
+					else			{	$optionname = "NODE"	}
+					$rangestart = "1"			
+				}
+	elseif($groupby)
+				{	$optionname = $groupby.toUpper()
+						$rangestart = "2"
+						Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,$optionname,User%,Sys%,Idle%,Intr/s,CtxtSw/s"
+				}
+		else	{	$rangestart = "1"
 					Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,User%,Sys%,Idle%,Intr/s,CtxtSw/s"
 				}
-			write-verbose "System reporter command => $srinfocmd"
-			$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-			if($Result -contains "FAILURE")
-				{	Remove-Item  $tempFile
-					return "FAILURE : $Result"
-				}
-			$range1  = $Result.count
-			if($range1 -le "3")
-				{	Remove-Item  $tempFile
-					return "No data available"
-				}
-			foreach ($s in  $Result[$rangestart..$range1] )
-				{	$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +"," ")
-					$s= [regex]::Replace($s," ",",")
+		write-verbose "System reporter command => $srinfocmd"
+		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
+}
+End
+{	if ( (-not $ShowRaw ) -or ( ($Result.count) -le "3" ) )
+		{	foreach ($s in  $Result[$rangestart..$range1] )
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 					Add-Content -Path $tempFile -Value $s
 				}
-			Import-Csv $tempFile
-			Remove-Item  $tempFile
+			$Result = Import-Csv $tempFile
+		}
+	Remove-Item  $tempFile
+	return $Result
 }
 }
 
-Function Get-A9SRStatfsav
-{
-<#
-.SYNOPSIS
-	Get-SRStatfsav - System reporter performance reports for File Persona anti-virus.
-.DESCRIPTION
-	The Get-SRStatfsav command displays historical performance data reports for File Persona anti-virus activity.
-.PARAMETER Attime
-	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
-	groupby option. Without this option performance is shown versus time, with a row per time interval.
-.PARAMETER Btsecs
-	Select the begin time in seconds for the report. The value can be specified as either
-		- The absolute epoch time (for example 1351263600).
-		- The absolute time as a text string in one of the following formats:
-			- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-			- Full time string excluding time zone: "2012-10-26 11:00:00"
-			- Date string: "2012-10-26" or 2012-10-26
-			- Time string: "11:00:00" or 11:00:00
-		- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-			be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the time at which the report begins depends
-	on the sample category (-hires, -hourly, -daily):
-		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
-		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
-		- For daily, the default begin time is 90 days ago (-btsecs -90d).
-	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
-	If -btsecs 0 is specified then the report begins at the earliest sample.
-
-.PARAMETER Etsecs
-	Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
-		- The absolute epoch time (for example 1351263600).
-		- The absolute time as a text string in one of the following formats:
-			- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-			- Full time string excluding time zone: "2012-10-26 11:00:00"
-			- Date string: "2012-10-26" or 2012-10-26
-			- Time string: "11:00:00" or 11:00:00
-		- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-			be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the report ends with the most recent
-	sample.
-.PARAMETER Hires
-	Select high resolution samples (5 minute intervals) for the report. This is the default.
-.PARAMETER Hourly
-	Select hourly samples for the report.
-.PARAMETER Daily
-	Select daily samples for the report.
-.PARAMETER Summary
-	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
-		min   Display the minimum for each metric
-		avg   Display the average for each metric
-		max   Display the maximum for each metric
-		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
-	Other keywords which modify the summary display or computation:
-		detail	 	Display individual performance records in addition to one  or more summaries. By default, -summary output excludes individual records and only displays the summary.
-		per_time	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per  time. By default, one summary is computed across all records.
-		per_group	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per object grouping. By default, one summary is computed across all records.
-	only_compareby	When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries using only that reduced set of object groupings. By default,
-		summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
-.PARAMETER Groupby
-	For -attime reports, generate a separate row for each combination of <groupby> items.  Each <groupby> must be different and	one of the following:
-	NODE      The controller node
-.PARAMETER Compareby
-	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects
-	can be displayed, up to 32 objects for vstime reports or 128 objects for attime reports.  The field used for comparison can be any of the
-	groupby fields or one of the following: scanengine, maxscanengine, totalscanned, totalinfected, totalquarantined
-.PARAMETER Node
-	Limit the data to that corresponding to one of the specified nodes.
-.PARAMETER Sortcol
-	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
-	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
-	inc		Sort in increasing order (default).
-	dec		Sort in decreasing order.
-	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Attime,
-		[Parameter()]	[String]	$Btsecs,
-		[Parameter()]	[String]	$Etsecs,
-		[Parameter()]	[switch]	$Hires,
-		[Parameter()]	[switch]	$Hourly,
-		[Parameter()]	[switch]	$Daily,
-		[Parameter()]	[String]	$Summary,
-		[Parameter()]	[String]	$Groupby,
-		[Parameter()]	[String]	$Compareby,
-		[Parameter()]	[String]	$Node,
-		[Parameter()]	[String]	$Sortcol,	
-		[Parameter()]	[String]	$FPGname
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$Cmd = " srstatfsav "
-	if($Attime)		{	$Cmd += " -attime " 		}
-	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
-	if($Etsecs) 	{	$Cmd += " -etsecs $Etsecs " }
-	if($Hires)		{	$Cmd += " -hires " 			}
-	if($Hourly)		{	$Cmd += " -hourly " 		}
-	if($Daily)		{	$Cmd += " -daily " 			}
-	if($Summary)	{	$Cmd += " -summary $Summary "}
-	if($Groupby)	{	$Cmd += " -groupby $Groupby "}
-	if($Compareby)	{	$Cmd += " -compareby $Compareby "}
-	if($Node)		{	$Cmd += " -node $Node "		}
-	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
-	if($FPGname)	{	$Cmd += " $FPGname " 		} 
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Get-A9SRStatfsblock
-{
-<#
-.SYNOPSIS
-	Get-SRStatfsblock - System reporter performance reports for File Persona block devices.
-.DESCRIPTION
-	The Get-SRStatfsblock command displays historical performance data reports for File Persona block devices.
-.PARAMETER Attime
-	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
-	groupby option. Without this option performance is shown versus time, with a row per time interval.
-.PARAMETER Btsecs
-	Select the begin time in seconds for the report. The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):
-		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
-		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
-		- For daily, the default begin time is 90 days ago (-btsecs -90d).
-	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
-	If -btsecs 0 is specified then the report begins at the earliest sample.
-.PARAMETER Etsecs
-	Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the report ends with the most recent sample.
-.PARAMETER Hires
-	Select high resolution samples (5 minute intervals) for the report. This is the default.
-.PARAMETER Hourly
-	Select hourly samples for the report.
-.PARAMETER Daily
-	Select daily samples for the report.
-.PARAMETER Summary
-	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
-		min   Display the minimum for each metric
-		avg   Display the average for each metric
-		max   Display the maximum for each metric
-		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
-	Other keywords which modify the summary display or computation:
-	detail
-		Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
-	per_time
-		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per
-		time. By default, one summary is computed across all records.
-	per_group
-		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per
-		object grouping. By default, one summary is computed across all records.
-	only_compareby
-		When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries using only that reduced set of object groupings. By default,
-		summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
-.PARAMETER Groupby
-	For -attime reports, generate a separate row for each combination of <groupby> items.  Each <groupby> must be different and one of the following:
-	NODE            The controller node
-	BLOCKDEV_NAME   The block device name
-.PARAMETER Compareby
-	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects can be displayed, up to 32 objects for vstime reports 
-	or 128 objects for attime reports.  The field used for comparison can be any of the groupby fields or one of the following: reads, reads_merged, read_sectors, read_time_ms, writes, 
-	writes_merged,  write_sectors, write_time_ms, ios_current, io_time_ms, io_time_weighted_ms
-.PARAMETER Node
-	Limit the data to that corresponding to one of the specified nodes.
-.PARAMETER Sortcol
-	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
-	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
-		inc		Sort in increasing order (default).
-		dec		Sort in decreasing order.
-	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
-.PARAMETER BlockdevName  
-	Block Devices matching either the specified name or glob-style pattern are included. This specifier can be repeated to display information
-	for multiple devices. If not specified, all block devices are included.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Attime,
-		[Parameter()]	[String]	$Btsecs,
-		[Parameter()]	[String]	$Etsecs,
-		[Parameter()]	[switch]	$Hires,
-		[Parameter()]	[switch]	$Hourly,
-		[Parameter()]	[switch]	$Daily,
-		[Parameter()]	[String]	$Summary,
-		[Parameter()]	[String]	$Groupby,
-		[Parameter()]	[String]	$Compareby,
-		[Parameter()]	[String]	$Node,
-		[Parameter()]	[String]	$Sortcol,
-		[Parameter()]	[String]	$BlockdevName
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$Cmd = " srstatfsblock "
-	if($Attime)		{	$Cmd += " -attime " }
-	if($Btsecs) 	{	$Cmd += " -btsecs $Btsecs " }
-	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
-	if($Hires)		{	$Cmd += " -hires " }
-	if($Hourly)		{	$Cmd += " -hourly " }
-	if($Daily)		{	$Cmd += " -daily " }
-	if($Summary)	{	$Cmd += " -summary $Summary "}
-	if($Groupby)	{	$Cmd += " -groupby $Groupby " }
-	if($Compareby)	{	$Cmd += " -compareby $Compareby " }
-	if($Node)		{	$Cmd += " -node $Node "}
-	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
-	if($BlockdevName){	$Cmd += " $Blockdev_name " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Get-A9SRStatfscpu
-{
-<#
-.SYNOPSIS
-	Get-SRStatfscpu - System reporter performance reports for File Persona CPU usage.
-.DESCRIPTION
-	The Get-SRStatfscpu command displays historical performance data reports for File Persona CPU utilization.
-.PARAMETER Attime
-	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
-	groupby option. Without this option performance is shown versus time, with a row per time interval.
-.PARAMETER Btsecs
-	Select the begin time in seconds for the report. The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):
-		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
-		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
-		- For daily, the default begin time is 90 days ago (-btsecs -90d).
-	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
-	If -btsecs 0 is specified then the report begins at the earliest sample.
-.PARAMETER Etsecs
-	Select the end time in seconds for the report.  If -attime is specified, select the time for the report.
-	The value can be specified as either
-		- The absolute epoch time (for example 1351263600).
-		- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-		- A negative number indicating the number of seconds before the
-	current time. Instead of a number representing seconds, <secs> can be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the report ends with the most recent sample.
-.PARAMETER Hires
-	Select high resolution samples (5 minute intervals) for the report. This is the default.
-.PARAMETER Hourly
-	Select hourly samples for the report.
-.PARAMETER Daily
-	Select daily samples for the report.
-.PARAMETER Summary
-	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
-		min   Display the minimum for each metric
-		avg   Display the average for each metric
-		max   Display the maximum for each metric
-		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
-	Other keywords which modify the summary display or computation:
-	detail
-		Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
-	per_time
-		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per time. By default, one summary is computed across all records.
-	per_group
-		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per
-		object grouping. By default, one summary is computed across all records.
-	only_compareby
-		When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries using only that reduced set of object groupings. By default,
-		summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail"  output does conform to the -compareby object limitation.
-.PARAMETER Groupby
-	For -attime reports, generate a separate row for each combination of <groupby> items. Each <groupby> must be different and one of the following:
-	NODE   The controller node
-	CPU    The CPU within the controller node
-.PARAMETER Compareby
-	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects
-	can be displayed, up to 32 objects for vstime reports or 128 objects for attime reports.  The field used for comparison can be any of the
-	groupby fields or one of the following: usage_pct, iowait_pct, idle_pct
-.PARAMETER Node
-	Limit the data to that corresponding to one of the specified nodes.
-.PARAMETER Sortcol
-	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
-	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
-		inc		Sort in increasing order (default).
-		dec		Sort in decreasing order.
-	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
-.PARAMETER CpuId
-	Only the specified CPU ID numbers are included. This specifier can be repeated to display information for multiple CPUs. If not specified, all CPUs are included.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Attime,
-		[Parameter()]	[String]	$Btsecs,
-		[Parameter()]	[String]	$Etsecs,
-		[Parameter()]	[switch]	$Hires,
-		[Parameter()]	[switch]	$Hourly,
-		[Parameter()]	[switch]	$Daily,
-		[Parameter()]	[String]	$Summary,
-		[Parameter()]	[String]	$Groupby,
-		[Parameter()]	[String]	$Compareby,
-		[Parameter()]	[String]	$Node,
-		[Parameter()]	[String]	$Sortcol,
-		[Parameter()]	[String]	$CpuId
-	)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$Cmd = " srstatfscpu "
-	if($Attime)		{	$Cmd += " -attime " }
-	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs "}
-	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
-	if($Hires)		{	$Cmd += " -hires " }
-	if($Hourly)		{	$Cmd += " -hourly " }
-	if($Daily)		{	$Cmd += " -daily " }
-	if($Summary)	{	$Cmd += " -summary $Summary " }
-	if($Groupby)	{	$Cmd += " -groupby $Groupby " }
-	if($Compareby)	{	$Cmd += " -compareby $Compareby "}
-	if($Node)		{	$Cmd += " -node $Node " }
-	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
-	if($CpuId)		{	$Cmd += " $CpuId " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Get-A9SRStatfsfpg
-{
-<#
-.SYNOPSIS
-	Get-SRStatfsfpg - System reporter performance reports for File Persona FPGs.
-.DESCRIPTION	
-	The Get-SRStatfsfpg command displays historical performance data reports for File Persona file provisioning groups.
-.PARAMETER Attime
-	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
-	groupby option. Without this option performance is shown versus time, with a row per time interval.
-.PARAMETER Btsecs
-	Select the begin time in seconds for the report. The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):
-		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
-		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
-		- For daily, the default begin time is 90 days ago (-btsecs -90d).
-	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
-	If -btsecs 0 is specified then the report begins at the earliest sample.
-.PARAMETER Etsecs
-	Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the report ends with the most recent
-	sample.
-.PARAMETER Hires
-	Select high resolution samples (5 minute intervals) for the report.  This is the default.
-.PARAMETER Hourly
-	Select hourly samples for the report.
-.PARAMETER Daily
-	Select daily samples for the report.
-.PARAMETER Summary
-	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
-		min   Display the minimum for each metric
-		avg   Display the average for each metric
-		max   Display the maximum for each metric
-		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
-	Other keywords which modify the summary display or computation:
-		detail		Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
-		per_time	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per time. By default, one summary is computed across all records.
-		per_group	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per object grouping. By default, one summary is computed across all records.
-		only_compareby	When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries using only that reduced set of object groupings. By default,
-				summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
-.PARAMETER Groupby
-	For -attime reports, generate a separate row for each combination of <groupby> items. Each <groupby> must be different and one of the following:
-	FPG_NAME  File Provisioning Group name
-	FPG_ID    File Provisioning Group ID
-	NODE      The controller node
-.PARAMETER Compareby
-	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects can be displayed, up to 32 objects for vstime reports or 128 objects
-	for attime reports.  The field used for comparison can be any of the groupby fields or one of the following: Totalblocks, Freeblocks, Numreads, Numbytesread, Numwrites,	
-	NumBytesWritten, Creates, Removes, Errors, ReadLatency, WriteLatency
-.PARAMETER Node
-	Limit the data to that corresponding to one of the specified nodes.
-.PARAMETER Sortcol
-	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
-	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
-		inc		Sort in increasing order (default).
-		dec		Sort in decreasing order.
-	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted  by values in later columns.
-.PARAMETER FpgName
-	File provisioning groups matching either the specified name or glob-style pattern are included. This specifier can be repeated to
-	display information for multiple FPGs. If not specified, all FPGs are included.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Attime,
-		[Parameter()]	[String]	$Btsecs,
-		[Parameter()]	[String]	$Etsecs,
-		[Parameter()]	[switch]	$Hires,
-		[Parameter()]	[switch]	$Hourly,
-		[Parameter()]	[switch]	$Daily,
-		[Parameter()]	[String]	$Summary,
-		[Parameter()]	[String]	$Groupby,
-		[Parameter()]	[String]	$Compareby,
-		[Parameter()]	[String]	$Node,
-		[Parameter()]	[String]	$Sortcol,
-		[Parameter()]	[String]	$FpgName
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$Cmd = " srstatfsfpg "
-	if($Attime)		{	$Cmd += " -attime " 			}
-	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " 	}
-	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " 	}
-	if($Hires) 		{	$Cmd += " -hires " 				}
-	if($Hourly)		{	$Cmd += " -hourly " 			}
-	if($Daily)		{	$Cmd += " -daily " 				}
-	if($Summary)	{	$Cmd += " -summary $Summary " 	}
-	if($Groupby)	{	$Cmd += " -groupby $Groupby "	}
-	if($Compareby) 	{	$Cmd += " -compareby $Compareby "}
-	if($Node)		{	$Cmd += " -node $Node " 		}
-	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "	}
-	if($FpgName)	{	$Cmd += " $FpgName " 			}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Get-A9SRStatfsmem
-{
-<#
-.SYNOPSIS
-	srstatfsmem - System reporter performance reports for File Persona memory usage
-.DESCRIPTION
-	The srstatfsmem command displays historical performance data reports for File Persona memory utilization.
-.PARAMETER Attime
-	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
-	groupby option. Without this option performance is shown versus time, with a row per time interval.
-.PARAMETER Btsecs
-	Select the begin time in seconds for the report. The value can be specified as either
-		- The absolute epoch time (for example 1351263600).
-		- The absolute time as a text string in one of the following formats:
-			- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-			- Full time string excluding time zone: "2012-10-26 11:00:00"
-			- Date string: "2012-10-26" or 2012-10-26
-			- Time string: "11:00:00" or 11:00:00
-		- A negative number indicating the number of seconds before the
-	current time. Instead of a number representing seconds, <secs> can be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):
-		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
-		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
-		- For daily, the default begin time is 90 days ago (-btsecs -90d).
-	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires. If -btsecs 0 is specified then the report begins at the earliest sample.
-.PARAMETER Etsecs
-	Select the end time in seconds for the report.  If -attime is specified, select the time for the report.
-	The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the report ends with the most recent sample.
-.PARAMETER Hires
-	Select high resolution samples (5 minute intervals) for the report. This is the default.
-.PARAMETER Hourly
-	Select hourly samples for the report.
-.PARAMETER Daily
-	Select daily samples for the report.
-.PARAMETER Summary
-	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
-		min   Display the minimum for each metric
-		avg   Display the average for each metric
-		max   Display the maximum for each metric
-		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
-	Other keywords which modify the summary display or computation:
-		detail		Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
-		per_time	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per time. By default, one summary is computed across all records.
-		per_group	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per object grouping. By default, one summary is computed across all records.
-		only_compareby	When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries  using only that reduced set of object groupings. By default,
-					summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
-.PARAMETER Groupby
-	For -attime reports, generate a separate row for each combination of <groupby> items. Each <groupby> must be different and one of the following:
-	NODE   The controller node
-.PARAMETER Compareby
-	The compareby option limits output records to only certain objects,	compared by a specified field.  Either the top or bottom X objects can be displayed, up to 32 objects for vstime reports or 128 objects
-	for attime reports.  The field used for comparison can be any of the groupby fields or one of the following: usage_pct, swap_pct, free_pct
-.PARAMETER Node
-	Limit the data to that corresponding to one of the specified nodes.
-.PARAMETER Sortcol
-	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
-	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
-		inc		Sort in increasing order (default).
-		dec		Sort in decreasing order.
-	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Attime,
-		[Parameter()]	[String]	$Btsecs,
-		[Parameter()]	[String]	$Etsecs,
-		[Parameter()]	[switch]	$Hires,
-		[Parameter()]	[switch]	$Hourly,
-		[Parameter()]	[switch]	$Daily,
-		[Parameter()]	[String]	$Summary,
-		[Parameter()] 	[String]	$Groupby,
-		[Parameter()]	[String]	$Compareby,
-		[Parameter()]	[String]	$Node,
-		[Parameter()]	[String]	$Sortcol
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$Cmd = " srstatfsmem "
-	if($Attime)		{	$Cmd += " -attime " }
-	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
-	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
-	if($Hires)		{	$Cmd += " -hires " }
-	if($Hourly)		{	$Cmd += " -hourly " }
-	if($Daily)		{	$Cmd += " -daily " }
-	if($Summary)	{	$Cmd += " -summary $Summary " }
-	if($Groupby)	{	$Cmd += " -groupby $Groupby " }
-	if($Compareby)	{	$Cmd += " -compareby $Compareby " }
-	if($Node)		{	$Cmd += " -node $Node " }
-	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Get-A9SRStatfsnet
-{
-<#
-.SYNOPSIS
-	Get-SRStatfsnet - System reporter performance reports for File Persona networking.
-.DESCRIPTION
-	The Get-SRStatfsnet command displays historical performance data reports for File Persona networking devices.
-.PARAMETER Attime
-	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
-	groupby option. Without this option performance is shown versus time, with a row per time interval.
-.PARAMETER Btsecs
-	Select the begin time in seconds for the report. The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):
-		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
-		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
-		- For daily, the default begin time is 90 days ago (-btsecs -90d).
-	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
-	If -btsecs 0 is specified then the report begins at the earliest sample.
-.PARAMETER Etsecs
-	Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the report ends with the most recent sample.
-.PARAMETER Hires
-	Select high resolution samples (5 minute intervals) for the report. This is the default.
-.PARAMETER Hourly
-	Select hourly samples for the report.
-.PARAMETER Daily
-	Select daily samples for the report.
-.PARAMETER Summary
-	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
-		min   Display the minimum for each metric
-		avg   Display the average for each metric
-		max   Display the maximum for each metric
-		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
-	Other keywords which modify the summary display or computation:
-		detail			Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
-		per_time		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per time. By default, one summary is computed across all records.
-		per_group		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per object grouping. By default, one summary is computed across all records.
-		only_compareby	When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries using only that reduced set of object groupings. By default,
-						summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
-.PARAMETER Groupby
-	For -attime reports, generate a separate row for each combination of <groupby> items. Each <groupby> must be different and one of the following:
-	NODE      The controller node
-	DEV_NAME  Ethernet interface name
-.PARAMETER Compareby
-	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects can be displayed, up to 32 objects for vstime reports or 128 objects
-	for attime reports.  The field used for comparison can be any of the groupby fields or one of the following: rx_bytes, rx_packets, tx_bytes, tx_packets
-.PARAMETER Node
-	Limit the data to that corresponding to one of the specified nodes.
-.PARAMETER Sortcol
-	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
-	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
-		inc		Sort in increasing order (default).
-		dec		Sort in decreasing order.
-	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
-.PARAMETER EthdevName
-	Ethernet interface devices matching either the specified name or glob-style pattern are included. This specifier can be repeated to
-	display information for multiple devices. If not specified, all devices are included.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(
-	[Parameter()]	[switch]	$Attime,
-	[Parameter()]	[String]	$Btsecs,
-	[Parameter()]	[String]	$Etsecs,
-	[Parameter()]	[switch]	$Hires,
-	[Parameter()]	[switch]	$Hourly,
-	[Parameter()]	[switch]	$Daily,
-	[Parameter()]	[String]	$Summary,
-	[Parameter()]	[String]	$Groupby,
-	[Parameter()]	[String]	$Compareby,
-	[Parameter()]	[String]	$Node,
-	[Parameter()]	[String]	$Sortcol,
-	[Parameter()]	[String]	$EthdevName
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$Cmd = " srstatfsnet "
-	if($Attime)		{	$Cmd += " -attime " }
-	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
-	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
-	if($Hires) 		{	$Cmd += " -hires " 	}
-	if($Hourly) 	{	$Cmd += " -hourly " }
-	if($Daily)		{	$Cmd += " -daily " }
-	if($Summary)	{	$Cmd += " -summary $Summary " }
-	if($Groupby)	{	$Cmd += " -groupby $Groupby " }
-	if($Compareby)	{	$Cmd += " -compareby $Compareby " }
-	if($Node)		{	$Cmd += " -node $Node " }
-	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
-	if($EthdevName)	{	$Cmd += " $EthdevName " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Get-A9SRStatfsnfs
-{
-<#
-.SYNOPSIS
-	Get-SRStatfsnfs - System reporter performance reports for File Persona NFS shares.
-.DESCRIPTION
-	The Get-SRStatfsnfs command displays historical performance data reports for File Persona NFS shares.
-.PARAMETER Attime
-	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
-	groupby option. Without this option performance is shown versus time, with a row per time interval.
-.PARAMETER Btsecs
-	Select the begin time in seconds for the report. The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the time at which the report begins depends
-	on the sample category (-hires, -hourly, -daily):
-		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
-		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
-		- For daily, the default begin time is 90 days ago (-btsecs -90d).
-	If begin time and sample category are not specified then the time
-	the report begins is 12 hours ago and the default sample category is hires.
-	If -btsecs 0 is specified then the report begins at the earliest sample.
-.PARAMETER Etsecs
-	Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the report ends with the most recent sample.
-.PARAMETER Hires
-	Select high resolution samples (5 minute intervals) for the report. This is the default.
-.PARAMETER Hourly
-	Select hourly samples for the report.
-.PARAMETER Daily
-	Select daily samples for the report.
-.PARAMETER Summary
-	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
-		min   Display the minimum for each metric
-		avg   Display the average for each metric
-		max   Display the maximum for each metric
-		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
-	Other keywords which modify the summary display or computation:
-		detail		Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
-		per_time	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per time. By default, one summary is computed across all records.
-		per_group	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per object grouping. By default, one summary is computed across all records.
-		only_compareby	When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries
-					using only that reduced set of object groupings. By default, summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
-.PARAMETER Groupby
-	For -attime reports, generate a separate row for each combination of <groupby> items. Each <groupby> must be different and one of the following:
-	NODE   The controller node
-.PARAMETER Compareby
-	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects
-	can be displayed, up to 32 objects for vstime reports or 128 objects for attime reports.  The field used for comparison can be any of the  groupby fields or one of the following:
-	Client_RPC_calls, Client_RPC_retrans, Server_RPC_calls, Server_RPC_badcalls, V3_Null, V3_GetAttr, V3_SetAttr, V3_lookup, V3_access, V3_ReadLink, V3_Read,
-	V3_Write, V3_Create, V3_MkDir, V3_Symlink, V3_Mknod, V3_Remove, V3_RmDir, V3_Rename, V3_Link, V3_ReadDir, V3_ReadDirPlus, V3_FsStat, V3_FsInfo,
-	V3_PathConf, V3_Commit, V4_op0_unused, V4_op1_unused, V4_op2_future, V4_access, V4_close, V4_commit, V4_create, V4_delegpurge, V4_delegreturn,
-	V4_getattr, V4_getfh, V4_link, V4_lock, V4_lockt, V4_locku, V4_lookup, V4_lookup_root, V4_nverify, V4_open, V4_openattr, V4_open_conf, V4_open_dgrd,
-	V4_putfh, V4_putpubfh, V4_putrootfh, V4_Read, V4_reddir, V4_readlink, V4_remove, V4_rename, V4_renew, V4_restorefh, V4_savefh, V4_secinfo, V4_setattr, V4_setcltid,
-	V4_setcltidconf, V4_verify, V4_Write, V4_rellockowner, V4_bc_ctl, V4_bind_conn, V4_exchange_id, V4_create_ses, V4_destroy_ses, V4_free_stateid, V4_getdirdeleg,	
-	V4_getdevinfo, V4_getdevlist, V4_layoutcommit, V4_layoutget, V4_layoutreturn, V4_secinfononam, V4_sequence, V4_set_ssv, V4_test_stateid, V4_want_deleg, V4_destroy_clid, V4_reclaim_comp
-.PARAMETER Node
-	Limit the data to that corresponding to one of the specified nodes.
-.PARAMETER Sortcol
-	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
-		inc		Sort in increasing order (default).
-		dec		Sort in decreasing order.
-	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Attime,
-		[Parameter()]	[String]	$Btsecs,
-		[Parameter()]	[String]	$Etsecs,
-		[Parameter()]	[switch]	$Hires,
-		[Parameter()]	[switch]	$Hourly,
-		[Parameter()]	[switch]	$Daily,
-		[Parameter()]	[String]	$Summary,
-		[Parameter()]	[String]	$Groupby,
-		[Parameter()]	[String]	$Compareby,
-		[Parameter()]	[String]	$Node,
-		[Parameter()]	[String]	$Sortcol
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$Cmd = " srstatfsnfs "
-	if($Attime)			{	$Cmd += " -attime "}
-	if($Btsecs)			{	$Cmd += " -btsecs $Btsecs "}
-	if($Etsecs)			{	$Cmd += " -etsecs $Etsecs "}
-	if($Hires)			{	$Cmd += " -hires " }
-	if($Hourly)			{	$Cmd += " -hourly " }
-	if($Daily)			{	$Cmd += " -daily " }
-	if($Summary)		{	$Cmd += " -summary $Summary " }
-	if($Groupby) 		{	$Cmd += " -groupby $Groupby " }
-	if($Compareby)		{	$Cmd += " -compareby $Compareby " }
-	if($Node)			{	$Cmd += " -node $Node " }
-	if($Sortcol)		{	$Cmd += " -sortcol $Sortcol " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Set-A9SRAlertCrit
+Function Set-A9SystemReporterAlertCrit
 {
 <#
 .SYNOPSIS
@@ -2593,7 +1825,7 @@ Process
 }
 }
 
-Function Remove-A9SRAlertCrit
+Function Remove-A9SystemReporterAlertCrit
 {
 <#
 .SYNOPSIS
@@ -2633,19 +1865,13 @@ Process
 }
 }
 
-Function New-A9SRAlertCrit
+Function New-A9SystemReporterAlertCrit
 {
 <#
 .SYNOPSIS
     Creates a criterion that System Reporter evaluates to determine if a performance alert should be generated.
 .DESCRIPTION
     Creates a criterion that System Reporter evaluates to determine if a performance alert should be generated.
-.EXAMPLE
-    PS:> New-SRAlertCrit -Type port  -Condition "write_iops>50" -Name write_port_check
-
-	Example describes a criterion that generates an alert for each port that has more than 50 write IOPS in a high resolution sample:
-.EXAMPLE
-    PS:> New-A9SRAlertCrit -Type port  -PortType disk -Condition "write_iops>50" -Name write_port_check   
 .PARAMETER Type
 	Type must be one of the following: port, vlun, pd, ld, cmp, cpu, link, qos, rcopy, rcvv, ldspace, pdspace, cpgspace, vvspace, sysspace.
 .PARAMETER Condition
@@ -2736,14 +1962,20 @@ Function New-A9SRAlertCrit
 	can be specified in seconds or with a suffix of m, h or d to represent time in minutes (e.g. 30m), hours (e.g. 1.5h), or days (e.g. 7d).
 	Note that a single alert criteria can generate multiple alerts if multiple objects exceed the defined threshold. A deferral period
 	applies to each unique alert. Acknowledging an alert with "setalert ack <id>" will end its deferral period early.
+.EXAMPLE
+    PS:> New-SRAlertCrit -Type port  -Condition "write_iops>50" -Name write_port_check
+
+	Example describes a criterion that generates an alert for each port that has more than 50 write IOPS in a high resolution sample:
+.EXAMPLE
+    PS:> New-A9SRAlertCrit -Type port  -PortType disk -Condition "write_iops>50" -Name write_port_check   
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)][ValidateSet("port","vlun","pd","ld","cmp","cpu","link","qos","rcopy","rcvv")]	
-						[String]    $Type ,
-		[Parameter(Mandatory=$true)]	[String]   $Condition ,
-		[Parameter(Mandatory=$true)]	[String]    $Name ,
+param(	[Parameter(Mandatory)][ValidateSet("port","vlun","pd","ld","cmp","cpu","link","qos","rcopy","rcvv")]	
+						[String]    $Typed ,
+		[Parameter(Mandatory)]	[String]   $Condition ,
+		[Parameter(Mandatory)]	[String]    $Name ,
 		[Parameter()]	[switch]    $Daily , 
 		[Parameter()]	[switch]    $Hourly ,
 		[Parameter()]	[switch]	$Hires ,
@@ -2776,7 +2008,7 @@ Begin
 }
 Process
 {	$srinfocmd = "createsralertcrit "	
-	$srinfocmd += " $Type "
+	$srinfocmd += " $Typed "
 	if($Daily)		{	$srinfocmd += " -daily "	}
 	if($Hourly)		{	$srinfocmd += " -hourly "	}
 	if($Hires)		{	$srinfocmd += " -hires "	}
@@ -2806,31 +2038,22 @@ Process
 	$srinfocmd += " $Name "
 	write-verbose "Create alert criteria command => $srinfocmd"
 	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing New-SRAlertCrit Command $Result"	}
-	else{	return  "FAILURE : While Executing New-SRAlertCrit $Result "	}
+	if([string]::IsNullOrEmpty($Result))	
+		{	Write-host "Success : Executing New-SRAlertCrit Command" -ForegroundColor Green 
+		}
+	else{	Write-warning "FAILURE : While Executing New-SRAlertCrit "	
+		}
+	return $Result
 }
 }
 
-Function Get-A9SRStatPort
+Function Get-A9SystemReporterStatPort
 {
 <#
 .SYNOPSIS
 	System reporter performance reports for ports.
 .DESCRIPTION
 	System reporter performance reports for ports.	
-.EXAMPLE
-    PS:> Get-A9SRStatPort
-
-	System reporter performance reports for ports.
-.EXAMPLE
-    PS:> Get-A9SRStatPort -portType "disk,host" -Hourly -btsecs -24h -port "0:*:* 1:*:*"
-
-	Sexample displays aggregate hourly performance statistics for disk and host ports on nodes 0 and 1 beginning 24 hours ago:
-.EXAMPLE
-    PS:> Get-A9SRStatPort -Groupby PORT_N
-	
-.EXAMPLE
-    PS:> Get-A9SRStatPort -portType rcip
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
@@ -2876,6 +2099,21 @@ Function Get-A9SRStatPort
 .PARAMETER port
     <npat>:<spat>:<ppat> Ports with <port_n>:<port_s>:<port_p> that match any of the specified <npat>:<spat>:<ppat> patterns are included, where each of the patterns
 	is a glob-style pattern. This specifier can be repeated to include multiple ports or patterns. If not specified, all ports are included.
+.PARAMETER ShowRaw
+	Returns the raw SSH output instead of trying to return a PowerShell Object
+.EXAMPLE
+    PS:> Get-A9SRStatPort
+
+	System reporter performance reports for ports.
+.EXAMPLE
+    PS:> Get-A9SRStatPort -portType "disk,host" -Hourly -btsecs -24h -port "0:*:* 1:*:*"
+
+	Sexample displays aggregate hourly performance statistics for disk and host ports on nodes 0 and 1 beginning 24 hours ago:
+.EXAMPLE
+    PS:> Get-A9SRStatPort -Groupby PORT_N
+	
+.EXAMPLE
+    PS:> Get-A9SRStatPort -portType rcip
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -2886,41 +2124,29 @@ param(	[Parameter()]	[switch]	$attime,
 		[Parameter()]	[switch]    $Hourly ,		
 		[Parameter()]	[switch]    $Daily ,		
 		[Parameter()]	[switch]    $Hires ,
-		[Parameter()]	[String]	$groupby,
-		[Parameter()]	[String]	$portType,
-		[Parameter()]	[String]	$port
+		[Parameter()]	[ValidateSet("PORT_N","PORT_S","PORT_P","PORT_TYPE","GBITPS")]
+						[String]	$groupby,
+		[Parameter()]	[VAlidateSet( "disk","host","iscsi","free","fs","peer","rcip","rcfc")]
+						[String]	$portType,
+		[Parameter()]	[String]	$port,
+		[Parameter()]	[Switch]	$ShowRaw		
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+{	Test-A9Connection -ClientType 'SshClient' 
 }
 Process	
 {	$srinfocmd = "srstatport "
 		if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
-			if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
-			if($groupby)
-				{	$commarr = "PORT_N","PORT_S","PORT_P","PORT_TYPE","GBITPS"				
-					$lista = $groupby.split(",")
-					foreach($suba in $lista)
-						{	if(-not ($commarr -eq $suba.toUpper() ) )	{	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
-						}
-					$srinfocmd += " -groupby $groupby"
-				}		
-			if($Hourly)	{	$srinfocmd += " -hourly"	}
-			if($Daily)	{	$srinfocmd += " -daily"		}
-			if($Hires)	{	$srinfocmd += " -hires"		}
-			if($portType)
-				{	$commarr = "disk","host","iscsi","free","fs","peer","rcip","rcfc"
-					$splitarr = $portType.split(",")
-					foreach ($s in $splitarr)
-						{	if(-not ($commarr -match $s.toLower() ) )	{	return "FAILURE: Invalid port type option it should be in ( $commarr )"	}
-						}
-					$srinfocmd += " -port_type $portType"
-				}
-			if($port)	{	$srinfocmd += " $port "	}
-			$tempFile = [IO.Path]::GetTempFileName()
-			if($attime)
+		if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
+		if($groupby){	$srinfocmd += " -groupby $groupby"	}		
+		if($Hourly)	{	$srinfocmd += " -hourly"	}
+		if($Daily)	{	$srinfocmd += " -daily"		}
+		if($Hires)	{	$srinfocmd += " -hires"		}
+		if($portType){	$srinfocmd += " -port_type $portType"	}
+		if($port)	{	$srinfocmd += " $port "	}
+		$tempFile = [IO.Path]::GetTempFileName()
+		if($attime)
 				{	$srinfocmd += " -attime "
-					write-verbose "System reporter command => $srinfocmd"
 					if($groupby)	{	$optionname = $groupby.toUpper()	}
 					else			{	$optionname = "PORT_TYPE"	}
 					Add-Content -Path $tempFile -Value "PORT_TYPE,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
@@ -2938,25 +2164,21 @@ Process
 				}
 			write-verbose "System reporter command => $srinfocmd"
 			$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-			if($Result -contains "FAILURE")	{	return "FAILURE : $Result"	}
-			$range1  = $Result.count
-			if($range1 -le "4")
-				{	Remove-Item  $tempFile
-					return "No data available"
-				}
-			$range1 = $range1 - 3
-			foreach ($s in  $Result[$rangestart..$range1] )
-				{	$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +"," ")
-					$s= [regex]::Replace($s," ",",")
+}
+End
+{	if ( (-not $ShowRaw) -and ($Result.count) -gt "3")		
+		{	foreach ($s in  $Result[$rangestart..($Result.count)] )
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 					Add-Content -Path $tempFile -Value $s
 				}
-			Import-Csv $tempFile	
-			Remove-Item  $tempFile
+			$Result = Import-Csv $tempFile	
 		}
+	Remove-Item  $tempFile
+	return $Result
+}
 }
 
-Function Get-A9SRStatPhysicalDisk
+Function Get-A9SystemReporterStatPhysicalDisk
 {
 <#
 .SYNOPSIS
@@ -3002,6 +2224,8 @@ Function Get-A9SRStatPhysicalDisk
 	Limit the data to disks of the specified RPM. Allowed speeds are 7, 10, 15, 100 and 150
 .PARAMETER PDID
 	PDs with IDs that match either the specified PDID or glob-style pattern are included. This specifier can be repeated to include multiple PDIDs or patterns. If not specified, all PDs are included.
+.PARAMETER ShowRaw
+	Returns the raw SSH output instead of trying to return a PowerShell Object
 .EXAMPLE
     PS:> Get-A9SRStatPD_CLI 
 
@@ -3030,10 +2254,11 @@ param(	[Parameter()]	[switch]	$attime,
 						[String]	$diskType,
 		[Parameter()]	[ValidateSet("7","10","15","100","150")]
 						[String]	$rpmSpeed,
-		[Parameter()]	[String]	$PDID
+		[Parameter()]	[String]	$PDID,
+		[Parameter()]	[Switch]	$ShowRaw
 )
 Begin
-	{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+	{	Test-A9Connection -ClientType 'SshClient' 
 	}
 Process	
 	{	$srinfocmd = "srstatpd "
@@ -3049,7 +2274,6 @@ Process
 		$tempFile = [IO.Path]::GetTempFileName()
 		if($attime)
 			{	$srinfocmd += " -attime "
-				write-verbose "System reporter command => $srinfocmd"
 				if($groupby)	{	$optionname = $groupby.toUpper()	}
 				else			{	$optionname = "PDID"	}
 				Add-Content -Path $tempFile -Value "PDID,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
@@ -3065,150 +2289,28 @@ Process
 				Add-Content -Path $tempFile -Value "Date,Time,TimeZone,Secs,IO/s_Rd,IO/s_Wr,IO/s_Tot,KBytes/s_Rd,KBytes/s_Wr,KBytes/s_Tot,Svct/ms_Rd,Svct/ms_Wr,Svct/ms_Tot,IOSz/KBytes_Rd,IOSz/KBytes_Wr,IOSz/KBytes_Tot,QLen,AvgBusy%"
 			}
 		$Result = Invoke-A9CLICommand -cmds  $srinfocmd		
-		if($Result -contains "FAILURE")
-			{	Remove-Item  $tempFile
-				write-error "FAILURE" 
-				return $Result
+	}
+End
+	{	if ( (-not $ShowRaw) -and (-not  ( ($Result.count) -le "4") ))
+			{	foreach ($s in  $Result[$rangestart..($Result.count-3)] )
+					{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','	
+						Add-Content -Path $tempFile -Value $s
+					}
+				$result = Import-Csv $tempFile	
 			}
-		$range1  = $Result.count
-		if($range1 -le "4")
-			{	Remove-Item  $tempFile
-				return "No data available"
-			}
-		$range1 = $range1 - 3
-		foreach ($s in  $Result[$rangestart..$range1] )
-			{	$s= [regex]::Replace($s,"^ +","")			
-				$s= [regex]::Replace($s," +"," ")			
-				$s= [regex]::Replace($s," ",",")		
-				Add-Content -Path $tempFile -Value $s
-			}
-		$returndata = Import-Csv $tempFile	
 		Remove-Item  $tempFile
 		return $returndata
 	}
 }
 
-Function Get-A9SRStatfssmb
-{
-<#
-.SYNOPSIS
-	System reporter performance reports for File Persona SMB shares.
-.DESCRIPTION
-	The command displays historical performance data reports for File Persona SMB shares.
-.PARAMETER Attime
-	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
-	groupby option. Without this option performance is shown versus time, with a row per time interval.
-.PARAMETER Btsecs
-	Select the begin time in seconds for the report. The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the time at which the report begins depends
-	on the sample category (-hires, -hourly, -daily):
-		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
-		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
-		- For daily, the default begin time is 90 days ago (-btsecs -90d).
-	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
-	If -btsecs 0 is specified then the report begins at the earliest sample.
-.PARAMETER Etsecs
-	Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the report ends with the most recent sample.
-.PARAMETER Hires
-	Select high resolution samples (5 minute intervals) for the report. This is the default.
-.PARAMETER Hourly
-	Select hourly samples for the report.
-.PARAMETER Daily
-	Select daily samples for the report.
-.PARAMETER Summary
-	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
-		min   Display the minimum for each metric
-		avg   Display the average for each metric
-		max   Display the maximum for each metric
-		<N>%  Display percentile for each metric. <N> may be any number	from 0 to 100. Multiple percentiles may be specified.
-	Other keywords which modify the summary display or computation:
-		detail			Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
-		per_time		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per time. By default, one summary is computed across all records.
-		per_group		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per object grouping. By default, one summary is computed across all records.
-		only_compareby	When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries using only that reduced set of object groupings. By default,
-						summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
-.PARAMETER Groupby
-	For -attime reports, generate a separate row for each combination of <groupby> items. Each <groupby> must be different and one of the following:
-	NODE   Statistics per node
-.PARAMETER Compareby
-	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects can be displayed, up to 32 objects for vstime reports or 128 objects
-	for attime reports.  The field used for comparison can be any of the groupby fields or one of the following: connections, maxConnections, sessions, maxSessions, treeConnects, maxTreeConnects, openFiles, 
-	maxOpenFiles, ReadSumRecorded, ReadSampleRecorded, WriteSumRecorded, WriteSampleRecorded
-.PARAMETER Sortcol
-	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must be specified. In addition, the direction of sorting (<dir>) can be
-	specified as follows:
-		inc		Sort in increasing order (default).
-		dec		Sort in decreasing order.
-	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Attime,
-		[Parameter()]	[String]	$Btsecs,
-		[Parameter()]	[String]	$Etsecs,
-		[Parameter()]	[switch]	$Hires,
-		[Parameter()]	[switch]	$Hourly,
-		[Parameter()]	[switch]	$Daily,
-		[Parameter()]	[String]	$Summary,
-		[Parameter()]	[String]	$Groupby,
-		[Parameter()]	[String]	$Compareby,
-		[Parameter()]	[String]	$Sortcol
-)
-Begin
-	{	Test-A9Connection -ClientType 'SshClient'
-	}
-Process	
-	{	$Cmd = " srstatfssmb "
-		if($Attime)		{	$Cmd += " -attime " }
-		if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
-		if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
-		if($Hires)		{	$Cmd += " -hires " }
-		if($Hourly)		{	$Cmd += " -hourly " }
-		if($Daily)		{	$Cmd += " -daily " }
-		if($Summary)	{	$Cmd += " -summary $Summary " }
-		if($Groupby)	{	$Cmd += " -groupby $Groupby " }
-		if($Compareby)	{	$Cmd += " -compareby $Compareby " }
-		if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
-		$Result = Invoke-A9CLICommand -cmds  $Cmd
-		Return $Result
-	}
-}
 
-Function Get-A9SRStatLD
+Function Get-A9SystemReporterStatLD
 {
 <#
 .SYNOPSIS
     Command displays historical performance data reports for logical disks.
 .DESCRIPTION
     Command displays historical performance data reports for logical disks.
-.EXAMPLE
-    PS:> Get-A9SRStatLD
-
-	Command displays historical performance data reports for logical disks.
-.EXAMPLE
-    PS:> Get-A9SRStatLD -Hourly -btsecs -24h
-
-	example displays aggregate hourly performance statistics for all logical disks beginning 24 hours ago:
-.EXAMPLE
-    PS:> Get-A9SRStatLD -Groupby Node
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
 .PARAMETER btsecs
@@ -3222,7 +2324,7 @@ Function Get-A9SRStatLD
 		- For daily, the default begin time is 90 days ago (-btsecs -90d).
 	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
 	If -btsecs 0 is specified then the report begins at the earliest sample.
-	.PARAMETER etsecs
+.PARAMETER etsecs
     Select the end time in seconds for the report.  If -attime is   specified, select the time for the report.
 	The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
@@ -3249,6 +2351,18 @@ Function Get-A9SRStatLD
 	-Node 0,1,2
 .PARAMETER LDName
 	LDs matching either the specified LD_name or glob-style pattern are included. This specifier can be repeated to display information for multiple LDs. If not specified, all LDs are included.
+.PARAMETER ShowRaw
+	Returns the raw SSH output instead of trying to return a PowerShell Object
+.EXAMPLE
+    PS:> Get-A9SRStatLD
+
+	Command displays historical performance data reports for logical disks.
+.EXAMPLE
+    PS:> Get-A9SRStatLD -Hourly -btsecs -24h
+
+	example displays aggregate hourly performance statistics for all logical disks beginning 24 hours ago:
+.EXAMPLE
+    PS:> Get-A9SRStatLD -Groupby Node
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -3259,10 +2373,12 @@ param(	[Parameter()]	[switch]	$attime,
 		[Parameter()]	[switch]    $Hourly ,		
 		[Parameter()]	[switch]    $Daily ,		
 		[Parameter()]	[switch]    $Hires ,
-		[Parameter()]	[String]	$groupby,
+		[Parameter()]	[Validat3eSet("LDID","DOM_NAME","LD_NAME","CPG_NAME","NODE")]
+						[String]	$groupby,
 		[Parameter()]	[String]	$cpgName,
 		[Parameter()]	[String]	$Node,
-		[Parameter()]	[String]	$LDName
+		[Parameter()]	[String]	$LDName,
+		[Parameter()]	[switch]	$ShowRaw
 )
 Begin
 	{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
@@ -3271,23 +2387,15 @@ Process
 	{	$srinfocmd = "srstatld "
 		if($btsecs)	{	$srinfocmd += " -btsecs $btsecs"	}
 		if($etsecs)	{	$srinfocmd += " -etsecs $etsecs"	}
-		if($groupby)
-			{	$commarr = "LDID","DOM_NAME","LD_NAME","CPG_NAME","NODE"
-				$lista = $groupby.split(",")
-				foreach($suba in $lista)
-					{	if( -not ($commarr -eq $suba.toUpper() ) )
-						{	return "FAILURE: Invalid groupby option it should be in ( $commarr )"	}
-					}
-				$srinfocmd += " -groupby $groupby"
-			}		
-		if($Hourly)	{	$srinfocmd += " -hourly"	}
-		if($Daily)	{	$srinfocmd += " -daily"		}
-		if($Hires)	{	$srinfocmd += " -hires"		}
+		if($groupby){	$srinfocmd += " -groupby $groupby"	}		
+		if($Hourly)	{	$srinfocmd += " -hourly"			}
+		if($Daily)	{	$srinfocmd += " -daily"				}
+		if($Hires)	{	$srinfocmd += " -hires"				}
 		if($Node)	{	$nodes = $Node.split(",")
 						$srinfocmd += " $nodes"			
 					}
-		if($cpgName){	$srinfocmd += " -cpg $cpgName "}
-		if($LDName)	{	$srinfocmd += " $LDName "	}
+		if($cpgName){	$srinfocmd += " -cpg $cpgName "		}
+		if($LDName)	{	$srinfocmd += " $LDName "			}
 		$tempFile = [IO.Path]::GetTempFileName()
 		if($attime)	{	$srinfocmd += " -attime "
 						write-verbose "System reporter command => $srinfocmd"
@@ -3306,28 +2414,21 @@ Process
 			}
 		write-verbose "System reporter command => $srinfocmd"
 		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-		if($Result -contains "FAILURE")
-			{	Remove-Item  $tempFile
-				return "FAILURE : $Result"
+}
+End
+	{	if ( (-not $ShowRaw) -and (-not ($Result.count -le "4")))
+			{	foreach ($s in  $Result[$rangestart..($Result.count-3)] )
+					{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+						Add-Content -Path $tempFile -Value $s
+					}
+				$Result = Import-Csv $tempFile		
 			}
-		$range1  = $Result.count
-		if($range1 -le "4")
-			{	Remove-Item  $tempFile
-				return "No data available"
-			}
-		$range1 = $range1 - 3
-		foreach ($s in  $Result[$rangestart..$range1] )
-			{	$s= [regex]::Replace($s,"^ +","")
-				$s= [regex]::Replace($s," +"," ")
-				$s= [regex]::Replace($s," ",",")
-				Add-Content -Path $tempFile -Value $s
-			}
-		Import-Csv $tempFile	
 		Remove-Item  $tempFile
+		return $Result
 	}
 }
 
-Function Get-A9SRStatfssnapshot
+Function Get-A9SystemReporterStatfssnapshot
 {
 <#
 .SYNOPSIS
@@ -3435,7 +2536,7 @@ Process
 	}
 }
 
-Function Get-A9SRStatlink
+Function Get-A9SystemReporterStatlink
 {
 <#
 .SYNOPSIS
@@ -3544,7 +2645,7 @@ Process
 	}
 }
 
-Function Get-A9SRStatqos
+Function Get-A9SystemReporterStatqos
 {
 <#
 .SYNOPSIS
@@ -3669,7 +2770,7 @@ Process
 	} 
 }
 
-Function Get-A9SRStatrcvv
+Function Get-A9SystemReporterStatrcvv
 {
 <#
 .SYNOPSIS
@@ -3816,7 +2917,7 @@ Process
 	}
 }
 
-Function Get-A9SRStatVLun
+Function Get-A9SystemReporterStatVLun
 {
 <#
 .SYNOPSIS
@@ -3998,7 +3099,7 @@ Process
 	}
 }
 
-Function Get-A9SRVvSpace
+Function Get-A9SystemReporterVvSpace
 {
 <#
 .SYNOPSIS
@@ -4077,6 +3178,8 @@ Function Get-A9SRVvSpace
 	Limit the data to VVOLs that have states in either the Bound or Unbound state.
 .PARAMETER vvoLsc
 	Limit the data to VVol containers that match one or more of the specified VVol container names or glob-styled patterns.
+.PARAMETER ShowRaw
+	Returns the raw SSH output instead of trying to return a PowerShell Object
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -4087,10 +3190,12 @@ param(	[Parameter()]	[switch]	$attime,
 		[Parameter()]	[switch]	$Hourly ,		
 		[Parameter()]	[switch]    $Daily ,		
 		[Parameter()]	[switch]	$Hires ,
-		[Parameter()]	[String]	$groupby,
+		[Parameter()]	[ValidateSet("DOM_NAME","VVID","VV_NAME","BSID","WWN","SNP_CPG_NAME","USR_CPG_NAME","PROV_TYPE","VV_TYPE","VVSET_NAME")]
+						[String]	$groupby,
 		[Parameter()]	[String]	$usrcpg,		
 		[Parameter()]	[String]	$snpcpg,
-		[Parameter()]	[String]	$provType,
+		[Parameter()]	[ValidateSet("cpvv","dds","full","peer","snp","tdvv","tpsd","tpvv")]
+						[String]	$provType,
 		[Parameter()]	[String]	$VVName,
 		[Parameter()]	[String]	$vmName,
 		[Parameter()]	[String]	$vmHost,
@@ -4109,26 +3214,10 @@ Process
 		if($Hourly)	{	$srinfocmd += " -hourly"			}
 		if($Daily)	{	$srinfocmd += " -daily"				}
 		if($Hires)	{	$srinfocmd += " -hires"				}
-		if($groupby)
-			{	$commarr = "DOM_NAME","VVID","VV_NAME","BSID","WWN","SNP_CPG_NAME","USR_CPG_NAME","PROV_TYPE","VV_TYPE","VVSET_NAME"
-				$lista = $groupby.split(",")
-				foreach($suba in $lista)
-					{	if( -not ($commarr -eq $suba.toUpper() ) )
-							{	Remove-Item  $tempFile
-								return "FAILURE: Invalid groupby option it should be in ( $commarr )"
-							}
-					}
-				$srinfocmd += " -groupby $groupby"
-			}		
-		if($usrcpg)	{	$srinfocmd +=  " -usr_cpg $usrcpg "	}
-		if($snpcpg)	{	$srinfocmd +=  " -snp_cpg $snpcpg "	}
-		if($provType)
-			{	$provrray = "cpvv","dds","full","peer","snp","tdvv","tpsd","tpvv"
-				if($provrray -eq $provType)		{	$srinfocmd += " -prov $provType"}
-				else	{	Remove-Item  $tempFile
-							return "FAILURE: Invalid provType it should be in ( $provrray )"
-						}			
-			}
+		if($groupby){	$srinfocmd += " -groupby $groupby"	}		
+		if($usrcpg)	{	$srinfocmd += " -usr_cpg $usrcpg "	}
+		if($snpcpg)	{	$srinfocmd += " -snp_cpg $snpcpg "	}
+		if($provType){	$srinfocmd += " -prov $provType"	}				
 		if($VVName)	{	$srinfocmd += " $VVName "	}		
 		if($vmName)	{	$srinfocmd += " -vmname $vmName "	}
 		if($vmId)	{	$srinfocmd += " -vmid $vmId "	}		
@@ -4154,28 +3243,21 @@ Process
 			}
 		write-verbose "System reporter command => $srinfocmd"
 		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-		if($Result -contains "FAILURE")
-			{	Remove-Item  $tempFile
-				return "FAILURE : $Result"
-			}
-		$range1  = $Result.count
-		if($range1 -le "3")
-			{	Remove-Item  $tempFile
-				return "No data available"
-			}
-		foreach ($s in  $Result[$rangestart..$range1] )
-			{	$s= [regex]::Replace($s,"^ +","")
-				$s= [regex]::Replace($s," +"," ")
-				$s= [regex]::Replace($s," ",",")
-				Add-Content -Path $tempFile -Value $s
-			}
-		$returndata = Import-Csv $tempFile
-		Remove-Item  $tempFile
-		return $returndata
-	}
+}
+End
+{	if ( (-not $ShowRaw) -and (-not ($Result.count) -le "3"))
+		{	foreach ($s in  $Result[$rangestart..($Result.count)] )
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+					Add-Content -Path $tempFile -Value $s
+				}
+			$result = Import-Csv $tempFile
+		}
+	Remove-Item  $tempFile
+	return $result
+}
 }
 
-Function Show-A9SrStatIscsi
+Function Show-A9SystemReporterStatIscsi
 {
 <#
 .SYNOPSIS   
@@ -4229,6 +3311,8 @@ Function Show-A9SrStatIscsi
         PROTOCOL    The protocol type for the port
 .PARAMETER NSP
 	Dode Sloat Port Value 1:2:3
+.PARAMETER ShowRaw
+	Returns the raw SSH output instead of trying to return a PowerShell Object
 .EXAMPLE	
 	PS:> Show-A9SrStatIscsi
 .EXAMPLE
@@ -4255,7 +3339,8 @@ param(	[Parameter()]	[switch]	$Attime,
 		[Parameter()]	[String]	$ETSecs ,
 		[Parameter()]	[ValidateSet("PORT_N","PORT_S","PORT_P","PROTOCOL")]
 						[String]	$Groupby ,
-		[Parameter()]	[String]	$NSP 
+		[Parameter()]	[String]	$NSP,
+		[Parameter()]	[switch]	$ShowRaw
 )		
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -4271,11 +3356,12 @@ Process
 	if ($Daily)		{	$cmd+=" -daily "	}		
 	if($Groupby)	{	$cmd+=" -groupby $Groupby"}
 	if ($NSP)		{	$cmd+=" $NSP "	}
-	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Show-SrStatIscsi command that displays information iSNS table for iSCSI ports in the system  "	
+	$Result = Invoke-A9CLICommand -cmds  $cmd
 }
 end
 {	$Flag="True"
+	if ( $ShowRaw ) { return $Result}
 	if($Attime -or $Summary)
 		{	$Flag="Fals"
 			if($Result -match "Time")
@@ -4355,7 +3441,7 @@ end
 }
 }
 
-Function Show-A9SrStatIscsiSession
+Function Show-A9SystemReporterStatIscsiSession
 {
 <#
 .SYNOPSIS   
@@ -4422,6 +3508,8 @@ Function Show-A9SrStatIscsiSession
 	TPGT        The TPGT ID for the session
 .PARAMETER NSP
 	Node Sloat Poart Value 1:2:3
+.PARAMETER ShowRaw
+	Returns the raw SSH output instead of trying to return a PowerShell Object
 .EXAMPLE	
 	Show-SrStatIscsiSession
 .EXAMPLE
@@ -4446,12 +3534,14 @@ param(	[Parameter()]	[switch]	$Attime,
 		[Parameter()]	[switch]	$Hires,
 		[Parameter()]	[switch]	$Hourly,
 		[Parameter()]	[switch]	$Daily,
-		[Parameter()][ValidateSet("min","avg","max","detail")]	[String]	$Summary ,
+		[Parameter()][ValidateSet("min","avg","max","detail")]	
+						[String]	$Summary ,
 		[Parameter()]	[String]	$BTSecs ,
 		[Parameter()]	[String]	$ETSecs ,
-		[Parameter()][ValidateSet("PORT_N","PORT_S","PORT_P","ISCSI_NAME","TPGT")]	[String]	$Groupby ,
-		[Parameter()]	[String]	$NSP 
-    
+		[Parameter()][ValidateSet("PORT_N","PORT_S","PORT_P","ISCSI_NAME","TPGT")]	
+						[String]	$Groupby ,
+		[Parameter()]	[String]	$NSP,
+		[Parameter()]	[switch]	$ShowRaw
 	)	
 Begin
 	{	Test-A9Connection -ClientType 'SshClient'
@@ -4467,8 +3557,11 @@ Process
 		if ($Daily)		{	$cmd+=" -daily "	}	
 		if ($Groupby)	{	$cmd+=" -groupby $Groupby"	}
 		if ($NSP)	{	$cmd+=" $NSP "	}
-		$Result = Invoke-A9CLICommand -cmds  $cmd
 		write-verbose "  Executing  Show-SrStatIscsiSession command that displays information iSNS table for iSCSI ports in the system  "
+		$Result = Invoke-A9CLICommand -cmds  $cmd
+	}
+End
+	{	if ($ShowRaw) { return $Results}
 		if($Attime)
 			{	if($Result -match "Time")
 					{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
@@ -4536,9 +3629,7 @@ Process
 						$LastItem = $Result.Count
 						$incre = "true" 		
 						foreach ($s in  $Result[1..$LastItem] )
-							{	$s= [regex]::Replace($s,"^ ","")						
-								$s= [regex]::Replace($s," +",",")			
-								$s= [regex]::Replace($s,"-","")			
+							{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','		
 								$s= $s.Trim() -replace 'Time','Date,Time,Zone'				
 								if($incre -eq "true")
 									{	$sTemp1=$s.Substring(1)					
@@ -4566,9 +3657,7 @@ Process
 					$LastItem = $Result.Count
 					$incre = "true" 		
 					foreach ($s in  $Result[1..$LastItem] )
-						{	$s= [regex]::Replace($s,"^ ","")						
-							$s= [regex]::Replace($s," +",",")			
-							$s= [regex]::Replace($s,"-","")			
+						{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','		
 							$s= $s.Trim()					
 							if($incre -eq "true")
 								{	$s=$s.Substring(1)								
