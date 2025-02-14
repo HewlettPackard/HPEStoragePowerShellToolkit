@@ -53,7 +53,7 @@ process
 	if($Drive)		{	$Cmd += " -drive " 		}
 	if($Battery)	{	$Cmd += " -bat " 		}
 	if($NodeID) 	{	$Cmd += " $NodeID " 	}
-	write-verbose "The following command will be sent `n $Cmd"
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -95,7 +95,7 @@ process
 	if($Time) 		{	$Cmd += " -t $T " }
 	if($NodeList) 	{	$Cmd += " -nodes $NodeList " }
 	if($NoCage)		{	$Cmd += " -nocage " }
-	write-verbose "The following command will be sent `n $Cmd"
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -158,6 +158,7 @@ process
 	if($PF)		{	$Cmds +=" -pf"	}
 	$Cmds +=" $IP_address "	
 	$Cmds +=" $NSP "
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$result = Invoke-A9CLICommand  -cmds $Cmds	
 	return $result	
 }
@@ -171,14 +172,14 @@ Function Set-A9Battery
 .DESCRIPTION
 	The command may be used to set battery information such as the battery's expiration date, its recharging 
 	time, and its serial number. This information gives the system administrator a record or log of the battery age and battery charge status.
-.PARAMETER S
+.PARAMETER Serial
 	Specifies the serial number of the battery using a limit of 31 alphanumeric characters.
 	This option is not supported on HPE 3PAR 10000 and 20000 systems.
-.PARAMETER X	
+.PARAMETER Expiration	
 	Specifies the expiration date of the battery (mm/dd/yyyy). The expiration date cannot extend beyond 2037.
-.PARAMETER L
+.PARAMETER LogReset
 	Specifies that the battery test log is reset and all previous test log entries are cleared.
-.PARAMETER R
+.PARAMETER RechargeReset
 	Specifies that the battery recharge time is reset and that 10 hours of charging time are required for the battery to be fully charged. This option is deprecated.
 .PARAMETER Node_ID
 	Specifies the node number where the battery is installed. Node_ID is an integer from 0 through 7.
@@ -197,10 +198,10 @@ Function Set-A9Battery
 #>
 [CmdletBinding()]
 param(
-	[Parameter()]					[String]	$S,
-	[Parameter()]					[String]	$X,
-	[Parameter()]					[switch]	$L,
-	[Parameter()]					[switch]	$R,
+	[Parameter()]					[String]	$Serial,
+	[Parameter()]					[String]	$Expiration,
+	[Parameter()]					[switch]	$LogReset,
+	[Parameter()]					[switch]	$RechargeReset,
 	[Parameter()]					[String]	$Node_ID,
 	[Parameter(Mandatory=$True)]	[String]	$Powersupply_ID,
 	[Parameter()]					[String]	$Battery_ID
@@ -210,13 +211,14 @@ Begin
 }
 process	
 {	$Cmd = " setbattery "
-	if($S)				{	$Cmd += " -s $S "}
-	if($X)				{	$Cmd += " -x $X " }
-	if($L)				{	$Cmd += " -l " }
-	if($R)				{	$Cmd += " -r " }
+	if($Serial)			{	$Cmd += " -s $Serial "}
+	if($Expiration)		{	$Cmd += " -x $Expiration " }
+	if($LogReset)		{	$Cmd += " -l " }
+	if($RechargeReset)	{	$Cmd += " -r " }
 	if($Node_ID)		{	$Cmd += " $Node_ID "	}
 	if($Powersupply_ID)	{	$Cmd += " $Powersupply_ID "}
 	if($Battery_ID)		{	$Cmd += " $Battery_ID "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
@@ -324,45 +326,38 @@ Function Set-A9HostPorts
 .EXAMPLE	
 	PS:> Set-A9HostPorts -RCIPConfiguration -Port_IP 0.0.0.0 -NetMask xyz -NSP 1:2:3> for rcip port
 .EXAMPLE	
-	PS:> Set-A9HostPorts -RCFCConfiguration -NSP 1:2:3>
+	PS:> Set-A9HostPorts -RCFCConfiguration -NSP 1:2:3
 	
 	For RCFC port  
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-Param(		[Parameter()]	[String]	$FCConfigFile,
-			[Parameter()]	[String]	$iSCSIConfigFile,		
-			[Parameter()]	[String]	$LDConfigFile,
-			[Parameter()]	[switch]	$RCIPConfiguration,
-			[Parameter()]	[switch]	$RCFCConfiguration,
-			[Parameter()]	[String]	$Port_IP,
-			[Parameter()]	[String]	$NetMask,
-			[Parameter()]	[String]	$NSP,
-			[Parameter()]	[switch]	$Demo
+Param(		[Parameter(ParameterSetName='FCCF',Mandatory)]		[String]	$FCConfigFile,
+			[Parameter(ParameterSetName='ICF',Mandatory)]		[String]	$iSCSIConfigFile,		
+			[Parameter(ParameterSetName='LDCF',Mandatory)]		[String]	$LDConfigFile,
+			[Parameter(ParameterSetName='RCIPFCCF',Mandatory)]	[switch]	$RCIPConfiguration,
+			[Parameter(ParameterSetName='RCFCCF',Mandatory)]	[switch]	$RCFCConfiguration,
+			[Parameter(ParameterSetName='RCIPFCCF',Mandatory)]
+																[String]	$Port_IP,
+			[Parameter(ParameterSetName='RCIPFCCF',Mandatory)]	
+																[String]	$NetMask,
+			[Parameter(ParameterSetName='RCIPFCCF',Mandatory)]	
+			[Parameter(ParameterSetName='RCFCCF',Mandatory)]	[String]	$NSP
 	)
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
-{	if (!(($FCConfigFile) -or ($iSCSIConfigFile) -or ($LDConfigFile) -or ($RCIPConfiguration) -or ($RCFCConfiguration))) 
-		{	return "FAILURE : No config file selected"
-		}
-	if ($RCIPConfiguration)
-		{	$Cmds="controlport rcip addr -f "
-			if($Port_IP)	{	$Cmds=" $Port_IP "	}
-			else			{	return "port_IP required with RCIPConfiguration Option"	}
-			if($NetMask)	{	$Cmds=" $NetMask "	}
-			else			{	return "NetMask required with RCIPConfiguration Option"	}
-			if($NSP)		{	$Cmds=" $NSP "		}
-			else			{	return "NSP required with RCIPConfiguration Option"		}
+{	if ($RCIPConfiguration)
+		{	$Cmds="controlport rcip addr -f $Port_IP $NetMask $NSP "
+			write-verbose "Executing the following SSH command `n`t $cmdS"
 			$result = Invoke-A9CLICommand -cmds $Cmds
 			return $result
 		}
 	if ($RCFCConfiguration)
-		{	$Cmds="controlport rcfc init -f "	
-			if($NSP)	{	$Cmds=" $NSP "	}
-			else		{	return "NSP required with RCFCConfiguration Option"	}
+		{	$Cmds="controlport rcfc init -f $NSP "
+			write-verbose "Executing the following SSH command `n`t $cmdS"
 			$result = Invoke-A9CLICommand -cmds $Cmds
 			return $result
 		}
@@ -373,13 +368,18 @@ process
 					foreach ( $p in $ListofFCPorts)
 						{	$Port = $p.Controller 
 							Write-Verbose  "Set port $Port offline " 
+							write-verbose "Executing the following SSH command `n`t $cmdS"
 							$Cmds = "controlport offline -f $Port"
+							write-verbose "Executing the following SSH command `n`t $cmdS"
 							Invoke-A9CLICommand -cmds $Cmds
 							Write-Verbose  "Configuring port $Port as host " 
+							write-verbose "Executing the following SSH command `n`t $cmdS"
 							$Cmds= "controlport config host -ct point -f $Port"
+							write-verbose "Executing the following SSH command `n`t $cmdS"
 							Invoke-A9CLICommand -cmds $Cmds
 							Write-Verbose  "Resetting port $Port " 
 							$Cmds="controlport rst -f $Port"
+							write-verbose "Executing the following SSH command `n`t $cmdS"
 							Invoke-A9CLICommand -cmds $Cmds
 						}
 				}	
@@ -404,14 +404,17 @@ process
 							if ($bDHCP)
 								{	Write-Verbose  "Enabling DHCP on port $Port " 
 									$Cmds = "controliscsiport dhcp on -f $Port"
+									write-verbose "Executing the following SSH command `n`t $cmdS"
 									Invoke-A9CLICommand -cmds $Cmds			
 								}
 							else
 								{	Write-Verbose  "Setting IP address and subnet on port $Port " 
 									$Cmds = "controliscsiport addr $IPAddr $IPSubnet -f $Port"
+									write-verbose "Executing the following SSH command `n`t $cmdS"
 									Invoke-A9CLICommand -cmds $Cmds
 									Write-Verbose  "Setting gateway on port $Port " 
 									$Cmds = "controliscsiport gw $IPgw -f $Port"
+									write-verbose "Executing the following SSH command `n`t $cmdS"
 									Invoke-A9CLICommand -cmds $Cmds
 								}				
 						}
@@ -430,14 +433,14 @@ Function Set-A9NodeProperties
 	set the properties of the node components.
 .DESCRIPTION
 	The command sets properties of the node components such as serial number of the power supply.
-.EXAMPLE
-	PS:> Set-A9NodeProperties -PS_ID 1 -S xxx -Node_ID 1
 .PARAMETER Serial
 	Specify the serial number. It is up to 8 characters in length.
 .PARAMETER PS_ID
 	Specifies the power supply ID.
 .PARAMETER Node_ID
 	Specifies the node ID.
+.EXAMPLE
+	PS:> Set-A9NodeProperties -PS_ID 1 -S xxx -Node_ID 1
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -454,6 +457,7 @@ process
 	if($PS_ID)		{	$Cmd += " $PS_ID "	}	
 	if($Serial) 	{	$Cmd += " -s $S " 	} 
 	if($Node_ID) 	{	$Cmd += " $Node_ID "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -466,7 +470,6 @@ Function Set-A9NodesDate
 	Sets date and time information.
 .DESCRIPTION
 	The command allows you to set the system time and date on all nodes.
-
 .PARAMETER Tzlist
 	Displays a timezone within a group, if a group is specified. If a group is not specified, displays a list of valid groups.
 .PARAMETER TzGroup
@@ -499,6 +502,7 @@ process
 		{	$Cmd += " -tzlist "
 			if($TzGroup) 	{	$Cmd += " $TzGroup " }
 		}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
@@ -556,6 +560,7 @@ process
 	if($Force_iderecovery) 	{	$Cmd += " force_iderecovery " 	} 
 	if($Force_idewipe) 		{	$Cmd += " force_idewipe " 		}
 	if($Export_vluns) 		{	$Cmd += " export_vluns " 		}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -574,16 +579,12 @@ Function Show-A9Battery
 .PARAMETER Showcols
 	Explicitly select the columns to be shown using a comma-separated list of column names.  
 	For this option, the full column names are shown in the header.
-.PARAMETER D
+.PARAMETER Detailed
 	Specifies that detailed battery information, including battery test information, serial numbers, and expiration dates, is displayed.
 .PARAMETER Log
 	Show battery test log information. This option is not supported on HPE 3PAR 7000 nor on HPE 3PAR 8000 series systems.
-.PARAMETER I
+.PARAMETER Inventory
 	Show battery inventory information.
-.PARAMETER State
-	Show detailed battery state information.
-.PARAMETER S
-	This is the same as -state. This option is deprecated and will be removed in a future release.
 .PARAMETER Svc
 	Displays inventory information with HPE serial number, spare part etc. This option must be used with -i option and it is not supported on HPE 3PAR 10000 systems.
 .PARAMETER Node_ID
@@ -595,10 +596,9 @@ Function Show-A9Battery
 param(
 	[Parameter()]	[switch]	$Listcols,
 	[Parameter()]	[String]	$Showcols,
-	[Parameter()]	[switch]	$D,
+	[Parameter()]	[switch]	$Detailed,
 	[Parameter()]	[switch]	$Log,
-	[Parameter()]	[switch]	$I,
-	[Parameter()]	[switch]	$State,
+	[Parameter()]	[switch]	$Inventory,
 	[Parameter()]	[switch]	$Svc,
 	[Parameter()]	[String]	$Node_ID
 )
@@ -613,16 +613,19 @@ process
 			return $Result
 		}
 	if($Showcols)	{	$Cmd += " -showcols $Showcols "}
-	if($D)			{	$Cmd += " -d " 		}
+	if($Detailed)	{	$Cmd += " -d " 		}
 	if($Log)		{	$Cmd += " -log "	}
-	if($I)			{	$Cmd += " -i "		}
-	if($State)		{	$Cmd += " -state "	}
+	if($Inventory)	{	$Cmd += " -i "		}
 	if($Svc)		{	$Cmd += " -svc "	}
 	if($Node_ID)	{	$Cmd += " $Node_ID "}
 	$Cmd
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1)
-		{	if($D)	{	Return  $Result		}
+}
+End
+{	if($Result.count -gt 1)
+		{	if($Detailed)	
+					{	Return  $Result		}
 			else	{	$tempFile = [IO.Path]::GetTempFileName()
 						$LastItem = $Result.Count   
 						foreach ($S in  $Result[0..$LastItem] )
@@ -638,11 +641,11 @@ process
 											}
 								Add-Content -Path $tempfile -Value $s				
 							}
-						Import-Csv $tempFile 
+						$Result = Import-Csv $tempFile 
 						Remove-Item $tempFile
 					}
 		}
-	else{	Return  $Result}
+	Return  $Result
 }
 }
 
@@ -653,6 +656,11 @@ Function Show-A9EEProm
 	Show node EEPROM information.
 .DESCRIPTION
 	The command displays node EEPROM log information.
+.PARAMETER Dead
+	Specifies that an EEPROM log for a node that has not started or successfully joined the cluster be displayed. If this option is used, it must be followed by a non empty list of nodes.
+.PARAMETER Node_ID
+	Specifies the node ID for which EEPROM log information is retrieved. Multiple node IDs are separated with a single space (0 1 2). 
+	If no specifiers are used, the EEPROM log for all nodes is displayed.
 .EXAMPLE
 	The following example displays the EEPROM log for all nodes:
 	PS:> Show-A9EEProm
@@ -662,11 +670,6 @@ Function Show-A9EEProm
 	PS:> Show-A9EEProm -Dead 
 .EXAMPLE
 	PS:> Show-A9EEProm -Dead -Node_ID 0
-.PARAMETER Dead
-	Specifies that an EEPROM log for a node that has not started or successfully joined the cluster be displayed. If this option is used, it must be followed by a non empty list of nodes.
-.PARAMETER Node_ID
-	Specifies the node ID for which EEPROM log information is retrieved. Multiple node IDs are separated with a single space (0 1 2). 
-	If no specifiers are used, the EEPROM log for all nodes is displayed.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -681,6 +684,7 @@ process
 {	$Cmd = " showeeprom "
 	if($Dead)	{	$Cmd += " -dead "}
 	if($Node_ID)	{	$Cmd += " $Node_ID "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -729,7 +733,8 @@ process
 	if ($Option)
 		{	$sysinfocmd+=" -$option "
 			if($Option -eq "date")
-				{	$Result = Invoke-A9CLICommand -cmds  "showdate"
+				{	write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  "showdate"
 					write-verbose "Get system date information " 
 					write-verbose "Get system fan information cmd -> showdate " 
 					$tempFile = [IO.Path]::GetTempFileName()
@@ -749,11 +754,13 @@ process
 					Remove-Item $tempFile
 				}	
 			else
-				{	$Result = Invoke-A9CLICommand -cmds  $sysinfocmd
+				{	write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $sysinfocmd
 				}
 		}
 	else
-		{	$Result = Invoke-A9CLICommand -cmds  $sysinfocmd 
+		{	write-verbose "Executing the following SSH command `n`t $cmd"
+			$Result = Invoke-A9CLICommand -cmds  $sysinfocmd 
 		}
 	return $Result		
 }
@@ -789,8 +796,6 @@ Function Show-A9FCOEStatistics
 	Shows the values from when the system was last initiated.
 .NOTES
 	This command requires a SSH type connection.
-.NOTES
-	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]		[String]	$D,
@@ -817,8 +822,8 @@ Process
 	if($Fullcounts)	{	$Cmd += " -fullcounts " }
 	if($Prev)		{	$Cmd += " -prev " }
 	if($Begin)		{	$Cmd += " -begin " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Write-Verbose  "Executing function : Show-FCOEStatistics command -->"  
 	Return $Result
 }
 }
@@ -832,7 +837,7 @@ Function Show-A9Firmwaredb
 	Displays the current database of firmware levels for possible upgrade. If issued without any options, the firmware for all vendors is displayed.
 .PARAMETER VendorName
 	Specifies that the firmware vendor from the SCSI database file is displayed.
-.PARAMETER L
+.PARAMETER Load
 	Reloads the SCSI database file into the system.
 .PARAMETER All
 	Specifies current and past firmware entries are displayed. If not specified, only current entries are displayed.
@@ -843,12 +848,13 @@ Function Show-A9Firmwaredb
 .EXAMPLE
 	PS:> Show-A9Firmwaredb -All
 .EXAMPLE
-	PS:> Show-A9Firmwaredb -L.NOTES
+	PS:> Show-A9Firmwaredb -Load
+.NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$VendorName,
-		[Parameter()]	[switch]	$L,
+		[Parameter()]	[switch]	$Load,
 		[Parameter()]	[switch]	$All	
 )
 Begin
@@ -857,8 +863,9 @@ Begin
 Process
 {	$Cmd = " showfirmwaredb "
 	if($VendorName)	{	$Cmd += " -n $VendorName "}
-	if($L)			{	$Cmd += " -l "	}
+	if($Load)		{	$Cmd += " -l "	}
 	if($All)		{	$Cmd += " -all " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -881,6 +888,7 @@ Begin
 }
 process
 {	$Cmd = " showtocgen "
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -908,6 +916,8 @@ Function Show-A9iSCSISessionStatistics
 	Shows the differences from the previous sample.
 .PARAMETER Begin
 	Shows the values from when the system was last initiated.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Show-A9iSCSISessionStatistics
 .EXAMPLE
@@ -932,7 +942,8 @@ param(	[Parameter(mandatory=$true)]	[String]	$Iterations,
 		[Parameter()]	[String]	$SlotList,
 		[Parameter()]	[String]	$PortList,		
 		[Parameter()]	[Switch]	$Previous,	
-		[Parameter()]	[Switch]	$Begin
+		[Parameter()]	[Switch]	$Begin,
+		[parameter()]	[switch]	$ShowRaw
 )	
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -946,7 +957,9 @@ process
 	if($PortList)	{	$cmd+=" -ports $PortList "	}	
 	if($Previous)	{	$cmd+=" -prev "	}
 	if($Begin)		{	$cmd+=" -begin "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if ($ShowRaw) { return $Result }
 	if($Result -match "Total" -and $Result.Count -gt 5)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count - 3 
@@ -1046,8 +1059,6 @@ Function Show-A9iSCSIStatistics
 	Shows the differences from the previous sample.
 .PARAMETER Begin
 	Shows the values from when the system was last initiated.
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
 .EXAMPLE
 	PS:> Show-A9iSCSIStatistics
 .EXAMPLE
@@ -1093,6 +1104,7 @@ process
 	if($Fullcounts)	{	$cmd+=" -fullcounts "	}
 	if($Prev)		{	$cmd+=" -prev "	}
 	if($Begin)		{	$cmd+=" -begin "	}	
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Show-iSCSIStatistics command that displays information iSNS table for iSCSI ports in the system  " 	
 	if($Result -match "Total" -or $Result.Count -gt 1)
@@ -1163,6 +1175,7 @@ Begin
 process
 {	$Cmd = " shownet "
 	if($Detailed)	{	$Cmd += " -d "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1195,6 +1208,7 @@ Begin
 process
 {	$Cmd = " shownodeenv "
 	if($Node_ID)	{	$Cmd += " -n $Node_ID "} 
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1236,6 +1250,7 @@ process
 	if ($Detailed)	{	$cmd+=" -d "	}
 	if ($ConnectionState)	{	$cmd+=" -state "	}
 	if ($NSP)	{	$cmd+=" $NSP "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	if($Result -match "total")
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -1360,6 +1375,7 @@ process
 { 	$Cmd = " shownode "
 	if($Listcols)
 		{	$Cmd += " -listcols "
+			write-verbose "Executing the following SSH command `n`t $cmd"
 			$Result = Invoke-A9CLICommand -cmds  $Cmd
 			return $Result
 		}
@@ -1378,6 +1394,7 @@ process
 	if($Uptime)		{	$Cmd += " -uptime " }
 	if($Svc) 		{	$Cmd += " -svc " }
 	if($Node_ID)	{	$Cmd += " $Node_ID " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($I -Or $D -Or $VerboseD)	{	Return  $Result	}
@@ -1541,6 +1558,7 @@ process
 	if($PFC)		{	$Cmd += " -pfc " }
 	if($PG)			{	$Cmd += " -pg " }
 	if($NSP)		{ 	$Cmd += " $NSP " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
@@ -1553,12 +1571,12 @@ Function Show-A9PortISNS
 	The command shows iSNS host information for iSCSI ports in the system.
 .DESCRIPTION 
 	The command shows iSNS host information for iSCSI ports in the system.
+.PARAMETER NSP
+	Specifies the port for which information about devices on that port are displayed.
 .EXAMPLE	
 	PS:> Show-PortISNS
 .EXAMPLE	
 	PS:> Show-PortISNS -NSP 1:2:3
-.PARAMETER NSP
-	Specifies the port for which information about devices on that port are displayed.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1571,23 +1589,20 @@ Begin
 process
 {	$cmd= "showportisns "	
 	if ($NSP)	{	$cmd+=" $NSP "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
-	write-verbose "  Executing  Show-PortISNS command that displays information iSNS table for iSCSI ports in the system  " 
 	if($Result -match "N:S:P")
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -2 		
 			foreach ($s in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s," +",",")
-					$s= [regex]::Replace($s,"-","")
-					$s= $s.Trim() 	
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 					Add-Content -Path $tempFile -Value $s				
 				}			
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			remove-item $tempFile
 		}
-	if($Result -match "N:S:P")	{	return  " Success : Executing Show-PortISNS"	}
-	else	{	return  $Result	}
+	if($Result -match "N:S:P")	{	write-host " Success : Executing Show-PortISNS" -ForegroundColor green	}
+	return  $Result
 }	
 } 
 
@@ -1656,6 +1671,7 @@ process
 {	$Cmd = " showsysmgr "
 	if($Detailed)	{	$Cmd += " -d "	}
 	if($Locks)		{	$Cmd += " -l "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1678,6 +1694,7 @@ Begin
 }
 process
 {	$Cmd = " showtoc "
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1706,6 +1723,7 @@ Begin
 process
 {	$Cmd = " startnoderescue "
 	if($Node)	{	$Cmd += " -node $Node " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1831,6 +1849,7 @@ process
 					else		{	return " -d can only be used with -sfp"}
 				}
 	if($NSP)	{	$Cmds+=" $NSP"	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result=Invoke-A9CLICommand  -cmds $Cmds 	
 	$LastItem = $Result.Count -2  
 	if($SFP -and $D){	return $Result	}
@@ -1982,6 +2001,7 @@ process
 	if($Uptime)	{	$Cmd += " -uptime " }
 	if($Svc) 	{	$Cmd += " -svc " 	}
 	if($NodeID)	{ 	$Cmd += " $NodeID " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -2023,18 +2043,7 @@ Function Get-A9Target
 	Show information about unrecognized targets.
 .DESCRIPTION
 	The command displays information about unrecognized targets.
-.EXAMPLE
-	PS:> Get-A9Target 
-.EXAMPLE 
-	PS:> Get-A9Target -Lun -Node_WWN 2FF70002AC00001F
-.EXAMPLE 
-	PS:> Get-A9Target -Lun -All
-.EXAMPLE 	
-	PS:> Get-A9Target -Inq -Page 0 -LUN_WWN  50002AC00001001F
-.EXAMPLE 
-	PS:> Get-A9Target -Inq -Page 0 -D -LUN_WWN  50002AC00001001F
-.EXAMPLE 	
-	PS:> Get-A9Target -Mode -Page 0x3 -D -LUN_WWN  50002AC00001001F 
+
 .PARAMETER Lun
 	Displays the exported Logical Unit Numbers (LUNs) from the unknown
 	targets. Use the "all" specifier to display the exported LUNs from all
@@ -2053,6 +2062,18 @@ Function Get-A9Target
 	Specifies that the rescan is forced. If this option is not used, the rescan will be suppressed if the peer ports have already been rescanned within the last 10 seconds.
 .PARAMETER Rescan
 	Rescan the peer ports to find the unknown targets.
+.EXAMPLE
+	PS:> Get-A9Target 
+.EXAMPLE 
+	PS:> Get-A9Target -Lun -Node_WWN 2FF70002AC00001F
+.EXAMPLE 
+	PS:> Get-A9Target -Lun -All
+.EXAMPLE 	
+	PS:> Get-A9Target -Inq -Page 0 -LUN_WWN  50002AC00001001F
+.EXAMPLE 
+	PS:> Get-A9Target -Inq -Page 0 -D -LUN_WWN  50002AC00001001F
+.EXAMPLE 	
+	PS:> Get-A9Target -Mode -Page 0x3 -D -LUN_WWN  50002AC00001001F 
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -2084,7 +2105,7 @@ process
 	if($Rescan)	{	$Cmd += " -rescan " }
 	if($Node_WWN){	$Cmd += " $Node_WWN " }
 	if($LUN_WWN){	$Cmd += " $LUN_WWN " }
-	write-host "$Cmd"
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
@@ -2097,12 +2118,12 @@ Function Show-A9PortARP
 	The command shows the ARP table for iSCSI ports in the system.
 .DESCRIPTION  
 	The command shows the ARP table for iSCSI ports in the system.
+.PARAMETER NSP
+	Specifies the port for which information about devices on that port are displayed.
 .EXAMPLE
 	PS:> Show-A9PortARP
 .EXAMPLE
 	PS:> Show-A9PortARP -NSP 1:2:3
-.PARAMETER NSP
-	Specifies the port for which information about devices on that port are displayed.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -2115,6 +2136,7 @@ Begin
 Process	
 {	$cmd= "showportarp "	
 	if ($NSP)	{	$cmd+=" $NSP "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	if($Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -2206,6 +2228,7 @@ Process
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "}
 	if($Node_WWN)	{	$Cmd += " $Node_WWN "}
 	if($LUN_WWN)	{	$Cmd += " $LUN_WWN "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -2264,7 +2287,8 @@ Process
     if ($PortNSP) 		{    $cmd += "$PortNSP"		   }
     elseif (($Node) -and ($Slot) -and ($Port)) {    $cmd += "$($Node):$($Slot):$($Port)"    }
     else 				{           Return "Node, slot and plot details are required" }
-    $Result = Invoke-A9CLICommand -cmds  $cmd
+    write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $cmd
     return 	$Result	
 }
 }

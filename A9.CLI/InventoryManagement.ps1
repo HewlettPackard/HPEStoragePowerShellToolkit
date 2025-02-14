@@ -23,6 +23,7 @@ Begin
 Process
 {	$Cmd = " showinventory "
 	if($Service) 	{	$Cmd += " -svc "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 

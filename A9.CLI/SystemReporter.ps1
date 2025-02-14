@@ -306,6 +306,8 @@ Function Get-A9SystemReportAlertCrit
 	Displays only criteria that are disabled.
 .PARAMETER Critical
 	Displays only criteria that have critical severity.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
     PS:> Get-A9SystemReportAlertCrit 
 
@@ -1028,7 +1030,7 @@ Function Get-A9SystemReportLogicalDiskSpace
 .PARAMETER LDname
 	CPGs matching either the specified CPG_name or glob-style pattern are included. This specifier can be repeated to display information for multiple CPGs. If not specified, all CPGs are included.
 .PARAMETER ShowRaw
-	This option will show the raw resut from the SSH output instead of attempting to return a PowerShell Object.
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
     PS:> Get-A9SystemReportLogicalDiskSpace
 .EXAMPLE
@@ -1158,6 +1160,8 @@ Function Get-A9SystemReporterPhysicalDiskSpace
 	Limit the data to disks of the specified RPM. Allowed speeds are  7, 10, 15, 100 and 150
 .PARAMETER PDID
 	PDs with IDs that match either the specified PDID or glob-style  pattern are included. This specifier can be repeated to include multiple PDIDs or patterns.  If not specified, all PDs are included.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object.  
 .EXAMPLE
     PS:> Get-A9SRPhysicalDiskSpace 
 
@@ -1291,7 +1295,7 @@ Function Get-A9SystemReporterRegionIODensity
 .PARAMETER Rw
 	Specifies that the display includes separate read and write data. If not specified, the total is displayed.
 .PARAMETER ShowRaw
-	Returns the raw SSH output instead of trying to return a PowerShell Object
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1379,7 +1383,7 @@ Function Get-A9SystemReporterStatCache
 	Only the specified node numbers are included, where each node is a number from 0 through 7. If want to display information for multiple nodes specift <nodenumber>,<nodenumber2>,etc. 
 	If not specified, all nodes are included. Get-SRStatCache  -Node 0,1,2
 .PARAMETER ShowRaw
-	Returns the raw SSH output instead of trying to return a PowerShell Object
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
     PS:> Get-A9SystemReportStatCache
 
@@ -1513,7 +1517,7 @@ Function Get-A9SystemReporterStatCacheMemoryPages
 	Only the specified node numbers are included, where each node is a number from 0 through 7. If want to display information for multiple nodes specift <nodenumber>,<nodenumber2>,etc. 
 	If not specified, all nodes are included. Get-SRStatCMP  -Node 0,1,2
 .PARAMETER ShowRaw
-	Returns the raw SSH output instead of trying to return a PowerShell Object
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
     PS:> Get-A9SystemReporterStatCacheMemoryPages
 
@@ -1642,7 +1646,7 @@ Function Get-A9SystemReporterStatCPU
 	Only the specified node numbers are included, where each node is a number from 0 through 7. If want to display information for multiple nodes specift <nodenumber>,<nodenumber2>,etc. If not specified, all nodes are included.
 	Get-SRStatCPU  -Node 0,1,2
 .PARAMETER ShowRaw
-	Returns the raw SSH output instead of trying to return a PowerShell Object
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
     PS:> Get-A9SRStatCPU_CLI 
 
@@ -1725,14 +1729,6 @@ Function Set-A9SystemReporterAlertCrit
     Command allows users to enable or disable a System Reporter alert criterion
 .DESCRIPTION
     Command allows users to enable or disable a System Reporter alert criterion
-.EXAMPLE
-    PS:> Set-A9SRAlertCrit -Enable -NameOfTheCriterionToModify write_port_check
-.EXAMPLE
-	PS:> Set-A9SRAlertCrit -Disable -NameOfTheCriterionToModify write_port_check
-.EXAMPLE
-	PS:> Set-A9SRAlertCrit -Daily -NameOfTheCriterionToModify write_port_check
-.EXAMPLE
-	PS:> Set-A9SRAlertCrit -Info -Name write_port_check
 .PARAMETER Daily
 	This criterion will be evaluated on a daily basis at midnight.
 .PARAMETER Hourly
@@ -1775,6 +1771,14 @@ Function Set-A9SystemReporterAlertCrit
 	cannot be combined with -name, -condition, or any of the type-specific filtering options.
 .PARAMETER NewName
 	Specifies that the name of the SR alert be changed to <newname>, with a maximum of 31 characters.
+.EXAMPLE
+    PS:> Set-A9SRAlertCrit -Enable -NameOfTheCriterionToModify write_port_check
+.EXAMPLE
+	PS:> Set-A9SRAlertCrit -Disable -NameOfTheCriterionToModify write_port_check
+.EXAMPLE
+	PS:> Set-A9SRAlertCrit -Daily -NameOfTheCriterionToModify write_port_check
+.EXAMPLE
+	PS:> Set-A9SRAlertCrit -Info -Name write_port_check
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1794,15 +1798,13 @@ param(	[Parameter()]	[switch]    $Enable,
 		[Parameter()]	[switch]    $PAT,
 		[Parameter()]	[switch]    $ALL,
 		[Parameter()]	[String]    $NewName,		
-		[Parameter(Mandatory=$true)]	[String]    $NameOfTheCriterionToModify
+		[Parameter(Mandatory)]	[String]    $NameOfTheCriterionToModify
 	)
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
-{	$version1 = Get-Version -S  -SANConnection $SANConnection
-	if( $version1 -lt "3.2.1")	{	return "Current OS version $version1 does not support these cmdlet"	}
-	$srinfocmd = "setsralertcrit "	
+{	$srinfocmd = "setsralertcrit "	
 	if($Enable)		{	$srinfocmd += " -enable " 	}
 	if($Disable)	{	$srinfocmd += " -disable " 	}
 	if($Daily)		{	$srinfocmd += " -daily " 	}
@@ -1832,36 +1834,29 @@ Function Remove-A9SystemReporterAlertCrit
     Command removes a criterion that System Reporter evaluates to determine if a performance alert should be generated.
 .DESCRIPTION
     Command removes a criterion that System Reporter evaluates to determine if a performance alert should be generated.        
+.PARAMETER Name
+	Specifies the name of the criterion to Remove.  
 .EXAMPLE
-    PS:> Remove-A9SRAlertCrit -force  -Name write_port_check 
+    PS:> Remove-A9SRAlertCrit -Name write_port_check 
 
 	Example removes the criterion named write_port_check:
-.PARAMETER force
-	Do not ask for confirmation before removing this criterion.
-.PARAMETER Name
-	Specifies the name of the criterion to Remove.  .PARAMETER SANConnection 
-
-	Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$Name,
-		[Parameter()]					[switch]    $force
+param(	[Parameter(Mandatory=$true)]	[String]	$Name
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process	
-{	$version1 = Get-Version -S  -SANConnection $SANConnection
-	if( $version1 -lt "3.2.1")	{	return "Current OS version $version1 does not support these cmdlet"	}
-	$srinfocmd = "removesralertcrit "
-	if(($force) -and ($Name))	{	$srinfocmd += " -f $Name"	}
-	else	{	return "FAILURE : Please specify -force or Name parameter values"	}
+{	$srinfocmd = "removesralertcrit "
+	if ($Name)	{	$srinfocmd += " -f $Name"	}
 	write-verbose "Remove alert crit => $srinfocmd"
 	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	if($Result)	{	return "FAILURE : $Result"	}
-	else{	return "Success : sralert $Name has been removed" }	
+	if($Result)	{	write-warning "FAILURE :"	}
+	else{	write-host "Success : sralert $Name has been removed" -ForegroundColor green}	
+	return $Result
 }
 }
 
@@ -2100,7 +2095,7 @@ Function Get-A9SystemReporterStatPort
     <npat>:<spat>:<ppat> Ports with <port_n>:<port_s>:<port_p> that match any of the specified <npat>:<spat>:<ppat> patterns are included, where each of the patterns
 	is a glob-style pattern. This specifier can be repeated to include multiple ports or patterns. If not specified, all ports are included.
 .PARAMETER ShowRaw
-	Returns the raw SSH output instead of trying to return a PowerShell Object
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
     PS:> Get-A9SRStatPort
 
@@ -2225,7 +2220,7 @@ Function Get-A9SystemReporterStatPhysicalDisk
 .PARAMETER PDID
 	PDs with IDs that match either the specified PDID or glob-style pattern are included. This specifier can be repeated to include multiple PDIDs or patterns. If not specified, all PDs are included.
 .PARAMETER ShowRaw
-	Returns the raw SSH output instead of trying to return a PowerShell Object
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
     PS:> Get-A9SRStatPD_CLI 
 
@@ -2352,7 +2347,7 @@ Function Get-A9SystemReporterStatLD
 .PARAMETER LDName
 	LDs matching either the specified LD_name or glob-style pattern are included. This specifier can be repeated to display information for multiple LDs. If not specified, all LDs are included.
 .PARAMETER ShowRaw
-	Returns the raw SSH output instead of trying to return a PowerShell Object
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
     PS:> Get-A9SRStatLD
 
@@ -2743,7 +2738,8 @@ param(	[Parameter()]	[switch]	$Attime,
 		[Parameter()]	[String]	$Vvset,
 		[Parameter()]	[switch]	$AllOthers,
 		[Parameter()]	[String]	$Target,
-		[Parameter()]	[String]	$Groupby,
+		[Parameter()][ValidateSet('DOM_NAME','TARGET_TYPE','TARGET_NAME','IOPS_LIMIT','BW_LIMIT_KBPS')]	
+						[String]	$Groupby,
 		[Parameter()]	[String]	$Compareby,
 		[Parameter()]	[String]	$Sortcol
 )
@@ -2988,6 +2984,8 @@ Function Get-A9SystemReporterStatVLun
 	Limit the data to VVol containers that match one or more of the specified VVol container names or glob-styled patterns.
 .PARAMETER Summary 
 	Summarize performance across requested objects and time range.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
     PS:> Get-A9SRStatVLun
 
@@ -3011,7 +3009,8 @@ param(	[Parameter()]		[switch]	$attime,
 		[Parameter()]		[switch]    $Hourly ,		
 		[Parameter()]		[switch]    $Daily ,		
 		[Parameter()]		[switch]  	$Hires ,
-		[Parameter()]		[String]	$groupby,
+		[Parameter()][ValidateSet("DOM_NAME","VV_NAME","HOST_NAME","LUN","HOST_WWN","PORT_N","PORT_S","PORT_P","VVSET_NAME","HOSTSET_NAME")]
+							[String]	$groupby,
 		[Parameter()]		[String]	$hostE,
 		[Parameter()]		[String]	$vv,
 		[Parameter()]		[String]	$lun,
@@ -3020,7 +3019,8 @@ param(	[Parameter()]		[switch]	$attime,
 		[Parameter()]		[String]	$vmName,
 		[Parameter()]		[String]	$vmHost,
 		[Parameter()]		[String]	$vvoLsc,
-		[Parameter()]		[String]	$vmId       
+		[Parameter()]		[String]	$vmId ,
+		[Parameter()]		[switch]	$ShowRaw     
 	)
 Begin
 	{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
@@ -3034,18 +3034,7 @@ Process
 		if($Hourly)		{	$srinfocmd += " -hourly"			}
 		if($Daily)		{	$srinfocmd += " -daily"				}
 		if($Hires)		{	$srinfocmd += " -hires"				}
-		if($groupby)
-			{	$commarr = "DOM_NAME","VV_NAME","HOST_NAME","LUN","HOST_WWN","PORT_N","PORT_S","PORT_P","VVSET_NAME","HOSTSET_NAME"
-				$lista = $groupby.split(",")
-				foreach($suba in $lista)
-					{	if($commarr -eq $suba.toUpper())
-							{	$srinfocmd += " -groupby $groupby"
-							}
-						else{	Remove-Item  $tempFile
-								return "FAILURE: Invalid groupby option it should be in ( $commarr )"
-							}
-					}			
-			}
+		if($groupby)	{	$srinfocmd += " -groupby $groupby"	}
 		if($hostE)		{	$srinfocmd += " -host $hostE"		}
 		if($vv)			{	$srinfocmd += " -vv $vv "			}
 		if($lun)		{	$srinfocmd += " -l $lun "			}
@@ -3077,25 +3066,20 @@ Process
 			}
 		write-verbose "System reporter command => $srinfocmd"
 		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-		$range1  = $Result.count -3	
-		if($Summary)	{ $range1 = 4 }
-		if($range1 -le "2")
+		$rangeend  = $Result.count -3	
+		if($Summary)	{ $rangeend = 4 }
+		if($rangeend -le "2")
 			{ 	Remove-Item  $tempFile 
-				return "No data available" 
 			}	
-		if($Result.count -gt 4)
-			{	foreach ($s in  $Result[$rangestart..$range1] )
-					{	$s= [regex]::Replace($s,"^ +","")
-						$s= [regex]::Replace($s," +"," ")
-						$s= [regex]::Replace($s," ",",")
+		elseif($Result.count -gt 4 -and (-not $ShowRaw))
+			{	foreach ($s in  $Result[$rangestart..$rangeend] )
+					{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 						Add-Content -Path $tempFile -Value $s
 					}
-				Import-Csv $tempFile	
-				Remove-Item  $tempFile
+				$Result = Import-Csv $tempFile	
 			}
-		else{	Remove-Item  $tempFile
-				return $Result
-			}
+		Remove-Item  $tempFile
+		return $Result
 	}
 }
 
@@ -3106,18 +3090,6 @@ Function Get-A9SystemReporterVvSpace
     Command displays historical space data reports for virtual volumes (VVs).
 .DESCRIPTION
     Command displays historical space data reports for virtual volumes (VVs).
-.EXAMPLE
-    PS:> Get-A9SRVvSpace
-
-	Command displays historical space data reports for virtual volumes (VVs).
-.EXAMPLE
-    PS:> Get-A9SRVvSpace  -Hourly -btsecs -24h -VVName dbvv*
-	
-	example displays aggregate hourly VV space information for VVs with names matching either "dbvv*"  patterns beginning 24 hours ago:
-.EXAMPLE
-    PS:> Get-A9SRVvSpace -Daily -attime -groupby vv_name -vvName tp*
-
-	Example displays VV space information for the most recent daily sample aggregated by the VV name for VVs with names that match the pattern "tp*".
 .PARAMETER attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object 	
 	group described by the -groupby option. Without this option, performance is shown versus time with a row per time interval.
@@ -3179,7 +3151,19 @@ Function Get-A9SystemReporterVvSpace
 .PARAMETER vvoLsc
 	Limit the data to VVol containers that match one or more of the specified VVol container names or glob-styled patterns.
 .PARAMETER ShowRaw
-	Returns the raw SSH output instead of trying to return a PowerShell Object
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+    PS:> Get-A9SRVvSpace
+
+	Command displays historical space data reports for virtual volumes (VVs).
+.EXAMPLE
+    PS:> Get-A9SRVvSpace  -Hourly -btsecs -24h -VVName dbvv*
+	
+	example displays aggregate hourly VV space information for VVs with names matching either "dbvv*"  patterns beginning 24 hours ago:
+.EXAMPLE
+    PS:> Get-A9SRVvSpace -Daily -attime -groupby vv_name -vvName tp*
+
+	Example displays VV space information for the most recent daily sample aggregated by the VV name for VVs with names that match the pattern "tp*".
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -3201,7 +3185,8 @@ param(	[Parameter()]	[switch]	$attime,
 		[Parameter()]	[String]	$vmHost,
 		[Parameter()]	[String]	$vvoLsc,
 		[Parameter()]	[String]	$vmId,
-		[Parameter()]	[String]	$vvolState
+		[Parameter()]	[String]	$vvolState,
+		[Parameter()]	[switch]	$ShowRaw
 	)
 Begin
 	{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
@@ -3312,7 +3297,7 @@ Function Show-A9SystemReporterStatIscsi
 .PARAMETER NSP
 	Dode Sloat Port Value 1:2:3
 .PARAMETER ShowRaw
-	Returns the raw SSH output instead of trying to return a PowerShell Object
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE	
 	PS:> Show-A9SrStatIscsi
 .EXAMPLE
@@ -3509,7 +3494,7 @@ Function Show-A9SystemReporterStatIscsiSession
 .PARAMETER NSP
 	Node Sloat Poart Value 1:2:3
 .PARAMETER ShowRaw
-	Returns the raw SSH output instead of trying to return a PowerShell Object
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE	
 	Show-SrStatIscsiSession
 .EXAMPLE

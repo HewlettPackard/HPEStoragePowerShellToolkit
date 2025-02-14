@@ -9,6 +9,12 @@ Function Get-A9UserConnection
     Displays information about users who are currently connected (logged in) to the storage system.  
 .DESCRIPTION
 	Displays information about users who are currently connected (logged in) to the storage system.
+.PARAMETER Current
+	Shows all information about the current connection only.
+.PARAMETER Detailed
+	Specifies the more detailed information about the user connection.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object.  
 .EXAMPLE
     PS:> Get-A9UserConnection
 
@@ -21,12 +27,6 @@ Function Get-A9UserConnection
     PS:> Get-A9UserConnection -Detailed
 
 	Specifies the more detailed information about the user connection
-.PARAMETER Current
-	Shows all information about the current connection only.
-.PARAMETER Detailed
-	Specifies the more detailed information about the user connection.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning object. 
 .NOTES
 	This command requires a SSH type connection.
 #>

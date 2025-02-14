@@ -37,6 +37,7 @@ Process
 		IF($RAIDtype.ToLower() -eq 'raid-0') 	{$Cmd += " -t r0 " }
 		IF($RAIDtype.ToLower() -eq 'raid-1') 	{$Cmd += " -t r1 " }
 		if($Size)				{	$Cmd += " $Size " }
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 		Return $Result
 	} 
@@ -88,6 +89,7 @@ Process
 		if($Clear)	{	$Cmd += " clear " }
 		if($vvSet)		{	$Cmd += " $vvSet " }
 		if($All) 		{	$Cmd += " sys:all " }
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 		Return $Result
 	}
@@ -106,13 +108,14 @@ Function Remove-A9FlashCache_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[switch]	$F
+param(
 )
 Begin
 	{	Test-A9Connection -ClientType 'SshClient'
 	}
 Process
 	{	$Cmd = " removeflashcache -f "
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 		Return $Result
 	}

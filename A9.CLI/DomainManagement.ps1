@@ -10,19 +10,26 @@ Function Get-A9Domain
 	Displays a list of domains in a system.
 .PARAMETER Detailed
 	Specifies that detailed information is displayed.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter]	[switch]	$Detailed
+param(	[Parameter()]	[switch]	$Detailed,
+		[Parameter()]	[ switch]	$ShowRaw
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$Cmd = " showdomain "
-	if($D)	{	$Cmd += " -d " }
+	if($Detailed)	{	$Cmd += " -d " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
+}
+End
+{	if ($ShowRaw) {return $Result }
 	if($Result.count -gt 1) 
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -2  
@@ -72,6 +79,7 @@ Process
 	if($Detailed)			{	$Cmd += " -d " }
 	if($Domain)				{	$Cmd += " -domain " } 
 	if($SetOrDomainName)	{	$Cmd += " $SetOrDomainName " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)	{	Write-Host " Success : Executing Get-Domain" -ForegroundColor green }
 	return $Result 
@@ -117,8 +125,11 @@ Process
 	$Cmd += " -f "
 	if($ObjName){	$Cmd += " $ObjName " }
 	if($DomainName){$Cmd += " $DomainName " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result -match "Id")
+}	
+End
+{	if($Result -match "Id")
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			foreach ($s in  $Result[0..($Result.Count -1)])
 				{	$s= ( ( ($s.split(' ')).trim()).trim('-') | where-object { $_ -ne '' } ) -join ','
@@ -158,7 +169,7 @@ Function New-A9Domain
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Comment,
 		[Parameter()]	[String]	$Vvretentiontimemax,
-		[Parameter()]	[String]	$Domain_name
+		[Parameter(mandatory)]	[String]	$Domain_name
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient' 
@@ -167,8 +178,8 @@ Process
 {	$Cmd = " createdomain "
 	if($Comment)			{	$Cmd += " -comment " + '" ' + $Comment +' "'	 }
 	if($Vvretentiontimemax) {	$Cmd += " -vvretentiontimemax $Vvretentiontimemax " } 
-	if($Domain_name) 		{	$Cmd += " $Domain_name " }
-	else {	return "Domain Required.." }
+	$Cmd += " $Domain_name "
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 	if ([string]::IsNullOrEmpty($Result))	{  Write-Host "Domain : $Domain_name Created Successfully."	-ForegroundColor green }
@@ -208,6 +219,7 @@ Process
 	if($Add) 		{	$Cmd += " -add " }
 	if($Comment)	{	$Cmd += " -comment " + '" ' + $Comment +' "' }
 	if($SetName)	{	$Cmd += " $SetName " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -240,6 +252,7 @@ Process
 {	$Cmd = " removedomain -f "
 	if($Pattern)	{	$Cmd += " -pat " }
 	if($DomainName)	{	$Cmd += " $DomainName " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -278,6 +291,7 @@ Process
 	if($Pattern){	$Cmd += " -pat " }
 	if($SetName){	$Cmd += " $SetName " }
 	if($Domain)	{	$Cmd += " $Domain " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
@@ -308,6 +322,7 @@ Begin
 Process
 {	$Cmd = " changedomain "
 	if($Domain)	{	$Cmd += " $Domain " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if([String]::IsNullOrEmpty($Domain))
 		{	$Result = "Working domain is unset to current domain."
@@ -394,6 +409,7 @@ Process
 	if($Comment)	{	$Cmd += " -comment " + '" ' + $Comment +' "' }
 	if($NewName)	{  	$Cmd += " -name $NewName " }
 	if($DomainSetName){	$Cmd += " $DomainSetName " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 

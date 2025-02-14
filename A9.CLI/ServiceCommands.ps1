@@ -53,6 +53,7 @@ Process
 	if($Nopatch)	{	$Cmd += " -nopatch " 	}
 	if($Tune)		{	$Cmd += " -tune " 		}
 	if($Notune)		{	$Cmd += " -notune " 	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -67,9 +68,22 @@ Function Get-A9SystemPatch
 	This command displays all the patches currently affecting the system if options are not used.
 .PARAMETER Hist
 	Provides an audit log of all patches and updates that have been applied to the system.
-.PARAMETER D
+.PARAMETER Detailed
 	When used with the -hist option, shows detailed history information including the username who installed each package. If -d is used with a patch specification,
 	it shows detailed patch information. Otherwise it shows detailed information on the currently installed patches.
+
+.Example
+	The following example shows all patches currently installed on the system, with additional detail:
+
+	PS:> Get-A9SystemPatch -detailed
+.EXAMPLE
+	The following example shows all updates that have been applied to the system over time, with all detail:
+
+	PS:> Get-A9SystemPatch -hist -detailed
+.EXAMPLE
+	The showpatchcommand with a specific individual installed patch number displays the fields below when used with the optional -d option:
+
+	PS:> Get-A9SystemPatch P### -detailed
 .NOTES
 	Patch ID.          Specifies the patch ID. 
 	Release Version.   Specifies TPD or UI release affected by the patch. 
@@ -82,23 +96,11 @@ Function Get-A9SystemPatch
 	Requires.          Specifies the patch IDs of any other patches required by this patch. 
 	Notes.             Specifies any special instructions for the patch. 
 
-.Example
-	The following example shows all patches currently installed on the system, with additional detail:
-
-	PS:> Get-A9SystemPatch -d
-.EXAMPLE
-	The following example shows all updates that have been applied to the system over time, with all detail:
-
-	PS:> Get-A9SystemPatch -hist -d
-.EXAMPLE
-	The showpatchcommand with a specific individual installed patch number displays the fields below when used with the optional -d option:
-
-	PS:> Get-A9SystemPatch P### -d
 #>
 [CmdletBinding(DefaultParameterSetName='Default')]
-param(	[Parameter(ParameterSetName='ByPatchId', Mandatory=$true)]	[string]	$PatchId,
+param(	[Parameter(ParameterSetName='ByPatchId', Mandatory)]		[string]	$PatchId,
 		[Parameter(ParameterSetName='Default')]						[switch]	$Hist,
-		[Parameter()]												[switch]	$D
+		[Parameter()]												[switch]	$Detailed
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -106,8 +108,9 @@ Begin
 Process
 {	$Cmd = " showpatch "
 	if($PSCmdlet.ParameterSetName -eq 'ByPatchId') { $Cmd = $Cmd + $PatchId + ' '}
-	if($Hist)	{	$Cmd += " -hist " }
-	if($D) 		{	$Cmd += " -d " 	}
+	if($Hist)			{	$Cmd += " -hist " }
+	if($Detailed) 		{	$Cmd += " -d " 	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -120,24 +123,24 @@ Function Get-A9Version
     Get list of Storage system software version information 
 .DESCRIPTION
     Get list of Storage system software version information
+.PARAMETER All
+	Show all component versions
+.PARAMETER Build
+	Show build levels
+.PARAMETER ShowRelease
+	Show release version number only (useful for scripting).
 .EXAMPLE
     PS:> Get-A9Version
 
 	Get list of Storage system software version information
 .EXAMPLE
-    PS:> Get-A9Version -S	
+    PS:> Get-A9Version -ShowVersion	
 
 	Get list of Storage system release version number only
 .EXAMPLE
-    PS:> Get-A9Version -B	
+    PS:> Get-A9Version -Build	
 
 	Get list of Storage system versions including build levels
-.PARAMETER A
-	Show all component versions
-.PARAMETER B
-	Show build levels
-.PARAMETER S
-	Show release version number only (useful for scripting).
 .NOTES
 	Usage: When displaying all versions, for certain components multiple versions might be 
 	installed. In such cases, multiple lines are displayed.
@@ -157,18 +160,19 @@ Function Get-A9Version
 	Upgrade Tool      21 (190813) 
 #>
 [CmdletBinding()]
-param(	[Parameter()]    [switch]    $A,
-        [Parameter()]    [switch]    $B,
-        [Parameter()]    [switch]    $S
+param(	[Parameter()]    [switch]    $All,
+        [Parameter()]    [switch]    $Build,
+        [Parameter()]    [switch]    $ShowRelease
 )
 Begin
 {	Test-A9Connection -ClientType SshClient
 }
 Process
 {	$Cmd = "showversion"
-    if ($A) {    $Cmd += " -a"    }
-    if ($B) {    $Cmd += " -b"    }
-    if ($S) {    $Cmd += " -s"    }
+    if ($All) 			{    $Cmd += " -a"    }
+    if ($Build) 		{    $Cmd += " -b"    }
+    if ($ShowRelease) 	{    $Cmd += " -s"    }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
     return $Result
 }
@@ -181,7 +185,7 @@ Function Update-A9Cage
 	Upgrade firmware for the specified cage.
 .DESCRIPTION
 	The command downloads new firmware into the specified cage.
-.PARAMETER A
+.PARAMETER All
 	All drive cages are upgraded one at a time.
 .PARAMETER Parallel
 	All drive cages are upgraded in parallel by interface card domain. If -wait is specified, the command will not return until the upgrades
@@ -198,7 +202,7 @@ Function Update-A9Cage
 	When you issue the upgradecage command, the drive cage becomes temporarily degraded as the system upgrades each interface card.
 #>
 [CmdletBinding(DefaultParameterSetName='default')]
-param(	[Parameter(ParameterSetName='AllAndSequential',Mandatory)]	[switch]	$A,
+param(	[Parameter(ParameterSetName='AllAndSequential',Mandatory)]	[switch]	$All,
 		[Parameter(ParameterSetName='Parallel',Mandatory)]			[switch]	$Parallel,
 		[Parameter(ParameterSetName='Parallel')]					[switch]	$Wait,
 		[Parameter(ParameterSetName='Status',Mandatory)]			[switch]	$Status,
@@ -210,12 +214,13 @@ Begin
 }
 Process 
 {	$Cmd = " upgradecage "
-	if($A) 			{	$Cmd += " -a " }
+	if($All) 		{	$Cmd += " -a " }
 	if($Parallel)	{	$Cmd += " -parallel "
 						if($Wait)		{	$Cmd += " -wait " }
 					}
 	if($Status)		{	$Cmd += " -status " }
 	if($Cagename)	{	$Cmd += " $Cagename " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Status)	
 		{	if($Result.count -gt 1)
@@ -247,8 +252,6 @@ Function Reset-A9SystemNode
 	Halts or reboots a system node.
 .DESCRIPTION
 	The command shuts down a system node.
-.EXAMPLE
-	PS:> Reset-A9SystemNode -Halt -Node_ID 0.
 .PARAMETER Node_ID
 	Specifies the node, identified by its ID, to be shut down.
 .PARAMETER Halt
@@ -260,6 +263,8 @@ Function Reset-A9SystemNode
 	generated if the loss of the specified node would interrupt connectivity to the volume and cause I/O disruption.
 .PARAMETER Restart
 	Specifies that the storage services should be restarted.
+.EXAMPLE
+	PS:> Reset-A9SystemNode -Halt -Node_ID 0.
 .NOTES
 	Authority: Super, Service
 		Any role granted the node_shutdown right
@@ -296,6 +301,7 @@ Process
 	Elseif($Check)	{	$Cmd += " check " }
 	Elseif($Restart){	$Cmd += " restart " }
 	$Cmd += " $Node_ID "
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
@@ -310,10 +316,6 @@ Function Set-A9Magazines
 	The command takes drive magazines, or disk drives within a magazine, either on-loop or off-loop. Use this command when replacing a
 	drive magazine or disk drive within a drive magazine. This command assumes non-interactice, so unlike the SSH comamnd that requires a -F 
 	to force the command to run without a prompt, the -F is assumed.
-.EXAMPLE
-	PS:> Set-A9Magazines -Offloop -Cage_name "xxx" -Magazine "xxx"
-.EXAMPLE
-	PS:> Set-A9Magazines -Offloop -Port "Both" -Cage_name "xxx" -Magazine "xxx"
 .PARAMETER Offloop
 	Specifies that the specified drive magazine or disk drive is either taken off-loop or brought back on-loop.
 .PARAMETER Onloop
@@ -330,6 +332,10 @@ Function Set-A9Magazines
 .PARAMETER Port
 	Specifies that the operation is performed on port A, port B, or both A and B. 
 	If not specified, the operation is performed on both ports A and B.
+.EXAMPLE
+	PS:> Set-A9Magazines -Offloop -Cage_name "xxx" -Magazine "xxx"
+.EXAMPLE
+	PS:> Set-A9Magazines -Offloop -Port "Both" -Cage_name "xxx" -Magazine "xxx"
 .NOTES
 	Authority:Super, Service
 		Any role granted the mag_control right
@@ -346,8 +352,7 @@ param( 	[Parameter(ParameterSetName='OffLoop',mandatory)]	[switch]	$Offloop,
 		[Parameter(Mandatory=$True)]						[String]	$Magazine,
 		[Parameter()]										[String]	$Disk,
 		[Parameter()][Validateset('A','B','Both')]
-															[String]	$Port,
-		[Parameter()]										[switch]	$F
+															[String]	$Port
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -361,6 +366,7 @@ Process
 	$Cmd += " -f " 
 	if($Cage_name)	{	$Cmd += " $Cage_name " }
 	if($Magazine)	{	$Cmd += " $Magazine " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -391,15 +397,16 @@ Function Set-A9ServiceCage
 	Specifies that the I/O module will be serviced. This option is not valid for DCN5 cage. The Value for this can either be 0 or 1
 .PARAMETER CageName
 	Specifies the name of the cage to be serviced.
+.EXAMPLE
+	The following example starts the service of interface card module 0 on cage0:
+
+	PS:> Set-A9ServiceCage start -iom 0 cage0
 .NOTES
 	This command requires a SSH type connection.
 	Authority: Super, Service
 	Usage:Access to all domains is required to run this command.
 	Issuing the servicecage command results in chunklet relocation, causing a dip in throughput.
 	After issuing the start subcommand, the end subcommand must be issued to indicate that service is completed and to restore the cage to its normal state.
-.EXAMPLE
-	The following example starts the service of interface card module 0 on cage0:
-	PS:> Set-A9ServiceCage start -iom 0 cage0
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='StartPCM', Mandatory=$true)]	
@@ -413,11 +420,7 @@ param(	[Parameter(ParameterSetName='StartPCM', Mandatory=$true)]
 		[Parameter(ParameterSetName='HReset',	Mandatory=$true)]	
 										[ValidateSet('0','1')]		[int]		$HReset,
 		[Parameter(ParameterSetName='Remove',	Mandatory=$true)]	
-																	[switch]	$Remove,
-		[Parameter(ParameterSetName='Remove')]					
-		[Parameter(ParameterSetName='HReset')]
-		[Parameter(ParameterSetName='Reset')]
-																	[switch]	$Force,	
+																	[switch]	$Remove,	
 		[Parameter(ParameterSetName='StartPCM', Mandatory=$true)]
 		[Parameter(ParameterSetName='EndPCM', 	Mandatory=$true)]
 										[ValidateSet('0','1')]		[int]		$Pcm,
@@ -447,6 +450,7 @@ Process
 	if($PSBoundParameters.ContainsKey('HReset'))		{	$Cmd += " hreset -f " + $HReset	}
 	if($Remove)											{	$Cmd += " remove -f "	}
 	$Cmd += " $CageName "
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
@@ -459,10 +463,6 @@ Function Set-A9ServiceNodes
 	Prepare a node for service.
 .DESCRIPTION
 	The command informs the system that a certain component will be replaced, and will cause the system to indicate the physical location of that component.
-.EXAMPLE
-	Set-A9ServiceNodes -Start -Nodeid 0
-.EXAMPLE
-	Set-A9ServiceNodes -Start -Pci 3 -Nodeid 0
 .PARAMETER Start
 	Specifies the start of service on a node. If shutting down the node is required to start the service, the command will prompt for confirmation before proceeding further.
 .PARAMETER End
@@ -480,6 +480,10 @@ Function Set-A9ServiceNodes
 .PARAMETER Bat
 	Specifies that the node's battery backup unit will be placed into servicing-mode. For HPE 3PAR 600 series systems, this option is not
 	supported, use servicecage for servicing the Power Cooling Battery Module (PCBM).
+.EXAMPLE
+	Set-A9ServiceNodes -Start -Nodeid 0
+.EXAMPLE
+	Set-A9ServiceNodes -Start -Pci 3 -Nodeid 0
 .NOTES
 	This command requires a SSH type connection.
 	Authority: Super, Service
@@ -491,8 +495,8 @@ Function Set-A9ServiceNodes
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$True)] 	
 		[ValidateSet('0','1','2','3')]	[String] 	$Nodeid,
-		[Parameter(ParameterSetName='Start', Mandatory=$true)]	[switch]	$Start,
-		[Parameter(ParameterSetName='end',   Mandatory=$true)]	[switch]	$End,
+		[Parameter(ParameterSetName='Start', Mandatory)]	[switch]	$Start,
+		[Parameter(ParameterSetName='end',   Mandatory)]	[switch]	$End,
 		[Parameter()]					[int]	$Ps,
 		[Parameter()]					[int]	$Pci,
 		[Parameter()]					[int]	$Fan,
@@ -510,6 +514,7 @@ Process
 	if($Fan)		{	$Cmd += " -fan $Fan " 	}
 	if($Bat)		{	$Cmd += " -bat $Bat" 	}
 	if($Nodeid)		{	$Cmd += " $Nodeid " 	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -522,10 +527,6 @@ Function Get-A9ServiceNodes
 	Inquire the status of a node for service.
 .DESCRIPTION
 	The command informs the system that a certain component will be replaced, and will cause the system to indicate the physical location of that component.
-.EXAMPLE
-	Set-A9ServiceNodes -Start -Nodeid 0
-.EXAMPLE
-	Set-A9ServiceNodes -Start -Pci 3 -Nodeid 0
 .PARAMETER Ps
 	Specifies which power supply will be placed into servicing-mode. Accepted values for <psid> are 0 and 1. For HPE 3PAR 600 series
 	systems, this option is not supported, use servicecage for servicing the Power Cooling Battery Module (PCBM).
@@ -535,9 +536,13 @@ Function Get-A9ServiceNodes
 .PARAMETER Fan
 	Specifies which node fan will be placed into servicing-mode. For HPE 3PAR 600 series systems, 
 	this option is not supported, use servicecage for servicing the Power Cooling Battery Module (PCBM).
-.PARAMETER Bat
+.PARAMETER Battery
 	Specifies that the node's battery backup unit will be placed into servicing-mode. For HPE 3PAR 600 series systems, this option is not
 	supported, use servicecage for servicing the Power Cooling Battery Module (PCBM).
+.EXAMPLE
+	Set-A9ServiceNodes -Start -Nodeid 0
+.EXAMPLE
+	Set-A9ServiceNodes -Start -Pci 3 -Nodeid 0
 .NOTES
 	This command requires a SSH type connection.
 	Authority: Super, Service
@@ -552,7 +557,7 @@ param(	[Parameter(Mandatory=$True)]
 		[Parameter()]					[int]	$Ps,
 		[Parameter()]					[int]	$Pci,
 		[Parameter()]					[int]	$Fan,
-		[Parameter()]					[int]	$Bat
+		[Parameter()]					[int]	$Battery
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -562,8 +567,9 @@ Process
 	if($Ps) 		{	$Cmd += " -ps $Ps " 	}
 	if($Pci)		{	$Cmd += " -pci $Pci " 	}
 	if($Fan)		{	$Cmd += " -fan $Fan " 	}
-	if($Bat)		{	$Cmd += " -bat $Bat" 	}
+	if($Battery)	{	$Cmd += " -bat $Battery" }
 	if($Nodeid)		{	$Cmd += " $Nodeid " 	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -576,14 +582,14 @@ Function Reset-A9System
 	Halts or reboots the entire system.
 .DESCRIPTION
 	The command shuts down an entire system.
-.EXAMPLE
-	PS:> Reset-A9System -Halt
 .PARAMETER Halt
 	Specifies that the system should be halted after shutdown. If this subcommand is not specified, the reboot or restart subcommand must be used.
 .PARAMETER Reboot
 	Specifies that the system should be restarted after shutdown. If this subcommand is not given, the halt or restart subcommand must be used.
 .PARAMETER Restart
 	Specifies that the storage services should be restarted. If this subcommand is not given, the halt or reboot subcommand must be used.
+.EXAMPLE
+	PS:> Reset-A9System -Halt
 .NOTES
 	This command requires a SSH type connection.
 	Authority = Super, Service
@@ -600,9 +606,9 @@ Function Reset-A9System
 	Do not issue any commands other than showsys while the system is shutting down.
 #>
 [CmdletBinding()]
-param(	[Parameter(ParameterSetName='Halt',   Mandatory=$true)]	[switch]	$Halt,
-		[Parameter(ParameterSetName='Reboot', Mandatory=$true)]	[switch]	$Reboot,
-		[Parameter(ParameterSetName='Restart',Mandatory=$true)]	[switch]	$Restart
+param(	[Parameter(ParameterSetName='Halt',   Mandatory)]	[switch]	$Halt,
+		[Parameter(ParameterSetName='Reboot', Mandatory)]	[switch]	$Reboot,
+		[Parameter(ParameterSetName='Restart',Mandatory)]	[switch]	$Restart
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -612,6 +618,7 @@ Process
 	if($Halt)	{	$Cmd += " halt " }
 	if($Reboot)	{	$Cmd += " reboot " }
 	if($Restart){	$Cmd += " restart " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -624,8 +631,6 @@ Function Update-A9PdFirmware
 	Upgrade physical disk firmware.
 .DESCRIPTION
 	The command upgrades the physical disk firmware.
-.PARAMETER Force
-	Upgrades the physical disk firmware without requiring confirmation.
 .PARAMETER Skiptest
 	Skips the 10 second diagnostic test normally completed after each physical disk upgrade.
 .PARAMETER All
@@ -653,19 +658,19 @@ Function Update-A9PdFirmware
 param(	[Parameter()]							[switch]	$Skiptest,
 		[Parameter(ParameterSetName='All')]		[switch]	$All,
 		[Parameter(ParameterSetName='byWWN')]	[String]	$WwN,
-		[Parameter(ParameterSetName='byPdId')]	[String]	$PD_ID,
-		[Parameter()]							[switch]	$Force
+		[Parameter(ParameterSetName='byPdId')]	[String]	$PD_ID
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " upgradepd "
-	if($Force)			{	$Cmd += " -f " } 
+	$Cmd += " -f " 
 	if($Skiptest)		{	$Cmd += " -skiptest " } 
 	if($All)			{	$Cmd += " -a " } 
 	if($WWN)			{	$Cmd += " -w $WWN " } 
 	if($PD_ID) 		{	$Cmd += " $PD_ID " } 
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -690,7 +695,7 @@ Function Get-A9ResetReason
 .EXAMPLE
 	To display reset reason in more detail (-d option):
 	
-	PS:> Get-A9ResetReason -d
+	PS:> Get-A9ResetReason -detailed
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -703,8 +708,9 @@ Begin
 Process
 {	$Cmd = " showreset "
 	if ($Detailed) {    $Cmd += " -d "   }
-    $Result = Invoke-A9CLICommand -cmds  $Cmd
-    $Result 
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
+    return $Result 
 }
 }
 
@@ -786,7 +792,8 @@ Process
 	if ($PSBoundParameters.ContainsKey('fips')	) 		{    $Cmd += " fips $fips "    		}
 	if ($PSBoundParameters.ContainsKey('SSHKey')) 		{    $Cmd += " ssh-keys $SSHKey "   }
 	$Cmd += " -f "  
-    $Result = Invoke-A9CLICommand -cmds  $Cmd
+    write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
@@ -831,7 +838,8 @@ Begin
 }
 Process
 {	$Cmd = " controlsecurity fips status "
-    $Result = Invoke-A9CLICommand -cmds  $Cmd
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
     Return $Result
 }
 }

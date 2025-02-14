@@ -11,6 +11,12 @@ Function Add-A9Vv
 .DESCRIPTION
 	The command creates and admits remotely exported virtual volume definitions to enable the migration of these volumes. The newly created
 	volume will have the WWN of the underlying remote volume.
+.PARAMETER DomainName
+	Create the admitted volume in the specified domain   
+.PARAMETER VV_WWN
+	Specifies the World Wide Name (WWN) of the remote volumes to be admitted.
+.PARAMETER VV_WWN_NewWWN 
+	Specifies the World Wide Name (WWN) for the local copy of the remote volume. If the keyword "auto" is specified the system automatically generates a WWN for the virtual volume
 .EXAMPLE
 	PS:> Add-Vv -VV_WWN  migvv.0:50002AC00037001A
 
@@ -21,12 +27,6 @@ Function Add-A9Vv
 	PS:> Add-A9Vv -DomainName XYZ -VV_WWN X:Y
 
 	Create the admitted volume in the specified domain. The default is to create it in the current domain, or no domain if the current domain is not set.
-.PARAMETER DomainName
-	Create the admitted volume in the specified domain   
-.PARAMETER VV_WWN
-	Specifies the World Wide Name (WWN) of the remote volumes to be admitted.
-.PARAMETER VV_WWN_NewWWN 
-	Specifies the World Wide Name (WWN) for the local copy of the remote volume. If the keyword "auto" is specified the system automatically generates a WWN for the virtual volume
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -182,6 +182,8 @@ Function Get-A9LogicalDisk
 	Requests that policy information about the LD is displayed.
 .PARAMETER State
 	Requests that the detailed state information is displayed.	This is the same as s.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object.  
 .EXAMPLE
 	PS:> Get-A9LogicalDisk | format-table *
 
@@ -353,6 +355,8 @@ Function Get-A9LogicalDiskChunklet
 		pdid  - Shows the physical disk ID.
 		pdch  - Shows the physical disk chunklet.
 	If multiple <info> fields are specified, each corresponding field will be shown separately by a dash (-).
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object.  
 .Example
 	PS:> Get-A9LogicalDiskChunklet -LD_Name 'log0.0'  | format-table
 
@@ -374,7 +378,7 @@ param(	[Parameter()]										[switch]	$Degraded,
 		[Parameter()][ValidateSet('row','set')]				[String]	$Lformat,
 		[Parameter()][ValidateSet('pdpos','pdid','pdch')]	[String]	$Linfo,
 		[Parameter()]										[String]	$LD_Name,
-		[Parameter()]										[Switch]	$WhatIf
+		[Parameter()]										[Switch]	$ShowRaw
 )
 Begin
 	{	Test-A9Connection -ClientType 'SshClient'
@@ -385,22 +389,17 @@ process
 		if($Lformat)	{	$Cmd += " -lformat $Lformat " }
 		if($Linfo)		{	$Cmd += " -linfo $Linfo " }
 		if($LD_Name)	{	$Cmd += " $LD_Name " }
-		if($WhatIf)		{ 	write-host "Command to be sent via CLI`n $Cmd"; return }
+		write-host "Command to be sent via CLI;`n`t $Cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 	}
 end
-	{	if($Result.count -gt 1)
+	{	if($Result.count -gt 1 -and -not $ShowRaw)
 			{	$tempFile = [IO.Path]::GetTempFileName()
 				$LastItem = $Result.Count - 3 
 				$FristCount = 0
 				if($Lformat -Or $Linfo)	{	$FristCount = 1	}
 				foreach ($S in  $Result[$FristCount..$LastItem] )
-					{	$s= [regex]::Replace($s,"^ ","")			
-						$s= [regex]::Replace($s,"^ ","")
-						$s= [regex]::Replace($s,"^ ","")			
-						$s= [regex]::Replace($s,"^ ","")		
-						$s= [regex]::Replace($s," +",",")			
-						$s= $s.Trim()			
+					{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','					
 						Add-Content -Path $tempfile -Value $s				
 					}
 				$Result = Import-Csv $tempFile 
@@ -434,7 +433,9 @@ Function Get-A9Space
 	RAID-6. If no RAID type is specified, the default is r1 for FC and SSD device types and r6 is for
 	the NL device types
 .PARAMETER History
-	Specifies that free space history over time for CPGs specified
+	Specifies that free space history over time for CPGs specified.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Get-A9Space -cpgName 'rancher2023'
 
@@ -589,6 +590,8 @@ Function Get-A9VvList
     Explicitly select the columns to be shown using a comma-separated list of column names.  For this option the full column names are shown in the header.
     Run 'showvv -listcols' to list the available columns.
     Run 'clihelp -col showvv' for a description of each column.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Get-A9VvList | format-table *
 
@@ -755,7 +758,9 @@ Function Get-A9VvSet
 .PARAMETER Summary
 	Shows VV sets with summarized output with VV sets names and number of VVs in those sets
 .PARAMETER vvName 
-    Specifies that the sets containing virtual volumes	
+    Specifies that the sets containing virtual volumes.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 	
 .EXAMPLE
 	PS:> Get-A9VvSet | format-table
 	Cmdlet executed successfully
@@ -853,18 +858,6 @@ Function Import-A9Vv
 	The Import Vv command starts migrating the data from a remote LUN to the local Storage System. The remote LUN should have been prepared using the admitvv command.
 .DESCRIPTION  
 	The Import Vv command starts migrating the data from a remote LUN to the local Storage System. The remote LUN should have been prepared using the admitvv command.
-.EXAMPLE
-	PS:> Import-A9Vv -Usrcpg asCpg
-.EXAMPLE
-	PS:> Import-A9Vv -Usrcpg asCpg -VVName as4
-.EXAMPLE
-	PS:> Import-A9Vv -Usrcpg asCpg -Snapname asTest -VVName as4
-.EXAMPLE
-	PS:> Import-A9Vv -Usrcpg asCpg -Snp_cpg asCpg -VVName as4
-.EXAMPLE
-	PS:> Import-A9Vv -Usrcpg asCpg -Priority high -VVName as4
-.EXAMPLE
-	PS:> Import-A9Vv -Usrcpg asCpg -NoTask -VVName as4
 .PARAMETER NoCons
 	Any VV sets specified will not be imported as consistent groups. Allows multiple VV sets to be specified.
 	If the VV set contains any VV members that in a previous import attempt were imported consistently, they will continue to get imported consistently.
@@ -905,6 +898,18 @@ Function Import-A9Vv
 	Specifies the name of the CPG from which the volume user space will be allocated.
 .PARAMETER VVName
 	Specifies the VVs with the specified name 
+.EXAMPLE
+	PS:> Import-A9Vv -Usrcpg asCpg
+.EXAMPLE
+	PS:> Import-A9Vv -Usrcpg asCpg -VVName as4
+.EXAMPLE
+	PS:> Import-A9Vv -Usrcpg asCpg -Snapname asTest -VVName as4
+.EXAMPLE
+	PS:> Import-A9Vv -Usrcpg asCpg -Snp_cpg asCpg -VVName as4
+.EXAMPLE
+	PS:> Import-A9Vv -Usrcpg asCpg -Priority high -VVName as4
+.EXAMPLE
+	PS:> Import-A9Vv -Usrcpg asCpg -NoTask -VVName as4
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1153,6 +1158,19 @@ Function New-A9VvSet_CLI
     Creates a new VolumeSet 
 .DESCRIPTION
 	Creates a new VolumeSet
+.PARAMETER vvSetName 
+    Specify new name of the VolumeSet
+.PARAMETER Domain 
+    Specify the domain where the Volume set will reside
+.PARAMETER vvName 
+    Specify the VV  to add  to the Volume set 
+.PARAMETER Comment 
+    Specifies any comment or additional information for the set.	
+.PARAMETER Count
+	Add a sequence of <num> VVs starting with "vvname". vvname should be of the format <basename>.<int>
+	For each VV in the sequence, the .<int> suffix of the vvname is incremented by 1.
+.PARAMETER Add 
+	Specifies that the VVs listed should be added to an existing set. At least one VV must be specified.	
 .EXAMPLE
     PS:> New-A9VvSet_CLI -vvSetName "MyVolumeSet"  
 
@@ -1173,19 +1191,6 @@ Function New-A9VvSet_CLI
 	PS:> New-A9VvSet_CLI -vvSetName asVVset2 -vvName "as4 as5 as6"
 .EXAMPLE
 	PS:> New-A9VvSet_CLI -vvSetName set:asVVset3 -Add -vvName as3
-.PARAMETER vvSetName 
-    Specify new name of the VolumeSet
-.PARAMETER Domain 
-    Specify the domain where the Volume set will reside
-.PARAMETER vvName 
-    Specify the VV  to add  to the Volume set 
-.PARAMETER Comment 
-    Specifies any comment or additional information for the set.	
-.PARAMETER Count
-	Add a sequence of <num> VVs starting with "vvname". vvname should be of the format <basename>.<int>
-	For each VV in the sequence, the .<int> suffix of the vvname is incremented by 1.
-.PARAMETER Add 
-	Specifies that the VVs listed should be added to an existing set. At least one VV must be specified.	
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1234,8 +1239,6 @@ Function Remove-A9LogicalDisk
 	Remove-LD - Remove logical disks (LD).
 .DESCRIPTION
 	The Remove-LD command removes a specified LD from the system service group.
-.EXAMPLE
-	PS:> Remove-A9LogicalDisk -LD_Name xxx
 .PARAMETER Pat
 	Specifies glob-style patterns. All LDs matching the specified pattern are removed. By default, confirmation is required to proceed
 	with the command unless the -f option is specified. This option must be	used if the pattern specifier is used.
@@ -1247,7 +1250,8 @@ Function Remove-A9LogicalDisk
 	Specifies that system resource LDs such as logging LDs and preserved data LDs are removed.
 .PARAMETER Unused
 	Specifies the command to remove non-system LDs. This option cannot be used with the  -rmsys option.
-	
+.EXAMPLE
+	PS:> Remove-A9LogicalDisk -LD_Name xxx
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1256,7 +1260,7 @@ param(	[Parameter()]	[switch]	$Pat,
 		[Parameter()]	[switch]	$DryRun,
 		[Parameter()]	[switch]	$Rmsys,
 		[Parameter()]	[switch]	$Unused,
-		[Parameter(Mandatory=$True)][String]	$LD_Name
+		[Parameter(Mandatory)][String]	$LD_Name
 		)
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -1280,26 +1284,26 @@ Function Remove-A9VvLogicalDiskCpgTemplates
 	Remove-Vv_Ld_Cpg_Templates - Remove one or more templates from the system
 .DESCRIPTION
 	The Remove-Vv_Ld_Cpg_Templates command removes one or more virtual volume (VV), logical disk (LD), and common provisioning group (CPG) templates.
-.EXAMPLE
-	PS:> Remove-A9Vv_Ld_Cpg_Templates_CLI -Template_Name xxx
 .PARAMETER Template_Name
 	Specifies the name of the template to be deleted, using up to 31 characters. This specifier can be repeated to remove multiple templates
-.PARAMETER Pat
+.PARAMETER Pattern
 	The specified patterns are treated as glob-style patterns and that all templates matching the specified pattern are removed. By default,
 	confirmation is required to proceed with the command unless the -f option is specified. This option must be used if the pattern specifier is used.
+.EXAMPLE
+	PS:> Remove-A9Vv_Ld_Cpg_Templates_CLI -Template_Name xxx
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Template_Name,
-		[Parameter()]	[switch]	$Pat
+		[Parameter()]	[switch]	$Pattern
 )
 Begin
 {	Test-A9Connection -Clienttype 'SshClient'
 }
 process
 {	$Cmd = " removetemplate -f "
-	if($Pat)	{	$Cmd += " -pat "	}
+	if($Pattern)	{	$Cmd += " -pat "	}
 	if($Template_Name)	{	$Cmd += " $Template_Name "	}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
@@ -1313,6 +1317,15 @@ Function Set-A9Template_CLI
 	Add, modify or remove template properties
 .DESCRIPTION
 	The Set Template command modifies the properties of existing templates.
+.PARAMETER Option_Value
+	Indicates the specified options and their values (if any) are added to an existing template. The specified option replaces the existing option
+	in the template. For valid options, refer to createtemplate command.
+.PARAMETER Template_Name
+	Specifies the name of the template to be modified, using up to 31 characters.
+.PARAMETER Remove
+	Indicates that the option(s) that follow -remove are removed from the
+	existing template. When specifying an option for removal, do not specify
+	the option's value. For valid options, refer to createtemplate command.
 .EXAMPLE
 	In the following example, template vvtemp1 is modified to support the
 	availability of data should a drive magazine fail (mag) and to use the
@@ -1324,15 +1337,6 @@ Function Set-A9Template_CLI
 	template template1, and the -t option is removed:
 
 	PS:> Set-A9Template_CLI -Option_Value "-nrw -ha mag -remove -t" -Template_Name template1
-.PARAMETER Option_Value
-	Indicates the specified options and their values (if any) are added to an existing template. The specified option replaces the existing option
-	in the template. For valid options, refer to createtemplate command.
-.PARAMETER Template_Name
-	Specifies the name of the template to be modified, using up to 31 characters.
-.PARAMETER Remove
-	Indicates that the option(s) that follow -remove are removed from the
-	existing template. When specifying an option for removal, do not specify
-	the option's value. For valid options, refer to createtemplate command.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1361,17 +1365,17 @@ Function Set-A9VvSpace_CLI
 	Free SA and SD space from a VV if they are not in use.
 .DESCRIPTION
 	The command frees snapshot administration and snapshot data spaces from a Virtual Volume (VV) if they are not in use.
-.EXAMPLE
-	PS:> Set-A9VvSpace_CLI -VV_Name xxx
-.PARAMETER Pat
+.PARAMETER Pattern
 	Remove the snapshot administration and snapshot data spaces from all the virtual volumes that match any of the specified glob-style patterns.
 .PARAMETER VV_Name
 	Specifies the virtual volume name, using up to 31 characters.
+.EXAMPLE
+	PS:> Set-A9VvSpace_CLI -VV_Name xxx
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]					[switch]	$Pat,
+param(	[Parameter()]					[switch]	$Pattern,
 		[Parameter(Mandatory=$True)]	[String]	$VV_Name
 )
 Begin	
@@ -1379,7 +1383,7 @@ Begin
 }
 process
 {	$Cmd = " freespace -f "
-	if($Pat)		{	$Cmd += " -pat "}
+	if($Pattern)	{	$Cmd += " -pat "}
 	if($VV_Name)	{	$Cmd += " $VV_Name "}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
@@ -1393,17 +1397,20 @@ Function Show-A9LdMappingToVvs_CLI
 	Show mapping from a logical disk to virtual volumes.
 .DESCRIPTION
 	The command displays the mapping from a logical (LD) disk to virtual volumes (VVs).
+.PARAMETER LD_Name
+	Specifies the logical disk name.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	The following example displays the region of logical disk v0.usr.0 that is used for a virtual volume: 
 	
 	PS:> Show-A9LdMappingToVvs_CLI -LD_Name v0.usr.0
-.PARAMETER LD_Name
-	Specifies the logical disk name.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(		[Parameter(Mandatory=$True)]	[String]	$LD_Name
+param(		[Parameter(Mandatory)]	[String]	$LD_Name,
+			[Parameter()]			[switch]	$ShowRaw
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
@@ -1412,22 +1419,17 @@ process
 {	$Cmd = " showldmap "
 	if($LD_Name)	{	$Cmd += " $LD_Name " }
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1)
+	if($Result.count -gt 1 -and (-not $ShowRaw))
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count  
 			foreach ($S in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s,"^ ","")
-					$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s,"^ ","")		
-					$s= [regex]::Replace($s," +",",")			
-					$s= $s.Trim()			
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','					
 					Add-Content -Path $tempfile -Value $s				
 				}
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			Remove-Item $tempFile	
 		}
-	else{	Return  $Result}
+	Return  $Result
 }
 }
 
@@ -1448,6 +1450,8 @@ Function Show-A9VvScsiReservations
 	information about both scsi2 and scsi3 reservations will be shown.
 .PARAMETER Hostname
 	Displays reservation and registration information only for virtual volumes that are visible to the specified host.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Show-A9RSV_CLI -Hostname virt-r-node1
 
@@ -1459,7 +1463,8 @@ Function Show-A9VvScsiReservations
 param(	[Parameter()]	[switch]	$SCSI3,
 		[Parameter()]	[switch]	$SCSI2,
 		[Parameter()]	[String]	$Hostname,
-		[Parameter()]	[String]	$VV_Name
+		[Parameter()]	[String]	$VV_Name,
+		[Parameter()]	[switch]	$ShowRaw
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
@@ -1471,17 +1476,12 @@ process
 	if($HostInfo)	{	$Cmd += " -host $Hostname " }
 	if($VV_Name)	{	$Cmd += " $VV_Name " }
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1)
+	if($Result.count -gt 1 -and (-not $ShowRaw))
 		{	if($Result -match "SYNTAX" )	{	Return $Result	}
 			$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count		
 			foreach ($S in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s,"^ ","")
-					$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s,"^ ","")		
-					$s= [regex]::Replace($s," +",",")			
-					$s= $s.Trim()			
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','			
 					Add-Content -Path $tempfile -Value $s				
 				}
 			Import-Csv $tempFile 
@@ -1504,13 +1504,16 @@ Function Show-A9Template
 	Specifies that the properties of the template is displayed to fit within 80 character lines.
 .PARAMETER Template_name_or_pattern
 	Specifies the name of a template, using up to 31 characters or glob-style pattern for matching multiple template names. If not specified, all templates are displayed.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$T,
 		[Parameter()]	[switch]	$Fit,
-		[Parameter()]	[String]	$Template_name_or_pattern
+		[Parameter()]	[String]	$Template_name_or_pattern,
+		[Parameter()]	[switch]	$ShowRaw
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
@@ -1525,23 +1528,19 @@ process
 	if($Fit) 						{	$Cmd += " -fit " }
 	if($Template_name_or_pattern) 	{	$Cmd += " $Template_name_or_pattern " }
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1)
-		{	if($Result -match "SYNTAX" )	{	Return $Result	}
-			$tempFile = [IO.Path]::GetTempFileName()
+}
+End
+{	if($Result.count -gt 1 -and (-not $ShowRaw) -and (-not ($Result -match "SYNTAX")))
+		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count				
-			foreach ($S in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s,"^ ","")
-					$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s,"^ ","")		
-					$s= [regex]::Replace($s," +",",")			
-					$s= $s.Trim()			
+			foreach ($S in  $Result[0..($Result.count-1)] )
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 					Add-Content -Path $tempfile -Value $s				
 				}
-			Import-Csv $tempFile 
+			$result = Import-Csv $tempFile 
 			Remove-Item $tempFile	
 		}
-	else{	Return  $Result	}
+	Return  $Result	
 }
 }
 
@@ -1554,10 +1553,6 @@ Function Show-A9VvMappedToPD
 	The command displays the virtual volumes that are mapped to a particular physical disk.
 .EXAMPLE
 	PS:> Show-A9VvMappedToPD_CLI -PD_ID 4
-.EXAMPLE
-	PS:> Show-A9VvMappedToPD_CLI -Sum -PD_ID 4
-.EXAMPLE
-	PS:> Show-A9VvMappedToPD_CLI -P -Nd 1 -PD_ID 4
 .PARAMETER PD_ID
 	Specifies the physical disk ID using an integer. This specifier is not required if -p option is used, otherwise it must be used at least once on the command line.
 .PARAMETER Sum
@@ -1618,6 +1613,12 @@ Function Show-A9VvMappedToPD
 		dec:Sort in decreasing order.
 	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted
 	by values in later columns.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Show-A9VvMappedToPD_CLI -Sum -PD_ID 4
+.EXAMPLE
+	PS:> Show-A9VvMappedToPD_CLI -P -Nd 1 -PD_ID 4
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1640,7 +1641,8 @@ param(
 	[Parameter()]	[String]	$Devtype,
 	[Parameter()]	[String]	$Rpm,
 	[Parameter()]	[String]	$Sortcol,
-	[Parameter()]	[String]	$PD_ID
+	[Parameter()]	[String]	$PD_ID,
+	[Parameter()]	[switch]	$ShowRaw
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
@@ -1666,24 +1668,18 @@ process
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " 	}
 	if($PD_ID) 		{	$Cmd += " PD_ID "			 	}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1)
+	if($Result.count -gt 1 -and (-not $ShowRaw) -and ( -not $Result -match "SYNTAX" ) )
 		{	if($Result -match "SYNTAX" )	{	Return $Result	}
 			$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count
 			foreach ($S in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s,"^ ","")
-					$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s,"^ ","")		
-					$s= [regex]::Replace($s," +",",")			
-					$s= $s.Trim()			
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 					Add-Content -Path $tempfile -Value $s				
 				}
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			Remove-Item $tempFile	
 		}
-	else
-		{	Return  $Result }
+	Return  $Result 
 }
 }
 
@@ -1696,6 +1692,8 @@ Function Show-A9VvMapping
 	The command displays information about how virtual volume regions are mapped to logical disks.
 .PARAMETER VV_Name
 	The virtual volume name.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1710,24 +1708,17 @@ process
 	if($VV_Name)	{	$Cmd += " $VV_Name "}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Write-Verbose "Executing function : Show-VvMapping command -->" 
-	if($Result.count -gt 1)
-		{	if($Result -match "SYNTAX" )	{	Return $Result	}
-			$tempFile = [IO.Path]::GetTempFileName()
+	if($Result.count -gt 1 -and (-not $ShowRaw) -and (-not ($Result -match "SYNTAX" )))
+		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count
 			foreach ($S in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s,"^ ","")
-					$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s,"^ ","")		
-					$s= [regex]::Replace($s," +",",")			
-					$s= $s.Trim()			
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','		
 					Add-Content -Path $tempfile -Value $s				
 				}
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			Remove-Item $tempFile	
 		}
-	else
-		{	Return  $Result	}
+	Return  $Result
 }
 }
 
@@ -1748,6 +1739,8 @@ Function Show-A9VvpDistribution
 		inc : Sort in increasing order (default).
 		dec : Sort in decreasing order.
 	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Show-A9VvpDistribution_CLI -VV_Name Zertobm9 | format-table
 
@@ -1756,13 +1749,6 @@ Function Show-A9VvpDistribution
 	0                           0:0:0    1  0  2   3
 	1                           0:1:0    0  0  2   2
 	2                           0:2:0    1  0  2   3
-	3                           0:3:0    1  0  2   3
-	4                           0:4:0    0  0  2   2
-	5                           0:5:0    1  0  2   3
-	6                           0:6:0    0  0  2   2
-	7                           0:7:0    1  0  2   3
-	8                           0:8:0    1  0  2   3
-	9                           0:9:0    0  0  2   2
 	---------------------------
 	10                          total    6  0  20  26
 .NOTES
@@ -1770,7 +1756,8 @@ Function Show-A9VvpDistribution
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Sortcol,
-		[Parameter()]	[String]	$VV_Name
+		[Parameter()]	[String]	$VV_Name,
+		[Parameter()]	[switch]	$ShowRaw
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
@@ -1780,24 +1767,17 @@ process
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
 	if($VV_Name) 	{	$Cmd += " $VV_Name " }
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1)
-		{	if($Result -match "SYNTAX" )	{	Return $Result	}
-			$tempFile = [IO.Path]::GetTempFileName()
+	if($Result.count -gt 1 -and (-not $ShowRaw) -and (-not ($Result -match "SYNTAX" ) ))
+		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count
 			foreach ($S in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s,"^ ","")
-					$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s,"^ ","")		
-					$s= [regex]::Replace($s," +",",")			
-					$s= $s.Trim()			
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 					Add-Content -Path $tempfile -Value $s				
 				}
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			remove-item $tempFile	
 		}
-	else
-		{	Return  $Result	}
+	Return  $Result
 }
 } 
 
@@ -1808,12 +1788,12 @@ Function Start-A9LD_CLI
 	Start a logical disk (LD).  
 .DESCRIPTION
 	The command starts data services on a LD that has not yet been started.
-.EXAMPLE
-	Start-A9LD_CLI -LD_Name xxx
 .PARAMETER LD_Name
 	Specifies the LD name, using up to 31 characters.
 .PARAMETER Override
 	Specifies that the LD is forced to start, even if some underlying data is missing.
+.EXAMPLE
+	Start-A9LD_CLI -LD_Name xxx
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1840,12 +1820,12 @@ Function Start-A9Vv_CLI
 	Start a virtual volume.
 .DESCRIPTION
 	The command starts data services on a Virtual Volume (VV) that has not yet been started.
-.EXAMPLE
-	Start-A9Vv_CLI
 .PARAMETER VV_Name
 	Specifies the VV name, using up to 31 characters.
 .PARAMETER Ovrd
 	Specifies that the logical disk is forced to start, even if some underlying data is missing.
+.EXAMPLE
+	Start-A9Vv_CLI
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1872,12 +1852,6 @@ Function Test-A9Vv_CLI
 	The command executes validity checks of VV administration information in the event of an uncontrolled system shutdown and optionally repairs corrupted virtual volumes.   
 .DESCRIPTION
 	The command executes validity checks of VV administration information in the event of an uncontrolled system shutdown and optionally repairs corrupted virtual volumes.
-.EXAMPLE
-	PS:> Test-A9Vv_CLI -VVName XYZ
-.EXAMPLE
-	PS:> Test-A9Vv_CLI -Yes -VVName XYZ
-.EXAMPLE
-	PS:> Test-A9Vv_CLI -Offline -VVName XYZ
 .PARAMETER Yes
 	Specifies that if errors are found they are either modified so they are valid (-y) or left unmodified (-n). If not specified, errors are left unmodified (-n).
 .PARAMETER No
@@ -1900,6 +1874,12 @@ Function Test-A9Vv_CLI
 	This task will display compression and total savings ratios on a per-VV basis, and the dedup ratio will be calculated on a group basis of input VVs. 	
 .PARAMETER VVName       
 	Requests that the integrity of the specified VV is checked. This specifier can be repeated to execute validity checks on multiple VVs. Only base VVs are allowed.
+.EXAMPLE
+	PS:> Test-A9Vv_CLI -VVName XYZ
+.EXAMPLE
+	PS:> Test-A9Vv_CLI -Yes -VVName XYZ
+.EXAMPLE
+	PS:> Test-A9Vv_CLI -Offline -VVName XYZ
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1967,22 +1947,6 @@ Function Update-A9VvProperties_CLI
 .DESCRIPTION
 	The command changes the properties associated with a virtual volume. Use the Update-VvProperties to modify volume 
 	names, volume policies, allocation warning and limit levels, and the volume's controlling common provisioning group (CPG).
-.EXAMPLE  
-	The following example sets the policy of virtual volume vv1 to no_stale_ss.
-	
-	PS:> Update-A9VvProperties_CLI -Pol "no_stale_ss" -Vvname vv1
-.EXAMPLE
-	Use the command to change the name:
-	
-	PS:> Update-A9VvProperties_CLI setvv -name newtest test
-.EXAMPLE
-	The following example modifies the WWN of virtual volume vv1
-
-	PS:> Update-VvProperties_CLI -Wwn "50002AC0001A0024" -Vvname vv1
-.EXAMPLE
-	The following example modifies the udid value for virtual volume vv1.
-
-	PS:> Update-VvProperties_CLI -Udid "1715" -Vvname vv1
 .PARAMETER Vvname  
 	Specifies the virtual volume name or all virtual volumes that match the pattern specified, using up to 31 characters. The patterns are glob-
 	style patterns (see help on sub, globpat). Valid characters include alphanumeric characters, periods, dashes, and underscores.
@@ -2037,6 +2001,22 @@ Function Update-A9VvProperties_CLI
 .PARAMETER Hpc
 	Allows you to define the virtual volume geometry heads per cylinder value that is reported to the hosts though the SCSI mode pages. 
 	The valid range is between 1 to 255 and the default value is 8.
+.EXAMPLE  
+	The following example sets the policy of virtual volume vv1 to no_stale_ss.
+	
+	PS:> Update-A9VvProperties_CLI -Pol "no_stale_ss" -Vvname vv1
+.EXAMPLE
+	Use the command to change the name:
+	
+	PS:> Update-A9VvProperties_CLI setvv -name newtest test
+.EXAMPLE
+	The following example modifies the WWN of virtual volume vv1
+
+	PS:> Update-VvProperties_CLI -Wwn "50002AC0001A0024" -Vvname vv1
+.EXAMPLE
+	The following example modifies the udid value for virtual volume vv1.
+
+	PS:> Update-VvProperties_CLI -Udid "1715" -Vvname vv1
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -2095,8 +2075,6 @@ Function Update-A9VvSetProperties_CLI
 	Update-VvSetProperties - set parameters for a Virtual Volume set
 .DESCRIPTION
 	The Update-VvSetProperties command sets the parameters and modifies the properties of a Virtual Volume(VV) set.
-.EXAMPLE
-	Update-VvSetProperties
 .PARAMETER Setname
 	Specifies the name of the vv set to modify.
 .PARAMETER Comment
@@ -2104,6 +2082,8 @@ Function Update-A9VvSetProperties_CLI
 
 .PARAMETER Name
 	Specifies a new name for the VV set using up to 27 characters.
+.EXAMPLE
+	Update-VvSetProperties
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -2132,16 +2112,6 @@ Function Set-A9Host_CLI
     Add WWN or iSCSI name to an existing host.
 .DESCRIPTION
 	Add WWN or iSCSI name to an existing host.
-.EXAMPLE
-    PS:> Set-A9Host_CLI -hostName HV01A -Address  10000000C97B142E, 10000000C97B142F
-	Adds WWN 10000000C97B142E, 0000000C97B142F to host HV01A
-.EXAMPLE	
-	PS:> Set-A9Host_CLI -hostName HV01B  -iSCSI:$true -Address  iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com
-	Adds iSCSI  iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com to host HV01B
-.EXAMPLE
-    PS:> Set-A9Host_CLI -hostName HV01A  -Domain D_Aslam
-.EXAMPLE
-    PS:> Set-A9Host_CLI -hostName HV01A  -Add
 .PARAMETER hostName
     Name of an existing host
 .PARAMETER Address
@@ -2166,6 +2136,16 @@ Function Set-A9Host_CLI
 	Specifies any additional information for the host.
 .PARAMETER  Persona <hostpersonaval>
 	Sets the host persona that specifies the personality for all ports which are part of the host set.  
+.EXAMPLE
+    PS:> Set-A9Host_CLI -hostName HV01A -Address  10000000C97B142E, 10000000C97B142F
+	Adds WWN 10000000C97B142E, 0000000C97B142F to host HV01A
+.EXAMPLE	
+	PS:> Set-A9Host_CLI -hostName HV01B  -iSCSI:$true -Address  iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com
+	Adds iSCSI  iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com to host HV01B
+.EXAMPLE
+    PS:> Set-A9Host_CLI -hostName HV01A  -Domain D_Aslam
+.EXAMPLE
+    PS:> Set-A9Host_CLI -hostName HV01A  -Add
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -2220,34 +2200,30 @@ Function Show-A9Peer_CLI
 	The command displays the arrays connected through the host ports or peer ports over the same fabric. The Type field
     specifies the connectivity type with the array. The Type value of Slave means the array is acting as a source, the Type value
     of Master means the array is acting as a destination, the type value of Peer means the array is acting as both source and destination.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE	
 	PS:> Show-A9Peer_CLI
 #>
 [CmdletBinding()]
-param()	
+param(	[Parameter()] 	[switch]	$ShowRaw 
+	)	
 Begin
 {	Test-A9Connection -ClientType 'SshClient' 
 }	
 process	
 {	$cmd = " showpeer"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
-	write-verbose "  Executing Show-Peer Command.-->"
-	if($Result -match "No peers")	{	return $Result	}
-	else	{	$tempFile = [IO.Path]::GetTempFileName()
-				$LastItem = $Result.Count  
-				#Write-Host " Result Count =" $Result.Count
-				foreach ($s in  $Result[0..$LastItem] )
-					{	$s= [regex]::Replace($s,"^ ","")			
-						$s= [regex]::Replace($s," +",",")	
-						$s= [regex]::Replace($s,"-","")
-						$s= $s.Trim() 	
-						Add-Content -Path $tempFile -Value $s
-					}
-				Import-Csv $tempFile 
-				remove-item $tempFile
-			}
-	if($Result -match "No peers")	{	return $Result	}
-	else	{	return  " Success : Executing Show-Peer "	}		
+	if(-not ( ($Result -match "No peers") -or $ShowRaw ))
+		{	$tempFile = [IO.Path]::GetTempFileName()
+			foreach ($s in  $Result[0..($Result.count)] )
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','	
+					Add-Content -Path $tempFile -Value $s
+				}
+			$Result = Import-Csv $tempFile 
+			remove-item $tempFile
+		}
+	return $Result
 }
 } 
 
@@ -2256,12 +2232,12 @@ Function Resize-A9Vv_CLI
 <#
 .SYNOPSIS
 	Consolidate space in virtual volumes (VVs). (HIDDEN)
-.EXAMPLE
-	VVName testv
 .PARAMETER VVName
 	Specifies the name of the VV.
 .PARAMETER PAT
 	Compacts VVs that match any of the specified patterns. This option must be used if the pattern specifier is used.
+.EXAMPLE
+	VVName testv
 .NOTES
 	This command requires a SSH type connection.
 #>

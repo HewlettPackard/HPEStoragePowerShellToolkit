@@ -8,16 +8,6 @@ Function Compress-A9VV_CLI
 	The Compress-VV command is used to change the properties of a virtual volume that was created with the createvv command by associating it with a different CPG.
 .DESCRIPTION  
 	The Compress-VV command is used to change the properties of a virtual volume that was created with the createvv command by associating it with a different CPG.
-.EXAMPLE	
-	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ
-.EXAMPLE
-	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -VVName XYZ
-.EXAMPLE
-	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -Option XYZ -VVName XYZ
-.EXAMPLE
-	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -Option keepvv -KeepVVName XYZ -VVName XYZ
-.EXAMPLE
-	PS:> Compress-A9VV_CLI -SUBCommand snp_cpg -CPGName XYZ -VVName XYZ
 .PARAMETER SUBCommand
 	usr_cpg <cpg>
 		Moves the logical disks being used for user space to the specified CPG.
@@ -62,15 +52,23 @@ Function Compress-A9VV_CLI
 	Slice threshold. Volumes above this size will be tuned in slices. <threshold> must be in multiples of 128GiB. Minimum is 128GiB. Default is 16TiB. Maximum is 16TiB.
 .PARAMETER SliceSize
 	Slice size. Size of slice to use when volume size is greater than <threshold>. <size> must be in multiples of 128GiB. Minimum is 128GiB. Default is 2TiB. Maximum is 16TiB.
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
+.EXAMPLE	
+	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ
+.EXAMPLE
+	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -VVName XYZ
+.EXAMPLE
+	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -Option XYZ -VVName XYZ
+.EXAMPLE
+	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -Option keepvv -KeepVVName XYZ -VVName XYZ
+.EXAMPLE
+	PS:> Compress-A9VV_CLI -SUBCommand snp_cpg -CPGName XYZ -VVName XYZ
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(		[Parameter(Mandatory=$true)][ValidateSet('usr_cpg','snp_cpg','restart','rollback')]
+param(		[Parameter(Mandatory)][ValidateSet('usr_cpg','snp_cpg','restart','rollback')]
 											[String]	$SUBCommand ,
-			[Parameter(Mandatory=$true)]	[String]	$VVName ,
+			[Parameter(Mandatory)]			[String]	$VVName ,
 			[Parameter()]					[String]	$CPGName ,	
 			[Parameter()]					[switch]	$WaitTask ,		
 			[Parameter()]					[switch]	$DryRun ,		
@@ -111,6 +109,7 @@ Process
 	if($Threshold)	{	$Cmd += " -slth $Threshold"	}
 	if($SliceSize)	{	$Cmd += " -slsz $SliceSize"	}
 	if($VVName)		{	$Cmd += " $VVName"	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	return  $Result
 
@@ -124,16 +123,6 @@ Function Get-A9HistogramChunklet
     The Get-HistChunklet command displays a histogram of service times in a timed loop for individual chunklets
 .DESCRIPTION
 	The Get-HistChunklet command displays a histogram of service times in a timed loop for individual chunklets
-.EXAMPLE
-    PS:> Get-A9HistogramChunklet -Iteration 1 
-
-	This example displays one iteration of a histogram of service
-.EXAMPLE
-    PS:> Get-A9HistogramChunklet –LDname dildil -Iteration 1 
-
-	identified by name, from which chunklet statistics are sampled.
-.EXAMPLE
-	PS:> Get-A9HistogramChunklet -Iteration 1 -Previous
 .PARAMETER Chunklet_num
 	Specifies that statistics are limited to only the specified chunklet, identified
 	by number.
@@ -161,6 +150,18 @@ Function Get-A9HistogramChunklet
 	Specifies that histograms for only non-idle devices are displayed. This option is shorthand for the option -filt t,0,0.
 .PARAMETER LDname 
     Specifies the Logical Disk (LD), identified by name, from which chunklet statistics are sampled.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+    PS:> Get-A9HistogramChunklet -Iteration 1 
+
+	This example displays one iteration of a histogram of service
+.EXAMPLE
+    PS:> Get-A9HistogramChunklet –LDname dildil -Iteration 1 
+
+	identified by name, from which chunklet statistics are sampled.
+.EXAMPLE
+	PS:> Get-A9HistogramChunklet -Iteration 1 -Previous
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -168,13 +169,14 @@ Function Get-A9HistogramChunklet
 param(	[Parameter()]	[String]	$LDname,
 		[Parameter()]	[String]	$Chunklet_num,
 		[Parameter()]	[String]	$Metric,
-		[Parameter(Mandatory=$true)]	[String]	$Iteration,
+		[Parameter(Mandatory)]	[String]	$Iteration,
 		[Parameter()]	[switch]	$Percentage,
 		[Parameter()]	[switch]	$Previous,
 		[Parameter()]	[switch]	$Beginning,
 		[Parameter()]	[switch]	$RW,
 		[Parameter()]	[String]	$Interval,
-		[Parameter()]	[switch]	$NI	
+		[Parameter()]	[switch]	$NI,
+		[Parameter()]	[switch]	$ShowRaw
 )		
 begin	
 {	Test-A9Connection -ClientType 'SshClient' 
@@ -191,10 +193,11 @@ Process
 	if($RW)			{	$histchCMD +=" -rw "	}
 	if($Interval)	{	$histchCMD +=" -d $Interval "	}
 	if($NI)			{	$histchCMD +=" -ni "	}	
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $histchCMD	
 	$range1 = $Result.count
 	if($range1 -le "5")	{	return "No data available Please try with valid input."	}
-	Write-Verbose " displays a histogram of service -->$histchCMD" 
+	if ($ShowRaw) { return $Result }
 	if ( $Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count		
@@ -232,24 +235,6 @@ Function Get-A9HistogramLogicalDisk
     The Get-HistLD command displays a histogram of service times for Logical Disks (LDs) in a timed loop.
 .DESCRIPTION
 	The Get-HistLD command displays a histogram of service times for Logical Disks (LDs) in a timed loop.
-.EXAMPLE
-    PS:> Get-A9HistogramLogicalDisk -Iteration 1
-
-	displays a histogram of service Iteration number of times
-.EXAMPLE
-	PS:> Get-A9HistogramLogicalDisk -LdName abcd -Iteration 1
-
-	displays a histogram of service linked with LD_NAME on  Iteration number of times
-.EXAMPLE
-	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -VV_Name ZXZX
-
-	Shows only logical disks that are mapped to virtual volumes with names matching any of the names or patterns specified.
-.EXAMPLE
-	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -Domain ZXZX
-
-	Shows only logical disks that are in domains with names matching any of the names or patterns specified.
-.EXAMPLE
-	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -Percentage Shows the access count in each bucket as a percentage.
 .PARAMETER Timecols
 	For the I/O time histogram, shows the columns from the first column <fcol> through last column <lcol>. The available columns range from 0 through 31.
 
@@ -292,12 +277,32 @@ Function Get-A9HistogramLogicalDisk
 	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). If no option is specified, the histogram shows data from the beginning of the command's execution.
 .PARAMETER Beginning
 	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). If no option is specified, the histogram shows data from the beginning of the command's execution.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+    PS:> Get-A9HistogramLogicalDisk -Iteration 1
+
+	displays a histogram of service Iteration number of times
+.EXAMPLE
+	PS:> Get-A9HistogramLogicalDisk -LdName abcd -Iteration 1
+
+	displays a histogram of service linked with LD_NAME on  Iteration number of times
+.EXAMPLE
+	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -VV_Name ZXZX
+
+	Shows only logical disks that are mapped to virtual volumes with names matching any of the names or patterns specified.
+.EXAMPLE
+	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -Domain ZXZX
+
+	Shows only logical disks that are in domains with names matching any of the names or patterns specified.
+.EXAMPLE
+	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -Percentage Shows the access count in each bucket as a percentage.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	
-		[Parameter()]	[String]	$Iteration,	
+		[Parameter(Mandatory)]	[String]	$Iteration,	
 		[Parameter()][ValidateSet('both','time','size')]
 						[String]	$Metric,
 		[Parameter()]	[String]	$VV_Name,
@@ -309,27 +314,17 @@ param(
 		[Parameter()]	[Switch]	$Beginning,
 		[Parameter()]	[Switch]	$NI,
 		[Parameter()]	[String]	$Secs,
-		[Parameter()]	[String]	$LdName
+		[Parameter()]	[String]	$LdName,
+		[Parameter()] 	[switch]	$ShowRaw
 )		
 Begin	
 {	Test-A9Connection -ClientType 'SshClient' 
 }
 Process	
-{	$histldCmd = "histld "
-	if ($Iteration)	{	$histldCmd += " -iter $Iteration "	}
-	else			{	return "Error :  -Iteration is mandatory. "	}
+{	$histldCmd = "histld -iter $Iteration "
 	if ($Metric)	{	$histldCmd+=" -metric $Metric "				}
-	if($VV_Name)	{	$cmd= "showvv "
-						$demo = Invoke-A9CLICommand -cmds  $Cmd
-						if($demo -match $VV_Name )	{	$histldCmd+=" -vv $VV_Name"	}
-						else						{ 	return  "FAILURE : No Virtual Volume : $VV_Name found, Please try with valid input."	}		
-					} 
-	if($Domain)
-	{	$cmd= "showdomain "
-		$demo = Invoke-A9CLICommand -cmds  $Cmd
-		if($demo -match $Domain )	{	$histldCmd+=" -domain $Domain"	}
-		else	{ 	return  "FAILURE : No Domain : $Domain found, Please try with valid input."	}
-	}	
+	if($VV_Name)	{	$histldCmd+=" -vv $VV_Name"	} 
+	if($Domain)		{	$histldCmd+=" -domain $Domain"	}
 	if($Timecols)	{	$histldCmd+=" -timecols $Timecols "	}
 	if($Sizecols)	{	$histldCmd+=" -sizecols $Sizecols"	}	
 	if ($Percentage){	$histldCmd += " -pct "	}
@@ -337,13 +332,10 @@ Process
 	if ($Beginning)	{	$histldCmd += " -begin "	}
 	if($Secs)		{	$histldCmd+=" -d $Secs"	}
 	if ($NI)		{	$histldCmd += " -ni "	}
-	if ($LdName)	{	$cmd= "showld "
-						$demo = Invoke-A9CLICommand -cmds  $Cmd
-						if($demo -match $LdName )	{	$histldCmd += "  $LdName"	}
-						else	{ 	return  "FAILURE : No LD_name $LdName found "	}
-					}	
+	if ($LdName)	{	$histldCmd += "  $LdName"	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $histldCmd
-	write-verbose "  The Get-HistLD command displays a histogram of service times for Logical Disks (LDs) in a timed loop.->$cmd"	
+	if ($ShowRaw) { $ShowRaw }
 	$range1 = $Result.count
 	#write-host "count = $range1"
 	if($range1 -lt "5")		{	return "No data available Please Try With Valid Data. `n"	}	
@@ -385,22 +377,6 @@ Function Get-A9HistogramPhysicalDisk
     The Get-HistPD command displays a histogram of service times for Physical Disks (PDs).
 .DESCRIPTION
     The Get-HistPD command displays a histogram of service times for Physical Disks (PDs).
-.EXAMPLE
-    PS:> Get-A9HistogramPhysicalDisk -iteration 1 -WWN abcd
-
-	Specifies the world wide name of the PD for which service times are displayed.
-.EXAMPLE
-	PS:> Get-A9HistogramPhysicalDisk -iteration 1
-
-	The Get-HistPD displays a histogram of service iteration number of times Histogram displays data from when the system was last started (–begin).
-.EXAMPLE	
-	PS:> Get-A9HistogramPhysicalDisk -iteration 1 -Devinfo
-
-	Indicates the device disk type and speed.
-.EXAMPLE	
-	PS:> Get-A9HistogramPhysicalDisk -iteration 1 -Metric both
-
-	(Default)Display both I/O time and I/O size histograms
 .PARAMETER WWN
 	Specifies the world wide name of the PD for which service times are displayed.
 .PARAMETER Nodes
@@ -442,6 +418,24 @@ Function Get-A9HistogramPhysicalDisk
 	<count>: Specifies the minimum number of access above the threshold service time. When filtering is done, the <count> is compared with the sum of all columns 
 			starting with the one which corresponds to the threshold service time. For example, -t,8,100 means to only display the rows where the 8ms column
 			and all columns to the right adds up to more than 100.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+    PS:> Get-A9HistogramPhysicalDisk -iteration 1 -WWN abcd
+
+	Specifies the world wide name of the PD for which service times are displayed.
+.EXAMPLE
+	PS:> Get-A9HistogramPhysicalDisk -iteration 1
+
+	The Get-HistPD displays a histogram of service iteration number of times Histogram displays data from when the system was last started (–begin).
+.EXAMPLE	
+	PS:> Get-A9HistogramPhysicalDisk -iteration 1 -Devinfo
+
+	Indicates the device disk type and speed.
+.EXAMPLE	
+	PS:> Get-A9HistogramPhysicalDisk -iteration 1 -Metric both
+
+	(Default)Display both I/O time and I/O size histograms
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -457,7 +451,8 @@ param(	[Parameter()]	[String]	$Iteration,
 		[Parameter()]	[Switch]	$Percentage,
 		[Parameter()]	[Switch]	$Previous,
 		[Parameter()]	[Switch]	$Beginning,	
-		[Parameter()]	[String]	$FSpec
+		[Parameter()]	[String]	$FSpec,
+		[Parameter()]	[switch]	$ShowRaw
 )		
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -481,8 +476,9 @@ Process
 	if ($Beginning)		{	$Cmd += " -begin "}
 	if ($Percentage)	{	$Cmd += " -pct "	}	
 	if ($FSpec)			{	$Cmd += " -filt $FSpec"	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd 
-	write-verbose " The Get-HistPD command displays a histogram of service times for Physical Disks (PDs). " 
+	if ($ShowRaw) {$ShowRaw }
 	$range1 = $Result.count
 	if($range1 -lt "5")	{	return "No data available"	}		
 	if ( $Result.Count -gt 1)
@@ -531,22 +527,6 @@ Function Get-A9HistogramPort
     The command displays a histogram of service times for ports within the system.
 .DESCRIPTION
 	The command displays a histogram of service times for ports within the system.
-.EXAMPLE
-    PS:> Get-A9HistogramPort -iteration 1
-
-	displays a histogram of service times with option it can be one of these [both|ctrl|data].
-.EXAMPLE
-	PS:> Get-A9HistogramPort -iteration 1 -Both
-
-	Specifies that both control and data transfers are displayed(-both)
-.EXAMPLE
-	PS:> Get-A9HistogramPort -iteration 1 -Nodes nodesxyz
-
-	Specifies that the display is limited to specified nodes and physical disks connected to those nodes.
-.EXAMPLE	
-	PS:> Get-A9HistogramPort –Metric both -iteration 1
-
-	displays a histogram of service times with -metric option. metric can be one of these –metric [both|time|size]
 .PARAMETER Both 
 	Specifies that both control and data transfers are displayed(-both), only control transfers are displayed (-ctl), or only data transfers are
 	displayed (-data). If this option is not specified, only data transfers are displayed.
@@ -594,11 +574,29 @@ Function Get-A9HistogramPort
 	histogram shows data from the beginning of the command's execution.
 .PARAMETER RW	
 	Specifies that the display includes separate read and write data. If not specified, the total is displayed.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+    PS:> Get-A9HistogramPort -iteration 1
+
+	displays a histogram of service times with option it can be one of these [both|ctrl|data].
+.EXAMPLE
+	PS:> Get-A9HistogramPort -iteration 1 -Both
+
+	Specifies that both control and data transfers are displayed(-both)
+.EXAMPLE
+	PS:> Get-A9HistogramPort -iteration 1 -Nodes nodesxyz
+
+	Specifies that the display is limited to specified nodes and physical disks connected to those nodes.
+.EXAMPLE	
+	PS:> Get-A9HistogramPort –Metric both -iteration 1
+
+	displays a histogram of service times with -metric option. metric can be one of these –metric [both|time|size]
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$Iteration,	
+param(	[Parameter(Mandatory)]	[String]	$Iteration,	
 		[Parameter()]	[Switch]	$Both,
 		[Parameter()]	[Switch]	$CTL,
 		[Parameter()]	[Switch]	$Data,
@@ -609,7 +607,7 @@ param(	[Parameter(Mandatory=$true)]	[String]	$Iteration,
 		[Parameter()]	[Switch]	$PEER,
 		[Parameter()]	[Switch]	$Disk,
 		[Parameter()]	[Switch]	$RCFC,
-		[Parameter()]	[String]	$Metric,		
+		[Parameter()][VAlidateSet('both','time','size')]	[String]	$Metric,		
 		[Parameter()]	[Switch]	$Percentage,
 		[Parameter()]	[Switch]	$Previous,
 		[Parameter()]	[Switch]	$Beginning,
@@ -631,19 +629,15 @@ Process
 	if ($Disk)	{	$Cmd +=" -disk "	}
 	if ($RCFC)	{	$Cmd +=" -rcfc "	}
 	if ($PEER)	{	$Cmd +=" -peer "	}
-	if ($Metric){	$Cmd += " -metric "
-					$a1="both","time","size"
-					$Metric = $Metric.toLower()
-					if($a1 -eq $Metric )	{	$Cmd += "$Metric "	}		
-					else					{	return "FAILURE:  -Metric $Metric  is Invalid. Only [ both | time | size ] can be used."	}
-				}	
+	if ($Metric){	$Cmd += " -metric $Metric"	}	
 	if ($Previous)	{	$Cmd += " -prev "	}
 	if ($Beginning)	{	$Cmd += " -begin "	}
 	if ($Percentage){	$Cmd += " -pct "	}
 	if ($RW)		{	$Cmd += " -rw "		}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd 	
+	if ($ShowRaw) { return $Result }
 	$range1 = $Result.count
-	#write-host "count = $range1"
 	if ($range1 -lt "5")	{	return "No data available"	}		
 	if ( $Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -683,28 +677,6 @@ Function Get-A9HistogramRemoteCopyVv
 	The command shows a histogram of total remote-copy service times and backup system remote-copy service times in a timed loop.
 .DESCRIPTION
 	Thecommand shows a histogram of total remote-copy service times and backup system 	remote-copy service times in a timed loop        
-.EXAMPLE
-	PS:> Get-A9HistogramRemoteCopyVv -iteration 1
-
-	The command shows a histogram of total remote-copy service iteration number of times
-.EXAMPLE
-    PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -Sync
-
-	The command shows a histogram of total remote-copy service iteration number of times with option sync
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -group groupvv_1 -iteration
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -Periodic
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -PortSum
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -target name_vv1 -iteration 1
-
-	The command shows a histogram of total remote-copy service with specified target name.
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -group groupvv_1 -iteration   
-
-	The command shows a histogram of total remote-copy service with specified Group name.
 .PARAMETER Async
 	Show only volumes which are being copied in asynchronous mode.
 .PARAMETER sync
@@ -741,6 +713,30 @@ Function Get-A9HistogramRemoteCopyVv
 .PARAMETER group
     Shows only volumes whose volume group matches the specified group name or pattern of names. Multiple group names or patterns may be specified using a comma-separated list..PARAMETER iteration
     Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-A9HistogramRemoteCopyVv -iteration 1
+
+	The command shows a histogram of total remote-copy service iteration number of times
+.EXAMPLE
+    PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -Sync
+
+	The command shows a histogram of total remote-copy service iteration number of times with option sync
+.EXAMPLE	
+	PS:> Get-A9HistogramRemoteCopyVv -group groupvv_1 -iteration
+.EXAMPLE	
+	PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -Periodic
+.EXAMPLE	
+	PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -PortSum
+.EXAMPLE	
+	PS:> Get-A9HistogramRemoteCopyVv -target name_vv1 -iteration 1
+
+	The command shows a histogram of total remote-copy service with specified target name.
+.EXAMPLE	
+	PS:> Get-A9HistogramRemoteCopyVv -group groupvv_1 -iteration   
+
+	The command shows a histogram of total remote-copy service with specified Group name.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -788,8 +784,9 @@ Process
 	if ($VV_Name)	{ 	$Cmd += " $VV_Name"			}
 	if ($iteration)	{ 	$Cmd += " -iter $iteration "}	
 	else			{	return "Error :  -Iteration is mandatory. "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	write-verbose " histograms sums for all synchronous remote - copy volumes" 
+	if ($ShowRaw) { return $ShowRaw }
 	if ( $Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count - 2
@@ -831,21 +828,7 @@ Function Get-A9HistogramVLun
 	The command displays Virtual Volume Logical Unit Number (VLUN) service time histograms.
 .DESCRIPTION
     The command displays Virtual Volume Logical Unit Number (VLUN) service time histograms.
-.EXAMPLE
-	PS:> Get-A9HistogramVLun -iteration 1
 
-	This example displays two iterations of a histogram of service times for all VLUNs.	
-.EXAMPLE	
-	PS:> Get-A9HistogramVLun -iteration 1 -nodes 1
-
-	This example displays two iterations of a histogram only exports from the specified nodes.	
-.EXAMPLE	
-	PS:> Get-A9HistogramVLun -iteration 1 -domain DomainName
-	Shows only VLUNs whose Virtual Volumes (VVs) are in domains with names that match one or more of the specified domain names or patterns.
-.EXAMPLE	
-	PS:> Get-A9HistogramVLun -iteration 1 -Percentage
-
-	Shows the access count in each bucket as a percentage.	 
 .PARAMETER domain
 	Shows only VLUNs whose Virtual Volumes (VVs) are in domains with names that match one or more of the specified domain names or patterns. Multiple domain names or patterns can be
 	repeated using a comma-separated list.
@@ -878,6 +861,23 @@ Function Get-A9HistogramVLun
 	Specifies that VLUNs with LUNs matching the specified LUN(s) or pattern(s) are displayed. Multiple LUNs or patterns can be repeated using a comma-separated list.
 .PARAMETER iteration
 	Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-A9HistogramVLun -iteration 1
+
+	This example displays two iterations of a histogram of service times for all VLUNs.	
+.EXAMPLE	
+	PS:> Get-A9HistogramVLun -iteration 1 -nodes 1
+
+	This example displays two iterations of a histogram only exports from the specified nodes.	
+.EXAMPLE	
+	PS:> Get-A9HistogramVLun -iteration 1 -domain DomainName
+	Shows only VLUNs whose Virtual Volumes (VVs) are in domains with names that match one or more of the specified domain names or patterns.
+.EXAMPLE	
+	PS:> Get-A9HistogramVLun -iteration 1 -Percentage
+
+	Shows the access count in each bucket as a percentage.	 
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -893,7 +893,8 @@ param(	[Parameter()]	[String]	$iteration,
 		[Parameter()]	[Switch]	$Percentage,
 		[Parameter()]	[Switch]	$Previous,
 		[Parameter()]	[Switch]	$Beginning,
-		[Parameter()]	[String]	$Metric			
+		[Parameter()][ValidateSet("both","time","size")]	[String]	$Metric,
+		[Parameter()]	[switch]	$ShowRaw		
 )		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -904,30 +905,19 @@ Process
 	else			{	return "Error : -Iteration is mandatory. "	}
 	if ($domain)	{ 	$Cmd += " -domain $domain"	}	
 	if($hostE)		{	$Cmd += " -host $host "		}
-	if ($vvname)	{	$GetvVolumeCmd="showvv"
-						$Res = Invoke-A9CLICommand -cmds  $GetvVolumeCmd
-						if ($Res -match $vvname)
-							{	$Cmd += " -v $vvname"
-							}
-						else{ 	write-verbose "vvname $vvname does not exist. Nothing to List" 
-								return "FAILURE : No vvname $vvname found"			
-							}
-					}	
+	if ($vvname)	{	$Cmd += " -v $vvname"		}
 	if ($lun)		{	$Cmd += " -l $lun"	}
 	if ($Nodes)		{	$Cmd += " -nodes $Nodes"	}
 	if ($Slots)		{	$Cmd += " -slots $Slots"	}
 	if ($Ports)		{	$Cmd += " -ports $Ports"	}	
-	if($Metric)		{	$Met = $Metric
-						$c = "both","time","size"
-						$Metric = $metric.toLower()
-						if($c -eq $Met)	{	$Cmd += " -metric $Metric "	}
-						else			{	return "FAILURE: -Metric $Metric is Invalid. Use only [ both | time | size ]."	}
-					}
+	if($Metric)		{	$Cmd += " -metric $Metric "	}
 	if ($Previous)	{	$Cmd += " -prev "	}
 	if ($Beginning)	{	$Cmd += " -begin "	}
 	if ($Percentage){	$Cmd += " -pct "	}		
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	write-verbose " histograms The Get-HistVLun command displays Virtual Volume Logical Unit Number (VLUN)  " 
+	if ($ShowRaw) { return $ShowRaw }
 	$range1 = $Result.Count
 	if($range1 -le "5" ){	return "No Data Available"	}	
 	if ( $Result.Count -gt 1)
@@ -975,24 +965,6 @@ Function Get-A9HistogramVv
 	The Get-A9HistogramVv command displays Virtual Volume (VV) service time histograms in a timed loop.
 .DESCRIPTION
 	The Get-A9HistogramVv command displays Virtual Volume (VV) service time histograms in a timed loop.
-.EXAMPLE
-    PS:> Get-A9HistogramVv -iteration 1
-
-	This Example displays Virtual Volume (VV) service time histograms service iteration number of times.
-.EXAMPLE
-	PS:> Get-A9HistogramVv -iteration 1 -domain domain.com
-	This Example Shows only the VVs that are in domains with names that match the specified domain name(s)
-.EXAMPLE	
-	PS:> Get-A9HistogramVv -iteration 1 –Metric both
-	This Example Selects which Metric to display.
-.EXAMPLE
-	PS:> Get-A9HistogramVv -iteration 1 -Timecols "1 2"
-.EXAMPLE
-	PS:> Get-A9HistogramVv -iteration 1 -Sizecols "1 2"
-.EXAMPLE	
-	PS:> Get-A9HistogramVv –Metric both -VVname demoVV1 -iteration 1
-
-	This Example Selects which Metric to display. associated with Virtual Volume name.
 .PARAMETER domain
 	Shows only the VVs that are in domains with names that match the specified domain name(s) .
 .PARAMETER Metric
@@ -1051,6 +1023,26 @@ Function Get-A9HistogramVv
 	Virtual Volume name
 .PARAMETER iteration
 	Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+    PS:> Get-A9HistogramVv -iteration 1
+
+	This Example displays Virtual Volume (VV) service time histograms service iteration number of times.
+.EXAMPLE
+	PS:> Get-A9HistogramVv -iteration 1 -domain domain.com
+	This Example Shows only the VVs that are in domains with names that match the specified domain name(s)
+.EXAMPLE	
+	PS:> Get-A9HistogramVv -iteration 1 –Metric both
+	This Example Selects which Metric to display.
+.EXAMPLE
+	PS:> Get-A9HistogramVv -iteration 1 -Timecols "1 2"
+.EXAMPLE
+	PS:> Get-A9HistogramVv -iteration 1 -Sizecols "1 2"
+.EXAMPLE	
+	PS:> Get-A9HistogramVv –Metric both -VVname demoVV1 -iteration 1
+
+	This Example Selects which Metric to display. associated with Virtual Volume name.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1065,7 +1057,8 @@ param(	[Parameter()]	[String]	$iteration,
 		[Parameter()]	[Switch]	$Previous,	
 		[Parameter()]	[Switch]	$RW,
 		[Parameter()]	[String]	$IntervalInSeconds,
-		[Parameter()]	[String]	$FSpace
+		[Parameter()]	[String]	$FSpace,
+		[Parameter()]	[switch]	$ShowRaw
 	)
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1094,8 +1087,10 @@ Process
 			if($Result1 -match $vv)	{	$cmd += " $vv "	}
 			else					{	Return "Error: -VVname $VVname is not available `n Try Using Get-VvList to list all the VV's Available  "	}
 		}		
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	write-verbose " Get-HistVv command displays Virtual Volume Logical Unit Number (VLUN)  " 
+	write-verbose " Get-HistVv command displays Virtual Volume Logical Unit Number (VLUN)  "
+	if ($ShowRaw) { return $Result } 
 	$range1 = $Result.count
 	if($range1 -le "5")	{	return "No data available"	}	
 	if ( $Result.Count -gt 1)
@@ -1135,18 +1130,6 @@ Function Get-A9StatisticsChunklet
 	The command displays chunklet statistics in a timed loop.
 .DESCRIPTION
 	The command displays chunklet statistics in a timed loop. 
-.EXAMPLE
-	PS:> Get-A9StatisticsChunklet -Iterration 1
-
-	This example displays chunklet statistics in a timed loop.
-.EXAMPLE
-	PS:>Get-A9StatisticsChunklet -RW -Iteration 1
-
-	This example Specifies that reads and writes are displayed separately.while displays chunklet statistics in a timed loop.  
-.EXAMPLE  
-	PS:> Get-A9StatisticsChunklet -LDname demo1 -CHnum 5 -Iterration 1 
-	
-	This example Specifies particular chunklet number & logical disk.
 .PARAMETER RW	
 	Specifies that reads and writes are displayed separately. If this option is not used, then the total of reads plus writes is displayed.
 .PARAMETER Idlep
@@ -1163,6 +1146,20 @@ Function Get-A9StatisticsChunklet
 	Specifies that statistics are restricted to a particular chunklet number.
 .PARAMETER Iteration 
 	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-A9StatisticsChunklet -Iterration 1
+
+	This example displays chunklet statistics in a timed loop.
+.EXAMPLE
+	PS:>Get-A9StatisticsChunklet -RW -Iteration 1
+
+	This example Specifies that reads and writes are displayed separately.while displays chunklet statistics in a timed loop.  
+.EXAMPLE  
+	PS:> Get-A9StatisticsChunklet -LDname demo1 -CHnum 5 -Iterration 1 
+	
+	This example Specifies particular chunklet number & logical disk.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1174,7 +1171,8 @@ param(	[Parameter(Mandatory=$true)]	[String]	$Iteration ,
 		[Parameter()]	[switch]	$NI,
 		[Parameter()]	[String]	$Delay,
 		[Parameter()]	[String]	$LDname ,
-		[Parameter()]	[String]	$CHnum 
+		[Parameter()]	[String]	$CHnum,
+		[Parameter()]	[switch]	$ShowRaw
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1194,8 +1192,10 @@ Process
 					else{	Return "FAILURE : -LDname $LDname is not available . "	}
 				}
 	if($CHnum)	{	$cmd+=" -ch $CHnum "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Get-StatChunklet command displays chunklet statistics in a timed loop. with the command  " 
+	if ($ShowRaw) { return $Reult }
 	$range1 = $Result.Count
 	if($range1 -le "5" )	{	return "No Data Available"	}
 	if( $Result.Count -gt 1)
@@ -1235,14 +1235,6 @@ Function Get-A9StatCacheMemoryPages
 	The command displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
 .DESCRIPTION
 	The command displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
-.EXAMPLE
-	PS:> Get-A9StatCacheMemoryPages -Iteration 1
-
-	This Example displays Cache Memory Page (CMP).
-.EXAMPLE
-	PS:> Get-A9StatCacheMemoryPages -VVname Demo1 -Iteration 1
-
-	This Example displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
 .PARAMETER VVname   
 	Specifies that statistics are displayed for virtual volumes matching the specified name or pattern.
 .PARAMETER Domian 
@@ -1253,6 +1245,14 @@ Function Get-A9StatCacheMemoryPages
 	Specifies that statistics for only non-idle VVs are displayed. This option is valid only if -v is also specified.
 .PARAMETER Iteration 
 	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
+.EXAMPLE
+	PS:> Get-A9StatCacheMemoryPages -Iteration 1
+
+	This Example displays Cache Memory Page (CMP).
+.EXAMPLE
+	PS:> Get-A9StatCacheMemoryPages -VVname Demo1 -Iteration 1
+
+	This Example displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1261,7 +1261,8 @@ param(	[Parameter()]	[switch]	$NI,
 		[Parameter()]	[String]	$VVname ,
 		[Parameter()]	[String]	$Domian ,
 		[Parameter()]	[String]	$Delay  ,
-		[Parameter()]	[String]	$Iteration 
+		[Parameter()]	[String]	$Iteration ,
+		[Parameter()]	[switch]	$ShowRaw
 )		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1274,8 +1275,10 @@ Process
 	if($VVname)	{	$cmd+=" -n $VVname "	}		
 	if ($Domian){	$cmd+= " -domain $Domian "	}
 	if($Delay)	{	$cmd+=" -d $Delay"	}		
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Get-StatCMP command displays Cache Memory Page (CMP) statistics. with the command  " 
+	if ($ShowRaw) { return $Result }
 	$range1 = $Result.count
 	if($range1 -le "3")	{	return "No data available"	}	
 	if ( $Result.Count -gt 1)
@@ -1314,6 +1317,14 @@ Function Get-A9CPUStatisticalDataReports_CLI
 	The command displays CPU statistics for all nodes.
 .DESCRIPTION
 	The command displays CPU statistics for all nodes.
+.PARAMETER delay    
+	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483
+.PARAMETER total 
+	Show only the totals for all the CPUs on each node.
+.PARAMETER Iteration 
+	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Get-A9CPUStatisticalDataReports_CLI -iteration 1	
 	
@@ -1322,19 +1333,14 @@ Function Get-A9CPUStatisticalDataReports_CLI
 	PS:> Get-A9CPUStatisticalDataReports_CLI -delay 2  -total -iteration 1	
 
 	This Example Show only the totals for all the CPUs on each node.
-.PARAMETER delay    
-	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483
-.PARAMETER total 
-	Show only the totals for all the CPUs on each node.
-.PARAMETER Iteration 
-	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$delay,
 		[Parameter()]	[switch]	$total,
-		[Parameter(Mandatory=$true)]	[String]	$Iteration 
+		[Parameter(Mandatory)]	[String]	$Iteration,
+		[Parameter()]	[switch]	$ShowRaw
 )		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1344,8 +1350,10 @@ Process
 	$cmd+=" -iter $Iteration "
 	if($delay)	{	$cmd+=" -d $delay "	}
 	if ($total)	{	$cmd+= " -t "		}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd	
 	write-verbose "  Executing  Get-StatCPU command displays Cache Memory Page (CMP) statistics. with the command  " 
+	if ($ShowRaw) { return $Result}
 	$range1 = $Result.count
 	if($range1 -eq "5"){	return "No data available"	}		
 	if ( $Result.Count -gt 1)
@@ -1387,6 +1395,24 @@ Function Get-A9LogicalDiskStatisticsReports_CLI
 	The command displays read/write (I/O) statistics about Logical Disks (LDs) in a timed loop.
 .DESCRIPTION
 	The command displays read/write (I/O) statistics about Logical Disks (LDs) in a timed loop.
+.PARAMETER RW		
+	Specifies that reads and writes are displayed separately. If this option is not used, then the total of reads plus writes is displayed.
+.PARAMETER Begin	
+	Specifies that I/O averages are computed from the system start time. If not specified, the average is computed since the first iteration of the command.
+.PARAMETER IDLEP	
+    Specifies the percent of idle columns in the output.
+.PARAMETER VVname  
+	Show only LDs that are mapped to Virtual Volumes (VVs) with names matching any of names or patterns specified
+.PARAMETER LDname  
+	Only statistics are displayed for the specified LD or pattern
+.PARAMETER Domain
+	Shows only LDs that are in domains with names matching any of the names or specified patterns.
+.PARAMETER Delay 
+	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
+.PARAMETER Iteration 
+	Specifies that I/O statistics are displayed a specified number of times as indicated by the number argument using an integer from 1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Get-A9LogicalDiskStatisticsReports_CLI -Iteration 1
 	
@@ -1407,22 +1433,6 @@ Function Get-A9LogicalDiskStatisticsReports_CLI
 	PS:> Get-A9LogicalDiskStatisticsReports_CLI -begin -LDname demoLD1 -delay 2 -Iteration 1
 
 	This example displays statistics about Logical Disks (LDs).With Only statistics are displayed for the specified LD
-.PARAMETER RW		
-	Specifies that reads and writes are displayed separately. If this option is not used, then the total of reads plus writes is displayed.
-.PARAMETER Begin	
-	Specifies that I/O averages are computed from the system start time. If not specified, the average is computed since the first iteration of the command.
-.PARAMETER IDLEP	
-    Specifies the percent of idle columns in the output.
-.PARAMETER VVname  
-	Show only LDs that are mapped to Virtual Volumes (VVs) with names matching any of names or patterns specified
-.PARAMETER LDname  
-	Only statistics are displayed for the specified LD or pattern
-.PARAMETER Domain
-	Shows only LDs that are in domains with names matching any of the names or specified patterns.
-.PARAMETER Delay 
-	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
-.PARAMETER Iteration 
-	Specifies that I/O statistics are displayed a specified number of times as indicated by the number argument using an integer from 1 through 2147483647.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1435,7 +1445,8 @@ param(	[Parameter()]	[switch]	$RW,
 		[Parameter()]	[String]	$LDname,
 		[Parameter()]	[String]	$Domain,
 		[Parameter()]	[String]	$Delay,
-		[Parameter(Mandatory=$true)]	[String]	$Iteration
+		[Parameter(Mandatory)]	[String]	$Iteration,
+		[Parameter()]	[switch]	$ShowRaw
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1446,23 +1457,17 @@ Process
 	if($IDLEP)	{	$cmd+=" -idlep "	}
 	if($Begin)	{	$cmd+=" -begin "	}
 	if($NI)		{	$cmd+=" -ni "		}
-	if($VVname)	
-		{	$ld="showvv"
-			$Result1 = Invoke-A9CLICommand -cmds  $ld
-			if($Result1 -match $VVname )	{	$cmd+=" -vv $VVname "	}
-			else 							{	Return "FAILURE : -VVname $VVname is not available .`n Try Using Get-VvList to get all available VV  "	}
-		}
+	if($VVname)	{	$cmd+=" -vv $VVname "	}
 	if($LDname)	
 		{	if($cmd -match "-vv")	{	return "Stop: Executing -VVname $VVname and  -LDname $LDname cannot be done in a single Execution "	}
-			$ld="showld"
-			$Result1 = Invoke-A9CLICommand -cmds  $ld		
-			if($Result1 -match $LDname )	{	$cmd+=" $LDname "	}
-			else 							{	Return "FAILURE : -LDname $LDname is not available . "	}
+			$cmd+=" $LDname "	
 		}	
 	if($Domain)		{	$cmd+=" -domain $Domain "	}	
 	if($Delay)		{	$cmd+=" -d $Delay "	}		
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	$range1 = $Result.count
+	if ($ShowRaw) { return $Result }
 	if($range1 -le "5")	{	return "No data available" }	
 	if ( $Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -1502,7 +1507,14 @@ Function Get-A9StatisticLinkUtilization
 	The Get-StatLink command displays statistics for link utilization for all nodes in a timed loop.
 .DESCRIPTION
 	The Get-StatLink command displays statistics for link utilization for all nodes in a timed loop.
-
+.PARAMETER Detail
+	Displays detailed information regarding the Queue statistics.	 
+.PARAMETER Interval
+	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
+.PARAMETER Iteration 
+	Specifies that I/O statistics are displayed a specified number of times as indicated by the number argument using an integer from 1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Get-A9StatisticLinkUtilization -Iteration 1
 
@@ -1513,19 +1525,14 @@ Function Get-A9StatisticLinkUtilization
 	This Example displays statistics for link utilization for all nodes in a timed loop, with a delay of 3 sec.
 .EXAMPLE
 	PS:> Get-A9StatisticLinkUtilization -Detail -Iteration 1
-.PARAMETER Detail
-	Displays detailed information regarding the Queue statistics.	 
-.PARAMETER Interval
-	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
-.PARAMETER Iteration 
-	Specifies that I/O statistics are displayed a specified number of times as indicated by the number argument using an integer from 1 through 2147483647.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]					[switch]	$Detail,
-		[Parameter(Mandatory=$true)]	[String]	$Interval,
-		[Parameter()]					[String]	$Iteration
+		[Parameter(Mandatory)]			[String]	$Interval,
+		[Parameter()]					[String]	$Iteration,
+		[Parameter()]					[switch]	$ShowRaw
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1534,7 +1541,9 @@ Process
 {	$cmd= "statlink -iter $Iteration "
 	if ($Detail)	{	$cmd+=" -detail "	}
 	if ($Interval)	{	$cmd+=" -d $Interval "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if ($ShowRaw) { return $Result }
 	$range1 = $Result.count
 	if($range1 -eq "3")	{	return "No data available"	}	
 	if ( $Result.Count -gt 1)
@@ -1578,18 +1587,6 @@ Function Get-APhysicalDiskStatisticsReports_CLI
 	The Get-StatPD command displays the read/write (I/O) statistics for physical disks in a timed loop.
 .DESCRIPTION
     The Get-StatPD command displays the read/write (I/O) statistics for physical disks in a timed loop.   
-.EXAMPLE
-	PS:> Get-APhysicalDiskStatisticsReports_CLI -RW –Iteration 1
-	
-	This example displays one iteration of I/O statistics for all PDs.
-.EXAMPLE  
-	PS:> Get-APhysicalDiskStatisticsReports_CLI -IDLEP –nodes 2 –Iteration 1
-
-	This example displays one iteration of I/O statistics for all PDs with the specification idlep preference of node 2.
-.EXAMPLE  
-	PS:> Get-APhysicalDiskStatisticsReports_CLI -NI -wwn 1122112211221122 –nodes 2 –Iteration 1
-
-	This Example Specifies that statistics for a particular Physical Disk (PD) identified by World Wide Names (WWNs) and nodes
 .PARAMETER Devinfo
 	Indicates the device disk type and speed.
 .PARAMETER RW
@@ -1608,6 +1605,20 @@ Function Get-APhysicalDiskStatisticsReports_CLI
 	Specifies that the display is limited to specified ports and PDs connected to those ports
 .PARAMETER  Iteration
 	Specifies that the histogram is to stop after the indicated number of iterations using an integer from 1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-APhysicalDiskStatisticsReports_CLI -RW –Iteration 1
+	
+	This example displays one iteration of I/O statistics for all PDs.
+.EXAMPLE  
+	PS:> Get-APhysicalDiskStatisticsReports_CLI -IDLEP –nodes 2 –Iteration 1
+
+	This example displays one iteration of I/O statistics for all PDs with the specification idlep preference of node 2.
+.EXAMPLE  
+	PS:> Get-APhysicalDiskStatisticsReports_CLI -NI -wwn 1122112211221122 –nodes 2 –Iteration 1
+
+	This Example Specifies that statistics for a particular Physical Disk (PD) identified by World Wide Names (WWNs) and nodes
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1620,8 +1631,9 @@ param(	[Parameter()]	[switch]	$RW,
 		[Parameter()]	[String]	$nodes,
 		[Parameter()]	[String]	$slots,
 		[Parameter()]	[String]	$ports ,
-		[Parameter(Mandatory=$true)]	[String]	$Iteration ,
-		[Parameter()]	[switch]	$DevInfo		
+		[Parameter(Mandatory)]	[String]	$Iteration ,
+		[Parameter()]	[switch]	$DevInfo,
+		[Parameter()] 	[switch]	$ShowRaw	
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1638,7 +1650,9 @@ Process
 	if ($nodes)	{	$cmd+=" -nodes $nodes "	}	
 	if ($slots)	{	$cmd+=" -slots $slots "	}	
 	if ($ports ){	$cmd+=" -ports $ports "	}			
-	$Result = Invoke-A9CLICommand -cmds  $cmd	
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if ($ShowRaw) { return $Result }	
 	$range1 = $Result.count	
 	if($range1 -eq "4")	{	return "No data available"	}	
 	if ( $Result.Count -gt 1)
@@ -1678,15 +1692,6 @@ Function Get-A9PortStatisticsReports_CLI
 	The command displays read/write (I/O) statistics for ports.
 .DESCRIPTION
 	The command displays read/write (I/O) statistics for ports.
-.EXAMPLE
-	PS:> Get-A9PortStatisticsReports_CLI -Iteration 1
-	This example displays one iteration of I/O statistics for all ports.
-.EXAMPLE  
-	PS:> Get-A9PortStatisticsReports_CLI -Both -Iteration 1
-	This example displays one iteration of I/O statistics for all ports,Show data transfers only. 
-.EXAMPLE  
-	Get-A9PortStatisticsReports_CLI -Host -nodes 2 -Iteration 1
-	This example displays I/O statistics for all ports associated with node 2.
 .PARAMETER Both
 	Show data transfers only.
 .PARAMETER Ctl
@@ -1727,6 +1732,17 @@ Function Get-A9PortStatisticsReports_CLI
 .PARAMETER  Iteration
 	Specifies that the histogram is to stop after the indicated number of iterations using an integer from
 	1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-A9PortStatisticsReports_CLI -Iteration 1
+	This example displays one iteration of I/O statistics for all ports.
+.EXAMPLE  
+	PS:> Get-A9PortStatisticsReports_CLI -Both -Iteration 1
+	This example displays one iteration of I/O statistics for all ports,Show data transfers only. 
+.EXAMPLE  
+	Get-A9PortStatisticsReports_CLI -Host -nodes 2 -Iteration 1
+	This example displays I/O statistics for all ports associated with node 2.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1747,7 +1763,8 @@ param(	[Parameter()]	[switch]	$Both ,
 		[Parameter()]	[String]	$nodes,
 		[Parameter()]	[String]	$slots,
 		[Parameter()]	[String]	$ports ,	
-		[Parameter(Mandatory=$true)]	[String]	$Iteration 
+		[Parameter(Mandatory)]	[String]	$Iteration ,
+		[parameter()]	[switch]	$ShowRaw
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1771,7 +1788,9 @@ Process
 	if ($nodes)		{	$cmd+=" -nodes $nodes "	}
 	if ($slots)		{	$cmd+=" -slots $slots "	}
 	if ($ports )	{	$cmd+=" -ports $ports "	}				
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd	
+	if ($ShowRaw) { return $Reusult }
 	$range1 = $Result.count
 	if($range1 -eq "4")	{	return "No data available"	}
 	if(($Both) -And ($range -eq "6"))	{	return "No data available"	}
@@ -1813,25 +1832,6 @@ Function Get-A9RCopyStatisticalReports_CLI
 	The command displays statistics for remote-copy volumes in a timed loop.
 .DESCRIPTION
     The command displays statistics for remote-copy volumes in a timed loop.
-.EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1
-	This Example displays statistics for remote-copy volumes in a timed loop.
-.EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -ASync
-.EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -Sync -VVname $VV
-.EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -TargetSum
-.EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -VVSum   
-.EXAMPLE  
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -periodic 
-
-	This Example displays statistics for remote-copy volumes in a timed loop and show only volumes that are being copied in asynchronous periodic mode	
-.EXAMPLE  
-	PS:> Get-A9RCopyStatisticalReports_CLI -target demotarget1  -Iteration 1
-
-	This Example displays statistics for remote-copy volumes in a timed loop and Show only volumes whose group is copied to the specified target name.
 .PARAMETER Async     
 	Show only volumes which are being copied in asynchronous mode.
 .PARAMETER sync		
@@ -1872,6 +1872,27 @@ Function Get-A9RCopyStatisticalReports_CLI
 	command defaults to 2 seconds.
 .PARAMETER Subset
 	Show subset statistics for Asynchronous Remote Copy on a per group basis.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1
+	This Example displays statistics for remote-copy volumes in a timed loop.
+.EXAMPLE
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -ASync
+.EXAMPLE
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -Sync -VVname $VV
+.EXAMPLE
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -TargetSum
+.EXAMPLE
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -VVSum   
+.EXAMPLE  
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -periodic 
+
+	This Example displays statistics for remote-copy volumes in a timed loop and show only volumes that are being copied in asynchronous periodic mode	
+.EXAMPLE  
+	PS:> Get-A9RCopyStatisticalReports_CLI -target demotarget1  -Iteration 1
+
+	This Example displays statistics for remote-copy volumes in a timed loop and Show only volumes whose group is copied to the specified target name.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1894,7 +1915,8 @@ param(	[Parameter(Mandatory=$true)][String]	$Iteration ,
 		[Parameter()]				[switch]	$VVSum,
 		[Parameter()]				[switch]	$DomainSum,
 		[Parameter()]				[switch]	$NI,
-		[Parameter()]				[switch]	$SubSet
+		[Parameter()]				[switch]	$SubSet,
+		[Parameter()]				[switch]	$ShowRaw
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1919,44 +1941,40 @@ Process
 	if($DomainName)	{	$cmd += " -domain $DomainName "	}
 	if($NI)			{	$cmd += " -ni "	}
 	if($SubSet)		{	$cmd += " -subset "	}
-	if ($VVname)
-		{	$s= Get-A9Vv_CLI -vvName  $VVname
-			if ($s -match $VVname )		{	$cmd+=" $VVname"	}
-			else						{	Return "FAILURE : -VVname $VVname  is Unavailable to execute. "	}		
-		}
+	if ($VVname)	{	$cmd+=" $VVname"	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if ($ShowRaw) { return $Result}
 	$range1 = $Result.count
 	if($range1 -eq "4")	{	return "No data available"	}
 	if( $Result.Count -gt 1)
-	{	$tempFile = [IO.Path]::GetTempFileName()
-		$LastItem = $Result.Count - 2
-		if($TargetSum)		{	Add-Content -Path $tempFile -Value "Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-		elseif ($PortSum)	{	Add-Content -Path $tempFile -Value "Link,Target,Type,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-		elseif ($GroupSum)	{	Add-Content -Path $tempFile -Value "Group,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-		elseif ($VVSum)		{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-		elseif ($DomainSum)	{	Add-Content -Path $tempFile -Value "Domain,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-		else 				{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,Port,Type,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"}
-		foreach ($s in  $Result[0..$LastItem] )
-		{	$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
-			if ($s -match "I/O")
-				{	$a=$s.split(",")
-					$global:time1 = $a[0]
-					$global:date1 = $a[1]
-					continue
-				}
-			if (($s -match "-------") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Avg"))	{	continue	}
-			$aa=$s.split(",").length
-			if ($aa -eq "11")	{	continue	}			
-			$s +=",$global:time1,$global:date1"
-			Add-Content -Path $tempFile -Value $s		
+		{	$tempFile = [IO.Path]::GetTempFileName()
+			$LastItem = $Result.Count - 2
+			if($TargetSum)		{	Add-Content -Path $tempFile -Value "Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+			elseif ($PortSum)	{	Add-Content -Path $tempFile -Value "Link,Target,Type,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+			elseif ($GroupSum)	{	Add-Content -Path $tempFile -Value "Group,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+			elseif ($VVSum)		{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+			elseif ($DomainSum)	{	Add-Content -Path $tempFile -Value "Domain,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+			else 				{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,Port,Type,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"}
+			foreach ($s in  $Result[0..$LastItem] )
+			{	$s= [regex]::Replace($s,"^ +","")
+				$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
+				if ($s -match "I/O")
+					{	$a=$s.split(",")
+						$global:time1 = $a[0]
+						$global:date1 = $a[1]
+						continue
+					}
+				if (($s -match "-------") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Avg"))	{	continue	}
+				$aa=$s.split(",").length
+				if ($aa -eq "11")	{	continue	}			
+				$s +=",$global:time1,$global:date1"
+				Add-Content -Path $tempFile -Value $s		
+			}
+			$Result = Import-Csv $tempFile
+			remove-item $tempFile
 		}
-		Import-Csv $tempFile
-		remove-item $tempFile
-	}
-	else
-	{	return $Result
-	}
+	return $Result
 }
 }
 Function Get-A9vLunStatisticsReports_CLI
@@ -1966,22 +1984,6 @@ Function Get-A9vLunStatisticsReports_CLI
 	The command displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
 .DESCRIPTION
 	The Get-StatVLun command displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
-.EXAMPLE
-	PS:> Get-A9vLunStatisticsReports_CLI -Iteration 1
-
-	This example displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
-.EXAMPLE  
-	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -Iteration 1
-
-	This example displays statistics for Virtual Volumes (VVs) and Specifies that sums for VLUNs of the same VV are displayed.
-.EXAMPLE  
-	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -RW -Iteration 1
-.EXAMPLE  
-	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -RW -VVname xxx -Iteration 1
-.EXAMPLE  
-	PS:> Get-A9vLunStatisticsReports_CLI -VVname demovv1 -Iteration 1
-
-	This example displays statistics for Virtual Volumes (VVs) and only Logical Disks (LDs) mapped to VVs that match any of the specified names to be displayed.
 .PARAMETER LW  
 	Lists the host’s World Wide Name (WWN) or iSCSI names.
 .PARAMETER Domainsum
@@ -2010,6 +2012,24 @@ Function Get-A9vLunStatisticsReports_CLI
 .PARAMETER  Iteration
 	Specifies that the histogram is to stop after the indicated number of iterations using an integer from
 	1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-A9vLunStatisticsReports_CLI -Iteration 1
+
+	This example displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
+.EXAMPLE  
+	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -Iteration 1
+
+	This example displays statistics for Virtual Volumes (VVs) and Specifies that sums for VLUNs of the same VV are displayed.
+.EXAMPLE  
+	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -RW -Iteration 1
+.EXAMPLE  
+	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -RW -VVname xxx -Iteration 1
+.EXAMPLE  
+	PS:> Get-A9vLunStatisticsReports_CLI -VVname demovv1 -Iteration 1
+
+	This example displays statistics for Virtual Volumes (VVs) and only Logical Disks (LDs) mapped to VVs that match any of the specified names to be displayed.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -2026,7 +2046,8 @@ param(	[Parameter()]		[switch]	$RW,
 		[Parameter()]		[String]	$VVname ,
 		[Parameter()]		[String]	$LUN ,
 		[Parameter()]		[String]	$nodes,
-		[Parameter(Mandatory=$true)]	[String]	$Iteration 
+		[Parameter(Mandatory)]	[String]	$Iteration ,
+		[Parameter()]		[switch]	$ShowRaw
 )		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -2043,14 +2064,12 @@ Process
 	if($vvSum)		{	$cmd+=" -vvsum "	}	
 	if($HostSum)	{	$cmd+=" -hostsum "	}
 	if ($domian)	{	$cmd+=" -domain $domian"	}	
-	if ($VVname)
-		{	$s= Get-Vv -vvName  $VVname
-			if ($s -match $VVname )	{	$cmd+=" -v $VVname"	}
-			else					{	Return "FAILURE : -VVname $VVname  is Unavailable to execute. "	}		
-		}
-	if ($LUN)	{	$cmd+=" -l $LUN"	}	
-	if ($nodes)	{	$cmd+=" -nodes $nodes"	}				
+	if ($VVname)	{	$cmd+=" -v $VVname"	}			
+	if ($LUN)		{	$cmd+=" -l $LUN"	}	
+	if ($nodes)		{	$cmd+=" -nodes $nodes"	}				
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if ($ShowRaw) { return $Result }
 	$range1 = $Result.count
 	if($range1 -eq "4")					{	return "No data available"	}	
 	if(($range1 -eq "6") -and ($NI))	{	return "No data available"	}
@@ -2101,6 +2120,22 @@ Function Get-A9VvStatisticsReports
 	The command displays statistics for Virtual Volumes (VVs) in a timed loop.
 .DESCRIPTION
 	The command displays statistics for Virtual Volumes (VVs) in a timed loop.
+.PARAMETER RW
+	Specifies reads and writes to be displayed separately.
+.PARAMETER Delay
+	<Seconds> Specifies the interval in seconds that statistics are sampled from using an integer from 1 through 2147483. 
+	If no count is specified, the command defaults to 2 seconds.
+.PARAMETER NI
+	Specifies that statistics for only non-idle devices are displayed. This option is shorthand for the option -filt curs,t,iops,0.
+.PARAMETER domian    
+	Shows only Virtual Volume Logical Unit Number (VLUNs) whose VVs are in domains with names that match one or more of the specified domain names or patterns.
+.PARAMETER  Iteration
+	Specifies that the histogram is to stop after the indicated number of iterations using an integer from
+	1 through 2147483647.
+.PARAMETER  VVname
+	Only statistics are displayed for the specified VV.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Get-A9VvStatisticsReports -Iteration 1
 	
@@ -2116,20 +2151,6 @@ Function Get-A9VvStatisticsReports
 .EXAMPLE  
 	PS:> Get-A9VvStatisticsReports -RW -domain ZZZ -VVname demovv1 -Iteration 1
 	This Example displays statistics for Virtual Volumes (VVs) with Only statistics are displayed for the specified VVname.			
-.PARAMETER RW
-	Specifies reads and writes to be displayed separately.
-.PARAMETER Delay
-	<Seconds> Specifies the interval in seconds that statistics are sampled from using an integer from 1 through 2147483. 
-	If no count is specified, the command defaults to 2 seconds.
-.PARAMETER NI
-	Specifies that statistics for only non-idle devices are displayed. This option is shorthand for the option -filt curs,t,iops,0.
-.PARAMETER domian    
-	Shows only Virtual Volume Logical Unit Number (VLUNs) whose VVs are in domains with names that match one or more of the specified domain names or patterns.
-.PARAMETER  Iteration
-	Specifies that the histogram is to stop after the indicated number of iterations using an integer from
-	1 through 2147483647.
-.PARAMETER  VVname
-	Only statistics are displayed for the specified VV.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -2139,7 +2160,8 @@ param(	[Parameter()]				[switch]	$RW ,
 		[Parameter()]				[String]	$Delay  ,
 		[Parameter()]				[String]	$domian  ,
 		[Parameter()]				[String]	$VVname ,	
-		[Parameter(Mandatory=$true)][String]	$Iteration
+		[Parameter(Mandatory)]		[String]	$Iteration,
+		[Parameter()]				[switch]	$ShowRaw
 	)			
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -2152,7 +2174,9 @@ Process
 	if ($NI)		{	$cmd+=" -ni "				}
 	if ($domian)	{	$cmd+=" -domain $domian"	}			
 	if ($VVname)	{	$cmd+="  $VVname"			}	
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd	
+	if ($ShowRaw) { return $Result }
 	$range1 = $Result.count
 	if($range1 -eq "4")	{	return "No data available"	}	
 	if ( $Result.Count -gt 1)
@@ -2191,10 +2215,6 @@ Function Set-A9StatisticsInUseChunklets
     The Set-Statch command sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD).
 .DESCRIPTION
 	The Set-Statch command sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD).
-.EXAMPLE 
-	PS:> Set-A9StatisticsInUseChunklets -Start -LDname test1 -CLnum 1  
-	
-	This example starts and stops the statistics collection mode for chunklets.with the LD name test1.
 .PARAMETER Start  
     Specifies that the collection of statistics is either started or stopped for the specified Logical Disk (LD) and chunklet.
 .PARAMETER Stop  
@@ -2203,14 +2223,18 @@ Function Set-A9StatisticsInUseChunklets
 	Specifies the name of the logical disk in which the chunklet to be configured resides.
 .PARAMETER CLnum 	
 	Specifies the chunklet that is configured using the setstatch command.	
+.EXAMPLE 
+	PS:> Set-A9StatisticsInUseChunklets -Start -LDname test1 -CLnum 1  
+	
+	This example starts and stops the statistics collection mode for chunklets.with the LD name test1.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]											[switch]	$Start,
-		[Parameter()]											[switch]	$Stop,
-		[Parameter(ValueFromPipeline=$true, Mandatory=$true)]	[String]	$LDname,
-		[Parameter(ValueFromPipeline=$true, Mandatory=$true)]	[String]	$CLnum
+param(	[Parameter()]			[switch]	$Start,
+		[Parameter()]			[switch]	$Stop,
+		[Parameter(Mandatory)]	[String]	$LDname,
+		[Parameter(Mandatory)]	[String]	$CLnum
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -2225,6 +2249,7 @@ Process
 						Else		{	return "Error:  LDname  is Invalid ."	}
 					}
 	if($CLnum)		{	$cmd1+="$CLnum"	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd1
 	write-verbose "   The Set-Statch command sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD).->$cmd"
 	if([string]::IsNullOrEmpty($Result))
@@ -2241,23 +2266,23 @@ Function Set-A9StatisticsCollectionPhysicalDiskChunklets
     The command starts and stops the statistics collection mode for chunklets.
 .DESCRIPTION
     The command starts and stops the statistics collection mode for chunklets.
-.EXAMPLE
-	PS:> Set-A9StatisticsCollectionPhysicalDiskChunklets -Start -PD_ID 2
-	
-	This Example sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD) 2.
 .PARAMETER Start  
     Specifies that the collection of statistics is either started or stopped for the specified Logical Disk (LD) and chunklet.
 .PARAMETER Stop  
     Specifies that the collection of statistics is either started or stopped for the specified Logical Disk (LD) and chunklet.
 .PARAMETER PD_ID   
     Specifies the PD ID.
+.EXAMPLE
+	PS:> Set-A9StatisticsCollectionPhysicalDiskChunklets -Start -PD_ID 2
+	
+	This Example sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD) 2.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]					[switch]	$Start,
-		[Parameter()]					[switch]	$Stop,
-		[Parameter(ValueFromPipeline=$true, Mandatory=$true)]	[String]	$PD_ID
+param(	[Parameter()]			[switch]	$Start,
+		[Parameter()]			[switch]	$Stop,
+		[Parameter(Mandatory)]	[String]	$PD_ID
 	)			
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -2392,6 +2417,7 @@ Process
 	if($Maxtasks)	{	$Cmd += " -maxtasks $Maxtasks " }
 	if($Maxnodetasks){	$Cmd += " -maxnodetasks $Maxnodetasks " }
 	if($Waittask)	{	$Cmd += " -waittask " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -2491,6 +2517,7 @@ Process
 	if($MaxSvct)		{	$Cmd += " maxSvct $MaxSvct "	} 
 	elseif($AvgSvct)	{	$Cmd += " avgsvct $AvgSvct "	}
 	else				{	return	"Please select at list one from [ MaxSvct or AvgSvct]."	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }

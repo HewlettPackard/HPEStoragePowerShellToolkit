@@ -19,8 +19,7 @@ Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }	
 Process
-{	Write-Host "--------------------------------------`n"
-	Write-host "Controller,WWN"	
+{	Write-host "Controller,WWN"	
 	$ListofPorts = Get-A9HostPorts_cli | where-object { ( $_.Type -eq "host" ) -and ($_.Protocol -eq "FC")}
 	$Port_Pattern = "(\d):(\d):(\d)"							# Pattern matches value of port: 1:2:3
 	$WWN_Pattern = "([0-9a-f][0-9a-f])" * 8						# Pattern matches value of WWN
@@ -91,7 +90,8 @@ Process
 {	$IsObjectExisted = $True
 	$ObjCmd = $ObjectType -replace ' ', '' 
 	$Cmds = "show$ObjCmd $ObjectName"
-	$Result = Invoke-A9CLICommand -cmds  $Cmds
+	write-verbose "Executing the following SSH command `n`t $cmds"
+			$Result = Invoke-A9CLICommand -cmds  $Cmds
 	if ($Result -like "no $ObjectMsg listed")	{	$IsObjectExisted = $false	}
 	return $IsObjectExisted
 }	

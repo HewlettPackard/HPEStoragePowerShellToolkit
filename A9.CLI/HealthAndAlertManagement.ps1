@@ -50,6 +50,7 @@ Process
 	if($Detailed) 		{	$Cmd += " -d " 		}
 	if($Wide)			{	$Cmd += " -wide " 	}
 	if($Oneline)		{	$Cmd += " -oneline "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -155,6 +156,7 @@ Process
 	if($NoMessage)		{	$Cmd += " -nmsg $NoMessage " }
 	if($Component)		{	$Cmd += " -comp $Component " }
 	if($NoComponent)	{	$Cmd += " -ncomp $NoComponent " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 }
 end
@@ -230,8 +232,9 @@ Process
 	if($Quiet)		{	$Cmd += " -quiet " 	}
 	if($Detailed)	{	$Cmd += " -d " 		}
 	if($Component)	{	$Cmd += " $Component "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-Return $Result
+	Return $Result
 }
 }
 
@@ -261,6 +264,7 @@ Process
 	$Cmd += " -f "
 	if($All)		{	$Cmd += " -a "	}
 	if($Alert_ID)	{	$Cmd += " $Alert_ID "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -315,6 +319,7 @@ Process
 	if($Fixed)		{	$Cmd += " fixed " }
 	if($All)		{	$Cmd += " -a " }
 	if($Alert_ID){	$Cmd += " $Alert_ID " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }

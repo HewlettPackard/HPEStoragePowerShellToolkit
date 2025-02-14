@@ -8,10 +8,6 @@ Function Get-A9Maintenance
 	Show maintenance window records.
 .DESCRIPTION
 	The command displays maintenance window records.
-.EXAMPLE
-	PS:> Get-A9Maintenance
-.EXAMPLE
-	PS:> Get-A9Maintenance -All 
 .PARAMETER All
 	Display all maintenance window records, including active and expired ones. If this option is not specified, only active window records will be displayed.
 .PARAMETER Sortcol
@@ -19,12 +15,19 @@ Function Get-A9Maintenance
 	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
 		inc: Sort in increasing order (default).
 		dec: Sort in decreasing order.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-A9Maintenance
+.EXAMPLE
+	PS:> Get-A9Maintenance -All 
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$All,
-		[Parameter()]	[String]	$Sortcol
+		[Parameter()]	[String]	$Sortcol,
+		[Parameter()]	[switch]	$ShowRaw
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -33,7 +36,9 @@ Process
 {	$Cmd = " showmaint "
 	if($All)	{	$Cmd += " -all " }
 	if($Sortcol){	$Cmd += " -sortcol $Sortcol "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	if ( $ShowRaw) { return $Result}
 	if($Result.count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			foreach ($s in  $Result[0..($Result.Count -2)] )
@@ -59,8 +64,6 @@ Function New-A9Maintenance
 	Create a maintenance window record.
 .DESCRIPTION
 	The command creates a maintenance window record with the specified options and maintenance type.
-.EXAMPLE
-	PS:> New-A9Maintenance -Duration 1m -MaintType Node
 .PARAMETER Comment
 	Specifies any comment or additional information for the maintenance window record. The comment can be up to 255 characters long. Unprintable
 	characters are not allowed.
@@ -68,6 +71,8 @@ Function New-A9Maintenance
 	Sets the duration of the maintenance window record. May be specified in minutes (e.g. 20m) or hours (e.g. 6h). Value is not to exceed 24 hours. The default is 4 hours.
 .PARAMETER MaintType
 	Specify the maintenance type. Maintenance type can be Other, Node, Restart, Disk, Cage, Cabling, Upgrade, DiskFirmware, or CageFirmware.
+.EXAMPLE
+	PS:> New-A9Maintenance -Duration 1m -MaintType Node
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -84,6 +89,7 @@ Process
 	if($Comment)	{	$Cmd += " -comment $Comment " }
 	if($Duration)	{	$Cmd += " -duration $Duration " }
 	if($MaintType) 	{	$Cmd += " $MaintType " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -127,6 +133,7 @@ Process
 	if($Duration)	{	$Cmd += " -duration $Duration " }
 	if($End)		{	$Cmd += " -end " }
 	if($MaintType)	{	$Cmd += " $MaintType " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 

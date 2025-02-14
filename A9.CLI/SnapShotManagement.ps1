@@ -9,18 +9,6 @@ Function New-A9GroupSnapVolume_CLI
     creates consistent group snapshots
 .DESCRIPTION
 	creates consistent group snapshots
-.EXAMPLE
-	PS:> New-A9GroupSnapVolume_CLI
-.EXAMPLE
-	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F
-.EXAMPLE
-	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -exp 2d
-.EXAMPLE
-	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -retain 2d
-.EXAMPLE
-	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -Comment Hello
-.EXAMPLE
-	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -OR
 .PARAMETER vvNames 
     Specify the Existing virtual volume with comma(,) seperation ex: vv1,vv2,vv3.
 .PARAMETER OR
@@ -37,6 +25,18 @@ Function New-A9GroupSnapVolume_CLI
 	By default, all snapshots are created read-write. The -ro option instead specifies that all snapshots created will be read-only.
 	The -match option specifies that snapshots are created matching each parent's read-only or read-write setting. The -ro and -match
 	options cannot be combined. Either of these options can be overridden for an individual snapshot VV in the colon separated specifiers.
+.EXAMPLE
+	PS:> New-A9GroupSnapVolume_CLI
+.EXAMPLE
+	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F
+.EXAMPLE
+	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -exp 2d
+.EXAMPLE
+	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -retain 2d
+.EXAMPLE
+	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -Comment Hello
+.EXAMPLE
+	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -OR
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -67,6 +67,7 @@ Process
 				}
 		}
 	$CreateGSVCmd += " $vvName1 "	
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$result1 = Invoke-A9CLICommand -cmds  $CreateGSVCmd
 	write-verbose " Creating Snapshot Name with the command --> $CreateGSVCmd"
 	if($result1 -match "CopyOfVV")
@@ -85,14 +86,6 @@ Function New-A9GroupVvCopy_CLI
     Creates consistent group physical copies of a list of virtualvolumes.
 .DESCRIPTION
 	Creates consistent group physical copies of a list of virtualvolumes.
-.EXAMPLE
-    PS:> New-A9GroupVvCopy_CLI -P -parent_VV ZZZ -destination_VV ZZZ 
-.EXAMPLE
-    PS:> New-A9GroupVvCopy_CLI -P -Online -parent_VV ZZZ -destination_cpg ZZZ -VV_name ZZZ -wwn 123456
-.EXAMPLE
-    PS:> New-A9GroupVvCopy_CLI -R -destination_VV ZZZ
-.EXAMPLE
-    PS:> New-A9GroupVvCopy_CLI -Halt -destination_VV ZZZ
 .PARAMETER parent_VV 
     Indicates the parent virtual volume.
 .PARAMETER destination_VV
@@ -135,6 +128,14 @@ Function New-A9GroupVvCopy_CLI
 	This option can only be used with a CPG that has SSD (Solid State Drive) device type. Cannot be used with the -tpvv option.
 .PARAMETER Compressed
 	Indicates that the VV the online copy creates should be a compressed virtual volume.    
+.EXAMPLE
+    PS:> New-A9GroupVvCopy_CLI -P -parent_VV ZZZ -destination_VV ZZZ 
+.EXAMPLE
+    PS:> New-A9GroupVvCopy_CLI -P -Online -parent_VV ZZZ -destination_cpg ZZZ -VV_name ZZZ -wwn 123456
+.EXAMPLE
+    PS:> New-A9GroupVvCopy_CLI -R -destination_VV ZZZ
+.EXAMPLE
+    PS:> New-A9GroupVvCopy_CLI -Halt -destination_VV ZZZ
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -188,6 +189,7 @@ Process
 	if($wwn)		{	$groupvvcopycmd += ":"
 						$groupvvcopycmd += "$wwn"
 					}	
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result1 = Invoke-A9CLICommand -cmds  $groupvvcopycmd
 	write-verbose " Creating consistent group fo Virtual copies with the command --> $groupvvcopycmd"
 	if ($Result1 -match "TaskID")	{	$outmessage += "Success : `n $Result1"	}
@@ -203,22 +205,6 @@ Function New-A9SnapVolume_CLI
     creates a point-in-time (snapshot) copy of a virtual volume.
 .DESCRIPTION
 	creates a point-in-time (snapshot) copy of a virtual volume.
-.EXAMPLE
-	PS:> New-A9SnapVolume_CLI -svName svr0_vv0 -vvName vv0 
-	
-	Ceates a read-only snapshot volume "svro_vv0" from volume "vv0" 
-.EXAMPLE
-	PS:> New-A9SnapVolume_CLI -svName svr0_vv0 -vvName vv0 -ro -exp 25H
-
-	Ceates a read-only snapshot volume "svro_vv0" from volume "vv0" and that will expire after 25 hours
-.EXAMPLE
-	PS:> New-A9SnapVolume_CLI -svName svrw_vv0 -vvName svro_vv0
-	
-	creates snapshot volume "svrw_vv0" from the snapshot "svro_vv0"
-.EXAMPLE
-	PS:> New-A9SnapVolume_CLI -ro svName svro-@vvname@ -vvSetName set:vvcopies 
-	
-	creates a snapshot volume for each member of the VV set "vvcopies". Each snapshot will be named svro-<name of parent virtual volume>:
 .PARAMETER svName 
     Specify  the name of the Snap shot	
 .PARAMETER vvName 
@@ -239,12 +225,28 @@ Function New-A9SnapVolume_CLI
 	Time can be optionally specified in days or hours providing either d or D for day and h or H for hours following the entered time value.
 .PARAMETER ro
 	Specifies that the copied volume is read-only. If not specified, the volume is read/write.	
+.EXAMPLE
+	PS:> New-A9SnapVolume_CLI -svName svr0_vv0 -vvName vv0 
+	
+	Ceates a read-only snapshot volume "svro_vv0" from volume "vv0" 
+.EXAMPLE
+	PS:> New-A9SnapVolume_CLI -svName svr0_vv0 -vvName vv0 -ro -exp 25H
+
+	Ceates a read-only snapshot volume "svro_vv0" from volume "vv0" and that will expire after 25 hours
+.EXAMPLE
+	PS:> New-A9SnapVolume_CLI -svName svrw_vv0 -vvName svro_vv0
+	
+	creates snapshot volume "svrw_vv0" from the snapshot "svro_vv0"
+.EXAMPLE
+	PS:> New-A9SnapVolume_CLI -ro svName svro-@vvname@ -vvSetName set:vvcopies 
+	
+	creates a snapshot volume for each member of the VV set "vvcopies". Each snapshot will be named svro-<name of parent virtual volume>:
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ParameterSetName="set",Mandatory=$true)]	[String]	$svName,			
-		[Parameter(ParameterSetName="vv", Mandatory=$true)]	[String]	$vvName,
+param(	[Parameter(ParameterSetName="set",Mandatory)]	[String]	$svName,			
+		[Parameter(ParameterSetName="vv", Mandatory)]	[String]	$vvName,
 		[Parameter()]	[String]	$VV_ID,
 		[Parameter()]	[String]	$exp,
 		[Parameter()]	[String]	$retain,
@@ -270,6 +272,7 @@ Process
 			if($retain)	{	$CreateSVCmd += " -f -retain $retain  "	}
 			if($Comment){	$CreateSVCmd += " -comment $Comment  "	}
 			$CreateSVCmd +=" $svName $vvName "
+			write-verbose "Executing the following SSH command `n`t $CreateSVcmd"
 			$result1 = Invoke-A9CLICommand -cmds  $CreateSVCmd
 			write-verbose " Creating Snapshot Name $svName with the command --> $CreateSVCmd"
 			if([string]::IsNullOrEmpty($result1))
@@ -312,22 +315,6 @@ Function New-A9VvCopy_CLI
     Creates a full physical copy of a Virtual Volume (VV) or a read/write virtual copy on another VV.
 .DESCRIPTION
 	Creates a full physical copy of a Virtual Volume (VV) or a read/write virtual copy on another VV.
-.EXAMPLE
-    PS:> New-A9VvCopy_CLI -parentName VV1 -vvCopyName VV2
-.EXAMPLE		
-	PS:> New-A9VvCopy_CLI -parentName VV1 -vvCopyName VV2 -online -CPGName ZZZ
-.EXAMPLE
-	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3 -online -CPGName asCpg -Tpvv
-.EXAMPLE
-	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -Tdvv
-.EXAMPLE
-	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -Dedup
-.EXAMPLE
-	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -Compr
-.EXAMPLE
-	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -AddToSet
-.EXAMPLE
-	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3 -Priority med
 .PARAMETER parentName 
     Specify name of the parent Virtual Volume
 .PARAMETER Online 
@@ -367,12 +354,28 @@ Function New-A9VvCopy_CLI
 	task.  If this option is not specified, the createvvcopy operation is started with default priority of medium. High priority indicates that
 	the operation will complete faster. Low priority indicates that the operation will run slower than the default priority task. This option
 	cannot be used with -halt option.
+.EXAMPLE
+    PS:> New-A9VvCopy_CLI -parentName VV1 -vvCopyName VV2
+.EXAMPLE		
+	PS:> New-A9VvCopy_CLI -parentName VV1 -vvCopyName VV2 -online -CPGName ZZZ
+.EXAMPLE
+	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3 -online -CPGName asCpg -Tpvv
+.EXAMPLE
+	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -Tdvv
+.EXAMPLE
+	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -Dedup
+.EXAMPLE
+	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -Compr
+.EXAMPLE
+	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -AddToSet
+.EXAMPLE
+	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3 -Priority med
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$parentName,		
-		[Parameter(Mandatory=$true)]	[String]	$vvCopyName,
+param(	[Parameter(Mandatory)]	[String]	$parentName,		
+		[Parameter(Mandatory)]	[String]	$vvCopyName,
 		[Parameter()]	[switch]    $online,
 		[Parameter()]	[String]    $CPGName,		
 		[Parameter()]	[String]    $snapcpg,
@@ -468,26 +471,6 @@ Function Push-A9GroupSnapVolume
     Copies the differences of snapshots back to their base volumes.
 .DESCRIPTION
 	Copies the differences of snapshots back to their base volumes.
-.EXAMPLE
-    PS:> Push-A9GroupSnapVolume
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr02F
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames "WSDS_compr02F"
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames "tesWSDS_compr01t_lun"
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -RCP
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -Halt
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -PRI high
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -Online
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -TargetVV at
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -TargetVV y
 .PARAMETER VVNames 
     Specify virtual copy name of the Snap shot
 .PARAMETER TargetVV 
@@ -508,6 +491,26 @@ Function Push-A9GroupSnapVolume
 	to initiate the promote command, but can be brought online and used during the background tasks. Each specified virtual copy and its base
 	volume must be the same size. The base volume is the only possible target of online promote, and is the default. To halt a promote started
 	with the online option, use the canceltask command. The -halt, -target, and -pri options cannot be combined with the -online option.	
+.EXAMPLE
+    PS:> Push-A9GroupSnapVolume
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr02F
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames "WSDS_compr02F"
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames "tesWSDS_compr01t_lun"
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -RCP
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -Halt
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -PRI high
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -Online
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -TargetVV at
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -TargetVV y
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -556,14 +559,6 @@ Function Push-A9SnapVolume
     This command copies the differences of a snapshot back to its base volume, allowing you to revert the base volume to an earlier point in time.
 .DESCRIPTION
 	This command copies the differences of a snapshot back to its base volume, allowing you to revert the base volume to an earlier point in time.
-.EXAMPLE
-	PS:> Push-A9SnapVolume -name vv1 
-	
-	copies the differences of a snapshot back to its base volume "vv1"
-.EXAMPLE
-	PS:> Push-A9SnapVolume -target vv23 -name vv1 
-	
-	copies the differences of a snapshot back to target volume "vv23" of volume "vv1"
 .PARAMETER name 
     Specifies the name of the virtual copy volume or set of virtual copy volumes to be promoted 
 .PARAMETER target 
@@ -583,6 +578,14 @@ Function Push-A9SnapVolume
 	initiate the promote command, but can bring it online and use it during the background task. The specified virtual copy and its base volume must
 	be the same size. The base volume is the only possible target of online promote, and is the default. To halt a promote started with the online
 	option, use the canceltask command. The -halt, -target, and -pri options cannot be combined with the -online option.
+.EXAMPLE
+	PS:> Push-A9SnapVolume -name vv1 
+	
+	copies the differences of a snapshot back to its base volume "vv1"
+.EXAMPLE
+	PS:> Push-A9SnapVolume -target vv23 -name vv1 
+	
+	copies the differences of a snapshot back to target volume "vv23" of volume "vv1"
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -634,14 +637,12 @@ Function Push-A9VvCopy
     Promotes a physical copy back to a regular base volume
 .DESCRIPTION
 	Promotes a physical copy back to a regular base volume
+.PARAMETER physicalCopyName 
+    Specifies the name of the physical copy to be promoted.
 .EXAMPLE
     PS:> Push-A9VvCopy –physicalCopyName volume1
 	
 	Promotes virtual volume "volume1" to a base volume
-.PARAMETER physicalCopyName 
-    Specifies the name of the physical copy to be promoted.
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -678,36 +679,33 @@ Function Set-A9VvSnapshot
     Updates a snapshot Virtual Volume (VV) with a new snapshot.
 .DESCRIPTION
 	Updates a snapshot Virtual Volume (VV) with a new snapshot.
-.EXAMPLE
-    PS:> Set-A9VvSnapshot -Name volume1 -Force
-	snapshot update of snapshot VV "volume1"
-.EXAMPLE
-    PS:> Set-A9VvSnapshot -Name volume1,volume2 -Force
-	snapshot update of snapshot VV's "volume1" and "volume2"
-.EXAMPLE
-    PS:> Set-A9VvSnapshot -Name set:vvset1 -Force
-	snapshot update of snapshot VVSet "vvset1"
-.EXAMPLE
-    PS:> Set-A9VvSnapshot -Name set:vvset1,set:vvset2 -Force
-	snapshot update of snapshot VVSet's "vvset1" and "vvset2"
-.EXAMPLE	
-	PS:> Set-A9VvSnapshot -Name as2 -RO
-.EXAMPLE	
-	PS:> Set-A9VvSnapshot -Name as2 -Force -RemoveAndRecreate 
 .PARAMETER Name 
     Specifies the name(s) of the snapshot virtual volume(s) or virtual volume set(s) to be updated.
 .PARAMETER RO 
     Specifies that if the specified VV (<VV_name>) is a read/write snapshot the snapshot’s read-only
 	parent volume is also updated with a new snapshot if the parent volume is not a member of a
 	virtual volume set
-.PARAMETER Force
-	Specifies that the command is forced.
+.EXAMPLE
+    PS:> Set-A9VvSnapshot -Name volume1 
+	snapshot update of snapshot VV "volume1"
+.EXAMPLE
+    PS:> Set-A9VvSnapshot -Name volume1,volume2 -
+	snapshot update of snapshot VV's "volume1" and "volume2"
+.EXAMPLE
+    PS:> Set-A9VvSnapshot -Name set:vvset1 
+	snapshot update of snapshot VVSet "vvset1"
+.EXAMPLE
+    PS:> Set-A9VvSnapshot -Name set:vvset1,set:vvset2 
+	snapshot update of snapshot VVSet's "vvset1" and "vvset2"
+.EXAMPLE	
+	PS:> Set-A9VvSnapshot -Name as2 -RO
+.EXAMPLE	
+	PS:> Set-A9VvSnapshot -Name as2 -RemoveAndRecreate 
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$Name,		
-		[Parameter()]	[switch]	$Force,		
+param(	[Parameter(Mandatory)]	[String]	$Name,		
 		[Parameter()]	[switch]	$RemoveAndRecreate,
 		[Parameter()]	[switch]	$RO	        
 	)		

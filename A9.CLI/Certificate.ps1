@@ -24,6 +24,8 @@ Function Get-A9Cert
 	Displays the certificates in PEM format. When a filename is specified the certificates are exported to the file.
 .PARAMETER Text
 	Displays the certificates in human readable format. When a filename is specified the certificates are exported to the file.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Get-A9Cert -Service unified-server -Pem
 .EXAMPLE
@@ -55,14 +57,8 @@ Process
 		if($Type)		{	$Cmd += " -type $Type " }
 		if($Pem)		{	$Cmd += " -pem " }
 		if($Text)		{	$Cmd += " -text " }
-		if($Listcols -Or $Pem -Or $Text)
-			{	$Result = Invoke-A9CLICommand -cmds  $Cmd
-				Return $Result
-			}
-		else
-			{	$Result = Invoke-A9CLICommand -cmds  $Cmd
-				Write-Verbose "Executing Function : Get-Cert Command -->" 
-			}
+		write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
 	}
 end
 	{	if ($ShowRaw -or $Service -or $pem -or $Text -or $Showcols -or $ListCols) { return $Result }
@@ -102,14 +98,14 @@ Function Import-A9Cert
 .DESCRIPTION
 	The Import Cert command allows a user to import certificates for a given service. The user can import a CA bundle containing the intermediate and/or
 	root CAs prior to importing the service certificate. The CA bundle can also be imported alongside the service certificate.
-.EXAMPLE
-	PS:> Import-Cert -SSL_service wsapi -Service_cert  wsapi-service.pem
 .PARAMETER SSL_service
 	Valid service names are cim, cli, ekm-client, ekm-server, ldap, syslog-gen-client, syslog-gen-server, syslog-sec-client, syslog-sec-server, wsapi, vasa, and unified-server.
 .PARAMETER CA_bundle
 	Allows the import of a CA bundle without importing a service certificate. Note the filename "stdin" can be used to paste the CA bundle into the CLI.
 .PARAMETER Ca
 	Allows the import of a CA bundle without importing a service certificate. Note the filename "stdin" can be used to paste the  CA bundle into the CLI.
+.EXAMPLE
+	PS:> Import-Cert -SSL_service wsapi -Service_cert  wsapi-service.pem
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -129,6 +125,7 @@ Process
 		if($Service_cert) 	{	$Cmd += " $Service_cert " 	}
 		if($CA_bundle) 		{	$Cmd += " $CA_bundle " 		}
 		if($Ca) 			{	$Cmd += " -ca $Ca " 		}
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 		Return $Result
 	}
@@ -163,8 +160,6 @@ Function New-A9Cert
 	Specifies the value of organizational unit (OU) attribute of the subject of the certificate.
 .PARAMETER CommonName
 	Specifies the value of common name (CN) attribute of the subject of the certificate. Over ssh, -CN must be specified.
-.PARAMETER SAN
-	Subject alternative name is a X509 extension that allows other pieces of information to be associated with the certificate. Multiple SANs may delimited with a comma.
 .EXAMPLE
 	PS:> New-A9Cert -SSL_service unified-server -Selfsigned -Keysize 2048 -Days 365
 .EXAMPLE
@@ -205,6 +200,7 @@ Process
 		if($OrganizationalUnit)	{	$Cmd += " -OU $OrganizationalUnit " }
 		if($CommonName)			{	$Cmd += " -CN $CommonName " 		}
 		if($SAN)				{	$Cmd += " -SAN $SAN " 				}
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 		Return $Result
 	}
@@ -244,6 +240,7 @@ Process
 		if($SSL_Service_Name)		{	$Cmd += " $SSL_Service_Name " }
 		$Cmd += " -f "
 		if($CertType) 				{	$Cmd += " -type $Type " }
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 		Return $Result
 	} 

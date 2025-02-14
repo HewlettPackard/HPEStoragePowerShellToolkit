@@ -47,6 +47,7 @@ Process
 		if ($Nold)		{	$cmd+=" -nold "	}
 		if ($NoPatch)	{	$cmd+=" -nopatch " }
 		if($wwn)		{	$cmd += " $wwn"	}
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $cmd
 		return 	$Result	
 	} 
@@ -82,6 +83,7 @@ Begin
 	}
 Process
 	{	$Cmd = " dismisspd $PDID"
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 		Return $Result
 	}
@@ -123,6 +125,7 @@ Begin
 	}
 Process
 	{	$cmd= "setpd ldalloc $Ldalloc $PD_ID "
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $cmd
 			
 	} 
@@ -178,6 +181,7 @@ Process
 								if($Force)	{	$Cmd += " -ovrd " }
 							}
 		if($WWN)			{	$Cmd += " $WWN " }
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 		Return $Result
 	} 
@@ -277,6 +281,7 @@ Process
 			if ($retry )	{	$cmd +=" -retry $retry "	}
 		}	
 	$cmd += " $pd_ID "
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd	
 	return $Result	
 } 

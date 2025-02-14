@@ -8,16 +8,6 @@ Function Join-A9Federation
 	The Join-Federation command makes the StoreServ system a member of the Federation identified by the specified name and UUID.
 .DESCRIPTION
 	The Join-Federation command makes the StoreServ system a member of the Federation identified by the specified name and UUID.
-.EXAMPLE
-	PS:> Join-A9Federation -FedName test -UUID 12345
-.EXAMPLE
-	PS:> Join-A9Federation -Comment hello -UUID 12345
-.EXAMPLE
-	PS:> Join-A9Federation -Comment hello -UUID 12345 -FedName test
-.EXAMPLE
-	PS:> Join-A9Federation -Setkv 10 -UUID 12345 -FedName test
-.EXAMPLE
-	PS:> Join-A9Federation -Setkvifnotset 20  -UUID 12345 -FedName test
 .PARAMETER Force
 	If the StoreServ system is already a member of a Federation, the option forcefully removes the system from the current Federation and makes it a
 	member of the new Federation identified by the specified name and UUID.
@@ -32,6 +22,16 @@ Function Join-A9Federation
 	Specifies the UUID of the Federation to be joined.
 .PARAMETER FedName
 	Specifies the name of the Federation to be joined.
+.EXAMPLE
+	PS:> Join-A9Federation -FedName test -UUID 12345
+.EXAMPLE
+	PS:> Join-A9Federation -Comment hello -UUID 12345
+.EXAMPLE
+	PS:> Join-A9Federation -Comment hello -UUID 12345 -FedName test
+.EXAMPLE
+	PS:> Join-A9Federation -Setkv 10 -UUID 12345 -FedName test
+.EXAMPLE
+	PS:> Join-A9Federation -Setkvifnotset 20  -UUID 12345 -FedName test
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -71,14 +71,6 @@ Function New-A9Federation
 	The New-Federation command generates a UUID for the named Federation and makes the StoreServ system a member of that Federation.
 .DESCRIPTION
 	The New-Federation command generates a UUID for the named Federation and makes the StoreServ system a member of that Federation.
-.EXAMPLE
-	PS:> New-A9Federation -Fedname XYZ
-.EXAMPLE
-	PS:> New-A9Federation –CommentString XYZ -Fedname XYZ
-.EXAMPLE
-	PS:> New-A9Federation -Setkv TETS -Fedname XYZ
-.EXAMPLE
-	PS:> New-A9Federation -Setkvifnotset TETS -Fedname XYZ
 .PARAMETER comment
 	Specifies any additional textual information.
 .PARAMETER Setkv 
@@ -88,6 +80,14 @@ Function New-A9Federation
 .PARAMETER Fedname
 	Specifies the name of the Federation to be created. The name must be between 1 and 31 characters in length
 	and must contain only letters, digits, or punctuation characters '_', '-', or '.'
+.EXAMPLE
+	PS:> New-A9Federation -Fedname XYZ
+.EXAMPLE
+	PS:> New-A9Federation –CommentString XYZ -Fedname XYZ
+.EXAMPLE
+	PS:> New-A9Federation -Setkv TETS -Fedname XYZ
+.EXAMPLE
+	PS:> New-A9Federation -Setkvifnotset TETS -Fedname XYZ
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -118,14 +118,6 @@ Function Set-A9Federation
 	The command modifies name, comment, or key/value attributes of the Federation of which the StoreServ system is member.
 .DESCRIPTION 
 	The command modifies name, comment, or key/value attributes of the Federation of which the StoreServ system is member.
-.EXAMPLE
-	PS:> Set-A9Federation -FedName test
-.EXAMPLE
-	PS:> Set-A9Federation -Comment hello
-.EXAMPLE
-	PS:> Set-A9Federation -ClrAllKeys
-.EXAMPLE
-	PS:> Set-A9Federation -Setkv 1
 .PARAMETER Comment
 	Specifies any additional textual information.
 .PARAMETER Setkv
@@ -143,6 +135,14 @@ Function Set-A9Federation
 	Checks whether given key/value pairs exist. If not, any subsequent key/value options on the command line will be ignored for the federation.
 .PARAMETER FedName
 	Specifies the new name of the Federation.
+.EXAMPLE
+	PS:> Set-A9Federation -FedName test
+.EXAMPLE
+	PS:> Set-A9Federation -Comment hello
+.EXAMPLE
+	PS:> Set-A9Federation -ClrAllKeys
+.EXAMPLE
+	PS:> Set-A9Federation -Setkv 1
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -207,33 +207,33 @@ Function Show-A9Federation
 .DESCRIPTION 
 	The Show Federation command displays the name, UUID, and comment
 	of the Federation of which the StoreServ system is member.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE	
 	PS:> Show-A9Federation
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param()		
+param(	[Parameter()]	[switch]	$ShowRaw
+
+)		
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd = " showfed"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
-	write-verbose "  Executing Show-Federation Command.--> "
-	$tempFile = [IO.Path]::GetTempFileName()
-	$LastItem = $Result.Count  
-	#Write-Host " Result Count =" $Result.Count
-	foreach ($s in  $Result[0..$LastItem] )
-		{	$s= [regex]::Replace($s,"^ ","")			
-			$s= [regex]::Replace($s," +",",")	
-			$s= [regex]::Replace($s,"-","")
-			$s= $s.Trim() 	
-			Add-Content -Path $tempFile -Value $s
+	if (-not $ShowRaw)
+		{	$tempFile = [IO.Path]::GetTempFileName()
+			foreach ($s in  $Result[0..($Result.count-1)] )
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+					Add-Content -Path $tempFile -Value $s
+				}
+			$Result = Import-Csv $tempFile 
+			Remove-Item  $tempFile
 		}
-	Import-Csv $tempFile 
-	Remove-Item  $tempFile
-	if($Result -match "Name")	{	return  " Success : Executing Show-Federation "	}
-	else						{	return $Result		}		
+	if($Result -match "Name")	{	write-host " Success : Executing Show-Federation "	-ForegroundColor green }
+	return $Result		
 }
 } 

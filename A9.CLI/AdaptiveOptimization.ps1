@@ -85,6 +85,7 @@ process
 		if($T1max)					{	$Cmd += " -t1max $T1max "}
 		if($T2max)					{	$Cmd += " -t2max $T2max "}
 		if($AOConfigurationName) 	{	$Cmd += " $AOConfigurationName "}
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 		Return $Result
 	} 
@@ -120,7 +121,8 @@ process
 		if($AOConfigurationName)
 			{	$Cmd += " $AOConfigurationName "
 			}
-		$Result = Invoke-A9CLICommand -cmds  $Cmd
+			write-verbose "Executing the following SSH command `n`t $cmd"
+			$Result = Invoke-A9CLICommand -cmds  $Cmd
 		Return $Result
 	} 
 }
@@ -268,6 +270,7 @@ process
 		if($T1max)		{	$Cmd += " -t1max $T1max " }
 		if($T2max)		{	$Cmd += " -t2max $T2max " }
 		if($AocfgName) 	{	$Cmd += " $AocfgName " }
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 		Return $Result
 	} 
@@ -357,6 +360,7 @@ process
 		if($T2max) 	{	$Cmd += " -t2max $T2max " 	}
 		if($NewName){	$Cmd += " -name $NewName " 	} 
 		if($AOConfigurationName) {	$Cmd += " $AOConfigurationName " }
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 		Return $Result
 	} 
@@ -427,8 +431,8 @@ Process
 	if ($oneline)	{	$cmd+=" -oneline "		}
 	if ($VV_name)	{	$cmd+=" -vv $VV_name "		}
 	if ($withvv)	{	$cmd+=" -withvv "		}	
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
-	write-verbose " The Get-SRAOMoves command creates and admits physical disk definitions to enable the use of those disks  " 
 	return 	$Result	
 } 
 }

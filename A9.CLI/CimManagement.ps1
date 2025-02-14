@@ -33,11 +33,11 @@ Begin
     }
 process
     {   $cmd = "showcim "
-        write-verbose "Executing the following SSH command `n $cmd"
+        write-verbose "Executing the following SSH command `n`t $cmd"
         $Result1 = Invoke-A9CLICommand -cmds $cmd
         $cmd += " -pol " 	
-        write-verbose "Executing the following SSH command `n $cmd"
-        $Result2 = Invoke-A9CLICommand -cmds $cmd
+        write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result2 = Invoke-A9CLICommand -cmds $cmd
     }
 end
     {   if ( $Result1.count -gt 1)
@@ -84,7 +84,7 @@ begin
     }	
 process 
 {   $cmd = "startcim "
-    write-verbose "Executing the following SSH command `n $cmd"
+    write-verbose "Executing the following SSH command `n`t $cmd"
     $Result = Invoke-A9CLICommand  -cmds  $cmd
     return 	$Result	
 }
@@ -165,8 +165,8 @@ Process
         if ($Http)  {   $cmd += " -http $Http"  }
         if ($Https) {   $cmd += " -https $Https"}
         if ($Policy){   $cmd += " -pol $Pol"    }
-        write-verbose "Executing the following SSH command `n $cmd"
-        $Result = Invoke-A9CLICommand -cmds  $cmd
+        write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result = Invoke-A9CLICommand -cmds  $cmd
         return 	$Result	
     }
 }
@@ -182,7 +182,6 @@ Function Stop-A9CIM
     Specifies that the operation is forced. If this option is not used, the command requires confirmation before proceeding with its operation.
 .PARAMETER Immediate
     Specifies that the operation terminates the server immediately without graceful shutdown notice.
-
 .EXAMPLE
     The following example stops the CIM server without confirmation
 
@@ -209,8 +208,8 @@ Process
     {   $cmd = "setcim "	
         $cmd += " -f " 
         if ($Immediate) {    $cmd += " -x "}
-        write-verbose "Executing the following SSH command `n $cmd"
-        $Result = Invoke-A9CLICommand -cmds $cmd
+        write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result = Invoke-A9CLICommand -cmds $cmd
         return 	$Result	
     }
 }

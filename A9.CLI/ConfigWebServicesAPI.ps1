@@ -41,7 +41,7 @@ Begin
   }
 Process
   { $Cmd = " showwsapi -d "
-    write-verbose "Executing the following SSH command `n $cmd"
+    write-verbose "Executing the following SSH command `n`t $cmd"
     $Result = Invoke-A9CLICommand -cmds  $Cmd
   }
 end
@@ -76,7 +76,7 @@ Begin
 }
 Process
 { $Cmd = " showwsapisession "
-  write-verbose "Executing the following SSH command `n $cmd"
+  write-verbose "Executing the following SSH command `n`t $cmd"
   $Result = Invoke-A9CLICommand -cmds  $Cmd
 }
 end
@@ -105,8 +105,6 @@ Function Remove-A9WsapiSession
   Remove WSAPI user connections.
 .DESCRIPTION
   The command removes the WSAPI user connections from the current system.
-.EXAMPLE
-	PS:> Remove-A9WsapiSession -Id "1537246327049685" -User_name 3parxyz -IP_address "10.10.10.10"
 .PARAMETER DryRun
   Specifies that the operation is a dry run and no connections are removed.
 .PARAMETER Close_sse
@@ -117,6 +115,8 @@ Function Remove-A9WsapiSession
   Specifies the name of the WSAPI user to be removed.
 .PARAMETER IP_address
   Specifies the IP address of the WSAPI user to be removed.
+.EXAMPLE
+	PS:> Remove-A9WsapiSession -Id "1537246327049685" -User_name 3parxyz -IP_address "10.10.10.10"
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -137,8 +137,8 @@ Process
     if($Id)         {  $Cmd += " $Id "        }
     if($User_name)  {  $Cmd += " $User_name " }
     if($IP_address) {  $Cmd += " $IP_address " }
-    write-verbose "Executing the following SSH command `n $cmd"
-    $Result = Invoke-A9CLICommand -cmds  $Cmd
+    write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
     Return $Result
   }
 }
@@ -191,8 +191,8 @@ Process
     if($Policy)   {	$Cmd += " -pol $Pol " }
     if($Timeout)  {	$Cmd += " -timeout $Timeout " }
     if($Evtstream){	$Cmd += " -evtstream $Evtstream " }
-    write-verbose "Executing the following SSH command `n $cmd"
-    $Result = Invoke-A9CLICommand -cmds  $Cmd
+    write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
     Return $Result
   }
 }
@@ -223,7 +223,7 @@ Begin
   }
 Process
   { $cmd= " startwsapi "
-    write-verbose "Executing the following SSH command `n $cmd"
+    write-verbose "Executing the following SSH command `n`t $cmd"
     $Result = Invoke-A9CLICommand -cmds  $cmd 
     return $Result	
   }
@@ -248,8 +248,8 @@ Begin
 Process
   { $Cmd = " stopwsapi -f "
     if ( $Keep_UI)  { $Cmd+= ' -keep_ui'}
-    write-verbose "Executing the following SSH command `n $cmd"
-    $Result = Invoke-A9CLICommand -cmds  $Cmd
+    write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
     Return $Result
   }
 }

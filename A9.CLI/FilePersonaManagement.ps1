@@ -21,6 +21,7 @@ Begin
 	}
 Process
 	{	$cmd= "startfsndmp "	
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $cmd
 		Return $Result	
 	}
@@ -45,8 +46,8 @@ Begin
 	}
 Process	
 	{	$cmd= "stopfsndmp "
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $cmd	
-		write-verbose "  Executing  Stop-FSNDMP command that displays information iSNS table for iSCSI ports in the system  "	
 		return $Result	
 	}
 }
@@ -127,6 +128,8 @@ Function Get-A9SRStatfsfpg
 .PARAMETER FpgName
 	File provisioning groups matching either the specified name or glob-style pattern are included. This specifier can be repeated to
 	display information for multiple FPGs. If not specified, all FPGs are included.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -143,7 +146,7 @@ param(	[Parameter()]	[switch]	$Attime,
 		[Parameter()]	[String]	$Node,
 		[Parameter()]	[String]	$Sortcol,
 		[Parameter()]	[String]	$FpgName,
-		[Parameter()]	[String]	$ShowRaw,
+		[Parameter()]	[String]	$ShowRaw
 		
 )
 Begin
@@ -163,6 +166,7 @@ Process
 	if($Node)		{	$Cmd += " -node $Node " 		}
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "	}
 	if($FpgName)	{	$Cmd += " $FpgName " 			}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -248,7 +252,7 @@ Function Get-A9SystemReporterStatfscpu
 .PARAMETER CpuId
 	Only the specified CPU ID numbers are included. This specifier can be repeated to display information for multiple CPUs. If not specified, all CPUs are included.
 .PARAMETER ShowRaw
-	Returns the raw SSH output instead of trying to return a PowerShell Object
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -265,8 +269,7 @@ param(	[Parameter()]	[switch]	$Attime,
 		[Parameter()]	[String]	$Node,
 		[Parameter()]	[String]	$Sortcol,
 		[Parameter()]	[String]	$CpuId,
-		[Parameter()]	[Switch]	$ShowRaw,
-		
+		[Parameter()]	[Switch]	$ShowRaw		
 	)
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -285,6 +288,7 @@ Process
 	if($Node)		{	$Cmd += " -node $Node " }
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
 	if($CpuId)		{	$Cmd += " $CpuId " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -391,6 +395,7 @@ Process
 	if($Compareby)	{	$Cmd += " -compareby $Compareby " }
 	if($Node)		{	$Cmd += " -node $Node " }
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -477,7 +482,7 @@ Function Get-A9SystemReporterStatfsblock
 	Block Devices matching either the specified name or glob-style pattern are included. This specifier can be repeated to display information
 	for multiple devices. If not specified, all block devices are included.
 .PARAMETER ShowRaw
-	Returns the raw SSH output instead of trying to return a PowerShell Object
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -514,6 +519,7 @@ Process
 	if($Node)		{	$Cmd += " -node $Node "}
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
 	if($BlockdevName){	$Cmd += " $Blockdev_name " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -593,7 +599,7 @@ Function Get-A9SystemReporterStatfsav
 	dec		Sort in decreasing order.
 	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
 .PARAMETER ShowRaw
-	Returns the raw SSH output instead of trying to return a PowerShell Object
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -742,6 +748,7 @@ Process
 	if($Node)		{	$Cmd += " -node $Node " }
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
 	if($EthdevName)	{	$Cmd += " $EthdevName " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -856,6 +863,7 @@ Process
 	if($Compareby)		{	$Cmd += " -compareby $Compareby " }
 	if($Node)			{	$Cmd += " -node $Node " }
 	if($Sortcol)		{	$Cmd += " -sortcol $Sortcol " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -925,7 +933,7 @@ Function Get-A9SystemReporterStatfssmb
 	for attime reports.  The field used for comparison can be any of the groupby fields or one of the following: connections, maxConnections, sessions, maxSessions, treeConnects, maxTreeConnects, openFiles, 
 	maxOpenFiles, ReadSumRecorded, ReadSampleRecorded, WriteSumRecorded, WriteSampleRecorded
 .PARAMETER ShowRaw
-	Returns the raw SSH output instead of trying to return a PowerShell Object
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -956,6 +964,7 @@ Process
 		if($Summary)	{	$Cmd += " -summary $Summary " }
 		if($Groupby)	{	$Cmd += " -groupby $Groupby " }
 		if($Compareby)	{	$Cmd += " -compareby $Compareby " }
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 		Return $Result
 	}

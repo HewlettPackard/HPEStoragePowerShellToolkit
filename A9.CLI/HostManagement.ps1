@@ -10,21 +10,6 @@ Function New-A9Host_CLI
     Creates a new host.
 .DESCRIPTION
 	Creates a new host.
-.EXAMPLE
-    PS:> New-A9Host_CLI -HostName HV01A -Persona 2 -WWN 10000000C97B142E
-
-	Creates a host entry named HV01A with WWN equals to 10000000C97B142E
-.EXAMPLE	
-	PS:> New-A9Host_CLI -HostName HV01B -Persona 2 -iSCSI
-
-	Creates a host entry named HV01B with iSCSI equals to iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com
-.EXAMPLE
-    PS:> New-A9Host_CLI -HostName HV01A -Persona 2 
-
-.EXAMPLE 
-	PS:> New-A9Host_CLI -HostName Host3 -iSCSI
-.EXAMPLE 
-	PS:> New-A9Host_CLI -HostName Host4 -iSCSI -Domain ZZZ
 .PARAMETER HostName
     Specify new name of the host
 .PARAMETER Add
@@ -60,6 +45,21 @@ Function New-A9Host_CLI
 	Host iSCSI name to be assigned or added to a host. This specifier is optional.
 .PARAMETER iSCSI
     when specified, it means that the address is an iSCSI address
+.EXAMPLE
+    PS:> New-A9Host_CLI -HostName HV01A -Persona 2 -WWN 10000000C97B142E
+
+	Creates a host entry named HV01A with WWN equals to 10000000C97B142E
+.EXAMPLE	
+	PS:> New-A9Host_CLI -HostName HV01B -Persona 2 -iSCSI
+
+	Creates a host entry named HV01B with iSCSI equals to iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com
+.EXAMPLE
+    PS:> New-A9Host_CLI -HostName HV01A -Persona 2 
+
+.EXAMPLE 
+	PS:> New-A9Host_CLI -HostName Host3 -iSCSI
+.EXAMPLE 
+	PS:> New-A9Host_CLI -HostName Host4 -iSCSI -Domain ZZZ
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -100,6 +100,7 @@ Process
 	if ($HostName)	{	$cmd +="$HostName "			}
 	if ($WWN)		{	$cmd +="$WWN "				}
 	if ($IscsiName)	{	$cmd +="$IscsiName "		}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds $cmd	
 	if([string]::IsNullOrEmpty($Result))
 		{	Write-host "Success : New-Host command executed Host Name : $HostName is created." -ForegroundColor green
@@ -180,6 +181,7 @@ Process
 	if($Domain)			{	$cmdCrtHostSet +="-domain $Domain "		}	
 	$cmdCrtHostSet +=" $HostSetName "
 	if($hostName)		{	$cmdCrtHostSet +=" $hostName "			}	
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmdCrtHostSet
 	if($Add)
 		{	if([string]::IsNullOrEmpty($Result))
@@ -241,7 +243,7 @@ Begin
 {	Test-A9Connection -ClientType 'SshClient' 
 }
 Process
-{	$RemoveCmd = "removehost "			
+{	$Cmd = "removehost "			
 	if ($address)
 		{	if($Rvl)		{	$RemoveCmd += " -rvl "	}	
 			if($ISCSI)		{	$RemoveCmd += " -iscsi "	}
@@ -249,22 +251,24 @@ Process
 			if($Port)		{	$RemoveCmd += " -port $Port "	}
 		}			
 	$Addr = [string]$address 
-			$RemoveCmd += " $hostName $Addr"
-			$Result1 = Get-HostSet -hostName $hostName 			
-			if(($Result1 -match "No host set listed"))
-				{	$Result2 = Invoke-A9CLICommand -cmds  $RemoveCmd
-					write-verbose "Removing host  with the command --> $RemoveCmd" 
-					if([string]::IsNullOrEmpty($Result2))
-						{	return "Success : Removed host $hostName"
-						}
-					else
-						{	return "FAILURE : While removing host $hostName"
-						}				
+	$Cmd += " $hostName $Addr"
+	$Result1 = Get-HostSet -hostName $hostName 			
+	if(($Result1 -match "No host set listed"))
+		{	write-verbose "Executing the following SSH command `n`t $cmd"
+			$Result2 = Invoke-A9CLICommand -cmds  $Cmd
+			if([string]::IsNullOrEmpty($Result2))
+				{	return "Success : Removed host $hostName"
 				}
 			else
-				{	$Result3 = Invoke-A9CLICommand -cmds $RemoveCmd
-					return "FAILURE : Host $hostName is still a member of set $Result3"
-				}			
+				{	return "FAILURE : While removing host $hostName"
+				}				
+		}
+	else
+		{	write-verbose "Executing the following SSH command `n`t $cmd"
+			$Result3 = Invoke-A9CLICommand -cmds $Cmd
+			Write-warning "FAILURE : Host $hostName is still a member of set "
+			return $Result3
+		}			
 }
 }
 
@@ -281,7 +285,7 @@ Function Remove-A9HostSet_CLI
     Specify name of  a host to remove from hostset
 .PARAMETER force
 	If present, perform forcible delete operation
-.PARAMETER Pat
+.PARAMETER Pattern
 	Specifies that both the set name and hosts will be treated as glob-style patterns.
 .EXAMPLE
     PS:> Remove-A9HostSet_CLI -hostsetName "MyHostSet"  -force 
@@ -303,12 +307,13 @@ Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
-{	$RemovehostsetCmd = "removehostset "
-	$RemovehostsetCmd += " -f "	
-	if($Pattern)	{	$RemovehostsetCmd += " -pat "	}
-	$RemovehostsetCmd += " $hostsetName "
-	if($hostName)	{	$RemovehostsetCmd +=" $hostName"	}
-	$Result2 = Invoke-A9CLICommand -cmds  $RemovehostsetCmd
+{	$Cmd = "removehostset "
+	$Cmd += " -f "	
+	if($Pattern)	{	$Cmd += " -pat "	}
+	$Cmd += " $hostsetName "
+	if($hostName)	{	$Cmd +=" $hostName"	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result2 = Invoke-A9CLICommand -cmds  $Cmd
 	if([string]::IsNullOrEmpty($Result2))
 		{	if($hostName)
 				{	Write-host "Success : Removed host $hostName from hostset $hostsetName " -ForegroundColor green 

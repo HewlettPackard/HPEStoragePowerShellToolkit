@@ -83,32 +83,20 @@ Begin
 Process
 	{	$cmd= "locatecage "	
 		if ($time)	{	$cmd+=" -t $time"	}
-		$cmd2="showcage "
-		write-verbose "Executing the following SSH command `n $cmd"
-		$Result2 = Invoke-A9CLICommand -cmds  $cmd2
-		if($Result2 -match $CageName)
-			{	$cmd+=" $CageName"
-			}
-		else
-			{	write-error "FAILURE : -CageName $CageName  is Unavailable `n Try using [Get-A9Cage] Command "
-				return 
-			}
+		$cmd+=" $CageName"
 		if ($ModuleName)	{	$cmd +=" $ModuleName"  	}		
 		if ($ModuleNumber)	{	$cmd +=" $ModuleNumber"	}
 		if ($ArrayType.ToLower() -eq "3par")
 			{	if ($Mag)		{	$cmd +=" $Mag"		}
 				if ($PortName)	{	$cmd +=" $PortName"	}				
 			}	
-		write-verbose "Executing the following SSH command `n $cmd"
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $cmd	
 	}
 end
-	{	if($Result)
-			{	write-error "FAILURE : While Executing Find-Cage `n "
-				return $Result
-			} 	
-		write-host "Success : Find-Cage Command Executed Successfully" -ForegroundColor Green
-		return	
+	{	if($Result)	{	write-error "FAILURE : While Executing Find-Cage `n "	} 	
+		else		{	write-host "Success : Find-Cage Command Executed Successfully" -ForegroundColor Green }
+		return$Result
 	}
 }
 
@@ -164,7 +152,7 @@ Function Get-A9Cage
 .PARAMETER CageName  
 	Specifies a drive cage name for which information is displayed. This specifier can be repeated to display information for multiple cages
 .PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning object. 
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Get-A9Cage
 	
@@ -233,7 +221,7 @@ Process
 		if($sep)		{ 	$cmd +=" -sep " }
 		if($temperature){ 	$cmd +=" -temp " }
 		$cmd+=" $CageName "
-		write-verbose "Executing the following SSH command `n $cmd" 
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds $cmd
 	}
 end
@@ -305,32 +293,16 @@ Begin
 	}
 Process
 	{	$cmd= "setcage "
-		if ($Position ){	$cmd+=" position $Position "}		
-		if ($PSModel)
-			{	$cmd2="showcage -d"
-				write-verbose "Executing the following SSH command `n $cmd"
-				$Result2 = Invoke-A9CLICommand -cmds  $cmd2
-				if($Result2 -match $PSModel)	{	$cmd+=" ps $PSModel "	}	
-				else{	return "Failure: -PSModel $PSModel is Not available."
-					}
-			}		
-		if ($CageName)
-			{	$cmd1="showcage"
-				write-verbose "Executing the following SSH command `n $cmd"
-				$Result1 = Invoke-A9CLICommand -cmds  $cmd1
-				if($Result1 -match $CageName)	{	$cmd +="$CageName "	}
-				else{	return "Failure:  -CageName $CageName is Not available."
-					}	
-			}	
-		write-verbose "Executing the following SSH command `n $cmd"
+		if ($Position )	{	$cmd+=" position $Position "}		
+		if ($PSModel)	{	$cmd+=" ps $PSModel "	}	
+		if ($CageName)	{	$cmd +="$CageName "	}
+		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $cmd
-		write-verbose " The Set-Cage command enables service personnel to set or modify parameters for a drive cage  " 		
-		if($Result)
-			{	write-warning "FAILURE : While Executing Set-Cage:" 
-				return   $Result
-			} 	
-		write-host "Success : Executing Set-Cage Command" -ForegroundColor Green
-		return	
+	}
+end
+	{	if($Result)	{	write-warning "FAILURE : While Executing Set-Cage:" 	} 	
+		else 		{	write-host "Success : Executing Set-Cage Command" -ForegroundColor Green }
+		return$Result
 	}
 }
 

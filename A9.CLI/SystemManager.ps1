@@ -160,7 +160,7 @@ param(	[Parameter()]	[switch]	$Waittask,
 		[Parameter()]	[switch]	$Tunesys,
 		[Parameter()]	[switch]	$Tunenodech,
 		[Parameter()]	[switch]	$Preserved,
-		[Parameter(Mandatory=$true)]			[String]	$LD_name
+		[Parameter(Mandatory)]	[String]	$LD_name
 )
 Begin
 	{	Test-A9Connection -ClientType 'SshClient'
