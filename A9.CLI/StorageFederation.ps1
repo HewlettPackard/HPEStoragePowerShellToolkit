@@ -92,7 +92,7 @@ Function New-A9Federation
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$Fedname ,
+param(	[Parameter(Mandatory)]	[String]	$Fedname ,
 		[Parameter()]	[String]	$Comment ,
 		[Parameter()]	[String]	$Setkv ,
 		[Parameter()]	[String]	$Setkvifnotset

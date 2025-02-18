@@ -10,32 +10,6 @@ Function Get-A9Disk
 	Displays configuration information about the physical disks (PDs) on a system. 
 .DESCRIPTION
 	Displays configuration information about the physical disks (PDs) on a system. 
-.EXAMPLE  
-	PS:> Get-A9Disk
-
-	This example displays configuration information about all the physical disks (PDs) on a system. 
-.EXAMPLE  
-	PS:> Get-A9Disk -PD_ID 5
-
-	This example displays configuration information about specific or given physical disks (PDs) on a system. 
-.EXAMPLE  
-	PS:> Get-A9Disk -C 
-
-	This example displays chunklet use information for all disks. 
-.EXAMPLE  
-	PS:> Get-A9Disk -C -PD_ID 5
-
-	This example will display chunklet use information for all disks with the physical disk ID. 
-.EXAMPLE  
-	PS:> Get-A9Disk -Node 0 -PD_ID 5
-.EXAMPLE  
-	PS:> Get-A9Disk -I -Pattern -ND 1 -PD_ID 5
-.EXAMPLE
-	PS:> Get-A9Disk -C -Pattern -Devtype FC  	
-.EXAMPLE  
-	PS:> Get-A9PhysicalDisk -option p -pattern mg -patternValue 0
-
-	TThis example will display all the FC disks in magazine 0 of all cages.
 .PARAMETER Listcols
 	List the columns available to be shown in the -showcols option
 	described below (see 'clihelp -col showpd' for help on each column).
@@ -116,6 +90,32 @@ Function Get-A9Disk
 	by commas (e.g. 1,2,3). The list can also consist of a single integer. If the port list is not specified, all disks on all ports are displayed.
 .PARAMETER WWN
 	Specifies the WWN of the physical disk. This option and argument can be specified if the <PD_ID> specifier is not used. This option should be the last option in the command line.
+.EXAMPLE  
+	PS:> Get-A9Disk
+
+	This example displays configuration information about all the physical disks (PDs) on a system. 
+.EXAMPLE  
+	PS:> Get-A9Disk -PD_ID 5
+
+	This example displays configuration information about specific or given physical disks (PDs) on a system. 
+.EXAMPLE  
+	PS:> Get-A9Disk -C 
+
+	This example displays chunklet use information for all disks. 
+.EXAMPLE  
+	PS:> Get-A9Disk -C -PD_ID 5
+
+	This example will display chunklet use information for all disks with the physical disk ID. 
+.EXAMPLE  
+	PS:> Get-A9Disk -Node 0 -PD_ID 5
+.EXAMPLE  
+	PS:> Get-A9Disk -I -Pattern -ND 1 -PD_ID 5
+.EXAMPLE
+	PS:> Get-A9Disk -C -Pattern -Devtype FC  	
+.EXAMPLE  
+	PS:> Get-A9PhysicalDisk -option p -pattern mg -patternValue 0
+
+	TThis example will display all the FC disks in magazine 0 of all cages.
 .NOTES
 	This command requires a SSH type connection.
 #>

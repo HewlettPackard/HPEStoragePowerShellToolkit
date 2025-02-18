@@ -482,10 +482,10 @@ Function Move-A9RelocPhysicalDisk
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]							[String]	$diskID,
-		[Parameter()]							[Switch]	$DryRun,
-		[Parameter()]							[Switch]	$nowait,
-		[Parameter()]							[Switch]	$partial
+param(	[Parameter()]	[String]	$diskID,
+		[Parameter()]	[Switch]	$DryRun,
+		[Parameter()]	[Switch]	$nowait,
+		[Parameter()]	[Switch]	$partial
 	)
 Begin
 {	Test-A9Connection -ClientType 'SshClient'

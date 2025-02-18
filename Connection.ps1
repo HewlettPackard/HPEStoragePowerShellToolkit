@@ -88,10 +88,10 @@ Function Connect-A9API
 	Specify the array type ie. 3Par, Primera Alletra9000, or AlletraMP-B10000
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$ArrayFQDNorIPAddress,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$SANUserName,
-		[Parameter(ValueFromPipeline=$true)]								[String]	$SANPassword,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+param(	[Parameter(Mandatory)]				[String]	$ArrayFQDNorIPAddress,
+		[Parameter(Mandatory)]				[String]	$SANUserName,
+		[Parameter()]						[String]	$SANPassword,
+		[Parameter(Mandatory)]
 		[ValidateSet("3par", "Primera", "Alletra9000", "AlletraMP-B10000", IgnoreCase=$false, ErrorMessage="Value '{0}' is invalid. Try one of: '{1}' and remember it is case sensitive")]
 																			[String]	$ArrayType
 	)
@@ -292,10 +292,10 @@ Function Connect-A9SSH
     Specify Array Name or Array IP Address
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]    $ArrayNameOrIPAddress,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$SANUserName,	
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$SANPassword,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$AcceptKey
+param(	[Parameter(Mandatory)]	[String]    $ArrayNameOrIPAddress,
+		[Parameter(Mandatory)]	[String]	$SANUserName,	
+		[Parameter(Mandatory)]	[String]	$SANPassword,
+		[Parameter()]					[switch]	$AcceptKey
 		)
 Process
 {	$CurrentModulePath = (Get-Module HPEStorage).path

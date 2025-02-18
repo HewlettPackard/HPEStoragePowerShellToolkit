@@ -101,7 +101,6 @@ process
 }
 }
 
-
 Function Ping-A9RCIPPorts
 {
 <#
@@ -2174,7 +2173,7 @@ Function Show-A9UnrecognizedTargetsInfo
 	Specify the SCSI page number for the inquiry and mode information. <num> is a hex number. For SCSI inquiry information, the valid <num>
 	is 0, 80, 83, and c0. For SCSI mode information, the valid <num> is 3 and 4. This option needs to be used together with -inq or -mode. 
 	If this option is not specified, the default <num> is 0.
-.PARAMETER D
+.PARAMETER Detailed
 	Display the detail information of SCSI inquiry or mode page information.
 .PARAMETER Force
 	Specifies that the rescan is forced. If this option is not used, the rescan will be suppressed if the peer ports have already
@@ -2203,7 +2202,7 @@ param(	[Parameter()]	[switch]	$Lun,
 		[Parameter()]	[switch]	$Inq,
 		[Parameter()]	[switch]	$Mode,
 		[Parameter()]	[String]	$Page,
-		[Parameter()]	[switch]	$D,
+		[Parameter()]	[switch]	$Detailed,
 		[Parameter()]	[switch]	$Force,
 		[Parameter()]	[switch]	$VerboseE,
 		[Parameter()]	[switch]	$Rescan,
@@ -2221,7 +2220,7 @@ Process
 	if($Inq)		{ 	$Cmd += " -inq "}
 	if($Mode)		{	$Cmd += " -mode "	}
 	if($Page)		{	$Cmd += " -page $Page "	}
-	if($D)			{	$Cmd += " -d "}
+	if($Detailed)	{	$Cmd += " -d "}
 	if($Force) 		{	$Cmd += " -force " }
 	if($VerboseE)	{	$Cmd += " -verbose "}
 	if($Rescan)		{	$Cmd += " -rescan "}

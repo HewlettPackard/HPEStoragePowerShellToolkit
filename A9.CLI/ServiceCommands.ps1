@@ -37,11 +37,11 @@ Function Add-A9Hardware
 		- With admithw -notune, rebalancing does not occur after new discovery of new disks. In all circumstances, run tunesys as soon as possible after discovery of new disks.
 #>
 [CmdletBinding(DefaultParameterSetName='default')]
-param(	[Parameter(ParameterSetName='CheckOnly', Mandatory=$true)]	[switch]	$Checkonly,
+param(	[Parameter(ParameterSetName='CheckOnly', Mandatory)]	[switch]	$Checkonly,
 		[Parameter()]												[switch]	$F,
 		[Parameter()]												[switch]	$Nopatch,
-		[Parameter(ParameterSetName="Tune", Mandatory=$true)]		[switch]	$Tune,
-		[Parameter(ParameterSetName="NoTune",Mandatory=$true)]		[switch]	$Notune
+		[Parameter(ParameterSetName="Tune", Mandatory)]		[switch]	$Tune,
+		[Parameter(ParameterSetName="NoTune",Mandatory)]		[switch]	$Notune
 )
 Begin
 {	Test-A9CLIConection
@@ -348,8 +348,8 @@ Function Set-A9Magazines
 [CmdletBinding()]
 param( 	[Parameter(ParameterSetName='OffLoop',mandatory)]	[switch]	$Offloop,
 		[Parameter(ParameterSetName='onLoop',mandatory)]	[switch]	$Onloop,
-		[Parameter(Mandatory=$True)]						[String]	$Cage_name,
-		[Parameter(Mandatory=$True)]						[String]	$Magazine,
+		[Parameter(Mandatory)]						[String]	$Cage_name,
+		[Parameter(Mandatory)]						[String]	$Magazine,
 		[Parameter()]										[String]	$Disk,
 		[Parameter()][Validateset('A','B','Both')]
 															[String]	$Port
@@ -409,25 +409,25 @@ Function Set-A9ServiceCage
 	After issuing the start subcommand, the end subcommand must be issued to indicate that service is completed and to restore the cage to its normal state.
 #>
 [CmdletBinding()]
-param(	[Parameter(ParameterSetName='StartPCM', Mandatory=$true)]	
-		[Parameter(ParameterSetName='StartIOM', Mandatory=$true)]	
+param(	[Parameter(ParameterSetName='StartPCM', Mandatory)]	
+		[Parameter(ParameterSetName='StartIOM', Mandatory)]	
 																	[switch]	$Start,
-		[Parameter(ParameterSetName='EndPCM',   Mandatory=$true)]	
-		[Parameter(ParameterSetName='EndIOM',   Mandatory=$true)]	
+		[Parameter(ParameterSetName='EndPCM',   Mandatory)]	
+		[Parameter(ParameterSetName='EndIOM',   Mandatory)]	
 																	[switch]	$End,
-		[Parameter(ParameterSetName='Reset', 	Mandatory=$true)]	
+		[Parameter(ParameterSetName='Reset', 	Mandatory)]	
 										[ValidateSet('0','1')]		[int]		$Reset,
-		[Parameter(ParameterSetName='HReset',	Mandatory=$true)]	
+		[Parameter(ParameterSetName='HReset',	Mandatory)]	
 										[ValidateSet('0','1')]		[int]		$HReset,
-		[Parameter(ParameterSetName='Remove',	Mandatory=$true)]	
+		[Parameter(ParameterSetName='Remove',	Mandatory)]	
 																	[switch]	$Remove,	
-		[Parameter(ParameterSetName='StartPCM', Mandatory=$true)]
-		[Parameter(ParameterSetName='EndPCM', 	Mandatory=$true)]
+		[Parameter(ParameterSetName='StartPCM', Mandatory)]
+		[Parameter(ParameterSetName='EndPCM', 	Mandatory)]
 										[ValidateSet('0','1')]		[int]		$Pcm,
-		[Parameter(ParameterSetName='StartIOM', Mandatory=$true)]
-		[Parameter(ParameterSetName='EndIOM', 	Mandatory=$true)]
+		[Parameter(ParameterSetName='StartIOM', Mandatory)]
+		[Parameter(ParameterSetName='EndIOM', 	Mandatory)]
 										[ValidateSet('0','1')]		[int]		$Iom,
-		[Parameter(Mandatory=$true)]								[String]	$CageName
+		[Parameter(Mandatory)]								[String]	$CageName
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -493,7 +493,7 @@ Function Set-A9ServiceNodes
 	If no option is specified, only node LED will be illuminated.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$True)] 	
+param(	[Parameter(Mandatory)] 	
 		[ValidateSet('0','1','2','3')]	[String] 	$Nodeid,
 		[Parameter(ParameterSetName='Start', Mandatory)]	[switch]	$Start,
 		[Parameter(ParameterSetName='end',   Mandatory)]	[switch]	$End,
@@ -552,7 +552,7 @@ Function Get-A9ServiceNodes
 	If no option is specified, only node LED will be illuminated.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$True)] 	
+param(	[Parameter(Mandatory)] 	
 		[ValidateSet('0','1','2','3')]	[String] 	$Nodeid,
 		[Parameter()]					[int]	$Ps,
 		[Parameter()]					[int]	$Pci,
@@ -675,7 +675,6 @@ Process
 	Return $Result
 }
 }
-
 
 Function Get-A9ResetReason
 {

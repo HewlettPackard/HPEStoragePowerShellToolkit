@@ -41,7 +41,7 @@ Function New-A9GroupSnapVolume_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$vvNames,
+param(	[Parameter(Mandatory)]	[String]	$vvNames,
 		[Parameter()]	[switch]	$OR, 
 		[Parameter()]	[String]	$exp,
 		[Parameter()]	[String]	$retain,

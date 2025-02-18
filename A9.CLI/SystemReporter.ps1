@@ -95,7 +95,7 @@ Function Start-A9SystemReporter
 [CmdletBinding()]
 param()
 Begin
-	{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+	{	Test-A9Connection -ClientType 'SshClient'
 	}
 Process	
 	{	$srinfocmd = "startsr -f "
@@ -129,7 +129,7 @@ Function Stop-A9SSystemReporter
 [CmdletBinding()]
 param()
 Begin
-	{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+	{	Test-A9Connection -ClientType 'SshClient'
 	}
 Process	
 	{	$srinfocmd = "stopsr -f "
@@ -2297,7 +2297,6 @@ End
 		return $returndata
 	}
 }
-
 
 Function Get-A9SystemReporterStatLD
 {

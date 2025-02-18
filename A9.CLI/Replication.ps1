@@ -39,8 +39,8 @@ Function New-A9RCopyGroup_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$GroupName,
-		[Parameter(Mandatory=$true)]	[String]	$TargetName,	
+param(	[Parameter(Mandatory)]	[String]	$GroupName,
+		[Parameter(Mandatory)]	[String]	$TargetName,	
 		[Parameter()][ValidateSet("sync","async","periodic")]
 						[String]	$Mode,
 		[Parameter()]	[String]	$domain,
@@ -1020,7 +1020,7 @@ param(	[Parameter()]	[Switch]	$Force,
 		[Parameter()]	[Switch]	$Snp_cpg_unset,
 		[Parameter(Mandatory=$true)]	[ValidateSet('auto_failover','no_auto_failover','auto_recover','no_auto_recover','over_per_alert','no_over_per_alert','path_management','no_path_management')]	
 						[String]	$policy,
-		[Parameter(Mandatory=$true)]	[String]	$GroupName
+		[Parameter(Mandatory)]	[String]	$GroupName
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -1218,7 +1218,7 @@ Function Set-A9RCopyTargetWitness_CLI
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory)]			[ValidateSet('witness','create','start','stop','remove','check')]	
-												[String]	$SubCommand,		
+						[String]	$SubCommand,		
 		[Parameter()]	[switch]	$Remote,
 		[Parameter()]	[String]	$Witness_ip,
 		[Parameter()]	[String]	$Target,

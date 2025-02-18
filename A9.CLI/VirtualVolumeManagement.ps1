@@ -1037,7 +1037,6 @@ Function New-A9Vv_CLI
 	The volume is created under the MyCPG CPG group and will be contained inside the MyvolumeSet volume set. If MyvolumeSet does not exist, the command creates a new volume set and allocates minimum 2048MB.
 .NOTES
 	This command requires a SSH type connection.
-	`e[3m This is italicized
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory)]			[String]	$vvName,
@@ -2227,7 +2226,7 @@ process
 }
 } 
 
-Function Resize-A9Vv_CLI
+Function Resize-A9Vv
 {
 <#
 .SYNOPSIS

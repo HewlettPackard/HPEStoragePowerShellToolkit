@@ -1,6 +1,7 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
+
 Function Get-A9Domain
 {
 <#
@@ -55,7 +56,7 @@ Function Get-A9DomainSet
 	show domain set information
 .DESCRIPTION
 	Lists the domain sets defined on the system and their members.
-.PARAMETER D
+.PARAMETER Detailed
 	Show a more detailed listing of each set.
 .PARAMETER DomainShow 
 	domain sets that contain the supplied domains or patterns

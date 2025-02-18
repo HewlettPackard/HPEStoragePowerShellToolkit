@@ -106,8 +106,8 @@ Function Remove-A9AdaptiveOptimizationConfig
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$Pattern,
-		[Parameter()]	[String]	$AOConfigurationName
+param(	[Parameter(ParameterSetName='Pattern',Mandatory)]	[String]	$Pattern,
+		[Parameter(ParameterSetName='AOCfg'.Mandatory)]		[String]	$AOConfigurationName
 )
 begin
 	{	Test-A9Connection -ClientType 'SshClient' 
@@ -116,7 +116,6 @@ process
 	{	$Cmd = " removeaocfg -f "
 		if($Pattern)
 			{	$Cmd += " -pat $Pattern "
-				if($AOConfigurationName)	{	Return "Either Pattern or AOConfigurationName."	}
 			}
 		if($AOConfigurationName)
 			{	$Cmd += " $AOConfigurationName "

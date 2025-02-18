@@ -77,9 +77,9 @@ Function New-A9Maintenance
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]					[String]	$Comment,
-		[Parameter()]					[String]	$Duration,
-		[Parameter(Mandatory=$true)]	[String]	$MaintType
+param(	[Parameter()]				[String]	$Comment,
+		[Parameter()]				[String]	$Duration,
+		[Parameter(Mandatory)]		[String]	$MaintType
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -122,7 +122,7 @@ Function Set-A9Maintenance
 param(	[Parameter()]	[String]	$Comment,
 		[Parameter()]	[String]	$Duration,
 		[Parameter()]	[switch]	$End,
-		[Parameter(Mandatory=$true)]	[String]	$MaintType
+		[Parameter(Mandatory)]	[String]	$MaintType
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'

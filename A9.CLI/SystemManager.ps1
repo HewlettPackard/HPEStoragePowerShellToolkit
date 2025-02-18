@@ -45,7 +45,6 @@ End
 	}
 }
 
-
 Function Measure-A9Upgrade
 {
 <#

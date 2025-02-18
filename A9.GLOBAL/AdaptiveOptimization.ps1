@@ -18,12 +18,14 @@ Function Get-A9AdaptiveOptimizationConfig
 	Specifies that AO configurations matching either the specified AO configuration name or those AO configurations matching 
 	the specified pattern are displayed. This specifier can be repeated to display information for multiple AO configurations. 
 	If not specified, all AO configurations in the system are displayed.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-A9AdaptiveOptimizationConfig
 .NOTES
 	This command requires a SSH type connection.
 	Usage:
 	- AO will limit the space utilization of a CPG to the lowest of: max, warn, or limit. If none of these values is set for the AOCFG tier or CPG, then AO will only be bounded by the available raw space of the CPG characteristics.
-.EXAMPLE
-	PS:> Get-A9AdaptiveOptimizationConfig
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
 param(	[Parameter(ParameterSetName='SSH')]             [String]	$Domain,
@@ -57,6 +59,7 @@ process
                         $uri = '/aoconfigurations'
                         if($AOconfigName)	{	$uri = $uri+'/'+$ConfigName	}	
                         $Result = Invoke-A9API -uri $uri -type 'GET' 
+                        return $Result
                     }
                 'SSH'   
                     {	$Cmd = " showaocfg "
@@ -68,22 +71,14 @@ process
             }            
     }
 end
-    {   if( ($Result.StatusCode -eq 200)  )
-            {	$dataPS = $Result.content | ConvertFrom-Json
-                write-host "Cmdlet executed successfully" -foreground green
-                return $dataPS		
-            }
-        elseif ( $PSSetName -eq 'SSH')
+    {   if ($ShowRaw)   { Return $Result }
+        if ( $PSSetName -eq 'SSH')
             {   if($Result.count -gt 1)
                     {	$tempFile = [IO.Path]::GetTempFileName()
                         $LastItem = $Result.Count -2  
                         $oneTimeOnly = "True"
                         foreach ($s in  $Result[1..$LastItem] )
-                            {	$s= [regex]::Replace($s,"^ ","")
-                                $s= [regex]::Replace($s,"^ ","")
-                                $s= [regex]::Replace($s,"^ ","")		
-                                $s= [regex]::Replace($s," +",",")		
-                                $s= [regex]::Replace($s,"-","")		
+                            {	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
                                 $s= $s.Trim()		
                                 if($oneTimeOnly -eq "True")
                                     {	$sTemp1=$s				
