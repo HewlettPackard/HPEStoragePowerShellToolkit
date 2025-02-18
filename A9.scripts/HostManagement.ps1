@@ -246,22 +246,22 @@ Function Update-A9Host
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]    [String]	$HostName,
-	[Parameter(ValueFromPipeline=$true)]    [String]	$ChapName,
-	[Parameter(ValueFromPipeline=$true)] 	[int]		$ChapOperationMode,
-	[Parameter(ValueFromPipeline=$true)]    [Switch]	$ChapRemoveTargetOnly,
-	[Parameter(ValueFromPipeline=$true)]    [String]	$ChapSecret,
-	[Parameter(ValueFromPipeline=$true)]    [Switch]	$ChapSecretHex,
-	[Parameter(ValueFromPipeline=$true)]
+	[Parameter(Mandatory)]    [String]	$HostName,
+	[Parameter()]    [String]	$ChapName,
+	[Parameter()] 	[int]		$ChapOperationMode,
+	[Parameter()]    [Switch]	$ChapRemoveTargetOnly,
+	[Parameter()]    [String]	$ChapSecret,
+	[Parameter()]    [Switch]	$ChapSecretHex,
+	[Parameter()]
     [ValidateSet('INITIATOR','TARGET')]		[String]	$ChapOperation,
-	[Parameter(ValueFromPipeline=$true)]    [String]	$Descriptors,
-	[Parameter(ValueFromPipeline=$true)]    [String[]]	$FCWWN,
-	[Parameter(ValueFromPipeline=$true)]    [Switch]	$ForcePathRemoval,
-	[Parameter(ValueFromPipeline=$true)]    [String[]]	$iSCSINames,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$NewName,
-	[Parameter(ValueFromPipeline=$true)]
+	[Parameter()]    [String]	$Descriptors,
+	[Parameter()]    [String[]]	$FCWWN,
+	[Parameter()]    [Switch]	$ForcePathRemoval,
+	[Parameter()]    [String[]]	$iSCSINames,
+	[Parameter()]	[String]	$NewName,
+	[Parameter()]
 	[ValidateSet('ADD','REMOVE')]			[String]	$PathOperation,
-	[Parameter(ValueFromPipeline=$true)]
+	[Parameter()]
 	[ValidateSet('GENERIC','GENERIC_ALUA','GENERIC_LEGACY','HPUX_LEGACY','AIX_LEGACY','EGENERA','ONTAP_LEGACY','VMWARE','OPENVMS','HPUX')]
 											[String]	$Persona
 )

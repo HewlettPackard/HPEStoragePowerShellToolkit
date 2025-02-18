@@ -58,14 +58,14 @@ Function New-a9VvSnapshot
 	SUCCESS: volume snapshot:$snpVVName created successfully
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$snpVVName,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$ID,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Comment,
-		[Parameter(ValueFromPipeline=$true)]					[boolean]	$ReadOnly,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$ExpirationHours,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$RetentionHours,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$AddToSet
+Param(	[Parameter(Mandatory)]	[String]	$VolumeName,
+		[Parameter(Mandatory)]	[String]	$snpVVName,
+		[Parameter()]					[int]		$ID,
+		[Parameter()]					[String]	$Comment,
+		[Parameter()]					[boolean]	$ReadOnly,
+		[Parameter()]					[int]		$ExpirationHours,
+		[Parameter()]					[int]		$RetentionHours,
+		[Parameter()]					[String]	$AddToSet
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -135,18 +135,18 @@ Function New-A9VvListGroupSnapshot
 	PS:> New-A9VvListGroupSnapshot -VolumeName xyz -SnapshotName asSnpvv -SnapshotId 10 -SnapshotWWN 60002AC0000000000101142300018F8D -ReadWrite $true -Comment Hello -ReadOnly $true -Match $true -ExpirationHours 10 -RetentionHours 10 -SkipBlock $true
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$SnapshotName,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$SnapshotId,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$SnapshotWWN,
-		[Parameter(ValueFromPipeline=$true)]					[boolean]	$ReadWrite,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Comment,
-		[Parameter(ValueFromPipeline=$true)]					[boolean]	$ReadOnly,
-		[Parameter(ValueFromPipeline=$true)]					[boolean]	$Match,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$ExpirationHours,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$RetentionHours,
-		[Parameter(ValueFromPipeline=$true)]					[boolean]	$SkipBlock,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$AddToSet
+Param(	[Parameter(Mandatory)]	[String]	$VolumeName,
+		[Parameter(Mandatory)]	[String]	$SnapshotName,
+		[Parameter()]					[int]		$SnapshotId,
+		[Parameter()]					[String]	$SnapshotWWN,
+		[Parameter()]					[boolean]	$ReadWrite,
+		[Parameter()]					[String]	$Comment,
+		[Parameter()]					[boolean]	$ReadOnly,
+		[Parameter()]					[boolean]	$Match,
+		[Parameter()]					[int]		$ExpirationHours,
+		[Parameter()]					[int]		$RetentionHours,
+		[Parameter()]					[boolean]	$SkipBlock,
+		[Parameter()]					[String]	$AddToSet
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -266,20 +266,20 @@ Function New-A9VvPhysicalCopy
 	PS:> New-A9VvPhysicalCopy -VolumeName $val -DestVolume Test -Priority high
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$DestVolume,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$DestCPG,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$Online,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$WWN,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$TPVV,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$TDVV,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$Reduce,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$SnapCPG,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$SkipZero,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$Compression,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$SaveSnapshot,
-		[Parameter(ValueFromPipeline=$true)]
-		[ValidateSet('HIGH','MED','LOW')]						[String]	$Priority
+Param(	[Parameter(Mandatory)]	[String]	$VolumeName,
+		[Parameter(Mandatory)]	[String]	$DestVolume,
+		[Parameter()]			[String]	$DestCPG,
+		[Parameter()]			[switch]	$Online,
+		[Parameter()]			[String]	$WWN,
+		[Parameter()]			[switch]	$TPVV,
+		[Parameter()]			[switch]	$TDVV,
+		[Parameter()]			[switch]	$Reduce,
+		[Parameter()]			[String]	$SnapCPG,
+		[Parameter()]			[switch]	$SkipZero,
+		[Parameter()]			[switch]	$Compression,
+		[Parameter()]			[switch]	$SaveSnapshot,
+		[Parameter()]	[ValidateSet('HIGH','MED','LOW')]						
+								[String]	$Priority
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -346,7 +346,7 @@ Function Reset-A9PhysicalCopy
 	The <VolumeName> parameter specifies the name of the destination volume you want to resynchronize.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeName
+Param(	[Parameter(Mandatory)]	[String]	$VolumeName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -384,7 +384,7 @@ Function Stop-A9PhysicalCopy
 	Stop a physical copy of given Volume 
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]		[String]	$VolumeName
+Param(	[Parameter(Mandatory)]		[String]	$VolumeName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -432,11 +432,11 @@ Function Move-A9VirtualCopy
 	Allows the promote operation to proceed even if the RW parent volume is currently in a Remote Copy volume group, if that group has not been started. If the Remote Copy group has been started, this command fails.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VirtualCopyName,
-		[Parameter(ValueFromPipeline=$true)]					[Switch]	$Online,
-		[Parameter(ValueFromPipeline=$true)]
+Param(	[Parameter(Mandatory)]	[String]	$VirtualCopyName,
+		[Parameter()]					[Switch]	$Online,
+		[Parameter()]
 		[ValidateSet('HIGH','MED','LOW')]						[String]	$Priority,
-		[Parameter(ValueFromPipeline=$true)]					[Switch]	$AllowRemoteCopyParent
+		[Parameter()]					[Switch]	$AllowRemoteCopyParent
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -492,11 +492,11 @@ Function Move-A9VvSetVirtualCopy
 	PS:> Move-A9VvSetVirtualCopy -VVSetName xyz -AllowRemoteCopyParent
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VVSetName,
-		[Parameter(ValueFromPipeline=$true)]					[Switch]	$Online,
-		[Parameter(ValueFromPipeline=$true)]
+Param(	[Parameter(Mandatory)]	[String]	$VVSetName,
+		[Parameter()]					[Switch]	$Online,
+		[Parameter()]
 		[ValidateSet('HIGH','MED','LOW')]						[String]	$Priority,
-		[Parameter(ValueFromPipeline=$true)]					[Switch]	$AllowRemoteCopyParent
+		[Parameter()]					[Switch]	$AllowRemoteCopyParent
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -557,14 +557,14 @@ Function New-A9VvSetSnapshot
 	PS:> New-A9VvSetSnapshot -VolumeSetName Test_delete -SnpVVName PERF_AIX38 -ID 110 -Comment Hello -readOnly -ExpirationHours 1 -RetentionHours 1
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeSetName,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$SnpVVName,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$ID,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Comment,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$readOnly,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$ExpirationHours,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$RetentionHours,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$AddToSet
+Param(	[Parameter(Mandatory)]	[String]	$VolumeSetName,
+		[Parameter()]					[String]	$SnpVVName,
+		[Parameter()]					[int]		$ID,
+		[Parameter()]					[String]	$Comment,
+		[Parameter()]					[switch]	$readOnly,
+		[Parameter()]					[int]		$ExpirationHours,
+		[Parameter()]					[int]		$RetentionHours,
+		[Parameter()]					[String]	$AddToSet
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -615,10 +615,10 @@ Function New-A9VvSetPhysicalCopy
 	PS:> New-A9VvSetPhysicalCopy -VolumeSetName Test_delete -DestVolume PERF_AIX38 	
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeSetName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$DestVolume,
-		[Parameter(ValueFromPipeline=$true)]					[boolean]	$SaveSnapshot,
-		[Parameter(ValueFromPipeline=$true)]
+Param(	[Parameter(Mandatory)]	[String]	$VolumeSetName,
+		[Parameter(Mandatory)]	[String]	$DestVolume,
+		[Parameter()]					[boolean]	$SaveSnapshot,
+		[Parameter()]
 		[ValidateSet('HIGH','MED','LOW')]						[String]	$Priority
 )
 Begin 
@@ -669,8 +669,8 @@ Function Reset-A9VvSetPhysicalCopy
 	PS:> Reset-A9VvSetPhysicalCopy -VolumeSetName xxx -Priority HIGH
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]     	[String]  	$VolumeSetName,
-		[Parameter(ValueFromPipeline=$true)]
+Param(	[Parameter(Mandatory)]     	[String]  	$VolumeSetName,
+		[Parameter()]
 		[ValidateSet('HIGH','MED','LOW')]							[String]	$Priority
 )
 Begin 
@@ -715,8 +715,8 @@ Function Stop-A9VvSetPhysicalCopy
 	PS:> Stop-A9VvSetPhysicalCopy -VolumeSetName xxx -Priority HIGH
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeSetName,
-		[Parameter(ValueFromPipeline=$true)]
+Param(	[Parameter(Mandatory)]	[String]	$VolumeSetName,
+		[Parameter()]
 		[ValidateSet('HIGH','MED','LOW')]						[String]	$Priority
 )
 Begin 
@@ -766,8 +766,8 @@ Function Update-A9VvOrVvSets
 	Update virtual copies or VV-sets
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String[]]	$VolumeSnapshotList,
-		[Parameter(ValueFromPipeline=$true)]					[boolean]	$ReadOnly
+Param(	[Parameter(Mandatory)]	[String[]]	$VolumeSnapshotList,
+		[Parameter()]					[boolean]	$ReadOnly
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'

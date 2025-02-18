@@ -38,8 +38,8 @@ Function Get-A9Port
 	FS Ethernet File Persona ports.
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$NSP,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Type
+Param(	[Parameter()]	[String]	$NSP,
+		[Parameter()]	[String]	$Type
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -143,9 +143,9 @@ Function Get-A9IscsivLans
 	VLAN ID.
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Type,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$NSP,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$VLANtag
+Param(	[Parameter()]	[String]	$Type,
+		[Parameter()]	[String]	$NSP,
+		[Parameter()]	[String]	$VLANtag
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -279,7 +279,7 @@ Function Get-A9PortDeviceTDZ
 	The <n:s:p> variable identifies the node, slot, and port of the device.
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String] 	$NSP
+Param(	[Parameter()]	[String] 	$NSP
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'	 
@@ -321,7 +321,7 @@ Function Get-A9FcSwitches
 	The <n:s:p> variable identifies the node, slot, and port of the device.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NSP
+Param(	[Parameter(Mandatory)]	[String]	$NSP
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'	 
@@ -375,13 +375,13 @@ Function Set-A9ISCSIPort
 	iSNS server IP address
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NSP,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$IPAdr,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Netmask,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Gateway,
-		[Parameter(ValueFromPipeline=$true)]					[Int]		$MTU,
-		[Parameter(ValueFromPipeline=$true)]					[Int]		$ISNSPort,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$ISNSAddr
+Param(	[Parameter(Mandatory)]	[String]	$NSP,
+		[Parameter()]					[String]	$IPAdr,
+		[Parameter()]					[String]	$Netmask,
+		[Parameter()]					[String]	$Gateway,
+		[Parameter()]					[Int]		$MTU,
+		[Parameter()]					[Int]		$ISNSPort,
+		[Parameter()]					[String]	$ISNSAddr
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -431,10 +431,10 @@ Function New-A9IscsivLan
 	VLAN tag
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NSP,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$IPAddress,	  
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$Netmask,	
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[int]		$VlanTag
+Param(	[Parameter(Mandatory)]	[String]	$NSP,
+		[Parameter(Mandatory)]	[String]	$IPAddress,	  
+		[Parameter(Mandatory)]	[String]	$Netmask,	
+		[Parameter(Mandatory)]	[int]		$VlanTag
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -480,10 +480,10 @@ Function New-A9IscsivLun
 	VLAN tag
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NSP,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$IPAddress,	  
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$Netmask,	
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[int]		$VlanTag
+Param(	[Parameter(Mandatory)]	[String]	$NSP,
+		[Parameter(Mandatory)]	[String]	$IPAddress,	  
+		[Parameter(Mandatory)]	[String]	$Netmask,	
+		[Parameter(Mandatory)]	[int]		$VlanTag
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -539,15 +539,15 @@ Function Set-A9IscsivLan
 	iSNS server IP address
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NSP,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[int]		$VlanTag,	  
-		[Parameter(ValueFromPipeline=$true)]					[String]	$IPAdr,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Netmask,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Gateway,
-		[Parameter(ValueFromPipeline=$true)]					[Int]		$MTU,
-		[Parameter(ValueFromPipeline=$true)]					[Int]		$STGT,
-		[Parameter(ValueFromPipeline=$true)]					[Int]		$ISNSPort,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$ISNSAddr
+Param(	[Parameter(Mandatory)]	[String]	$NSP,
+		[Parameter(Mandatory)]	[int]		$VlanTag,	  
+		[Parameter()]					[String]	$IPAdr,
+		[Parameter()]					[String]	$Netmask,
+		[Parameter()]					[String]	$Gateway,
+		[Parameter()]					[Int]		$MTU,
+		[Parameter()]					[Int]		$STGT,
+		[Parameter()]					[Int]		$ISNSPort,
+		[Parameter()]					[String]	$ISNSAddr
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -588,7 +588,7 @@ Function Reset-A9IscsiPort
 	The <n:s:p> parameter identifies the port you want to configure.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NSP
+Param(	[Parameter(Mandatory)]	[String]	$NSP
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -629,7 +629,7 @@ Function Remove-A9IscsivLan
 #>
 [CmdletBinding()]
 Param(	[Parameter(omPipeline=$true)]							[String]	$NSP,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[int]		$VlanTag
+		[Parameter(Mandatory)]	[int]		$VlanTag
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'

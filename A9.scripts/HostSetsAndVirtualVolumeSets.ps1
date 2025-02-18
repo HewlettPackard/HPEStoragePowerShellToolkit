@@ -37,10 +37,10 @@ Function New-A9HostSet
 	Creates a new host Set with name MyHostSet with Set Members MyHost.	
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$HostSetName,	  
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Comment,	
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Domain, 
-		[Parameter(ValueFromPipeline=$true)]					[String[]]	$SetMembers
+Param(	[Parameter(Mandatory)]	[String]	$HostSetName,	  
+		[Parameter()]					[String]	$Comment,	
+		[Parameter()]					[String]	$Domain, 
+		[Parameter()]					[String[]]	$SetMembers
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -114,17 +114,17 @@ Function Update-A9HostSet
 	3: low
 #>
 [CmdletBinding(DefaultParameterSetName="default")]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]					[String]	$HostSetName,
+Param(	[Parameter(Mandatory)]					[String]	$HostSetName,
 		[Parameter(ParameterSetName='AddMember', ValueFromPipeline=$true)]		[switch]	$AddMember,	
 		[Parameter(ParameterSetName='RemoveMember', ValueFromPipeline=$true)]	[switch]	$RemoveMember,
 		[Parameter(ParameterSetName='Resync', ValueFromPipeline=$true)]			[switch]	$ResyncPhysicalCopy,
 		[Parameter(ParameterSetName='Stop', ValueFromPipeline=$true)]			[switch]	$StopPhysicalCopy,
 		[Parameter(ParameterSetName='Promote', ValueFromPipeline=$true)]		[switch]	$PromoteVirtualCopy,
 		[Parameter(ParameterSetName='StopPromote', ValueFromPipeline=$true)]	[switch]	$StopPromoteVirtualCopy,
-		[Parameter(ValueFromPipeline=$true)]									[String]	$NewName,
-		[Parameter(ValueFromPipeline=$true)]									[String]	$Comment,
-		[Parameter(ValueFromPipeline=$true)]									[String[]]	$Members,
-		[Parameter(ValueFromPipeline=$true)]	
+		[Parameter()]									[String]	$NewName,
+		[Parameter()]									[String]	$Comment,
+		[Parameter()]									[String[]]	$Members,
+		[Parameter()]	
 		[ValidateSet('high','medium','low')]									[String]	$Priority
 )
 Begin 
@@ -214,7 +214,6 @@ Process
 }
 }
 
-
 Function New-A9VvSet
 {
 <#
@@ -251,10 +250,10 @@ Function New-A9VvSet
 	The virtual volume to be added to the set. The existence of the hist will not be checked.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]		[String]	$VVSetName,	  
-		[Parameter(ValueFromPipeline=$true)]			[String]	$Comment,	
-		[Parameter(ValueFromPipeline=$true)]						[String]	$Domain, 
-		[Parameter(ValueFromPipeline=$true)]						[String[]]	$SetMembers
+Param(	[Parameter(Mandatory)]		[String]	$VVSetName,	  
+		[Parameter()]			[String]	$Comment,	
+		[Parameter()]						[String]	$Domain, 
+		[Parameter()]						[String[]]	$SetMembers
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -337,17 +336,17 @@ Function Update-A9VvSet
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VVSetName,
-	[Parameter(ValueFromPipeline=$true)]	[switch]	$AddMember,	
-	[Parameter(ValueFromPipeline=$true)]	[switch]	$RemoveMember,	
-	[Parameter(ValueFromPipeline=$true)]	[switch]	$ResyncPhysicalCopy,	
-	[Parameter(ValueFromPipeline=$true)]	[switch]	$StopPhysicalCopy,	
-	[Parameter(ValueFromPipeline=$true)]	[switch]	$PromoteVirtualCopy,
-	[Parameter(ValueFromPipeline=$true)]	[switch]	$StopPromoteVirtualCopy,	
-	[Parameter(ValueFromPipeline=$true)]	[String]	$NewName,	
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Comment,
-	[Parameter(ValueFromPipeline=$true)]	[String[]]	$Members,
-	[Parameter(ValueFromPipeline=$true)]
+	[Parameter(Mandatory)]	[String]	$VVSetName,
+	[Parameter()]	[switch]	$AddMember,	
+	[Parameter()]	[switch]	$RemoveMember,	
+	[Parameter()]	[switch]	$ResyncPhysicalCopy,	
+	[Parameter()]	[switch]	$StopPhysicalCopy,	
+	[Parameter()]	[switch]	$PromoteVirtualCopy,
+	[Parameter()]	[switch]	$StopPromoteVirtualCopy,	
+	[Parameter()]	[String]	$NewName,	
+	[Parameter()]	[String]	$Comment,
+	[Parameter()]	[String[]]	$Members,
+	[Parameter()]
 	[ValidateSet('high','medium','low')]	[String]	$Priority
 )
 Begin 
@@ -402,7 +401,6 @@ Process
 }
 }
 
-
 Function Get-A9VvSet 
 {
 <#
@@ -447,10 +445,10 @@ Function Get-A9VvSet
 	Specify uuid of the virtual volume Set.
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$VVSetName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Members,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Id,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Uuid
+Param(	[Parameter()]	[String]	$VVSetName,
+		[Parameter()]	[String]	$Members,
+		[Parameter()]	[String]	$Id,
+		[Parameter()]	[String]	$Uuid
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'	 
@@ -512,46 +510,4 @@ Process
 }
 }
 
-Function Set-A9VvSetFlashCachePolicy
-{
-<#      
-.SYNOPSIS	
-	Setting a VV-set Flash Cache policy.
-.DESCRIPTION	
-    Setting a VV-set Flash Cache policy.
-.EXAMPLE	
-	PS:> Set-A9VvSetFlashCachePolicy
-.PARAMETER VvSet
-	Name Of the VV-set to Set Flash Cache policy.
-.PARAMETER Enable
-	To Enable VV-set Flash Cache policy
-.PARAMETER Disable
-	To Disable VV-set Flash Cache policy
-#>
-[CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VvSet,
-		[Parameter(ValueFromPipeline=$true)]					[Switch]	$Enable,
-		[Parameter(ValueFromPipeline=$true)]					[Switch]	$Disable
-	)
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$body = @{}		
-	If($Enable) 		{	$body["flashCachePolicy"] = 1	}		
-	elseIf($Disable) 	{	$body["flashCachePolicy"] = 2 	}
-	else				{	$body["flashCachePolicy"] = 2 	}		
-    $Result = $null
-	$uri = '/volumesets/'+$VvSet
-    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
-	$status = $Result.StatusCode
-	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else{	Write-Error "Failure:  While Setting Flash Cache policy (1 = enable, 2 = disable) $body to vv-set $VvSet." 
-			return $Result.StatusDescription
-		}
-}
-}
 

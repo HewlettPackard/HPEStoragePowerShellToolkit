@@ -71,12 +71,12 @@ Function New-A9FlashCache
 	Overrides the size comparison check to allow Adaptive Flash Cache creation with mismatched SCM device sizes.
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[int]		$SizeGiB,
-		[Parameter(ValueFromPipeline=$true)]
+Param(	[Parameter()]	[int]		$SizeGiB,
+		[Parameter()]
 		[ValidateSet('Simulator','Real')]		[string]	$Mode='Real',
-		[Parameter(ValueFromPipeline=$true)]	
+		[Parameter()]	
 		[ValidateSet("R0","R1")]				[String]	$RAIDType,
-		[Parameter(ValueFromPipeline=$true)]	[boolean]	$NoCheckSCMSize
+		[Parameter()]	[boolean]	$NoCheckSCMSize
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API' 
@@ -167,4 +167,47 @@ Process
 			return $Result.StatusDescription
 		}
 }	
+}
+
+Function Set-A9VvSetFlashCachePolicy
+{
+<#      
+.SYNOPSIS	
+	Setting a VV-set Flash Cache policy.
+.DESCRIPTION	
+    Setting a VV-set Flash Cache policy.
+.EXAMPLE	
+	PS:> Set-A9VvSetFlashCachePolicy
+.PARAMETER VvSet
+	Name Of the VV-set to Set Flash Cache policy.
+.PARAMETER Enable
+	To Enable VV-set Flash Cache policy
+.PARAMETER Disable
+	To Disable VV-set Flash Cache policy
+#>
+[CmdletBinding()]
+Param(	[Parameter(Mandatory)]	[String]	$VvSet,
+		[Parameter()]					[Switch]	$Enable,
+		[Parameter()]					[Switch]	$Disable
+	)
+Begin 
+{	Test-A9Connection -ClientType 'API'
+}
+Process 
+{	$body = @{}		
+	If($Enable) 		{	$body["flashCachePolicy"] = 1	}		
+	elseIf($Disable) 	{	$body["flashCachePolicy"] = 2 	}
+	else				{	$body["flashCachePolicy"] = 2 	}		
+    $Result = $null
+	$uri = '/volumesets/'+$VvSet
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
+	$status = $Result.StatusCode
+	if($status -eq 200)
+		{	write-host "Cmdlet executed successfully" -foreground green
+			return $Result
+		}
+	else{	Write-Error "Failure:  While Setting Flash Cache policy (1 = enable, 2 = disable) $body to vv-set $VvSet." 
+			return $Result.StatusDescription
+		}
+}
 }

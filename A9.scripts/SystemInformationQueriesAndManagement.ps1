@@ -3,39 +3,6 @@
 ##	Description: 	System information queries and management cmdlets 
 ##		
 
-Function Get-A9System
-{
-<#
-.SYNOPSIS	
-	Retrieve informations about the array.
-.DESCRIPTION
-	Retrieve informations about the array.
-.EXAMPLE
-	PS:> Get-A9System
-
-	Retrieve informations about the array.
-#>
-[CmdletBinding()]
-Param()
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$Result = $null	
-	$dataPS = $null	
-	$Result = Invoke-A9API -uri '/system' -type 'GET' 
-	if($Result.StatusCode -eq 200)
-		{	$dataPS = $Result.content | ConvertFrom-Json
-			write-host "Cmdlet executed successfully" -foreground green
-			return $dataPS
-		}
-	else
-		{	Write-Error "Failure:  While Executing Get-System" 
-			return $Result.StatusDescription
-		}
-}	
-}
-
 Function Update-A9System 
 {
 <#
@@ -87,18 +54,18 @@ Function Update-A9System
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(ValueFromPipeline=$true)]	[boolean]	$RemoteSyslog,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$RemoteSyslogHost,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$RemoteSyslogSecurityHost,
-	[Parameter(ValueFromPipeline=$true)]	[boolean]	$PortFailoverEnabled,
-	[Parameter(ValueFromPipeline=$true)]	[boolean]	$FailoverMatchedSet,
-	[Parameter(ValueFromPipeline=$true)]	[boolean]	$DisableDedup,
-	[Parameter(ValueFromPipeline=$true)]	[boolean]	$DisableCompr,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$OverProvRatioLimit,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$OverProvRatioWarning,
-	[Parameter(ValueFromPipeline=$true)]	[boolean]	$AllowR5OnNLDrives,
-	[Parameter(ValueFromPipeline=$true)]	[boolean]	$AllowR5OnFCDrives,
-	[Parameter(ValueFromPipeline=$true)]	[boolean]	$ComplianceOfficerApproval
+	[Parameter()]	[boolean]	$RemoteSyslog,
+	[Parameter()]	[String]	$RemoteSyslogHost,
+	[Parameter()]	[String]	$RemoteSyslogSecurityHost,
+	[Parameter()]	[boolean]	$PortFailoverEnabled,
+	[Parameter()]	[boolean]	$FailoverMatchedSet,
+	[Parameter()]	[boolean]	$DisableDedup,
+	[Parameter()]	[boolean]	$DisableCompr,
+	[Parameter()]	[int]		$OverProvRatioLimit,
+	[Parameter()]	[int]		$OverProvRatioWarning,
+	[Parameter()]	[boolean]	$AllowR5OnNLDrives,
+	[Parameter()]	[boolean]	$AllowR5OnFCDrives,
+	[Parameter()]	[boolean]	$ComplianceOfficerApproval
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'

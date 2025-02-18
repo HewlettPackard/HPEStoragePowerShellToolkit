@@ -37,15 +37,15 @@ Function New-A9RCopyGroup
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$RcgName,
-	[Parameter(ValueFromPipeline=$true)]		[String]	$Domain,
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetName,
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+	[Parameter(Mandatory)]	[String]	$RcgName,
+	[Parameter()]		[String]	$Domain,
+	[Parameter(Mandatory)]	[String]	$TargetName,
+	[Parameter(Mandatory)]
 	[ValidateSet('SYNC','PERIODIC','ASYNC')]				[String]	$Mode,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$UserCPG,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$SnapCPG,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$LocalUserCPG,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$LocalSnapCPG
+	[Parameter()]					[String]	$UserCPG,
+	[Parameter()]					[String]	$SnapCPG,
+	[Parameter()]					[String]	$LocalUserCPG,
+	[Parameter()]					[String]	$LocalSnapCPG
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -111,11 +111,11 @@ Function Start-A9RCopyGroup
 #>
 [CmdletBinding()]
 Param(
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,	  
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$SkipInitialSync,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$TargetName,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$VolumeName,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$SnapshotName
+		[Parameter(Mandatory)]	[String]	$GroupName,	  
+		[Parameter()]					[switch]	$SkipInitialSync,
+		[Parameter()]					[String]	$TargetName,
+		[Parameter()]					[String]	$VolumeName,
+		[Parameter()]					[String]	$SnapshotName
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -173,9 +173,9 @@ Function Stop-A9RCopyGroup
 #>
 [CmdletBinding()]
 Param(
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,	  
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$NoSnapshot,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$TargetName
+		[Parameter(Mandatory)]	[String]	$GroupName,	  
+		[Parameter()]					[switch]	$NoSnapshot,
+		[Parameter()]					[String]	$TargetName
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -233,10 +233,10 @@ Function Sync-A9RCopyGroup
 	Defaults to false.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,	  
-		[Parameter(ValueFromPipeline=$true)]		[switch]	$NoResyncSnapshot,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$TargetName,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$FullSync
+Param(	[Parameter(Mandatory)]	[String]	$GroupName,	  
+		[Parameter()]		[switch]	$NoResyncSnapshot,
+		[Parameter()]					[String]	$TargetName,
+		[Parameter()]					[switch]	$FullSync
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -283,8 +283,8 @@ Function Remove-A9RCopyGroup
 	PS:> Remove-A9RCopyGroup -GroupName xxx -KeepSnap $false
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,		
-		[Parameter(ValueFromPipeline=$true)]		[boolean]	$KeepSnap	
+Param(	[Parameter(Mandatory)]	[String]	$GroupName,		
+		[Parameter()]		[boolean]	$KeepSnap	
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -365,23 +365,23 @@ Function Update-A9RCopyGroup
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$LocalUserCPG,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$LocalSnapCPG,	  
-	[Parameter(ValueFromPipeline=$true)]	[String]	$TargetName,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$RemoteUserCPG,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$RemoteSnapCPG,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$SyncPeriod,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$RmSyncPeriod,
-	[Parameter(ValueFromPipeline=$true)]
+	[Parameter(Mandatory)]	[String]	$GroupName,
+	[Parameter()]	[String]	$LocalUserCPG,
+	[Parameter()]	[String]	$LocalSnapCPG,	  
+	[Parameter()]	[String]	$TargetName,
+	[Parameter()]	[String]	$RemoteUserCPG,
+	[Parameter()]	[String]	$RemoteSnapCPG,
+	[Parameter()]	[int]		$SyncPeriod,
+	[Parameter()]	[int]		$RmSyncPeriod,
+	[Parameter()]
 	[ValidateSet('SYNC','ASYNC','PERIODIC')][String]	$Mode,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$SnapFrequency,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$RmSnapFrequency,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$AutoRecover,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$OverPeriodAlert,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$AutoFailover,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$PathManagement,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$MultiTargetPeerPersistence
+	[Parameter()]	[int]		$SnapFrequency,
+	[Parameter()]	[int]		$RmSnapFrequency,
+	[Parameter()]	[int]		$AutoRecover,
+	[Parameter()]	[int]		$OverPeriodAlert,
+	[Parameter()]	[int]		$AutoFailover,
+	[Parameter()]	[int]		$PathManagement,
+	[Parameter()]	[int]		$MultiTargetPeerPersistence
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -487,18 +487,18 @@ Function Update-A9RCopyGroupTarget
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$GroupName,
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetName,
-	[Parameter(ValueFromPipeline=$true)]								[int]		$SnapFrequency,
-	[Parameter(ValueFromPipeline=$true)]								[Boolean]	$RmSnapFrequency,
-	[Parameter(ValueFromPipeline=$true)]								[int]		$SyncPeriod,
-	[Parameter(ValueFromPipeline=$true)]								[Boolean]	$RmSyncPeriod,
-	[Parameter(ValueFromPipeline=$true)][ValidateSet('SYNC','PERIODIC')][String]	$Mode,
-	[Parameter(ValueFromPipeline=$true)]								[int]		$AutoRecover,
-	[Parameter(ValueFromPipeline=$true)]								[int]		$OverPeriodAlert,
-	[Parameter(ValueFromPipeline=$true)]								[int]		$AutoFailover,
-	[Parameter(ValueFromPipeline=$true)]							[int]		$PathManagement,
-	[Parameter(ValueFromPipeline=$true)]								[int]		$MultiTargetPeerPersistence
+	[Parameter(Mandatory)]				[String]	$GroupName,
+	[Parameter(Mandatory)]	[String]	$TargetName,
+	[Parameter()]								[int]		$SnapFrequency,
+	[Parameter()]								[Boolean]	$RmSnapFrequency,
+	[Parameter()]								[int]		$SyncPeriod,
+	[Parameter()]								[Boolean]	$RmSyncPeriod,
+	[Parameter()][ValidateSet('SYNC','PERIODIC')][String]	$Mode,
+	[Parameter()]								[int]		$AutoRecover,
+	[Parameter()]								[int]		$OverPeriodAlert,
+	[Parameter()]								[int]		$AutoFailover,
+	[Parameter()]							[int]		$PathManagement,
+	[Parameter()]								[int]		$MultiTargetPeerPersistence
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -569,15 +569,15 @@ Function Restore-A9RCopyGroup
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-	[Parameter(ValueFromPipeline=$true)]		[String]	$TargetName,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$SkipStart,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$SkipSync,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$DiscardNewData,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$SkipPromote,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$NoSnapshot,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$StopGroups,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$LocalGroupsDirection
+	[Parameter(Mandatory)]	[String]	$GroupName,
+	[Parameter()]		[String]	$TargetName,
+	[Parameter()]					[Switch]	$SkipStart,
+	[Parameter()]					[Switch]	$SkipSync,
+	[Parameter()]					[Switch]	$DiscardNewData,
+	[Parameter()]					[Switch]	$SkipPromote,
+	[Parameter()]					[Switch]	$NoSnapshot,
+	[Parameter()]					[Switch]	$StopGroups,
+	[Parameter()]					[Switch]	$LocalGroupsDirection
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -636,14 +636,14 @@ Function Add-A9VvToRCopyGroup
 	Specifies the name of the secondary volume on the target system.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$GroupName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeName,
-		[Parameter(ValueFromPipeline=$true)]								[String]	$SnapshotName,
-		[Parameter(ValueFromPipeline=$true)]								[boolean]	$VolumeAutoCreation,
-		[Parameter(ValueFromPipeline=$true)]								[boolean]	$SkipInitialSync,
-		[Parameter(ValueFromPipeline=$true)]								[boolean]	$DifferentSecondaryWWN,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$TargetName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$SecVolumeName
+Param(	[Parameter(Mandatory)]				[String]	$GroupName,
+		[Parameter(Mandatory)]	[String]	$VolumeName,
+		[Parameter()]								[String]	$SnapshotName,
+		[Parameter()]								[boolean]	$VolumeAutoCreation,
+		[Parameter()]								[boolean]	$SkipInitialSync,
+		[Parameter()]								[boolean]	$DifferentSecondaryWWN,
+		[Parameter(Mandatory)]				[String]	$TargetName,
+		[Parameter(Mandatory)]				[String]	$SecVolumeName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -700,10 +700,10 @@ Function Remove-A9VvFromRCopyGroup
 	Enables (true) or disables (false) deletion of the remote volume on the secondary array from the system. Defaults to false. Do not use with keepSnap.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeName,
-		[Parameter(ValueFromPipeline=$true)]					[boolean]	$KeepSnap,
-		[Parameter(ValueFromPipeline=$true)]					[boolean]	$RemoveSecondaryVolume
+Param(	[Parameter(Mandatory)]	[String]	$GroupName,
+		[Parameter(Mandatory)]	[String]	$VolumeName,
+		[Parameter()]					[boolean]	$KeepSnap,
+		[Parameter()]					[boolean]	$RemoveSecondaryVolume
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -756,13 +756,13 @@ Function New-A9RCopyTarget
 	Enable (true) or disable (false) the creation of the target in disabled mode.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]							[String]	$TargetName,
+Param(	[Parameter(Mandatory)]							[String]	$TargetName,
 		[Parameter(Mandatory=$true, ParameterSetName = "IP", ValueFromPipeline=$true)]	[Switch]	$IP,
 		[Parameter(Mandatory=$true, ParameterSetName = "FC", ValueFromPipeline=$true)]	[Switch]	$FC,
 		[Parameter(ParameterSetName = "FC", ValueFromPipeline=$true)]					[String]	$NodeWWN,
-		[Parameter(ValueFromPipeline=$true)]											[String]	$PortPos,
-		[Parameter(ValueFromPipeline=$true)]											[String]	$Link, 
-		[Parameter(ValueFromPipeline=$true)]											[Switch]	$Disabled
+		[Parameter()]											[String]	$PortPos,
+		[Parameter()]											[String]	$Link, 
+		[Parameter()]											[Switch]	$Disabled
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -820,8 +820,8 @@ Function Update-A9RCopyTarget
 	Use false to allow recovery from an unusual error condition only, and only after consulting your Hewlett Packard Enterprise representative.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetName,
-		[Parameter(ValueFromPipeline=$true)]					[Switch]	$MirrorConfig
+Param(	[Parameter(Mandatory)]	[String]	$TargetName,
+		[Parameter()]					[Switch]	$MirrorConfig
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -877,12 +877,12 @@ Function Add-A9TargetToRCopyGroup
 	Name of the volume on the target.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetName,
-		[Parameter(ValueFromPipeline=$true)]
+Param(	[Parameter(Mandatory)]	[String]	$GroupName,
+		[Parameter(Mandatory)]	[String]	$TargetName,
+		[Parameter()]
 		[ValidateSet('SYNC','PERIODIC','ASYNC')]				[String]	$Mode,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$LocalVolumeName,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$RemoteVolumeName
+		[Parameter()]					[String]	$LocalVolumeName,
+		[Parameter()]					[String]	$RemoteVolumeName
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -929,8 +929,8 @@ Function Remove-A9TargetFromRCopyGroup
 	Target Name to be removed.  
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetName
+Param(	[Parameter(Mandatory)]	[String]	$GroupName,
+		[Parameter(Mandatory)]	[String]	$TargetName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -984,13 +984,13 @@ Function New-A9SnapRcGroupVv
 #>
 [CmdletBinding()]
 Param(
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-		[Parameter(ValueFromPipeline=$true)]		[String]	$VolumeName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NewVvNmae,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Comment,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$ExpirationHous,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$RetentionHours,
-		[Parameter(ValueFromPipeline=$true)]					[Switch]	$SkipBlock
+		[Parameter(Mandatory)]	[String]	$GroupName,
+		[Parameter()]		[String]	$VolumeName,
+		[Parameter(Mandatory)]	[String]	$NewVvNmae,
+		[Parameter()]					[String]	$Comment,
+		[Parameter()]					[int]		$ExpirationHous,
+		[Parameter()]					[int]		$RetentionHours,
+		[Parameter()]					[Switch]	$SkipBlock
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1069,7 +1069,7 @@ Function Get-A9RCopyTarget
     Remote Copy Target Name
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$TargetName
+Param(	[Parameter()]	[String]	$TargetName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1119,7 +1119,7 @@ Function Get-A9RCopyGroup
     Remote Copy Group Name
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$GroupName
+Param(	[Parameter()]	[String]	$GroupName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1183,10 +1183,10 @@ Function Get-A9RCopyGroupTarget
     Target Name
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+Param(	[Parameter(Mandatory)]
 		[String]	$GroupName,
 		
-		[Parameter(ValueFromPipeline=$true)]
+		[Parameter()]
 		[String]	$TargetName
 	)
 Begin 
@@ -1229,8 +1229,8 @@ Function Get-A9RCopyGroupVv
     Remote Copy Volume Name
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$VolumeName
+Param(	[Parameter(Mandatory)]	[String]	$GroupName,
+		[Parameter()]					[String]	$VolumeName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1272,7 +1272,7 @@ Function Get-A9RCopyLink
     Remote Copy Link Name
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$LinkName
+Param(	[Parameter()]	[String]	$LinkName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'

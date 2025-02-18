@@ -36,7 +36,7 @@ Function Get-A9Users
 	3paradm  {@{domain=all; role=super}} {@{href=https://192.168.20.19/api/v1/users/3paradm; rel=self}}
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$UserName		
+Param(	[Parameter()]	[String]	$UserName		
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API' 
@@ -108,7 +108,7 @@ Function Get-A9Roles
 	audit For security scanners to perform a scan of the OS file system. An audit user has no access to the CLI. {@{right=audit_chroot; rightDescription=Secure access to a read only chroot of the OS…
 	#>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$RoleName
+Param(	[Parameter()]	[String]	$RoleName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API' 

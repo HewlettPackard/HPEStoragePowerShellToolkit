@@ -105,19 +105,19 @@ Function Get-A9CacheMemoryStatisticsDataReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$NodeId,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,		
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$NodeId,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,		
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -291,21 +291,21 @@ Function Get-A9CPGSpaceDataReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$CpgName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$DiskType,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$RAIDType,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,	
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$CpgName,
+		[Parameter()]	[String]	$DiskType,
+		[Parameter()]	[String]	$RAIDType,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,	
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -469,19 +469,19 @@ Function Get-A9CPGStatisticalDataReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter.
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$CpgName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$CpgName,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -626,19 +626,19 @@ Function Get-A9CPUStatisticalDataReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$NodeId,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$NodeId,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -793,18 +793,18 @@ Function Get-A9PDCapacityReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Id,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$DiskType,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$RPM,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$Id,
+		[Parameter()]	[String]	$DiskType,
+		[Parameter()]	[String]	$RPM,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -967,21 +967,21 @@ Function Get-A9PDStatisticsReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Id,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$DiskType,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$RPM,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$Id,
+		[Parameter()]	[String]	$DiskType,
+		[Parameter()]	[String]	$RPM,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
 		[Parameter(mPipeline=$true)]			[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1166,21 +1166,21 @@ Function Get-A9PDSpaceReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Id,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$DiskType,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$RPM,	
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$Id,
+		[Parameter()]	[String]	$DiskType,
+		[Parameter()]	[String]	$RPM,	
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1349,20 +1349,20 @@ Function Get-A9PortStatisticsReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$NSP,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$PortType,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$NSP,
+		[Parameter()]	[String]	$PortType,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1544,21 +1544,21 @@ Function Get-A9QoSStatisticalReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$VvSetName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Domain,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$All_Others,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]	$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$VvSetName,
+		[Parameter()]	[String]	$Domain,
+		[Parameter()]	[Switch]	$All_Others,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]	$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1753,20 +1753,20 @@ Function Get-A9RCopyStatisticalReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$TargetName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$NSP,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$TargetName,
+		[Parameter()]	[String]	$NSP,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1967,22 +1967,22 @@ Function Get-A9RCopyVolumeStatisticalReports
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$vvName,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$TargetName,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Mode,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$RCopyGroup,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+	[Parameter()]	[Switch]	$VersusTime,
+	[Parameter()]	[Switch]	$AtTime,
+	[Parameter()]	[Switch]	$Frequency_Hires,
+	[Parameter()]	[Switch]	$Frequency_Hourly,
+	[Parameter()]	[Switch]	$Frequency_Daily,
+	[Parameter()]	[String]	$vvName,
+	[Parameter()]	[String]	$TargetName,
+	[Parameter()]	[String]	$Mode,
+	[Parameter()]	[String]	$RCopyGroup,
+	[Parameter()]	[String]	$Groupby,
+	[Parameter()]	[String]	$Summary,
+	[Parameter()]	[String]	$Compareby,
+	[Parameter()]	[int]		$NoOfRecords,
+	[Parameter()]	[String]	$ComparebyField,
+	[Parameter()]	[String]	$GETime,
+	[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -2162,24 +2162,24 @@ Function Get-A9vLunStatisticsReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$VlunId,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$VvName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$HostName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$VvSetName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$HostSetName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$NSP,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$VlunId,
+		[Parameter()]	[String]	$VvName,
+		[Parameter()]	[String]	$HostName,
+		[Parameter()]	[String]	$VvSetName,
+		[Parameter()]	[String]	$HostSetName,
+		[Parameter()]	[String]	$NSP,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -2381,23 +2381,23 @@ Function Get-A9VvSpaceReports
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$VvName,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$VvSetName,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$UserCPG,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$SnapCPG,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$ProvType,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+	[Parameter()]	[Switch]	$VersusTime,
+	[Parameter()]	[Switch]	$AtTime,
+	[Parameter()]	[Switch]	$Frequency_Hires,
+	[Parameter()]	[Switch]	$Frequency_Hourly,
+	[Parameter()]	[Switch]	$Frequency_Daily,
+	[Parameter()]	[String]	$VvName,
+	[Parameter()]	[String]	$VvSetName,
+	[Parameter()]	[String]	$UserCPG,
+	[Parameter()]	[String]	$SnapCPG,
+	[Parameter()]	[String]	$ProvType,
+	[Parameter()]	[String]	$Groupby,
+	[Parameter()]	[String]	$Summary,
+	[Parameter()]	[String]	$Compareby,
+	[Parameter()]	[int]		$NoOfRecords,
+	[Parameter()]	[String]	$ComparebyField,
+	[Parameter()]	[String]	$GETime,
+	[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
