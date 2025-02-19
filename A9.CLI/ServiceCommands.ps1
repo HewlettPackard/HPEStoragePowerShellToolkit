@@ -300,9 +300,10 @@ Process
 	Elseif($Reboot)	{	$Cmd += " reboot " }
 	Elseif($Check)	{	$Cmd += " check " }
 	Elseif($Restart){	$Cmd += " restart " }
-	$Cmd += " $Node_ID "
+	$Cmd += " $Node_ID `nyes`n"
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	$AuthorizeAction = Invoke-A9CLICommand -cmd 'yes'
 	if ( $Result -match 'yes or no')
 		{	$AuthorizeAction = Invoke-A9CLICommand -cmd 'yes'
 			write-verbose $AuthorizeAction
