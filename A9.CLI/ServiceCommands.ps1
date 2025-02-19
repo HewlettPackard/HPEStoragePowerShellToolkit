@@ -303,6 +303,10 @@ Process
 	$Cmd += " $Node_ID "
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	if ( $Result -match 'yes or no')
+		{	$AuthorizeAction = Invoke-A9CLICommand -cmd 'yes'
+			write-verbose $AuthorizeAction
+		}
 	Return $Result
 } 
 }
