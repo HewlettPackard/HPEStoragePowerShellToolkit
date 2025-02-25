@@ -295,7 +295,7 @@ Function Connect-A9SSH
 param(	[Parameter(Mandatory)]	[String]    $ArrayNameOrIPAddress,
 		[Parameter(Mandatory)]	[String]	$SANUserName,	
 		[Parameter(Mandatory)]	[String]	$SANPassword,
-		[Parameter()]					[switch]	$AcceptKey
+		[Parameter()]			[switch]	$AcceptKey
 		)
 Process
 {	$CurrentModulePath = (Get-Module HPEStorage).path
@@ -331,11 +331,13 @@ Process
 				UserName 	= $SANUserName
 				epwdFile 	= "Secure String"			
 				CLIType 	= "SshClient"
-				CLIDir 		= "Null"			
+				CLIDir 		= "Null"	
+				SessionObj  = $Session		
 			}
 	$global:SANConnection = $SANC
 	#-- Obtain more Details by retrieving System Details via a CLI call --
-	# $Result3 = Invoke-A9CLICommand -Connection $SANC -cmds "showsys "	
+	write-verbose 'Invoke-A9CLICommand -Connection $SANC -cmds "showsys "'	
+
 	$R1 = Invoke-SSHCommand -Command "showsys " -SessionId $SANC.SessionId
 	if ($R1.ExitStatus -eq 0) 	{	$Result3 = $R1.Output	}
 	$FirstCnt = 1

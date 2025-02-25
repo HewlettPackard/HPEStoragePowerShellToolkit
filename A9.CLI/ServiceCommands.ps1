@@ -300,15 +300,18 @@ Process
 	Elseif($Reboot)	{	$Cmd += " reboot " }
 	Elseif($Check)	{	$Cmd += " check " }
 	Elseif($Restart){	$Cmd += " restart " }
-	$Cmd += " $Node_ID `nyes`n"
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	$AuthorizeAction = Invoke-A9CLICommand -cmd 'yes'
-	if ( $Result -match 'yes or no')
-		{	$AuthorizeAction = Invoke-A9CLICommand -cmd 'yes'
-			write-verbose $AuthorizeAction
+	$Cmd += " $Node_ID"
+	$Stream = (($SanConnection.SessionObj).Session).CreateShellStream("",0,0,0,0,100)
+	$ReturnData = invoke-sshstreamShellCommand -ShellStream $Stream -Command $Cmd
+	if ( $ReturnData -match "Permission denied") 		
+		{	write-warning "The Command returned the following error : Permission has been Denied`nYour Account permissions are not capable of executing this command."
+			return
 		}
-	Return $Result
+	if ( $ReturnData -match "yes or no" )
+		{	write-verbose "The command is asking for a confirmation Yes or No, Sending a Yes confirmation now."
+			invoke-sshstreamShellCommand -shellstream $Stream -Command 'yes'
+		}
+	return
 } 
 }
 
