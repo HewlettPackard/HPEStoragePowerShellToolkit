@@ -301,15 +301,17 @@ Process
 	Elseif($Check)	{	$Cmd += " check " }
 	Elseif($Restart){	$Cmd += " restart " }
 	$Cmd += " $Node_ID"
-	$Stream = (($SanConnection.SessionObj).Session).CreateShellStream("",0,0,0,0,100)
+	$Stream = (($SanConnection.SessionObj).Session).CreateShellStream("xterm",80,24,800,600,1024)
 	$ReturnData = invoke-sshstreamShellCommand -ShellStream $Stream -Command $Cmd
+	start-sleep 3 
+	$ReturnData | out-string
 	if ( $ReturnData -match "Permission denied") 		
 		{	write-warning "The Command returned the following error : Permission has been Denied`nYour Account permissions are not capable of executing this command."
 			return
 		}
 	if ( $ReturnData -match "yes or no" )
 		{	write-verbose "The command is asking for a confirmation Yes or No, Sending a Yes confirmation now."
-			invoke-sshstreamShellCommand -shellstream $Stream -Command 'yes'
+			$Stream.writeline('yes')
 		}
 	return
 } 
