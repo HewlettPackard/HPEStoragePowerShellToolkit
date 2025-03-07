@@ -43,7 +43,7 @@ Function Invoke-A9CLICommand
 	$global:SANConnection is created wiith the cmdlet New-CLIConnection or New-PoshSshConnection
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory = $true)]	[string]	$Cmds  
+Param(	[Parameter(Mandatory)]	[string]	$Cmds  
 	)
 	if ( -not (Test-A9Connection -ClientType 'SshClient' -returnBoolean) ) 
 		{	Write-Warning  "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-*Connection and pass it as parameter" 
