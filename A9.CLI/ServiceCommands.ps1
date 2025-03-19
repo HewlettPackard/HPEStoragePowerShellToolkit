@@ -302,9 +302,13 @@ Process
 	Elseif($Restart){	$Cmd += " restart " }
 	$Cmd += " $Node_ID"
 	$Stream = (($SanConnection.SessionObj).Session).CreateShellStream("xterm",80,24,800,600,1024)
+	$Stream.Read()
 	$ReturnData = invoke-sshstreamShellCommand -ShellStream $Stream -Command $Cmd
 	start-sleep 3 
-	$ReturnData | out-string
+	if ( $Verbose )
+		{	write-host "Command sent to the system is $Cmd. The response is below"
+			$ReturnData | convertto-json | out-string
+		}
 	if ( $ReturnData -match "Permission denied") 		
 		{	write-warning "The Command returned the following error : Permission has been Denied`nYour Account permissions are not capable of executing this command."
 			return
