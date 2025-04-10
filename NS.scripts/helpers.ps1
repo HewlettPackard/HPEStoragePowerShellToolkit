@@ -463,8 +463,7 @@ function Invoke-NimbleStorageAPIAction()
 }
 
 
-function ValidateServerCertificate() 
-{
+function ValidateServerCertificate() {
 param(  [Parameter(Mandatory,Position=0)]   [string]$Group 
 )
     $Code = @'
@@ -505,42 +504,38 @@ param(  [Parameter(Mandatory,Position=0)]   [string]$Group
 '@
 
 if ($PSEdition -ne 'Core')
-    {   $webrequest=[net.webrequest]::Create("https://$Group")
-        try { $response=$webrequest.getresponse() } catch {}
-        $cert=$webrequest.servicepoint.certificate
-        if($cert -ne $null)
-            {   $Thumbprint = $webrequest.ServicePoint.Certificate.GetCertHashString()
-                $bytes=$cert.export([security.cryptography.x509certificates.x509contenttype]::cert)
-                $tfile=[system.io.path]::getTempFileName()
-                set-content -value $bytes -encoding byte -path $tfile
-                $certdetails = $cert | select * | ft -AutoSize | Out-String
-                if ($($GlobalImportServerCertificate))  
-                {   try{    $output =import-certificate -filepath $tfile -certStoreLocation 'Cert:\localmachine\Root'
-                            $certdetails = $output | select -Property Thumbprint,subject | ft -AutoSize | Out-String
-                        }
-                    catch{  Write-Error "Failed to import the server certificate `n`n $_.Exception.Message"  -ErrorAction Stop
-                        }
-                    Write-Host "Successfully imported the server certificate `n $certdetails"
-                }
-                else
-                {   if((Get-ChildItem -Path Cert:\LocalMachine\root | Where-Object {$_.Thumbprint -eq $Thumbprint}))
-                            { 
-                            }                
-                        else
-                            {   write-Error "The security certificate presented by host $Group was not issued by a trusted certificate authority. Please verify the certificate details shown below and use ImportServerCertificate command line parameter to proceed. `n $certdetails `n`n" -ErrorAction Stop 
-                            }
-                }
-                ResolveIPtoHost $cert.subject $Group
+{   $webrequest=[net.webrequest]::Create("https://$Group")
+    try { $response=$webrequest.getresponse() } catch {}
+    $cert=$webrequest.servicepoint.certificate
+    if($cert -ne $null)
+        {   $Thumbprint = $webrequest.ServicePoint.Certificate.GetCertHashString()
+            $bytes=$cert.export([security.cryptography.x509certificates.x509contenttype]::cert)
+            $tfile=[system.io.path]::getTempFileName()
+            set-content -value $bytes -encoding byte -path $tfile
+            $certdetails = $cert | select * | ft -AutoSize | Out-String
+            if ($($GlobalImportServerCertificate))  
+            {   try{    $output =import-certificate -filepath $tfile -certStoreLocation 'Cert:\localmachine\Root'
+                        $certdetails = $output | select -Property Thumbprint,subject | ft -AutoSize | Out-String
+                    }
+                catch{  Write-Error "Failed to import the server certificate `n`n $_.Exception.Message"  -ErrorAction Stop
+                    }
+                Write-Host "Successfully imported the server certificate `n $certdetails"
             }
-        else{   Write-Error "Failed to import the server certificate `n`n"  -ErrorAction Stop
-            }  
-    }
+            else
+            {   if((Get-ChildItem -Path Cert:\LocalMachine\root | Where-Object {$_.Thumbprint -eq $Thumbprint}))
+                        { 
+                        }                
+                    else
+                        {   write-Error "The security certificate presented by host $Group was not issued by a trusted certificate authority. Please verify the certificate details shown below and use ImportServerCertificate command line parameter to proceed. `n $certdetails `n`n" -ErrorAction Stop 
+                        }
+            }
+            ResolveIPtoHost $cert.subject $Group
+        }
+    else{   Write-Error "Failed to import the server certificate `n`n"  -ErrorAction Stop
+        }  
+}
 else 
-    {   try     {    Add-Type $Code -errorAction SilentlyContinue
-                }
-        catch   {   Write-Verbose "The Add-Type command was not successful."
-                }
-    }
+{   Add-Type $Code
     $Certs = [CertificateCapture.Utility]::CapturedCertificates
     $Handler = [System.Net.Http.HttpClientHandler]::new()
     $Handler.ServerCertificateCustomValidationCallback = [CertificateCapture.Utility]::ValidationCallback
@@ -570,57 +565,77 @@ else
                 {   write-Error "The security certificate presented by host $Group was not issued by a trusted certificate authority. Please verify the certificate details shown below and use ImportServerCertificate command line parameter to proceed. `n $certdetails `n`n" -ErrorAction Stop 
                 }
             }
-            try {   ResolveIPtoHost $cert.subject $Group -errorAction stop
-                }
-            catch
-                {   Write-Host $_
-                }
+            ResolveIPtoHost $cert.subject $Group
         }
-    else
+        else
         {   Write-Error "Failed to import the server certificate `n`n"  -ErrorAction Stop
         }
 }
-
-
-function ResolveIPtoHost
-{   <#  we will check if the host name given as input matches the host name in the certificate.
-        if IP is given as input and the certificate has hostname (FQDN) then we will use the hostname name but 
-        before that we will ensurelookup from hostname to IP works.
-    #>
-param(  [Parameter(Mandatory)]  [string]    $CertSubject, 
-        [Parameter(Mandatory)]  [string]    $Group
-    )
-process
-{   $cert_hostname = ($CertSubject.Substring(($CertSubject.IndexOf("=")+1),($CertSubject.IndexOf(",")-3))).trim()
-    # check if the input and cert hostname matches, if yes we are good to go
-    # Else the input must have ben the IP address, we will if cert hostname can be resolved to match the input hostname (IP).
-    if ($Group -ne $cert_hostname)
-        {   # we will look up the DNS to resolve the cert_hostname. 
-            # we could do this with either cert hostname or ibput hostname(IP), but cert hostname has better chance of getting resolved.
-            try{    $resolved_name = [System.Net.DNS]::GetHostEntry($cert_hostname).AddressList 
-                    $resolved_name = $resolved_name | select -ExpandProperty IPAddressToString
-                    # $Group = $resolved_name
-                    # will come here if the host got resolved.
-                    Write-Verbose " $cert_hostname is host-name for provided input $Group IP address"
-                    if ($resolved_name -ne $Group)             
-                        {   # most probably this will not happen, just to be defensive adding this code.
-                            # this is the same host as the certificate hostname got resolved to the input hostname(IP)
-                            # we  will start using the cert hostname for all the calls from this point in this session.
-                            Write-Error "Unable to resolve the certificate hostname to match the provided input hostname/IP. `n`n $_.Exception.Message"  -ErrorAction Stop
-                        }
-                    else
-                        {   Write-Verbose " Resolved name and input name matches: $Group IP address"
-                            $global:Group = $cert_hostname
-                        }
-                }
-            catch 
-                {   Write-Error "Unable to resolve the certificate hostname. Host not reachable. `n`n $_.Exception.Message"  -ErrorAction Stop
-                }
-        }
-    else
-        {   Write-Verbose "Host-name given as input matches with certificate name"
-        }
 }
+
+function ResolveIPtoHost{
+param(
+    [Parameter(Mandatory)]
+        [string]$CertSubject, 
+        
+    [Parameter(Mandatory)]
+        [string]$Group
+        )
+
+            # we will check if the host name given as input matches the host name in the certificate.
+            # if IP is given as input and the certificate has hostname (FQDN) then we will use the hostname name but 
+            # before that we will ensurelookup from hostname to IP works.
+            
+            $cert_hostname = ($CertSubject.Substring(($CertSubject.IndexOf("=")+1),($CertSubject.IndexOf(",")-3))).trim()
+            
+            # check if the input and cert hostname matches, if yes we are good to go
+            # Else the input must have ben the IP address, we will if cert hostname can be resolved to match the input hostname (IP).
+            if ($Group -ne $cert_hostname)
+            {
+                # we will look up the DNS to resolve the cert_hostname. 
+                # we could do this with either cert hostname or ibput hostname(IP), but cert hostname has better chance of getting resolved.
+                
+                try
+                {
+                    $resolved_name = [System.Net.DNS]::GetHostEntry($cert_hostname).AddressList 
+                    $resolved_name = $resolved_name | select -ExpandProperty IPAddressToString
+                   # $Group = $resolved_name
+                    # will come here if the host got resolved.
+                    
+                     Write-Verbose " $cert_hostname is host-name for provided input $Group IP address"
+                    
+                    if ($resolved_name -ne $Group)             
+                    {
+                        # most probably this will not happen, just to be defensive adding this code.
+                        # this is the same host as the certificate hostname got resolved to the input hostname(IP)
+                        # we  will start using the cert hostname for all the calls from this point in this session.
+                        
+                        Write-Error "Unable to resolve the certificate hostname to match the provided input hostname/IP. `n`n $_.Exception.Message"  -ErrorAction Stop
+                    }
+                    else
+                    {
+                        # we are good to go.
+                        Write-Verbose " Resolved name and input name matches: $Group IP address"
+                        $global:Group = $cert_hostname
+                    }
+
+                }
+                catch 
+                {
+                    # unable to resolve the cert hostname. Host not reachable. Error out!.
+                    Write-Error "Unable to resolve the certificate hostname. Host not reachable. `n`n $_.Exception.Message"  -ErrorAction Stop
+                }
+
+            }
+            else
+            {
+                # we are good to go. 
+                
+                Write-Verbose "Host-name given as input matches with certificate name"
+            }
+             
+
+
 }
 
 Function APIExceptionHandler

@@ -549,7 +549,7 @@ function Set-NSVolume {
   If set to true, all the contents of this volume are kept in flash cache. This provides for consistent 
   performance guarantees for all types of workloads. The amount of flash needed to pin the volume is equal
   to the limit for the volume.
-.PARAMETER -app_uuid
+.PARAMETER app_uuid
   Application identifier of volume.
 .PARAMETER folder_id
   ID of the folder holding this volume.
@@ -581,7 +581,7 @@ function Set-NSVolume {
 #>
 [CmdletBinding()]
 param(
-    [Parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True, Mandatory = $True)]
+    [Parameter(ValueFromPipeline=$True, ValueFromPipelineByPropertyName=$True, Mandatory)]
     [ValidatePattern('([0-9a-f]{42})')]   [string]  $id,
                                           [string]  $name,
                                           [long]    $size,

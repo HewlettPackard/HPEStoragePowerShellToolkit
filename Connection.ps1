@@ -516,7 +516,11 @@ Process
 	elseif ( $ArrayType -eq 'Nimble' -or $ArrayType -eq'Alletra6000')	
 			{	$ModPath = $ModPath + '\HPEAlletra6000andNimbleStorage.psd1'
 				Import-Module $ModPath -force -scope Global
-				Connect-NSGroup -group $ArrayNameOrIPAddress -credential $Credential 
+				if ($PSVersion.VersionTable.Major -gt 5)
+					{	Connect-NSGroup -group $ArrayNameOrIPAddress -credential $Credential -ignoreServerCertificate
+					}
+				else{	Connect-NSGroup -group $ArrayNameOrIPAddress -credential $Credential
+					} 
 				Write-host "To View the list of commands available to you please use 'Get-Command -module HPEAlletra6000AndNimbleStorage'." -ForegroundColor Green
 				write-verbose 'Removing non-used modules'
 				if ( [boolean](get-module -name HPEAlletra9000andPrimeraand3Par_API ) )	{ remove-module -name HPEAlletra9000andPrimeraand3Par_API }
