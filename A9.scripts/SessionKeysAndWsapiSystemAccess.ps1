@@ -47,9 +47,12 @@ Process
 		}
 	If (($type -eq 'POST') -or ($type -eq 'PUT')) 
 		{	Try		{	Write-verbose "Invoke-A9API: Request: Invoke-WebRequest for Data, Request Type : $type" 
-						$json = $body | ConvertTo-Json  -Compress -Depth 10	
-						if ($PSEdition -eq 'Core') 	{	$data = Invoke-WebRequest -Uri "$url" -Body $json -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck } 
-						else 						{	$data = Invoke-WebRequest -Uri "$url" -Body $json -Headers $headers -Method $type -UseBasicParsing }
+						$bodyjson = $body | ConvertTo-Json  -Compress -Depth 10
+						$NewHeader = $headers
+						$NewHeader['content-length'] = $bodyjson.length
+						if ($PSEdition -eq 'Core' -or ( (($PSVersionTable).PSVersion).Major -ge 7) ) 	
+													{	$data = Invoke-WebRequest -Uri "$url" -Body $bodyjson -Headers $NewHeader -Method $type -UseBasicParsing -SkipCertificateCheck } 
+						else 						{	$data = Invoke-WebRequest -Uri "$url" -Body $bodyjson -Headers $NewHeader -Method $type -UseBasicParsing }
 						return $data
 					}
 			Catch 	{	Write-error "Invoke-A9API: Stop: Exception Occurs" 

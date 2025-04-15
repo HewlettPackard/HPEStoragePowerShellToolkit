@@ -77,31 +77,31 @@ Function New-a9Vv
 	Enables (true) or disables (false) creating thin provisioned volumes with compression. Defaults to false (create volume without compression).
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory = $true,ValueFromPipeline=$True,ValueFromPipelinebyPropertyName=$True)]
-										[String]	$VVName,
-		[Parameter(Mandatory = $true)]	[String]	$CpgName,
-		[Parameter(Mandatory = $true)]	[int]		$SizeMiB,
-		[Parameter()]					[int]		$Id,
-		[Parameter()]					[String]	$Comment,
-		[Parameter()]					[Boolean]	$StaleSS ,
-		[Parameter()]					[Boolean]	$OneHost,
-		[Parameter()]					[Boolean]	$ZeroDetect,
-		[Parameter()]					[Boolean]	$System ,
-		[Parameter()]					[Boolean]	$Caching ,
-		[Parameter()]					[Boolean]	$Fsvc ,
+Param(	[Parameter(Mandatory)]
+								[String]	$VVName,
+		[Parameter(Mandatory)]	[String]	$CpgName,
+		[Parameter(Mandatory)]	[int]		$SizeMiB,
+		[Parameter()]			[int]		$Id,
+		[Parameter()]			[String]	$Comment,
+		[Parameter()]			[Boolean]	$StaleSS ,
+		[Parameter()]			[Boolean]	$OneHost,
+		[Parameter()]			[Boolean]	$ZeroDetect,
+		[Parameter()]			[Boolean]	$System ,
+		[Parameter()]			[Boolean]	$Caching ,
+		[Parameter()]			[Boolean]	$Fsvc ,
 		[Parameter()]	[ValidateSet('3PAR_HOST_DIF','STD+HOST_DIF','NO_HOST_DIF')]
-										[string]	$HostDIF ,
-		[Parameter()]					[String]	$SnapCPG,
-		[Parameter()]					[int]		$SsSpcAllocWarningPct ,
-		[Parameter()]					[int]		$SsSpcAllocLimitPct ,
-		[Parameter()]					[Boolean]	$TPVV = $false,
-		[Parameter()]					[Boolean]	$TDVV = $false,
-		[Parameter()]					[Boolean]	$Reduce = $false,
-		[Parameter()]					[int]		$UsrSpcAllocWarningPct,
-		[Parameter()]					[int]		$UsrSpcAllocLimitPct,
-		[Parameter()]					[int]		$ExpirationHours,
-		[Parameter()]					[int]		$RetentionHours,
-		[Parameter()]					[Boolean]	$Compression = $false
+								[string]	$HostDIF ,
+		[Parameter()]			[String]	$SnapCPG,
+		[Parameter()]			[int]		$SsSpcAllocWarningPct ,
+		[Parameter()]			[int]		$SsSpcAllocLimitPct ,
+		[Parameter()]			[Boolean]	$TPVV,
+		[Parameter()]			[Boolean]	$TDVV,
+		[Parameter()]			[Boolean]	$Reduce,
+		[Parameter()]			[int]		$UsrSpcAllocWarningPct,
+		[Parameter()]			[int]		$UsrSpcAllocLimitPct,
+		[Parameter()]			[int]		$ExpirationHours,
+		[Parameter()]			[int]		$RetentionHours,
+		[Parameter()]			[Boolean]	$Compression
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -109,16 +109,16 @@ Begin
 Process 
 {	$body = @{}	
 	$body["name"] = "$($VVName)"
-	If ($CpgName) 	{	$body["cpg"] = "$($CpgName)" }
+	$body["cpg"] = "$($CpgName)"
     If ($SizeMiB) 	{	$body["sizeMiB"] = $SizeMiB  }
     If ($Id) 		{	$body["id"] = $Id }
 	$VvPolicies = @{}
-	If ($StaleSS) 	{	$VvPolicies["staleSS"] = $true	}	
-	If ($OneHost) 	{	$VvPolicies["oneHost"] = $true    } 
-	If ($ZeroDetect){	$VvPolicies["zeroDetect"] = $true    }	
-	If ($System) 	{	$VvPolicies["system"] = $true    }
-	If ($Caching) 	{	$VvPolicies["caching"] = $true    }	
-	If ($Fsvc) 		{	$VvPolicies["fsvc"] = $true    }	
+	If ($StaleSS) 	{	$VvPolicies["staleSS"] = $true		}	
+	If ($OneHost) 	{	$VvPolicies["oneHost"] = $true    	} 
+	If ($ZeroDetect){	$VvPolicies["zeroDetect"] = $true   }	
+	If ($System) 	{	$VvPolicies["system"] = $true    	}
+	If ($Caching) 	{	$VvPolicies["caching"] = $true    	}	
+	If ($Fsvc) 		{	$VvPolicies["fsvc"] = $true    		}	
 	If ($HostDIF) 	
 		{	if($HostDIF -eq "3PAR_HOST_DIF")	{	$VvPolicies["hostDIF"] = 1	}
 			elseif($HostDIF -eq "STD_HOST_DIF")	{	$VvPolicies["hostDIF"] = 2	}
@@ -138,6 +138,8 @@ Process
 	If ($Compression) 			{ 	$body["compression"] = $true }
 	if($VvPolicies.Count -gt 0){$body["policies"] = $VvPolicies }
 	$Result = $null
+	# write-verbose "The call will be made to /volumes and contain the body;"
+	#$body | convertto-json
     $Result = Invoke-A9API -uri '/volumes' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
