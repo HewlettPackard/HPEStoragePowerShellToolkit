@@ -188,6 +188,10 @@ To run cmdlets using sessions, follow the below steps:
 
    PS:> Get-A9Version 
 
+Known Issues
+------------------------------------------------------------------------------------------------
+Currently there is a fault in the command 'Reset-A9Node' for Alletra9000 and Alletra MP B10000 platforms. This bug will be fixed in a future bug release (4.0.1)
+
 Major Design Changes
 -------------------------------------------------------------------------------------------------
 - Added support for the HPE Alletra Storage MP B10000 Platform
