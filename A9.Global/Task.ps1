@@ -1,249 +1,255 @@
-﻿####################################################################################
-## 	© 2020,2021 Hewlett Packard Enterprise Development LP
+####################################################################################
+## 	© 2024 Hewlett Packard Enterprise Development LP
 ##
-Function Join-A9Federation
+# Contains the Following API/CLI joined commands
+# Get-A9Task
+# Stop-A9Task
+#
+
+Function Get-A9Task
 {
 <#
-.SYNOPSIS  
-	The Join-Federation command makes the StoreServ system a member of the Federation identified by the specified name and UUID.
+.SYNOPSIS
+    Displays information about tasks.
 .DESCRIPTION
-	The Join-Federation command makes the StoreServ system a member of the Federation identified by the specified name and UUID.
-.PARAMETER Force
-	If the StoreServ system is already a member of a Federation, the option forcefully removes the system from the current Federation and makes it a
-	member of the new Federation identified by the specified name and UUID.
-.PARAMETER Comment
-	Specifies any additional textual information.
-.PARAMETER Setkv
-	Sets or resets key/value pairs on the federation. <key> is a string of alphanumeric characters. <value> is a string of characters other than "=", "," or ".".
-.PARAMETER Setkvifnotset
-	Sets key/value pairs on the federation if not already set. A key/value pair is not reset on a federation if it already
-	exists.  If a key already exists, it is not treated as an error and the value is left as it is.
-.PARAMETER UUID
-	Specifies the UUID of the Federation to be joined.
-.PARAMETER FedName
-	Specifies the name of the Federation to be joined.
+    Displays information about tasks.
 .EXAMPLE
-	PS:> Join-A9Federation -FedName test -UUID 12345
+    PS:> Get-A9Task
+	
+    Display all tasks. This will attempt to use the API if connected, and fail back to SSH if needed.
+.EXAMPLE	
+	PS:> Get-A9Task -taskID 4
+	
+    Show detailed task status for specified task 4. This will attempt to use the API if connected, and fail back to SSH if needed.
+.EXAMPLE	
+	PS:> Get-A9Task -taskID 4 -UseSSH
+	
+    Show detailed task status for specified task 4. This force the use SSH only.
 .EXAMPLE
-	PS:> Join-A9Federation -Comment hello -UUID 12345
+    PS:> Get-A9Task -All
+	
+    Display all tasks. Unless the -all option is specified, system tasks are not displayed.
+.EXAMPLE		
+	PS:> Get-A9Task -Done
+	
+    Display includes only tasks that are successfully completed
 .EXAMPLE
-	PS:> Join-A9Federation -Comment hello -UUID 12345 -FedName test
-.EXAMPLE
-	PS:> Join-A9Federation -Setkv 10 -UUID 12345 -FedName test
-.EXAMPLE
-	PS:> Join-A9Federation -Setkvifnotset 20  -UUID 12345 -FedName test
+	PS:> Get-A9Task -Failed
+
+	Display includes only tasks that are unsuccessfully completed.
+.EXAMPLE	
+	PS:> Get-A9Task -Active
+	
+    Display includes only tasks that are currently in progress.
+.EXAMPLE	
+	PS:> Get-A9Task -Hours 10
+	
+    Show only tasks started within the past <hours>
+.EXAMPLE	
+	PS:> Get-A9Task -Task_type xyz
+	
+    Specifies that specified patterns are treated as glob-style patterns and that all tasks whose types match the specified pattern are displayed
+.EXAMPLE	
+	PS:> Get-A9Task -detailed -taskID 4
+	
+    Show detailed task status for specified task 4.
+.PARAMETER All	
+	Displays all tasks. This parameter is only available if using an SSH type connection
+.PARAMETER Detailed
+	Only value when speicfying a TaskID and gives detailed information about the task. This parameter is only available if using an SSH type connection
+.PARAMETER Done	
+	Displays only tasks that are successfully completed. This parameter is only available if using an SSH type connection
+.PARAMETER Failed	
+	Displays only tasks that are unsuccessfully completed. This parameter is only available if using an SSH type connection
+.PARAMETER Active	
+	Displays only tasks that are currently in progress. This parameter is only available if using an SSH type connection
+.PARAMETER Hours 
+    Show only tasks started within the past <hours>, where <hours> is an integer from 1 through 99999. This parameter is only available if using an SSH type connection
+.PARAMETER Task_type 
+    Specifies that specified patterns are treated as glob-style patterns and that all tasks whose types match the specified pattern are displayed. To see the different task types use the showtask column help.
+    This parameter is only available if using an SSH type connection
+.PARAMETER TaskID 
+    Show detailed task status for specified tasks. Tasks must be explicitly specified using their task IDs <task_ID>. Multiple task IDs can be specified. This option cannot be used in conjunction with other options.
 .NOTES
-	This command requires a SSH type connection.
+	This command requires a either a API or SSH type connection.
+    Authority:Any role in the system
+    Usage:
+    - By default, showtask shows all non-system tasks that were active within the last 24 hours.
+    - The system stores information for the most recent 2,000 tasks. Task ID numbers roll at 29999.
 #>
-[CmdletBinding()]
-param(	[Parameter()]	[Switch]	$Force ,
-		[Parameter()]	[String]	$UUID ,
-		[Parameter()]	[String]	$FedName ,
-		[Parameter()]	[String]	$Comment ,
-		[Parameter()]	[String]	$Setkv ,
-		[Parameter()]	[String]	$Setkvifnotset 
-)		
+[CmdletBinding(DefaultParameterSetName='API')]
+param(	[Parameter(Parametersetname='API')]	
+        [Parameter(Parametersetname='SSHOne')]  [String]	$TaskID, 
+        [Parameter(parametersetname='SSHAll')]	[String]	$Task_type,
+        [Parameter(parametersetname='SSHAll')]	[Switch]	$All,	
+        [Parameter(parametersetname='SSHAll')]	[Switch]	$Done,
+        [Parameter(parametersetname='SSHAll')]	[Switch]	$Failed,
+        [Parameter(parametersetname='SSHAll')]	[Switch]	$Active,
+        [Parameter(parametersetname='SSHAll')]	[int] 	    $Hours,
+        [Parameter(Parametersetname='SSHOne')]	[String]	$Detailed,
+        [Parameter(Parametersetname='SSHOne')]
+        [Parameter(parametersetname='SSHAll')]	[Switch]	$UseSSH
+        
+        
+	)		
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+    {   if ( $PSCmdlet.ParameterSetName -eq 'API' )
+            {	if ( Test-A9Connection -CLientType 'API' -returnBoolean )
+                    {	$PSetName = 'API'
+                    }
+                else{	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
+                            {	$PSetName = 'SSH'
+                            }
+                    }
+            }
+        elseif ( ($PSCmdlet.ParameterSetName -eq 'SSHAll') -or ($PSCmdlet.ParameterSetName -eq 'SSHOne') )	
+            {	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
+                    {	$PSetName = 'SSH'
+                    }
+                else{	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
+                        return
+                    }
+            }
+    }
 Process
-{	if($FedName )
-		{	if($UUID )
-				{	$Cmd = "joinfed "
-					if($Force)	{	$Cmd+= " -force "	}
-					if($Comment){	$Cmd+= " -comment $Comment"	}
-					if($Setkv)	{	$Cmd+= " -setkv $Setkv"		}
-					if($Setkvifnotset)	{	$Cmd+= " -setkvifnotset $Setkvifnotset"	}			
-					$Cmd += " $UUID $FedName "
-					$Result = Invoke-A9CLICommand -cmds  $Cmd
-					return  "$Result"	
-				}
-			else{	return "FAILURE : UUID Not specified."	}
-		}
-	else	{	return "FAILURE : Federation Name Not specified"	}
-}
+    {	switch( $PSetName )
+        {   
+            'API'   {   $uri='/tasks'
+                        if($TaskID)		{	$uri = $uri+'/'+$TaskID		}
+                        $Result = Invoke-A9API -uri $uri -type 'GET' 
+                        if($Result.StatusCode -eq 200)
+                            {	$dataPS = $Result.content | ConvertFrom-Json
+                                return $dataPS
+                            }
+                        else
+                            {	Write-Error "Failure:  While Executing Get-Task_WSAPI." 
+                                return $Result.StatusDescription
+                            }
+                    }
+            'SSH'   {   $taskcmd = "showtask "	
+                        if($Task_type){		$taskcmd +=" -type $Task_type "	}	
+                        if($All)		  {		$taskcmd +=" -all "	}
+                        if($Done)		  {		$taskcmd +=" -done "	}
+                        if($Failed)		{		$taskcmd +=" -failed "	}
+                        if($Active)		{		$taskcmd +=" -active "	}
+                        if($Hours)		{		$taskcmd +=" -t $Hours "	}	
+                        if($Detailed)	{		$taskcmd +=" -d "	}
+                        if($TaskID)		{		$taskcmd +=" $TaskID "	}
+                        $result = Invoke-A9CLICommand -cmds  $taskcmd
+                        if($TaskID)	{	return $result	}	
+                        if($Result -match "Id" )
+                        { $tempFile = [IO.Path]::GetTempFileName()
+                            $LastItem = $Result.Count  
+                            $incre = "true"
+                            foreach ($s in  $Result[0..$LastItem] )
+                            { $s= [regex]::Replace($s,"^ ","")			
+                                $s= [regex]::Replace($s," +",",")	
+                                $s= [regex]::Replace($s,"-","")			
+                                $s= $s.Trim() -replace 'StartTime,FinishTime','Date(ST),Time(ST),Zome(ST),Date(FT),Time(FT),Zome(FT)' 
+                                if($incre -eq "true") { $s=$s.Substring(1)	}
+                                Add-Content -Path $tempFile -Value $s
+                                $incre="false"		
+                            }
+                            $returnresult = Import-Csv $tempFile 
+                            remove-item $tempFile
+                            return $returnresult
+                        }	
+                        if($Result -match "Id")	{	return}
+                        else                    {	return  $Result	}	
+                    }
+        }
+    }
 }
 
-Function New-A9Federation
-{
+Function Stop-A9Task 
+{	
 <#
 .SYNOPSIS
-	The New-Federation command generates a UUID for the named Federation and makes the StoreServ system a member of that Federation.
+    Cancel one or more tasks
 .DESCRIPTION
-	The New-Federation command generates a UUID for the named Federation and makes the StoreServ system a member of that Federation.
-.PARAMETER comment
-	Specifies any additional textual information.
-.PARAMETER Setkv 
-	Sets or resets key/value pairs on the federation. <key> is a string of alphanumeric characters. <value> is a string of characters other than "=", "," or ".".
-.PARAMETER Setkvifnotset
-	Sets key/value pairs on the federation if not already set. A key/value pair is not reset on a federation if it already exists.
-.PARAMETER Fedname
-	Specifies the name of the Federation to be created. The name must be between 1 and 31 characters in length
-	and must contain only letters, digits, or punctuation characters '_', '-', or '.'
+    The Stop Task command cancels one or more tasks.
+.PARAMETER ALL
+    Cancels all active tasks. If not specified, a task ID(s) must be specified. The All option requires an SSH type connection.
+.PARAMETER TaskID
+    Cancels only tasks identified by their task IDs. TaskID must be an unsigned integer within 1-29999 range. If this is unset, then ALL must be set.
 .EXAMPLE
-	PS:> New-A9Federation -Fedname XYZ
-.EXAMPLE
-	PS:> New-A9Federation –CommentString XYZ -Fedname XYZ
-.EXAMPLE
-	PS:> New-A9Federation -Setkv TETS -Fedname XYZ
-.EXAMPLE
-	PS:> New-A9Federation -Setkvifnotset TETS -Fedname XYZ
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory)]	[String]	$Fedname ,
-		[Parameter()]	[String]	$Comment ,
-		[Parameter()]	[String]	$Setkv ,
-		[Parameter()]	[String]	$Setkvifnotset
-)		
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$cmd = "createfed"
-	if($Comment)	{	$cmd+= " -comment $Comment" }
-	if($Setkv)		{	$cmd+= " -setkv $Setkv"		}
-	if($Setkvifnotset){	$cmd+= " -setkvifnotset $Setkvifnotset"	}
-	$cmd += " $Fedname"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	return  "$Result"				
-}
-}
+    Cancel a task using the task ID
 
-Function Set-A9Federation
-{
-<#
-.SYNOPSIS
-	The command modifies name, comment, or key/value attributes of the Federation of which the StoreServ system is member.
-.DESCRIPTION 
-	The command modifies name, comment, or key/value attributes of the Federation of which the StoreServ system is member.
-.PARAMETER Comment
-	Specifies any additional textual information.
-.PARAMETER Setkv
-	Sets or resets key/value pairs on the federation. <key> is a string of alphanumeric characters. <value> is a string of characters other than "=", "," or ".".
-.PARAMETER Setkvifnotset
-	Sets key/value pairs on the federation if not already set. A key/value pair is not reset on a federation if it already
-	exists.  If a key already exists, it is not treated as an error and the value is left as it is.
-.PARAMETER ClrallKeys
-	Clears all key/value pairs on the federation.
-.PARAMETER ClrKey
-	Clears key/value pairs, regardless of the value. If a specified key does not exist, this is not treated as an error.
-.PARAMETER ClrKV
-	Clears key/value pairs only if the value matches the given key. Mismatches or keys that do not exist are not treated as errors.
-.PARAMETER IfKV
-	Checks whether given key/value pairs exist. If not, any subsequent key/value options on the command line will be ignored for the federation.
-.PARAMETER FedName
-	Specifies the new name of the Federation.
+    PS:> Stop-A9Task 1        
 .EXAMPLE
-	PS:> Set-A9Federation -FedName test
-.EXAMPLE
-	PS:> Set-A9Federation -Comment hello
-.EXAMPLE
-	PS:> Set-A9Federation -ClrAllKeys
-.EXAMPLE
-	PS:> Set-A9Federation -Setkv 1
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$FedName ,
-		[Parameter()]	[String]	$Comment ,
-		[Parameter()]	[String]	$Setkv ,	
-		[Parameter()]	[String]	$Setkvifnotset ,
-		[Parameter()]	[switch]	$ClrAllKeys ,
-		[Parameter()]	[String]	$ClrKey ,
-		[Parameter()]	[String]	$ClrKV ,
-		[Parameter()]	[String]	$IfKV 
-)		
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$cmd = "setfed"	
-	if($FedName)	{	$cmd += " -name $FedName "		}
-	if($Comment)	{	$cmd += " -comment $Comment "	}
-	if($Setkv)		{	$cmd += " -setkv $Setkv "		}
-	if($Setkvifnotset){	$cmd += " -setkvifnotset $Setkvifnotset "}
-	if($ClrAllKeys)	{	$cmd += "  -clrallkeys "		}
-	if($ClrKey)		{	$cmd += " -clrkey $ClrKey "		}
-	if($ClrKV)		{	$cmd += " -clrkv $ClrKV "		}
-	if($IfKV)		{	$cmd += " -ifkv $IfKV "			}
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	if([string]::IsNullOrEmpty($Result))	{	return "Success : Set-Federation command executed successfully."}
-	else									{	return $Result	}	
-}
-}
+    Cancel all ongoing tasks using the all option
 
-Function Remove-A9Federation
-{
-<#
-.SYNOPSIS
-	The command removes the StoreServ system from Federation membership.
-.DESCRIPTION 
-	The command removes the StoreServ system from Federation membership.
-.EXAMPLE	
-	PS:> Remove-A9Federation	
+    PS:> Stop-A9Task -all        
 .NOTES
-	This command requires a SSH type connection.
+    The Stop-Task command can return before a cancellation is completed. Thus, resources reserved for a task might not be immediately available. This can
+    prevent actions like restarting the canceled task. Use the waittask command to ensure orderly completion of the cancellation before taking other
+    actions. See waittask for more details.
+    A Service user is only allowed to cancel tasks started by that specific user.
+	This command will use the API if available, otherwise will default back to a SSH type connection.
+    Authority:Super, Service, Edit
+    Any role granted the task_cancel right
+    Usage:
+    - The canceltask command can return before a cancellation is completed. Thus, resources reserved for a task might not be immediately available. 
+    This can prevent actions like restarting the canceled task. Use the waittask command to ensure orderly completion of the cancellation before taking other actions. 
+    See waittask for more details.
 #>
-[CmdletBinding()]
-param()		
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
+[CmdletBinding(DefaultParameterSetName='API')]
+Param(	[Parameter(ParameterSetName='API',Mandatory)]
+        [Parameter(ParameterSetName='SSHONE',Mandatory)]    [String]	$TaskID,
+        [Parameter(ParameterSetName='SSHALL',Mandatory)]    [String]    $All,	
+        [Parameter(ParameterSetName='SSHONE',Mandatory)]    [Switch]    $UseSSH	
+	)
+Begin 
+    {	if ( $PSCmdlet.ParameterSetName -eq 'API' )
+            {	if ( Test-A9Connection -CLientType 'API' -returnBoolean )
+                    {	$PSetName = 'API'
+                    }
+                else{	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
+                            {	$PSetName = 'SSH'
+                            }
+                    }
+            }
+        elseif ( ($PSCmdlet.ParameterSetName -eq 'SSHAll') -or ($PSCmdlet.ParameterSetName -eq 'SSHONE') )	
+            {	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
+                    {	$PSetName = 'SSH'
+                    }
+                else{	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
+                        return
+                    }
+            }
+    }
+Process 
+    {	switch( $PSetName )
+        {   'SSH'   {   $cmd = "canceltask -f "	
+                        if ($TaskID){   $cmd += "$TaskID"		}
+                        if ($All)   {   $cmd += " -all"		  }    	
+                        $Result = Invoke-A9CLICommand -cmds  $cmd
+                        return 	$Result	
+                    }
+            'API'   {   $body = @{}	
+                        $body["action"] = 4
+                        $Result = $null	
+                        $uri = "/tasks/" + $TaskID
+                        $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
+                        if($Result.StatusCode -eq 200)
+                            {	write-host "Cmdlet executed successfully" -foreground green
+                                return $Result		
+                            }
+                        else
+                            {	Write-Error "Failure:  While Cancelling the ongoing task : $TaskID " 
+                                return $Result.StatusDescription
+                            }
+                    }
+        }
+    }
 }
-Process
-{	$cmd = " removefed -f"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	return  "$Result"				
-}
-}
-
-Function Show-A9Federation
-{
-<#
-.SYNOPSIS 
-	The Show Federation command displays the name, UUID, and comment of the Federation of which the StoreServ system is member.
-.DESCRIPTION 
-	The Show Federation command displays the name, UUID, and comment
-	of the Federation of which the StoreServ system is member.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE	
-	PS:> Show-A9Federation
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$ShowRaw
-
-)		
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$cmd = " showfed"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	if (-not $ShowRaw)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			foreach ($s in  $Result[0..($Result.count-1)] )
-				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
-					Add-Content -Path $tempFile -Value $s
-				}
-			$Result = Import-Csv $tempFile 
-			Remove-Item  $tempFile
-		}
-	if($Result -match "Name")	{	write-host " Success : Executing Show-Federation "	-ForegroundColor green }
-	return $Result		
-}
-} 
 
 # SIG # Begin signature block
 # MIIt4gYJKoZIhvcNAQcCoIIt0zCCLc8CAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEAg6vE+fhtx
-# E/2XRq5r2J74bTQ32LRmdpUoFcZAPkMI/ux9xiEYk6vObhDlONPLNUSUgG2THilh
-# rC0U6AW007wnoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEDu5aNjj0wO
+# qmwEfTpU+v5eN7+oakAItpPDj8K+wTuV4zeFIzt0sHQSsJP5j7xjEEZ0TpHRMJaH
+# u2IzOkiFits+oIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -341,21 +347,21 @@ Process
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQPOjPhj0G6s5p3OwLplIb+qe3T+JTeJiYaRxo53ykfnf7FBm+NjJjrAp
-# naermtR1LbONbv5cYRSFqk76/kJHFS0wDQYJKoZIhvcNAQEBBQAEggGAclGgEZ2t
-# gFDrTOACXolDQuKX03u7CHaDZ0t5rV3MAgQIKQgwQf+o3gRqF72wQXbM2HEjzSnD
-# leeHnO8ERYNgBUjdmbwPf7Idg77eOgMTEWxigypuVgeoT0rswuIwzme/bTIXfa07
-# 3m6fYdSjMN77DymR1DiAOxxs31m21s2ykrKi9+pdOqSy95FFHqn2RvnfGcbcsDbd
-# DMI+Ced4szeu62Pdhzwi4oJUIqzmI7Y++DJ+KoOcvDMvxkKZI4fr5mGy8mSZKmwY
-# 9crW1BvhEAGZzcJg9BFcH8cLgnrIY3+WsWKQm7fddjvrFo3JTuAa0gbwAioA8CbM
-# MunphTn87F+hpRnQEaThZaFXrpB6QSI6QhwFB9/HLMYZShzK9mNI+wTcPGIl8NGI
-# Kq3QIralCvl7q7hK/kGl1/C85y9z6wcNio5gZr2xczD6qQ6rPQRy8Solm7wfVoVk
-# eYF/Z8cON0SzOI2zxPvmysVG2tlrzZ24KedUDkbR2/7WPJ1iFuftiA2poYIY6DCC
+# AQkEMUIEQMYmhxtqvyuwFaSQmYvkGpLFyZ5glRDcgTsKRQsEmNVtUCH9qF2KNAIJ
+# unArQewh/3Jisl3eu0H+cy+aHgdSRtswDQYJKoZIhvcNAQEBBQAEggGAQ6q2QrVZ
+# TAXOWDCmwmOwsqHLMJ6PcKlYLVa5pDJ6fn+OcJvVBXBn62wkp3EnFP44dg7H96XB
+# Im1r5/FTXLkW2w7TqmMOkTCPyycw/OSxfYQM9vq6qM9VS9IsPf0satBZypGkvXyo
+# etvZwy+/1w9T3eqGtHurGv5myRVvaaRZCQMz29uyh02Z5DgcQ9L1qpkMk9jQzahc
+# 4VuSNYK/TeDUHSm0QnwSWvctcUwTF+1q0OpksE3qEbrbkqntuGeQpYSYqxwCrHz1
+# MdfpNc0p7i4h4ueyBRAgCUCoQDkjQqhAa+zJojhw+muFX/j0zc85KR0IcQ9kj2H8
+# gRBjl5BktnYekWtNdcA6un/PnXYHfu18WHM2BMmZKpbCxN4vmudwPZSaogmjE204
+# Np4O9Ft6w+gWsUW5hqIT3kLEuZZNBFqyc14OGKsxTHSm6/ZR6rcGLEzsk0pwCdqy
+# pz6mUCeTO7cIbFWkarvx4nvKkJRhGKlHdEGcoZ5eUPm/8ET1Sb2Q269loYIY6DCC
 # GOQGCisGAQQBgjcDAwExghjUMIIY0AYJKoZIhvcNAQcCoIIYwTCCGL0CAQMxDzAN
 # BglghkgBZQMEAgIFADCCAQcGCyqGSIb3DQEJEAEEoIH3BIH0MIHxAgEBBgorBgEE
-# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMOKKp+4xdigThRHniXDflqS7awpTJ8hc
-# LlA2ZuMx98nsuA70dn7BPFRyTfuDwxVpUwIUCxzkT/F7GMcL+R9s91kBIMRD3F0Y
-# DzIwMjUwNTE1MDIyMzI3WqB2pHQwcjELMAkGA1UEBhMCR0IxFzAVBgNVBAgTDldl
+# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMOZIycEJxyYmNYOlod6//103Pbli+EhN
+# qkK3VXV9tHhaQ2dsiq/oLe89x4qx+oewuAIUV5rEBZUK+mn96r8i2WDkK2zOu4kY
+# DzIwMjUwNTE1MDI0MTQyWqB2pHQwcjELMAkGA1UEBhMCR0IxFzAVBgNVBAgTDldl
 # c3QgWW9ya3NoaXJlMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxMDAuBgNVBAMT
 # J1NlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgU2lnbmVyIFIzNqCCEwQwggZi
 # MIIEyqADAgECAhEApCk7bh7d16c0CIetek63JDANBgkqhkiG9w0BAQwFADBVMQsw
@@ -463,8 +469,8 @@ Process
 # BgNVBAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMg
 # VGltZSBTdGFtcGluZyBDQSBSMzYCEQCkKTtuHt3XpzQIh616TrckMA0GCWCGSAFl
 # AwQCAgUAoIIB+TAaBgkqhkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcN
-# AQkFMQ8XDTI1MDUxNTAyMjMyN1owPwYJKoZIhvcNAQkEMTIEMLZ1zb+7vHJ3oBcF
-# T94XrOXWfQ1JXmO09yD+BpOtfvn9OvYMnXy9O+JHAHMrm0XwPDCCAXoGCyqGSIb3
+# AQkFMQ8XDTI1MDUxNTAyNDE0MlowPwYJKoZIhvcNAQkEMTIEMFiqZ0yVWNlm3vHV
+# 996VjsK/t/Ehp3/a1LNN8/RGRpDR9E6VvGhPCq+iUaVFti4k5zCCAXoGCyqGSIb3
 # DQEJEAIMMYIBaTCCAWUwggFhMBYEFDjJFIEQRLTcZj6T1HRLgUGGqbWxMIGHBBTG
 # rlTkeIbxfD1VEkiMacNKevnC3TBvMFukWTBXMQswCQYDVQQGEwJHQjEYMBYGA1UE
 # ChMPU2VjdGlnbyBMaW1pdGVkMS4wLAYDVQQDEyVTZWN0aWdvIFB1YmxpYyBUaW1l
@@ -473,15 +479,15 @@ Process
 # Ck5ldyBKZXJzZXkxFDASBgNVBAcTC0plcnNleSBDaXR5MR4wHAYDVQQKExVUaGUg
 # VVNFUlRSVVNUIE5ldHdvcmsxLjAsBgNVBAMTJVVTRVJUcnVzdCBSU0EgQ2VydGlm
 # aWNhdGlvbiBBdXRob3JpdHkCEDbCsL18Gzrno7PdNsvJdWgwDQYJKoZIhvcNAQEB
-# BQAEggIAYME0vvzUkIDGa8IRuZyIl1uf8MHs6MD+LZuGfsOR5Tkladm0I4o2qFxr
-# qW3qQlij1L9ON0VR/vZ90Byva7SDqV3MmJUVTp9uV9PP1G1uEyyVAski0v//ZceS
-# YgBunN+TV4KUuT85xWHJM+qEHy15kORuRfdk4z/Ubb3TzKBe5Ro24McJukc51Ewj
-# c31rbhFfV4AdDKJDnyjY3lK5FALzsyDR+0Qy/hJy0uJ6kNTKk3irYwHrxipZBBzY
-# dhEGnHsZxy2XCZg5TWbSPh3dxJtBomT5/UwUEJ7gYCJYJsxvtWGfPuu1ZVLuPIFf
-# +b1UTGmb9PZ2o75jFGk3xrU45ZW6dxm/stiwm0Y7pPicriTHkPLIIlMtrPSkDsf1
-# a6RqFPFFNS7FjdKcv+kSZ0SyJ20G0OUnfHOx1fA9MKfUlvujVB2aISwzskPeZZ1h
-# XBlascrFte9fU8jqGhxNAe/724lbvksx1N1N08+I9NJD05Rd/UNfLjTFGL2ra3ss
-# TetY7hEDaXUGzm/F+PhhkZxmcJR+h9ESRudtdhi+CbNQjRD9+Ohhz0ttp+tCJj2p
-# zk7b4GkGAnBogXuT21qpjgN11EY4PtkhhBa/8Ivo7oc+Z5VtcFOFU3f5sRGYwNBo
-# M2/WaHW8+hOUrToXVGs2ty2ZKb25aOdnyhv0NyYppx2f3Kn2Yjw=
+# BQAEggIAohy7rzGSJYGhMF5nPWCPV8jTyShxgkZ57WkvoDHQ2GEJi6uAXxIX7Oi0
+# YK+iilA4W5RmOqxfLGA7bGobLj/mhcuBSGDspkWzFgNHdvWY0BaFDJDLWogWGWd+
+# zAEZNxjh7SAv3/5oHtgI96OsygVJIKlIbs6elONwmVZAkKJVCf/IxMxe8W4DBmOw
+# Wk3qcI8au+6Ya1e7tGsaO+CgwxN1io+ps74NiJKvxD3srkBAIHXDTNT/kJyBAt8S
+# ttcx4tupPDqWxOZH/ta7ckC4eqZRQwcA65jUbJVIv6jFbn0yuntIPNLzPvaIA7Nu
+# eKfUvGOlFR1Uiw9yleny5GIf4vUxyDCTW39WF4VDfPtHLKZ8QBicfDG/8c58OASy
+# G8RiJzoZYu+Dkj16yVKIz8Fgq8lNMvVcv1ALektm807ucq9lE5o6e2x5RKgNK3ra
+# ZjlVv1exSsKTU/Zbw82qmhfrfO7GLWcZp8chevYeF7h8AlNLBf7NpwDq9BEUVvKf
+# m5ZhFYv1xtkPmUqJorCTqBrxpepWEq9ooNuCQs8mvY2+w5XOQvF/rSeWScURoK1H
+# q1ydNQwzmNfxBZkn+XZFOpJphY937JSbG+mtS8Qd+SLWjW7+aCugre7eyyA0XXs0
+# DKjjshcnA5/EUUbS/f7HaZZ5Y6xRXt0Rr4s9o+bP78AMTxm+jFI=
 # SIG # End signature block

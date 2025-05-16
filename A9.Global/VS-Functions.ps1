@@ -1,75 +1,148 @@
 ﻿####################################################################################
-## 	© 2020,2021 Hewlett Packard Enterprise Development LP
+## 	© 2019,2020 Hewlett Packard Enterprise Development LP
 ##
+##	File Name:		VS-Functions.psm1
+##	Description: 	Common Module functions.
+##		
+##	Pre-requisites: Needs POSH SSH Module for New-PoshSshConnection
+##					WSAPI uses array based HPE WSAPI service.
+##					
+##					Starting the WSAPI server    : The WSAPI server does not start automatically.
+##					Using SSH, enter startwsapi to manually start the WSAPI server.
+## 					Configuring the WSAPI server: To configure WSAPI, enter set-A9wsapi in the SSH command set.
+##
+##	Created:		June 2015
+##	Last Modified:	March 2024
+##
+##	History:		v1.0 - Created
+##					v2.0 - Added support for HP3PAR CLI
+##                     v2.1 - Added support for POSH SSH Module
+##					v2.2 - Added support for WSAPI
+##                  v2.3 - Added Support for all CLI cmdlets
+##                     v2.3.1 - Added support for primara array with wsapi
+##                  v3.0 - Added Support for wsapi 1.7 
+##                  v3.0 - Modularization
+##                  v3.0.1 (07/30/2020) - Fixed the Show-RequestException function to show the actual error message
+##					v3.5.0 (03/17/2024) - Refactored all commands. Removed CLI access. only uses SSH or WSAPI now.
 
-Function Get-A9UserConnection
+Function Invoke-A9CLICommand 
 {
 <#
 .SYNOPSIS
-    Displays information about users who are currently connected (logged in) to the storage system.  
+	Execute a command against a device using HP3PAR CLI
 .DESCRIPTION
-	Displays information about users who are currently connected (logged in) to the storage system.
-.PARAMETER Current
-	Shows all information about the current connection only.
-.PARAMETER Detailed
-	Specifies the more detailed information about the user connection.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object.  
-.EXAMPLE
-    PS:> Get-A9UserConnection
+	Execute a command against a device using HP3PAR CLI
+.PARAMETER Connection
+	Pointer to an object that contains passwordfile, HP3parCLI installed path and IP address
+.PARAMETER Cmds
+	Command to be executed
+.EXAMPLE		
+	Invoke-A9CLICommand -Connection $global:SANConnection -Cmds "showsysmgr"
 
-	Shows information about users who are currently connected (logged in) to the storage system.
-.EXAMPLE
-    PS:> Get-A9UserConnection -Current
-
-	Shows all information about the current connection only.
-.EXAMPLE
-    PS:> Get-A9UserConnection -Detailed
-
-	Specifies the more detailed information about the user connection
-.NOTES
-	This command requires a SSH type connection.
+	The command queries a array to get the system information
+	$global:SANConnection is created wiith the cmdlet New-CLIConnection or New-PoshSshConnection
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[switch]	$Current ,		
-		[Parameter()]	[switch]	$Detailed,
-		[Parameter()]	[Switch]	$ShowRaw 
+Param(	[Parameter(Mandatory)]	[string]	$Cmds  
 	)
-Begin
-{ Test-A9Connection -CLientType 'SshClient'
-}
-process	
-{	$cmd2 = "showuserconn "
-	if ($Current)	{	$cmd2 += " -current " }
-	if ($Detailed)	{	$cmd2 += " -d "
-						$result = Invoke-A9CLICommand -cmds  $cmd2
-						return $result
-					}
-	$result = Invoke-A9CLICommand -cmds  $cmd2
-}
-End
-{	if (-not $ShowRaw)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			Add-Content -Path $tempFile -Value "Id,Name,IP_Addr,Role,Connected_since_Date,Connected_since_Time,Connected_since_TimeZone,Current,Client,ClientName"
-			foreach($s in $result[1..($result.count - 3)])
-				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
-					Add-Content -Path $tempFile -Value $s
-				}
-			$Result = Import-CSV $tempFile
-			remove-item $tempFile
+	if ( -not (Test-A9Connection -ClientType 'SshClient' -returnBoolean) ) 
+		{	Write-Warning  "Connection object is null/empty or the array address (FQDN/IP Address) or user credentials in the connection object are either null or incorrect.  Create a valid connection object using New-*Connection and pass it as parameter" 
+			Write-Warning  "Stop: Exiting Invoke-A9CLICommand since connection object values are null/empty"
+			return
 		}
-	return $Result
-
+	$Result = Invoke-SSHCommand -Command $Cmds -SessionId $SANConnection.SessionId
+	if ($Result.ExitStatus -eq 0) 	
+		{	return $Result.Output	}
+	else{	$ErrorString = "Error :-" + $Result.Error + $Result.Output			    
+			return $ErrorString
+		}	
 }
+
+function Invoke-A9API 
+{
+[CmdletBinding()]
+Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex. /volumes)")]
+		[ValidateScript( { if ($_.startswith('/')) { $true } else { throw "-URI must begin with a '/' (eg. /volumes) in its value. Correct the value and try again." } })]
+		[string]	$uri,
+		
+		[parameter(Mandatory = $true)][ValidateSet('GET','POST','DELETE')]
+		[string]	$type,
+		
+		[parameter()]
+		[array]		$body,
+		
+		[Parameter()]
+		$WsapiConnection = $global:WsapiConnection
+	)
+	Write-Verbose  "Request: Request Invoke-A9API URL : $uri TYPE : $type " 
+	$ip = $WsapiConnection.IPAddress
+	$key = $WsapiConnection.Key
+	$arrtyp = $global:ArrayType
+	if ($arrtyp.ToLower() -eq "3par") {
+		$APIurl = 'https://' + $ip + ':8080/api/v1' 	
+	}
+	Elseif(($arrtyp.ToLower() -eq "primera") -or ($arrtyp.ToLower() -eq "alletra9000")) 
+		{	$APIurl = 'https://' + $ip + ':443/api/v1'	
+		}
+	else{	return "Array type is Null."
+		}
+	$url = $APIurl + $uri
+	Write-Verbose  "Running: Constructing header." 
+	$headers = @{}
+	$headers["Accept"] = "application/json"
+	$headers["Accept-Language"] = "en"
+	$headers["Content-Type"] = "application/json"
+	$headers["X-HP3PAR-WSAPI-SessionKey"] = $key
+	$data = $null
+	If ($type -eq 'GET') 
+		{	Try 	{	if ($PSEdition -eq 'Core') 
+							{	$data = Invoke-WebRequest -Uri "$url" -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck
+							} 
+						else{	$data = Invoke-WebRequest -Uri "$url" -Headers $headers -Method $type -UseBasicParsing 
+							}
+						return $data
+					}
+			Catch 	{	$_
+						return
+					}
+		}
+	If (($type -eq 'POST') -or ($type -eq 'PUT')) 
+		{	Try {	Write-Verbose  "Request: Invoke-WebRequest for Data, Request Type : $type" 
+					$json = $body | ConvertTo-Json  -Compress -Depth 10	
+					if ($PSEdition -eq 'Core') 
+						{	$data = Invoke-WebRequest -Uri "$url" -Body $json -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck
+						}
+					else{	$data = Invoke-WebRequest -Uri "$url" -Body $json -Headers $headers -Method $type -UseBasicParsing 
+						}
+					return $data
+				}
+			Catch 	
+				{	$_
+					return
+				}
+		}
+	If ($type -eq 'DELETE') 
+		{	Try {	if ($PSEdition -eq 'Core') 
+						{	$data = Invoke-WebRequest -Uri "$url" -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck
+						} 
+					else{    $data = Invoke-WebRequest -Uri "$url" -Headers $headers -Method $type -UseBasicParsing 
+						}
+					return $data
+				}
+			Catch 
+				{	$_
+					return
+				}
+		}
 }
 
 
 # SIG # Begin signature block
 # MIIt4wYJKoZIhvcNAQcCoIIt1DCCLdACAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEAtIs91xTFy
-# asJK1LwwKdwDGgjyD21vX8AljDrnWAlmP2CirITUEcT0YvBiBUJyG+m68IlwQcW1
-# hYy0LhI5Et+DoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEB9jAQdLNkm
+# cfkbR4kbqgSMxlr4najzshdoPEgvxumzwbZZn5jHDmglDtW9nqhCH2LMsjaJtayG
+# TnK/o6PZ0YLmoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -167,21 +240,21 @@ End
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQPAFDgJLNMK8KYnWIE+epkpm37g5bUl0uJffwxHdJDOY+/0UM3qsot3L
-# RK4PwbYpfPYHbQYPm3RkNoMxn9MWG1owDQYJKoZIhvcNAQEBBQAEggGAbdy+5m7p
-# 1mOO+7UK8m7kDtzVS6kk8pPgnwCnKk7CtgwfQvy5QxpsUhFu48K6DTZlzKdmG/Yj
-# rET2NQ/d7a19Xm6MyLeaS4A8wbDXaosXsglIC0Va5ittoS269ri/hH1wlq4MyA23
-# 7WLRXfWRkdN9BwqQ0xGnepefQVzWfZEDTeuNnCm92nYrAMvtz2AaY7QnoON7WsYS
-# buml3pAPcJDxUHZ4vQuza4u/IxpH4/nmOMZAle0638imvYO8JXfsHph1IFB8YMQD
-# +b86L7gwbOd5CUqRzL1pERYqd+WXSUaTLA6h6BiFrE416f2iK0PTDdCWaS4yQRQx
-# tAgT2VuD/TwAiSvIhpxUAUbBh3tfSS1MVe2pSyOF5LTdR3pjJKREpI5FlHuPn9Ya
-# WxlE/PH+EWFR2/mCmCU34GqeJEZo5wnaXMBX7Zgv+8PyXnqYHQvEWm8LwgBlT5CX
-# kCmt3vbgu0jvccOgbyjm37hBS95SCu8oyNnVONJI3XD/HchxYKli3CE0oYIY6TCC
+# AQkEMUIEQJAhhE03zot1CxQrje9uqSf2JNVojL5vHLpQVvUaTCNFXepRSTpJdk7J
+# FOIUP+P8+49ZvzskUir82bK/OLj5AgUwDQYJKoZIhvcNAQEBBQAEggGAiyM0w6MO
+# Ma+f/9UsoLNhOFYYJ57Weeya1H2G8qZlEidVU3DjTvW2+TxdWjScRktiwo2uEi7f
+# EfSLkY/mz/89Vr5uwgDOKBsp27YLh/eF+gOPjLVezPStDSyJITZ48LVh2FnNyJda
+# KdVpM5nz35Iy99/e9IhUYWoTiw9s0LnJ0riWVAgvWd0yTE+3c2yuiTfhhXNdTrRg
+# z15tEWX3Buxalv9iwQU+ZQUehOCBwoPz7rKMQPnIv1pgngU22fXcWSz6wiQ8OGTz
+# 5QcXVUuf30eaxr7tcccMVjqBz3cQpHDKbk7qy46b+TQw/1beShdbFFqVUK05cvgJ
+# TghF+9Epz8NehFArr8VGnZV+Ec6cJdMZbad6TWZnwYtZvl7ozj22m5CFSRAKu1OT
+# J37TGq3a5q23Pt9m8Ft/TikgfsLNPuU+/Zio4aAEj+1QbWNQX08OkN3PAMmDK7Bz
+# nCAobXHL1WXK+Q0gV/qyREKwwFVKI83rWD6HmMEwUGQc/RPg3b9DlSZkoYIY6TCC
 # GOUGCisGAQQBgjcDAwExghjVMIIY0QYJKoZIhvcNAQcCoIIYwjCCGL4CAQMxDzAN
 # BglghkgBZQMEAgIFADCCAQgGCyqGSIb3DQEJEAEEoIH4BIH1MIHyAgEBBgorBgEE
-# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMF/vy28axA5YnmIZkzgS/8SaFM0YrXoK
-# PaGYcFzp1HNlj+TI5aDdTOVvIxTVa4wyQAIVAMxoPXuChxmmRLKwGymDwgbxLA1e
-# GA8yMDI1MDUxNTAyMjUwM1qgdqR0MHIxCzAJBgNVBAYTAkdCMRcwFQYDVQQIEw5X
+# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMFW2j2iNF0JdHMTFAqqL+LGHxG7n/NnI
+# 9Wil06Ihn/OszIpKRfqDiPEK4VjqASDsFAIVAMj9vRdhl22LGV+NC2G1g53nAjSG
+# GA8yMDI1MDUxNTAyNDIwMlqgdqR0MHIxCzAJBgNVBAYTAkdCMRcwFQYDVQQIEw5X
 # ZXN0IFlvcmtzaGlyZTEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTAwLgYDVQQD
 # EydTZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIFNpZ25lciBSMzagghMEMIIG
 # YjCCBMqgAwIBAgIRAKQpO24e3denNAiHrXpOtyQwDQYJKoZIhvcNAQEMBQAwVTEL
@@ -289,8 +362,8 @@ End
 # FgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLDAqBgNVBAMTI1NlY3RpZ28gUHVibGlj
 # IFRpbWUgU3RhbXBpbmcgQ0EgUjM2AhEApCk7bh7d16c0CIetek63JDANBglghkgB
 # ZQMEAgIFAKCCAfkwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3
-# DQEJBTEPFw0yNTA1MTUwMjI1MDNaMD8GCSqGSIb3DQEJBDEyBDC/OSqg7Ut7JfXH
-# aj3gCP3Ohrb6cMxc83DVAntmjXQ0x36vokHtgvSa8/EHeu0/MQUwggF6BgsqhkiG
+# DQEJBTEPFw0yNTA1MTUwMjQyMDJaMD8GCSqGSIb3DQEJBDEyBDCDQbZAY1QLCX5U
+# 0Wkngo9PZrff2HAuNSZwSkK0sxg559xSQOAW5cVeWenjfE6AduMwggF6BgsqhkiG
 # 9w0BCRACDDGCAWkwggFlMIIBYTAWBBQ4yRSBEES03GY+k9R0S4FBhqm1sTCBhwQU
 # xq5U5HiG8Xw9VRJIjGnDSnr5wt0wbzBbpFkwVzELMAkGA1UEBhMCR0IxGDAWBgNV
 # BAoTD1NlY3RpZ28gTGltaXRlZDEuMCwGA1UEAxMlU2VjdGlnbyBQdWJsaWMgVGlt
@@ -299,15 +372,15 @@ End
 # EwpOZXcgSmVyc2V5MRQwEgYDVQQHEwtKZXJzZXkgQ2l0eTEeMBwGA1UEChMVVGhl
 # IFVTRVJUUlVTVCBOZXR3b3JrMS4wLAYDVQQDEyVVU0VSVHJ1c3QgUlNBIENlcnRp
 # ZmljYXRpb24gQXV0aG9yaXR5AhA2wrC9fBs656Oz3TbLyXVoMA0GCSqGSIb3DQEB
-# AQUABIICABtHK/jTfGyZh77I8/orHQVOxAfw3aMS5mGx249b3dhf+tMXE8pNQzMM
-# 6Fx7I5YRQTlN43GKsJ05LPweEMuAHnyZGb5sBPPt/dJTf0LYyAJWvoVvlBTZD3W3
-# /U1fc+vkhajIDwb8fFjR1SU2Rl+Ptm6Mci5MkjxZWSw+6JYtaYbnb6AWXs8Hv50n
-# LMn3YrCkNVn3WUtT3H5X5HkIpgoMCo2U9xwc8lXJbzzCcsJ3KpG4s5g7RAmiNHOb
-# XtdnCbKcoRE+WPC367xemaYPxwXzg39dWHZEI2nUy2B3ERE5VWU1duHt7PWZuw0K
-# iEGdFpBeOEUat1b/pslHLnJO4IZ23LIua7fJR5OBXunZo65EVF7g8DYh7JITmsJQ
-# fiklHi6+NyKHV/CSXh46p88UvyKVsANP+uForiESlFSJBPWFkXiZhc7/XqyUCr+Z
-# pOG1OSLG3USqo1jqXHQ9s832bwqF7QnCkRpu5MX81yxt18nSINoqiSADGL7qBk/b
-# XnRJvcGFwQs99W9Mpwhtf+ahFREvOxTNy8MMURJQ0qRCRvrC4iuXyFjl4j00LzCs
-# RwFklRuyS0cToyy3Y9CsDxSbBUpvO+lZeDGU7Df5GHhtZdLxT+k15G/IhnSXDbOi
-# DX4Tui1PznrC1D5y51l0gBllT3aK1+7/DdJzwXy+shqX7xPMOw0R
+# AQUABIICACXRZbJmkc+5Zw6OtkeS3H/GZb6SE4IC74bwawePav/K8z80gtOFA+g3
+# RRgd/IyGQBxflgqkh8GF5dc8sYOXi9ESghGvhaGlWv0ITiwdIRt7QUzCVrvUkOaL
+# Pw7pLjGISklMQuEPxqRIhVB7BJY498nr5PONEeZzLHlxZIQwdiWFef7Wz8pfZxUL
+# CEq5SzDT5FeVPRJn+iwedUeuYkWD2xVvmt/V4vJNPmvSiHxVxYQXiTW2Rxk3luF+
+# lSWFr5FtFqvjcs3rrxcDJxYGdJcZB8l4barwO/XffH3kzJUk0rPgMIBpioUzhYPh
+# 0vH6HZYrf4Sg7sgu5Wvl3fpPEnZiRqvXFFduacXkZotJmwRTGHHs+kN9QS/+FF5x
+# w4yfVMV//VycRzkZgcDBaEusyEN6ppLsmKvdyNpBw16zTBqZOainCBq/+BrCLZ/v
+# IOT3fCLj6lxliF6u31OWG4u538Cejfw8bcATX7V/UY8Pn6JaIPggCpvrUr1wZHVq
+# 7YTkE3bLol3SHCHI8WRl7M8lhjmvlSNBeMLK6gGEiXiOIaGVg4NYsmM7CzLemNL0
+# 975DD40Od2oa7ZqMmbCmq3rd4qyGKJlxxhcqW6setSQsJDVinEceCcmjTqX2OmZ5
+# 2PZtQZ/4vTdm+cSATwiCTkByZP7H/51BDDC6zoKBVAkjPqLYcFqm
 # SIG # End signature block

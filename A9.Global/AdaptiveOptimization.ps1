@@ -1,148 +1,130 @@
-﻿####################################################################################
+
+####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
 
-Function Remove-A9Task
+
+Function Get-A9AdaptiveOptimizationConfig
 {
 <#
 .SYNOPSIS
-    Remove one or more tasks or task details.                                                                                                           .
+	Show Adaptive Optimization configurations.
 .DESCRIPTION
-    The Remove-Task command removes information about one or more completed tasks
-    and their details.
-.PARAMETER All
-    Remove all tasks including details.
-.PARAMETER Details
-    Remove task details only.
-.PARAMETER Time <hours>
-  Removes tasks that have not been active within the past <hours>, where <hours> is an integer from 1 through 99999.
-.PARAMETER TaskID <int>
-    Allows you to specify tasks to be removed using their task IDs.
+	This command shows Adaptive Optimization configurations in the system.
+.PARAMETER Domain
+	Shows only AO configurations that are in domains with names matching one or more of the <domain_name_or_pattern> argument. This option
+	does not allow listing objects within a domain of which the user is not a member. Patterns are glob-style (shell-style) patterns (see help on sub,globpat)
+.PARAMETER AOConfigurationName
+	Specifies that AO configurations matching either the specified AO configuration name or those AO configurations matching 
+	the specified pattern are displayed. This specifier can be repeated to display information for multiple AO configurations. 
+	If not specified, all AO configurations in the system are displayed.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
-    Remove a task based on the task ID
-
-    PS:> Remove-A9Task 2
-.EXAMPLE
-    Remove all tasks, including details
-
-    PS:> Remove-A9Task -A
+	PS:> Get-A9AdaptiveOptimizationConfig
 .NOTES
-  With this command, the specified task ID and any information associated with it are removed from the system. However, task IDs are not recycled, so the
-  next task started on the system uses the next whole integer that has not already been used. Task IDs roll over at 29999. The system stores
-  information for the most recent 2000 tasks.
-  Authority: Super, Edit
-    Any role granted the task_remove right.
-  Usage:
-  - With this command, the specified task ID and any information associated with it are removed from the system. However, task IDs are not recycled, so the next task started on the system uses the next whole integer that has not already been used. Task IDs roll over at 29999. The system stores information for the most recent 2,000 tasks.
 	This command requires a SSH type connection.
+	Usage:
+	- AO will limit the space utilization of a CPG to the lowest of: max, warn, or limit. If none of these values is set for the AOCFG tier or CPG, then AO will only be bounded by the available raw space of the CPG characteristics.
 #>
-[CmdletBinding()]
-param(  [Parameter(parametersetname='One')]   [String]   $TaskID,
-        [Parameter(parametersetname='All')]   [Switch]   $All,
-        [Parameter()]                         [Switch]   $Details,
-        [Parameter(parametersetname='Time')]  [int]      $Time	
-    )	
-Begin
-  { Test-A9Connection -CLientType 'SshClient'
-  }
-process	
-  { $cmd = "removetask -f "	
-    if ($TaskID)  {   $cmd += "$TaskID"	}
-    if ($All)     {   $cmd += " -a"     }
-    if ($Details) {   $cmd += " -d"		  }
-    if ($Time)    {   $cmd += " -t $T"  }	
-    $Result = Invoke-A9CLICommand -cmds  $cmd
-    return $Result	
-  }
+[CmdletBinding(DefaultParameterSetName='API')]
+param(	[Parameter(ParameterSetName='SSH')]             [String]	$Domain,
+		[Parameter()]	                                [String]	$ConfigName,
+        [Parameter(ParameterSetName='SSH',Mandatory)]   [switch]    $useSSL
+)
+begin
+    {	if ( $PSCmdlet.ParameterSetName -eq 'API' )
+        {	if ( Test-A9Connection -CLientType 'API' -returnBoolean )
+                {	$PSetName = 'API'
+                }
+            else{	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
+                        {	$PSetName = 'SSH'
+                        }
+                }
+        }
+        elseif ( ($PSCmdlet.ParameterSetName -eq 'ssh') )	
+        {	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
+                {	$PSetName = 'SSH'
+                }
+            else{	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
+                    return
+                }
+        }
+    }
+process
+    {   switch ($PSetName)
+            {   'API'   
+                    {   $Result = $null
+                        $dataPS = $null
+                        $uri = '/aoconfigurations'
+                        if($AOconfigName)	{	$uri = $uri+'/'+$ConfigName	}	
+                        $Result = Invoke-A9API -uri $uri -type 'GET' 
+                        return $Result
+                    }
+                'SSH'   
+                    {	$Cmd = " showaocfg "
+                        if($Domain)	{	$Cmd += " -domain $Domain "	}
+                        if($ConfigName)	{	$Cmd += " $ConfigName " }
+                        $Result = Invoke-A9CLICommand -cmds  $Cmd
+                        
+                    }
+            }            
+    }
+end
+    {   if ($ShowRaw)   { Return $Result }
+        if ( $PSSetName -eq 'SSH')
+            {   if($Result.count -gt 1)
+                    {	$tempFile = [IO.Path]::GetTempFileName()
+                        $LastItem = $Result.Count -2  
+                        $oneTimeOnly = "True"
+                        foreach ($s in  $Result[1..$LastItem] )
+                            {	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+                                $s= $s.Trim()		
+                                if($oneTimeOnly -eq "True")
+                                    {	$sTemp1=$s				
+                                        $sTemp = $sTemp1.Split(',')							
+                                        $sTemp[2] = "T0(CPG)"
+                                        $sTemp[3] = "T1(CPG)"
+                                        $sTemp[4] = "T2(CPG)"
+                                        $sTemp[5] = "T0Min(MB)"
+                                        $sTemp[6] = "T1Min(MB)"
+                                        $sTemp[7] = "T2Min(MB)"
+                                        $sTemp[8] = "T0Max(MB)"
+                                        $sTemp[9] = "T1Max(MB)"
+                                        $sTemp[10] = "T2Max(MB)"
+                                        $sTemp[11] = "T0Warn(MB)"
+                                        $sTemp[12] = "T1Warn(MB)"
+                                        $sTemp[13] = "T2Warn(MB)"
+                                        $sTemp[14] = "T0Limit(MB)"
+                                        $sTemp[15] = "T1Limit(MB)"
+                                        $sTemp[16] = "T2Limit(MB)"
+                                        $newTemp= [regex]::Replace($sTemp,"^ ","")			
+                                        $newTemp= [regex]::Replace($sTemp," ",",")				
+                                        $newTemp= $newTemp.Trim()
+                                        $s=$newTemp			
+                                    }
+                                Add-Content -Path $tempfile -Value $s
+                                $oneTimeOnly = "False"		
+                            }
+                        $Result = Import-Csv $tempFile 
+                        Remove-Item  $tempFile 
+                    }
+                else{	Return $Result	}
+            }
+        else
+            {	write-error "While Executing Get-AOConfiguration" 
+                return $Result.StatusDescription
+            }
+    }
 }
 
-Function Wait-A9Task
-{
-<#
-.SYNOPSIS
-  Wait for tasks to complete.
-.DESCRIPTION
-  The Wait Task cmdlet asks the CLI to wait for a task to complete before proceeding. The cmdlet automatically notifies you when the specified task is finished.
-.PARAMETER Detailed
-  Displays the detailed status of the task specified by <TaskID> as it executes. When the task completes, this command exits.
-.PARAMETER TaskID
-  Indicates one or more tasks to wait for using their task IDs. When no task IDs are specified, the command waits for all non-system tasks
-  to complete. To wait for system tasks, <TaskID> must be specified.
-.PARAMETER Quiet
-  Quiet; do not report the end state of the tasks, only wait for them to exit.
-.EXAMPLE
-  The following example shows how to wait for a task using the task ID. When successful, the command returns only after the task completes.
-  
-  PS:> Wait-A9Task 1  
-  Task 1 done      
-.NOTES
-	This command requires a SSH type connection.
-  Authority: Any role in the system
-#>
-[CmdletBinding()]
-param(  [Parameter(parametersetname='Loud',mandatory)]  [Switch]  $Detailed, 
-        [Parameter(parametersetname='Loud',mandatory)] 
-        [Parameter(parametersetname='Quiet',mandatory)] [String]  $TaskID,
-        [Parameter(parametersetname='Quiet',mandatory)] [Switch]  $Quiet
-    )	
-Begin
-  { Test-A9Connection -ClientType 'SshClient'
-  }
-process	
-  { $cmd = "waittask "	
-    if ($Detailed)  {  $cmd += " -v "	    }
-    if ($TaskID)    {  $cmd += "$TaskID"  }
-    if ($Quiet)     {  $cmd += " -q"		  }    	
-    $Result = Invoke-A9CLICommand -cmds  $cmd
-    return $Result
-  }
-} 
-
-Function Set-A9Task
-{
-<#
-.SYNOPSIS
-  The settask command sets the priority on specified task.
-.DESCRIPTION
-  The settask command sets the priority on specified task.
-.PARAMETER Priority <high|med|low|auto>
-  Specifies the priority of the task.
-.PARAMETER TaskID
-  Indicates one or more tasks to modify using their task IDs. 
-.EXAMPLE
-  The following example shows how to wait for a task using the task ID. When successful, the command returns only after the task completes.
-  
-  PS:> Set-A9Task -TaskID 1234 -Priority high 
-.NOTES
-	This command requires a SSH type connection.
-  Authority: Super, Edit
-    Any role granted the task_set right.
-  Usage:
-  - Task priorities can only be set one at a time. If the specified task is not active or valid, attempting to set its priority will result in an error.
-#>
-[CmdletBinding()]
-param(  [Parameter(mandatory)]                    [String]  $TaskID,
-        [Parameter(mandatory)]   
-        [ValidateSet('high','med','low','auto')]  [String]  $Priority
-    )	
-Begin
-  { Test-A9Connection -ClientType 'SshClient'
-  }
-process	
-  { $cmd = "settask -f  "	
-    $cmd += " -pri $Priority "
-    $cmd += "$TaskID"  
-    $Result = Invoke-A9CLICommand -cmds $cmd
-    return $Result
-  }
-} 
 
 # SIG # Begin signature block
 # MIIsVQYJKoZIhvcNAQcCoIIsRjCCLEICAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEC4jaw3argX
-# KJLtobS7UIhkwvhczPmuAEtuPqC4yIqXDELAc1rWcbonFp/co6hE0LHKmulLiQ6v
-# 3krqex4gmpQsoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEB/K6qHxi/3
+# oeSDU3I0vabmef6fZj7vnLVndQ9XuQ/ph1H/dSR/yuIWSfs/qJj9KgByVIlj5dTH
+# 41xHT3nOxtXFoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -240,21 +222,21 @@ process
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQLGqUkU/2m1Cfoek2RGwh0o51xaIqm9SEJZA0ZcofxYVUNs1QBiX6Ri/
-# 8LpkkXp+9eiMfqk/KcfASHq+EetpV88wDQYJKoZIhvcNAQEBBQAEggGAI3hhJIso
-# YluUtBM7II40AHQz2OIZLHj1KYuAooF+WT4x1712eX4qPrygrDkXVCwfau6o91ku
-# +9ZQzZbEZk14hsJXOR3L+la8M65wzVmSPtmrA0mZbrXW0hMiYhcvTHTGMx5UiT0M
-# QiAxyUku+XH60Fvjd5uE+F6PtZOg1Wfx+/n8qMdj+OnQgH0sFe8J0qzzQj98UqJZ
-# /giYkKPStxKkQ/JO7COWSBYBPvTv6PRHNjQ/VoJi0Se5slzL56YatEK2ZXZdzgNN
-# S/cI5hxiyaqnl3oDxY3Qr1PAvqKE4iHETZx55LOMcX3hInUVz4HngzurxfKtGoo7
-# qsPAzDnoJI14U/rT0J1ENAfcjtPakyQyWL+jo6WXgKjHarDDNdguOsqh4kIc4gZz
-# 0ewDoJUKCCQ9waLPxxvsEG+j+Ke6rDyDzMycvtQnQEvJWw5FpVDdz08fw1vBowNm
-# SLQRdYPc/3l1fl0dTeL+Q8bdEjxdsYAdaoAGcHnBHoXVS78sbfEgkXkPoYIXWzCC
+# AQkEMUIEQGU6BzsfLvXPDNKXRS2ck8G4ta2r+oMonVbjg5Tcfz2mnr8wuJwvE6Tm
+# vpKkCpaYJoyrtaH8Xevid+spLWIhjUAwDQYJKoZIhvcNAQEBBQAEggGAQzct48IX
+# m+mlFsQP/q5EEhMbh/dE5MTVU5pbsgfMouIbJnz138x79pgZzUJ6CotmdtqZK77r
+# ZsxZcLK6ompWCGGvmy3okft0oJcuFym34nkqEBbH7G11yuo7cl9Bn3PScIr9FKZL
+# IRsAaFR59b96U2VmV6+U6EDQaicxONPOqlN8zIoZ4PG2C9lTp2t5ZEis6wzDby4N
+# 0y3o61ZrhG0ctQCVjC2rCLoqO9ukmH/twBNxCIzF5bTq+yQDSqtbJdXPZtgF8a8Z
+# RwLSJz5qLmZnBNeMrkB+jxPrVT4TOG/vfJOoiOTZqgd+GsfjyATlBuYu+3N1ncmr
+# gtkb2vopqlRKrPCK9VKRn9Wj4ewwmCRiKbNC9zoH60kf5IlKD2ipNNDYVR2mwT1/
+# 3RDkmD8VnUmVrssDIo81k5/j1ZVHm4ulHn/gGIeGEvKbC8TMNoHXRvJyGyet/XKA
+# fdW1VkvEa4+dIaDbkSqBhXl62uaJkXXsZgGwSypX8OoqL68rUETz3H7QoYIXWzCC
 # F1cGCisGAQQBgjcDAwExghdHMIIXQwYJKoZIhvcNAQcCoIIXNDCCFzACAQMxDzAN
 # BglghkgBZQMEAgIFADCBiAYLKoZIhvcNAQkQAQSgeQR3MHUCAQEGCWCGSAGG/WwH
-# ATBBMA0GCWCGSAFlAwQCAgUABDDoQ282KilskebCdh4S2pnhbTVtCv0Vov8tsU8H
-# AXb6Mj6foLBp0qcNaSuf0gs3acoCEQDV9OWgM66BDvcNXou1La68GA8yMDI1MDUx
-# NTAyMjQ0MVqgghMDMIIGvDCCBKSgAwIBAgIQC65mvFq6f5WHxvnpBOMzBDANBgkq
+# ATBBMA0GCWCGSAFlAwQCAgUABDCmUhW58s/tCKMqw7gtQJfUfHeltBJ+DFb2CArm
+# WRRL8AE78GQhpjLZINxh8eTrro0CEQDf4GeOHQkANWluFNtZoyllGA8yMDI1MDUx
+# NTAyMzkyOVqgghMDMIIGvDCCBKSgAwIBAgIQC65mvFq6f5WHxvnpBOMzBDANBgkq
 # hkiG9w0BAQsFADBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIElu
 # Yy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYg
 # VGltZVN0YW1waW5nIENBMB4XDTI0MDkyNjAwMDAwMFoXDTM1MTEyNTIzNTk1OVow
@@ -359,20 +341,20 @@ process
 # MAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJE
 # aWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBD
 # QQIQC65mvFq6f5WHxvnpBOMzBDANBglghkgBZQMEAgIFAKCB4TAaBgkqhkiG9w0B
-# CQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcNAQkFMQ8XDTI1MDUxNTAyMjQ0MVow
+# CQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcNAQkFMQ8XDTI1MDUxNTAyMzkyOVow
 # KwYLKoZIhvcNAQkQAgwxHDAaMBgwFgQU29OF7mLb0j575PZxSFCHJNWGW0UwNwYL
 # KoZIhvcNAQkQAi8xKDAmMCQwIgQgdnafqPJjLx9DCzojMK7WVnX+13PbBdZluQWT
-# mEOPmtswPwYJKoZIhvcNAQkEMTIEMHm95QHvy5uaQgtwb/bApx1Rz5m0iygEYaEj
-# pSw6thUqaYrNgx4SDeyqSdPzuGXatDANBgkqhkiG9w0BAQEFAASCAgAZjSdNhSZP
-# fQJZmtwK7J+Kuy2ChBkcPfc+IricRXBj9ED0gimwVkE70HzlITo7fN3V0UxKioH3
-# CH217eKqBViBs+43wumKwOpKANJyFOfiv/6uxN6+8XMZxIV8xSM2exQfAtiVOePE
-# 1PdMR0a8Jzyt05MppGCzF3c0rEVHGZGyFOXfEEDa89kh1MMivk3cDXLgEFF+3l6S
-# Rlt7AWVwMLqOrBYHD5djkeqlr8Y4dl4xMjsHEYo0cYbZ5kEv2xI2jwtjjc4ipxVu
-# bz71PBXiinFRvm6zQ9cbC9JX+kiYCICc3l8bTNXIZAJoLRD7SanGmbSpA8fjyw0h
-# kaTSbeBZ/a8rVg46w3N7kDQ67Slz1wOoX/fnltGVBzASCkWCpg6iij7iw3oXaayN
-# fgea5N6ihSsrmLkwRT0G6E/htPOC2I+I6oBzkCCTBeO/9xfVZ5USmlWd50NNVDW1
-# Fyvu5vzE5cV7VgLLaetbUG/L2E5JJ/tJoHyazoXJWD4y2H6K9wIqDd8LB8twhAQr
-# 5ASMXMIJx12LobxaqTLl1EZLyCUC+GqLwB66wKFORWDzlBWFVrA17c/6Zd5d+HoI
-# ZKt1A+Y3abL313eQmR2z9Y/zYH6VX9+SddTVE6lVAiB6j2sL/gzOoeCNWedD0JVx
-# bWlALCSzwqQqxLMebsFaZBx5+WGGmI0Pfw==
+# mEOPmtswPwYJKoZIhvcNAQkEMTIEMBzW/gm1jCF6KS12pTcY87K5hpHrRoaPbv8J
+# RTnGnRh+yBjunggoe1uodBt8sV5arDANBgkqhkiG9w0BAQEFAASCAgABXzXAeNyy
+# V+NNhKq+wXzu0mrl+ilFbuNLM9JWhDW3LWxLsmXc1PtekLJB57UkxZZj23+tnQTk
+# j65SkYC7zte7tbO5iH2zCsGMwfKY5OtA375AeHJoIcJIr0AGylZmL6UxQX86aY5I
+# 5+N+YcwoJqi8avpP4u8GiLEiITvXizYThVUJ+FKWvaVWcW4L24dVd1PTo2tCVDjA
+# pvHFlw3wsrGug4bDUC63NDiBy2eE3APiYuUfoT3P/b2hdNU+OnxSfxJy9CeLLF91
+# 0wUwe7LQPvz6vyTcwfJ9YwhPNnCqLF2kGfvuka/e7H+vy15NWp+lYrczq9kwlkB2
+# HzOMLH8CusD2VfGVjnM4jhTXWHZIqPhBEZ3qSJZk7eabyJ+zFt7oWNQRXKbo84y0
+# cbRJ8tcVZONpge8waSiOEJyXMHMS0W9fkoAdpF1JFcou7nZ89OuS3clb2eE/kkZG
+# 63Vv/N1lj747pBxmJ6MlM2a5owIoAZIY+0CVZrNlsMhkyKk8ujQlJrX858ReirS/
+# cv+qP47/0iV+FlSyt7Dzn6ukC2Oy4bv7/6D3IWFYX7sfEgL9kXqaS/j2kJ5CuVzh
+# 4SuzAVrKr1QvbzhHq93LAlPXkI1ANXJoSAs/oL4Q1SdOjPbxeXRIt0WqqvM+WtxA
+# 0KW+8zMWco0PXRqhvQyIlXwlMUYoVJlagw==
 # SIG # End signature block
