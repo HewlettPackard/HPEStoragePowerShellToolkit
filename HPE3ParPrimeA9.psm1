@@ -1,13 +1,13 @@
 
 . $PSScriptRoot\A9.GLOBAL\VS-Functions.ps1
 . $PSScriptRoot\A9.GLOBAL\Logger.ps1
+. $PSScriptRoot\A9.GLOBAL\CpgManagement.ps1 
 if  ( -not ($HPEStorageModuleConnected)  -or $HPEStorageA9CLIEnable  )
     {   # Detected that I am being loaded via the HPEStorageModlue, so only load if I was able to successfully connect via CLI
         Write-Host "HPE Alletra MP-B10000, 9000, Primara, And 3Par Module will load all CLI based commands"
         . $PSScriptRoot\A9.CLI\AdaptiveOptimization.ps1
         . $PSScriptRoot\A9.CLI\ConfigWebServicesAPI.ps1
-        . $PSScriptRoot\A9.CLI\CPGManagement.ps1
-        . $PSScriptRoot\A9.CLI\DiskEnclosureManagement.ps1
+        . $PSScriptRoot\A9.CLI\Disk.ps1
         . $PSScriptRoot\A9.CLI\DomainManagement.ps1
         . $PSScriptRoot\A9.CLI\FilePersonaManagement.ps1
         . $PSScriptRoot\A9.CLI\Flashcache.ps1
@@ -34,10 +34,8 @@ if  ( -not ($HPEStorageModuleConnected)  -or $HPEStorageA9CLIEnable  )
 else{   Write-warning "The HPE Alletra MP-B10000, 9000, Primera, And 3Par Module is loaded and read, but CLI Based commands are unavailable."
     }
 if  ( -not ($HPEStorageModuleConnected) -or $HPEStorageA9APIEnable )
-    {   . $PSScriptRoot\A9.scripts\AoConfigurationInformation.ps1 
-        . $PSScriptRoot\A9.scripts\AvailableSpace.ps1 
+    {   . $PSScriptRoot\A9.scripts\AvailableSpace.ps1 
         . $PSScriptRoot\A9.scripts\CopyOperations.ps1 
-        . $PSScriptRoot\A9.scripts\CpgManagement.ps1 
         . $PSScriptRoot\A9.scripts\FilePersona.ps1
         . $PSScriptRoot\A9.scripts\FlashCacheOperations.ps1 
         . $PSScriptRoot\A9.scripts\HostManagement.ps1
