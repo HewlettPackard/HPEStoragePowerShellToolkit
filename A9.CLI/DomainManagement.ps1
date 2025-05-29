@@ -1,6 +1,7 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
+
 Function Get-A9Domain
 {
 <#
@@ -8,39 +9,43 @@ Function Get-A9Domain
 	Show information about domains in the system.
 .DESCRIPTION
 	Displays a list of domains in a system.
-.PARAMETER D
+.PARAMETER Detailed
 	Specifies that detailed information is displayed.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$D
+param(	[Parameter()]	[switch]	$Detailed,
+		[Parameter()]	[ switch]	$ShowRaw
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$Cmd = " showdomain "
-	if($D)	{	$Cmd += " -d " }
+	if($Detailed)	{	$Cmd += " -d " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
+}
+End
+{	if ($ShowRaw) {return $Result }
 	if($Result.count -gt 1) 
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -2  
+			$s = ( ( ($s.split(' ')).trim()).trim('-') | where-object { $_ -ne '' } ) -join ','
+			$s = $s -replace 'CreationTime','Date,Time,Zone'
+			Add-Content -Path $tempfile -Value $s				
 			foreach ($s in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s," +",",")	
-					$s= [regex]::Replace($s,"-","")
-					$s= $s.Trim() 
-					$temp1 = $s -replace 'CreationTime','Date,Time,Zone'
-					$s = $temp1		
+				{	$s = ( ( ($s.split(' ')).trim()).trim('-') | where-object { $_ -ne '' } ) -join ','
 					Add-Content -Path $tempfile -Value $s				
 				}
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			Remove-Item  $tempFile 	
 		}
-	else{	return  $Result }
-	if($Result.count -gt 1)	{	return  " Success : Executing Get-Domain" }
-	else	{	return  $Result } 
+	if($Result.count -gt 1)	{	Write-Host " Success : Executing Get-Domain" -ForegroundColor green }
+	return  $Result
 }
 }
 
@@ -51,33 +56,34 @@ Function Get-A9DomainSet
 	show domain set information
 .DESCRIPTION
 	Lists the domain sets defined on the system and their members.
-.EXAMPLE
-	PS:> Get-A9DomainSet -D
-.PARAMETER D
+.PARAMETER Detailed
 	Show a more detailed listing of each set.
 .PARAMETER DomainShow 
 	domain sets that contain the supplied domains or patterns
 .PARAMETER SetOrDomainName
 	specify either Domain Set name or domain name (member of Domain set)
+.EXAMPLE
+	PS:> Get-A9DomainSet -Detailed
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$D,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Domain, 
-		[Parameter(ValueFromPipeline=$true)]	[String]	$SetOrDomainName
+param(	[Parameter()]	[switch]	$Detailed,
+		[Parameter()]	[switch]	$Domain, 
+		[Parameter()]	[String]	$SetOrDomainName
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient' 
 }
 Process
 {	$Cmd = " showdomainset "
-	if($D)		{	$Cmd += " -d " }
-	if($Domain)	{	$Cmd += " -domain " } 
+	if($Detailed)			{	$Cmd += " -d " }
+	if($Domain)				{	$Cmd += " -domain " } 
 	if($SetOrDomainName)	{	$Cmd += " $SetOrDomainName " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1)	{	return  $Result }
-	else	{	return  $Result }
+	if($Result.count -gt 1)	{	Write-Host " Success : Executing Get-Domain" -ForegroundColor green }
+	return $Result 
 }
 }
 
@@ -97,20 +103,17 @@ Function Move-A9Domain
 	Specifies that the object is a virtual volume.
 .PARAMETER Cpg
 	Specifies that the object is a common provisioning group (CPG).
-.PARAMETER Host
+.PARAMETER Hosts
 	Specifies that the object is a host.
-.PARAMETER F
-	Specifies that the command is forced. If this option is not used, the command requires confirmation before proceeding with its operation.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$vv,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Cpg,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Host,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$F,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$ObjName,
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]		[String]	$DomainName
+param(	[Parameter()]				[switch]	$vv,
+		[Parameter()]				[switch]	$Cpg,
+		[Parameter()]				[switch]	$Hosts,
+		[Parameter(Mandatory)]		[String]	$ObjName,
+		[Parameter(Mandatory)]		[String]	$DomainName
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient' 
@@ -119,26 +122,25 @@ Process
 {	$Cmd = " movetodomain "
 	if($Vv) 	{	$Cmd += " -vv " }
 	if($Cpg)	{	$Cmd += " -cpg " }
-	if($Host)	{	$Cmd += " -host " }
-	if($F)		{	$Cmd += " -f " }
+	if($Hosts)	{	$Cmd += " -host " }
+	$Cmd += " -f "
 	if($ObjName){	$Cmd += " $ObjName " }
 	if($DomainName){$Cmd += " $DomainName " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result -match "Id")
+}	
+End
+{	if($Result -match "Id")
 		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count -1  
-			foreach ($s in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s," +",",")	
-					$s= [regex]::Replace($s,"-","")
-					$s= $s.Trim()
+			foreach ($s in  $Result[0..($Result.Count -1)])
+				{	$s= ( ( ($s.split(' ')).trim()).trim('-') | where-object { $_ -ne '' } ) -join ','
 					Add-Content -Path $tempfile -Value $s				
 				}
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			Remove-Item  $tempFile 	
 		}
-	if($Result -match "Id")	{	return  " Success : Executing Move-Domain"}
-	else					{	return "FAILURE : While Executing Move-Domain `n $Result"	}
+	if($Result -match "Id")	{	Write-Host " Success : Executing Move-Domain" -ForegroundColor green }
+	return  $Result
 }
 }
 
@@ -149,10 +151,6 @@ Function New-A9Domain
 	Create a domain.
 .DESCRIPTION
 	The New-Domain command creates system domains.
-.EXAMPLE
-	Domain_name xxx
-.EXAMPLE
-	PS:> New-A9Domain -Domain_name xxx -Comment "Hello"
 .PARAMETER Domain_name
 	Specifies the name of the domain you are creating. The domain name can be no more than 31 characters. The name "all" is reserved.
 .PARAMETER Comment
@@ -162,13 +160,17 @@ Function New-A9Domain
 	Specify the maximum value that can be set for the retention time of a volume in this domain. <time> is a positive integer value and in the range of 0 - 43,800 hours (1825 days).
 	Time can be specified in days or hours providing either the 'd' or 'D' for day and 'h' or 'H' for hours following the entered time value.
 	To disable setting the volume retention time in the domain, enter 0 for <time>.
+.EXAMPLE
+	PS:> New-A9Domain -Domain_name xxx
+.EXAMPLE
+	PS:> New-A9Domain -Domain_name xxx -Comment "Hello"
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Comment,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Vvretentiontimemax,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Domain_name
+param(	[Parameter()]	[String]	$Comment,
+		[Parameter()]	[String]	$Vvretentiontimemax,
+		[Parameter(mandatory)]	[String]	$Domain_name
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient' 
@@ -177,12 +179,12 @@ Process
 {	$Cmd = " createdomain "
 	if($Comment)			{	$Cmd += " -comment " + '" ' + $Comment +' "'	 }
 	if($Vvretentiontimemax) {	$Cmd += " -vvretentiontimemax $Vvretentiontimemax " } 
-	if($Domain_name) 		{	$Cmd += " $Domain_name " }
-	else {	return "Domain Required.." }
+	$Cmd += " $Domain_name "
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
-	if ([string]::IsNullOrEmpty($Result))	{   Return $Result = "Domain : $Domain_name Created Successfully."	}
-	else									{	Return $Result	}
+	if ([string]::IsNullOrEmpty($Result))	{  Write-Host "Domain : $Domain_name Created Successfully."	-ForegroundColor green }
+	Return $Result
 }
 }
 
@@ -194,21 +196,21 @@ Function New-A9DomainSet
 .DESCRIPTION
 	The command defines a new set of domains and provides the option of assigning one or more existing domains to that set. 
 	The command also allows the addition of domains to an existing set by use of the -add option.
-.EXAMPLE
-	New-A9DomainSet -SetName xyz 
 .PARAMETER SetName
 	Specifies the name of the domain set to create or add to, using up to 27 characters in length.
 .PARAMETER Add
 	Specifies that the domains listed should be added to an existing set. At least one domain must be specified.
 .PARAMETER Comment
 	Specifies any comment or additional information for the set. The comment can be up to 255 characters long. Unprintable characters are not allowed.
+.EXAMPLE
+	New-A9DomainSet -SetName xyz 
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$SetName,
-		[Parameter(Mandatory=$false , ValueFromPipeline=$true)]	[switch]	$Add,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Comment
+param(	[Parameter(Mandatory)]	[String]	$SetName,
+		[Parameter()]			[switch]	$Add,
+		[Parameter()]			[String]	$Comment
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient' 
@@ -218,6 +220,7 @@ Process
 	if($Add) 		{	$Cmd += " -add " }
 	if($Comment)	{	$Cmd += " -comment " + '" ' + $Comment +' "' }
 	if($SetName)	{	$Cmd += " $SetName " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -230,26 +233,27 @@ Function Remove-A9Domain
 	Remove a domain
 .DESCRIPTION
 	The command removes an existing domain from the system.
-.EXAMPLE
-	Remove-A9Domain -DomainName xyz
 .PARAMETER DomainName
 	Specifies the domain that is removed. If the -pat option is specified the DomainName will be treated as a glob-style pattern, and multiple domains will be considered.
-.PARAMETER Pat
+.PARAMETER Pattern
 	Specifies that names will be treated as glob-style patterns and that all domains matching the specified pattern are removed.
+.EXAMPLE
+	Remove-A9Domain -DomainName xyz
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]					[switch]	$Pat,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$DomainName
+param(	[Parameter()]				[switch]	$Pattern,
+		[Parameter(Mandatory)]		[String]	$DomainName
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " removedomain -f "
-	if($Pat)		{	$Cmd += " -pat " }
+	if($Pattern)	{	$Cmd += " -pat " }
 	if($DomainName)	{	$Cmd += " $DomainName " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -262,35 +266,33 @@ Function Remove-A9DomainSet
 	Remove a domain set or remove domains from an existing set
 .DESCRIPTION
 	The command removes a domain set or removes domains from an existing set.
-.EXAMPLE
-	PS:> Remove-A9DomainSet -SetName xyz
 .PARAMETER SetName
 	Specifies the name of the domain set. If the -pat option is specified the setname will be treated as a glob-style pattern, and multiple domain sets will be considered.
 .PARAMETER Domain
 	Optional list of domain names that are members of the set. If no <Domain>s are specified, the domain set is removed, otherwise the specified <Domain>s are removed from the domain set. 
 	If the -pat option is specified the domain will be treated as a glob-style pattern, and multiple domains will be considered.
-.PARAMETER F
-	Specifies that the command is forced. If this option is not used, the command requires confirmation before proceeding with its operation.
-.PARAMETER Pat
+.PARAMETER Pattern
 	Specifies that both the set name and domains will be treated as glob-style patterns.
+.EXAMPLE
+	PS:> Remove-A9DomainSet -SetName xyz
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]					[switch]	$F,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$Pat,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$SetName,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Domain
+param(	[Parameter()]			[switch]	$Pattern,
+		[Parameter(Mandatory)]	[String]	$SetName,
+		[Parameter()]			[String]	$Domain
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " removedomainset "
-	if($F) 		{	$Cmd += " -f "	}
-	if($Pat)	{	$Cmd += " -pat " }
+	$Cmd += " -f "
+	if($Pattern){	$Cmd += " -pat " }
 	if($SetName){	$Cmd += " $SetName " }
 	if($Domain)	{	$Cmd += " $Domain " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
@@ -305,10 +307,10 @@ Function Set-A9Domain
 	The command changes the current domain CLI environment parameter.
 .EXAMPLE
 	PS:> Set-A9Domain
-.EXAMPLE
-	PS:> Set-A9Domain -Domain "XXX"
 .PARAMETER Domain
 	Name of the domain to be set as the working domain for the current CLI session. If the <domain> parameter is not present or is equal to -unset then the working domain is set to no current domain.
+.EXAMPLE
+	PS:> Set-A9Domain -Domain "XXX"
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -321,17 +323,15 @@ Begin
 Process
 {	$Cmd = " changedomain "
 	if($Domain)	{	$Cmd += " $Domain " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if([String]::IsNullOrEmpty($Domain))
 		{	$Result = "Working domain is unset to current domain."
-			Return $Result
 		}
-	else{	if([String]::IsNullOrEmpty($Result))
-				{	$Result = "Domain : $Domain to be set as the working domain for the current CLI session."
-					Return $Result
-				}
-			else{	Return $Result}	
+	elseif([String]::IsNullOrEmpty($Result))
+		{	$Result = "Domain : $Domain to be set as the working domain for the current CLI session."
 		}
+	return $Result
 }
 }
 
@@ -342,8 +342,6 @@ Function Update-A9Domain
 	Set parameters for a domain.
 .DESCRIPTION
 	The command sets the parameters and modifies the properties of a domain.
-.EXAMPLE
-	Update-A9Domain -DomainName xyz
 .PARAMETER DomainName
 	Indicates the name of the domain.(Existing Domain Name)
 .PARAMETER NewName
@@ -356,24 +354,26 @@ Function Update-A9Domain
 	range of 0 - 43,800 hours (1825 days). Time can be specified in days or hours providing either the 'd' or 'D' for day and 'h' or 'H' for hours
 	following the entered time value. To remove the maximum volume retention time for the domain, enter '-vvretentiontimemax ""'. As a result, the maximum 
 	volume retention time for the system is used instead. To disable setting the volume retention time in the domain, enter 0 for <time>.
+.EXAMPLE
+	Update-A9Domain -DomainName xyz
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[String]	$NewName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Comment,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Vvretentiontimemax,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$DomainName
+param(	[Parameter()]			[String]	$NewName,
+		[Parameter()]			[String]	$Comment,
+		[Parameter()]			[String]	$Vvretentiontimemax,
+		[Parameter(Mandatory)]	[String]	$DomainName
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " setdomain "
-	if($NewName)	{	$Cmd += " -name $NewName " }
-	if($Comment){	$Cmd += " -comment " + '" ' + $Comment +' "'}
+	if($NewName)			{	$Cmd += " -name $NewName " }
+	if($Comment)			{	$Cmd += " -comment " + '" ' + $Comment +' "'}
 	if($Vvretentiontimemax)	{	$Cmd += " -vvretentiontimemax $Vvretentiontimemax "	}
-	if($DomainName)	{	$Cmd += " $DomainName "}
+	if($DomainName)			{	$Cmd += " $DomainName "}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -386,21 +386,21 @@ Function Update-A9DomainSet
 	set parameters for a domain set
 .DESCRIPTION
 	The command sets the parameters and modifies the properties of a domain set.
-.EXAMPLE
-	Update-A9DomainSet -DomainSetName xyz
 .PARAMETER DomainSetName
 	Specifies the name of the domain set to modify.
 .PARAMETER Comment
 	Specifies any comment or additional information for the set. The comment can be up to 255 characters long. Unprintable characters are not allowed.
 .PARAMETER NewName
 	Specifies a new name for the domain set, using up to 27 characters in length.
+.EXAMPLE
+	Update-A9DomainSet -DomainSetName xyz
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[String]	$Comment,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$NewName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$DomainSetName
+param(	[Parameter()]			[String]	$Comment,
+		[Parameter()]			[String]	$NewName,
+		[Parameter(Mandatory)]	[String]	$DomainSetName
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -410,17 +410,18 @@ Process
 	if($Comment)	{	$Cmd += " -comment " + '" ' + $Comment +' "' }
 	if($NewName)	{  	$Cmd += " -name $NewName " }
 	if($DomainSetName){	$Cmd += " $DomainSetName " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
 } 
 
 # SIG # Begin signature block
-# MIIsWwYJKoZIhvcNAQcCoIIsTDCCLEgCAQExDzANBglghkgBZQMEAgMFADCBmwYK
+# MIIsVQYJKoZIhvcNAQcCoIIsRjCCLEICAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEDW+3egHMIO
-# kN05YKlWgqeNsU9zDVqgN/B2J4L8kCct2onJKxW5rZW58FxvL3ajHPUQcTPZ/tqR
-# nSRKv2In8T2AoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEBgOFsQP/Sd
+# HebNJe7s79isHf2pc/8/PsjCc15/Y4KXRM3TzKD/aKUl3310f4PNGg3ZbUCFhnKk
+# iTgzYgjoohiNoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -513,144 +514,144 @@ Process
 # 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
 # tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
 # NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCGhgwghoUAgEBMGkwVDELMAkGA1UEBhMCR0Ix
+# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCGhIwghoOAgEBMGkwVDELMAkGA1UEBhMCR0Ix
 # GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQP1Pc+lH0fhTDANBAo1sbTU+uBl5QBNaQvKkmMznrA+SXOYzDNrEA4WP
-# egk+K8kUfmwN7yQGYDQez6ZmCgtVD60wDQYJKoZIhvcNAQEBBQAEggGACPI3ERXe
-# u7bnvzWm78A52LLYeO6pO8FfDabZlZYYwhv20tVWvZY6N73H7+btpr66J6KL7JXq
-# AgcnDuA5rMWXqz/bmmysqN2hpMH/3qzfyQ4i8OnUoXd0eZK1EbkuWtTyElAXm0eF
-# ha3QhlfNz7SQJOWDubXiCh05wMTKO4rzrUhomq6qZJ/8g1IvZlgmlEqg4UyuQCDU
-# Yb9VINjWz6YJKupvwBwRnCcORXKEAw4A7LchX3+otHqjzgLRChrKsig0EnBCDMZQ
-# 7X1+NHOFxsFa6JJ8lH9BTeVim+nvdryufq8FNqC29k0Mc31vAUvhAHrTEtka2hnM
-# 1pi7XfjggUmnvqnanc2HfmUjjRTRayYdHopCd4GSgjRdpQRlcVehVxNdphzVWNck
-# lJTlcP0GVCi94sz+FeDDnqFUgeNbli0gM1j5/cMBRTEga3+NyURpPu9MlzpRvmyG
-# CxE7XbNXnCXcwS3FWIPCp5PkD3tsqQh7z1wneBfxOKqja6CaYyxzm/k7oYIXYTCC
-# F10GCisGAQQBgjcDAwExghdNMIIXSQYJKoZIhvcNAQcCoIIXOjCCFzYCAQMxDzAN
+# AQkEMUIEQNl7Cj+WbHRCiz10hqHxRh/9WdJZacY7j1t164BNqbw+BYbiT/r91sDJ
+# 1tfYmfBsV5vcM3Jd8IWpOeVXyolNj70wDQYJKoZIhvcNAQEBBQAEggGAoMYFc8eA
+# GMhshocMtY4JQFi4N34US20vgzJhRTcLcJ5lTvK3WT9nhJOgzuiSg7N7ZwcXtFXs
+# a4J4TjAQl1Wy6UYdDHWAS6QVvwkfi2LzeAdTCGMQPdjCyG8rbIid5WOzsx7UgclK
+# 0XQ40IttGbbaxQcCathQN3hD+H6JT+QJGtqIkgl7vFc6Gj/GFJZUY08KFwzPcPU3
+# yx88RvHdr7GXRJ1CoeJV18V+oY3FegfQKgiPrrJy/X1Zq+uiNKp0JFDnjc1jSoJ/
+# kJ3FVSREDbY2LnRshXOgkWaME2qfyeVnHsG4oufJ+MluPkHFS09JJpWZCRMZT+Ql
+# hEvdcra5kvlX9kiEHgr73cOXA1V67QDvJHKXIKpZKwrRmXDMBrioDj/SHeRtEOBG
+# oOBnXbGAkSUpqZDL/XK1fqxJuOXwSc68xdDHvhbR8c6Td3hw9om2afTaIX8gcaID
+# 6u0kYhkFAYWnzVi/FoJpGCWHhjGpPvQXyVGgv6xSKAvdPC+o0fynXlYFoYIXWzCC
+# F1cGCisGAQQBgjcDAwExghdHMIIXQwYJKoZIhvcNAQcCoIIXNDCCFzACAQMxDzAN
 # BglghkgBZQMEAgIFADCBiAYLKoZIhvcNAQkQAQSgeQR3MHUCAQEGCWCGSAGG/WwH
-# ATBBMA0GCWCGSAFlAwQCAgUABDBZI+CH9TTaJiaK+2uZTTd1ZJA9ZBULwcmnOSHH
-# 8NAqA9nnfS221t0d6l9iVUNkDaMCEQCt+kKunOD96sDJS+41FS6mGA8yMDI0MDcz
-# MTE5MjAwM1qgghMJMIIGwjCCBKqgAwIBAgIQBUSv85SdCDmmv9s/X+VhFjANBgkq
+# ATBBMA0GCWCGSAFlAwQCAgUABDCIFvxqD+SW0XB+0dNdlfjv70vf4E0l54bHJOcm
+# QGCCqXneaQHuP4gT0mcScOLsc3MCEQCGe0Hv37AnEB3fiyy74MPgGA8yMDI1MDUx
+# NTAyMTY1NVqgghMDMIIGvDCCBKSgAwIBAgIQC65mvFq6f5WHxvnpBOMzBDANBgkq
 # hkiG9w0BAQsFADBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIElu
 # Yy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYg
-# VGltZVN0YW1waW5nIENBMB4XDTIzMDcxNDAwMDAwMFoXDTM0MTAxMzIzNTk1OVow
-# SDELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMSAwHgYDVQQD
-# ExdEaWdpQ2VydCBUaW1lc3RhbXAgMjAyMzCCAiIwDQYJKoZIhvcNAQEBBQADggIP
-# ADCCAgoCggIBAKNTRYcdg45brD5UsyPgz5/X5dLnXaEOCdwvSKOXejsqnGfcYhVY
-# wamTEafNqrJq3RApih5iY2nTWJw1cb86l+uUUI8cIOrHmjsvlmbjaedp/lvD1isg
-# HMGXlLSlUIHyz8sHpjBoyoNC2vx/CSSUpIIa2mq62DvKXd4ZGIX7ReoNYWyd/nFe
-# xAaaPPDFLnkPG2ZS48jWPl/aQ9OE9dDH9kgtXkV1lnX+3RChG4PBuOZSlbVH13gp
-# OWvgeFmX40QrStWVzu8IF+qCZE3/I+PKhu60pCFkcOvV5aDaY7Mu6QXuqvYk9R28
-# mxyyt1/f8O52fTGZZUdVnUokL6wrl76f5P17cz4y7lI0+9S769SgLDSb495uZBkH
-# NwGRDxy1Uc2qTGaDiGhiu7xBG3gZbeTZD+BYQfvYsSzhUa+0rRUGFOpiCBPTaR58
-# ZE2dD9/O0V6MqqtQFcmzyrzXxDtoRKOlO0L9c33u3Qr/eTQQfqZcClhMAD6FaXXH
-# g2TWdc2PEnZWpST618RrIbroHzSYLzrqawGw9/sqhux7UjipmAmhcbJsca8+uG+W
-# 1eEQE/5hRwqM/vC2x9XH3mwk8L9CgsqgcT2ckpMEtGlwJw1Pt7U20clfCKRwo+wK
-# 8REuZODLIivK8SgTIUlRfgZm0zu++uuRONhRB8qUt+JQofM604qDy0B7AgMBAAGj
-# ggGLMIIBhzAOBgNVHQ8BAf8EBAMCB4AwDAYDVR0TAQH/BAIwADAWBgNVHSUBAf8E
-# DDAKBggrBgEFBQcDCDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEw
-# HwYDVR0jBBgwFoAUuhbZbU2FL3MpdpovdYxqII+eyG8wHQYDVR0OBBYEFKW27xPn
-# 783QZKHVVqllMaPe1eNJMFoGA1UdHwRTMFEwT6BNoEuGSWh0dHA6Ly9jcmwzLmRp
-# Z2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQwOTZTSEEyNTZUaW1lU3Rh
-# bXBpbmdDQS5jcmwwgZAGCCsGAQUFBwEBBIGDMIGAMCQGCCsGAQUFBzABhhhodHRw
-# Oi8vb2NzcC5kaWdpY2VydC5jb20wWAYIKwYBBQUHMAKGTGh0dHA6Ly9jYWNlcnRz
-# LmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQwOTZTSEEyNTZUaW1l
-# U3RhbXBpbmdDQS5jcnQwDQYJKoZIhvcNAQELBQADggIBAIEa1t6gqbWYF7xwjU+K
-# PGic2CX/yyzkzepdIpLsjCICqbjPgKjZ5+PF7SaCinEvGN1Ott5s1+FgnCvt7T1I
-# jrhrunxdvcJhN2hJd6PrkKoS1yeF844ektrCQDifXcigLiV4JZ0qBXqEKZi2V3mP
-# 2yZWK7Dzp703DNiYdk9WuVLCtp04qYHnbUFcjGnRuSvExnvPnPp44pMadqJpddNQ
-# 5EQSviANnqlE0PjlSXcIWiHFtM+YlRpUurm8wWkZus8W8oM3NG6wQSbd3lqXTzON
-# 1I13fXVFoaVYJmoDRd7ZULVQjK9WvUzF4UbFKNOt50MAcN7MmJ4ZiQPq1JE3701S
-# 88lgIcRWR+3aEUuMMsOI5ljitts++V+wQtaP4xeR0arAVeOGv6wnLEHQmjNKqDbU
-# uXKWfpd5OEhfysLcPTLfddY2Z1qJ+Panx+VPNTwAvb6cKmx5AdzaROY63jg7B145
-# WPR8czFVoIARyxQMfq68/qTreWWqaNYiyjvrmoI1VygWy2nyMpqy0tg6uLFGhmu6
-# F/3Ed2wVbK6rr3M66ElGt9V/zLY4wNjsHPW2obhDLN9OTH0eaHDAdwrUAuBcYLso
-# /zjlUlrWrBciI0707NMX+1Br/wd3H3GXREHJuEbTbDJ8WC9nR2XlG3O2mflrLAZG
-# 70Ee8PBf4NvZrZCARK+AEEGKMIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipe
-# WzANBgkqhkiG9w0BAQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNl
-# cnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdp
-# Q2VydCBUcnVzdGVkIFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1
-# OTU5WjBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5
-# BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0
-# YW1waW5nIENBMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAxoY1Bkmz
-# wT1ySVFVxyUDxPKRN6mXUaHW0oPRnkyibaCwzIP5WvYRoUQVQl+kiPNo+n3znIkL
-# f50fng8zH1ATCyZzlm34V6gCff1DtITaEfFzsbPuK4CEiiIY3+vaPcQXf6sZKz5C
-# 3GeO6lE98NZW1OcoLevTsbV15x8GZY2UKdPZ7Gnf2ZCHRgB720RBidx8ald68Dd5
-# n12sy+iEZLRS8nZH92GDGd1ftFQLIWhuNyG7QKxfst5Kfc71ORJn7w6lY2zkpsUd
-# zTYNXNXmG6jBZHRAp8ByxbpOH7G1WE15/tePc5OsLDnipUjW8LAxE6lXKZYnLvWH
-# po9OdhVVJnCYJn+gGkcgQ+NDY4B7dW4nJZCYOjgRs/b2nuY7W+yB3iIU2YIqx5K/
-# oN7jPqJz+ucfWmyU8lKVEStYdEAoq3NDzt9KoRxrOMUp88qqlnNCaJ+2RrOdOqPV
-# A+C/8KI8ykLcGEh/FDTP0kyr75s9/g64ZCr6dSgkQe1CvwWcZklSUPRR8zZJTYsg
-# 0ixXNXkrqPNFYLwjjVj33GHek/45wPmyMKVM1+mYSlg+0wOI/rOP015LdhJRk8mM
-# DDtbiiKowSYI+RQQEgN9XyO7ZONj4KbhPvbCdLI/Hgl27KtdRnXiYKNYCQEoAA6E
-# VO7O6V3IXjASvUaetdN2udIOa5kM0jO0zbECAwEAAaOCAV0wggFZMBIGA1UdEwEB
-# /wQIMAYBAf8CAQAwHQYDVR0OBBYEFLoW2W1NhS9zKXaaL3WMaiCPnshvMB8GA1Ud
-# IwQYMBaAFOzX44LScV1kTN8uZz/nupiuHA9PMA4GA1UdDwEB/wQEAwIBhjATBgNV
-# HSUEDDAKBggrBgEFBQcDCDB3BggrBgEFBQcBAQRrMGkwJAYIKwYBBQUHMAGGGGh0
-# dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBBBggrBgEFBQcwAoY1aHR0cDovL2NhY2Vy
-# dHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZFJvb3RHNC5jcnQwQwYDVR0f
-# BDwwOjA4oDagNIYyaHR0cDovL2NybDMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1
-# c3RlZFJvb3RHNC5jcmwwIAYDVR0gBBkwFzAIBgZngQwBBAIwCwYJYIZIAYb9bAcB
-# MA0GCSqGSIb3DQEBCwUAA4ICAQB9WY7Ak7ZvmKlEIgF+ZtbYIULhsBguEE0TzzBT
-# zr8Y+8dQXeJLKftwig2qKWn8acHPHQfpPmDI2AvlXFvXbYf6hCAlNDFnzbYSlm/E
-# UExiHQwIgqgWvalWzxVzjQEiJc6VaT9Hd/tydBTX/6tPiix6q4XNQ1/tYLaqT5Fm
-# niye4Iqs5f2MvGQmh2ySvZ180HAKfO+ovHVPulr3qRCyXen/KFSJ8NWKcXZl2szw
-# cqMj+sAngkSumScbqyQeJsG33irr9p6xeZmBo1aGqwpFyd/EjaDnmPv7pp1yr8TH
-# wcFqcdnGE4AJxLafzYeHJLtPo0m5d2aR8XKc6UsCUqc3fpNTrDsdCEkPlM05et3/
-# JWOZJyw9P2un8WbDQc1PtkCbISFA0LcTJM3cHXg65J6t5TRxktcma+Q4c6umAU+9
-# Pzt4rUyt+8SVe+0KXzM5h0F4ejjpnOHdI/0dKNPH+ejxmF/7K9h+8kaddSweJywm
-# 228Vex4Ziza4k9Tm8heZWcpw8De/mADfIBZPJ/tgZxahZrrdVcA6KYawmKAr7ZVB
-# tzrVFZgxtGIJDwq9gdkT/r+k0fNX2bwE+oLeMt8EifAAzV3C+dAjfwAL5HYCJtnw
-# ZXZCpimHCUcr5n8apIUP/JiW9lVUKx+A+sDyDivl1vupL0QVSucTDh3bNzgaoSv2
-# 7dZ8/DCCBY0wggR1oAMCAQICEA6bGI750C3n79tQ4ghAGFowDQYJKoZIhvcNAQEM
-# BQAwZTELMAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UE
-# CxMQd3d3LmRpZ2ljZXJ0LmNvbTEkMCIGA1UEAxMbRGlnaUNlcnQgQXNzdXJlZCBJ
-# RCBSb290IENBMB4XDTIyMDgwMTAwMDAwMFoXDTMxMTEwOTIzNTk1OVowYjELMAkG
-# A1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRp
-# Z2ljZXJ0LmNvbTEhMB8GA1UEAxMYRGlnaUNlcnQgVHJ1c3RlZCBSb290IEc0MIIC
-# IjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAv+aQc2jeu+RdSjwwIjBpM+zC
-# pyUuySE98orYWcLhKac9WKt2ms2uexuEDcQwH/MbpDgW61bGl20dq7J58soR0uRf
-# 1gU8Ug9SH8aeFaV+vp+pVxZZVXKvaJNwwrK6dZlqczKU0RBEEC7fgvMHhOZ0O21x
-# 4i0MG+4g1ckgHWMpLc7sXk7Ik/ghYZs06wXGXuxbGrzryc/NrDRAX7F6Zu53yEio
-# ZldXn1RYjgwrt0+nMNlW7sp7XeOtyU9e5TXnMcvak17cjo+A2raRmECQecN4x7ax
-# xLVqGDgDEI3Y1DekLgV9iPWCPhCRcKtVgkEy19sEcypukQF8IUzUvK4bA3VdeGbZ
-# OjFEmjNAvwjXWkmkwuapoGfdpCe8oU85tRFYF/ckXEaPZPfBaYh2mHY9WV1CdoeJ
-# l2l6SPDgohIbZpp0yt5LHucOY67m1O+SkjqePdwA5EUlibaaRBkrfsCUtNJhbesz
-# 2cXfSwQAzH0clcOP9yGyshG3u3/y1YxwLEFgqrFjGESVGnZifvaAsPvoZKYz0YkH
-# 4b235kOkGLimdwHhD5QMIR2yVCkliWzlDlJRR3S+Jqy2QXXeeqxfjT/JvNNBERJb
-# 5RBQ6zHFynIWIgnffEx1P2PsIV/EIFFrb7GrhotPwtZFX50g/KEexcCPorF+CiaZ
-# 9eRpL5gdLfXZqbId5RsCAwEAAaOCATowggE2MA8GA1UdEwEB/wQFMAMBAf8wHQYD
-# VR0OBBYEFOzX44LScV1kTN8uZz/nupiuHA9PMB8GA1UdIwQYMBaAFEXroq/0ksuC
-# MS1Ri6enIZ3zbcgPMA4GA1UdDwEB/wQEAwIBhjB5BggrBgEFBQcBAQRtMGswJAYI
-# KwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBDBggrBgEFBQcwAoY3
-# aHR0cDovL2NhY2VydHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0QXNzdXJlZElEUm9v
-# dENBLmNydDBFBgNVHR8EPjA8MDqgOKA2hjRodHRwOi8vY3JsMy5kaWdpY2VydC5j
-# b20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3JsMBEGA1UdIAQKMAgwBgYEVR0g
-# ADANBgkqhkiG9w0BAQwFAAOCAQEAcKC/Q1xV5zhfoKN0Gz22Ftf3v1cHvZqsoYcs
-# 7IVeqRq7IviHGmlUIu2kiHdtvRoU9BNKei8ttzjv9P+Aufih9/Jy3iS8UgPITtAq
-# 3votVs/59PesMHqai7Je1M/RQ0SbQyHrlnKhSLSZy51PpwYDE3cnRNTnf+hZqPC/
-# Lwum6fI0POz3A8eHqNJMQBk1RmppVLC4oVaO7KTVPeix3P0c2PR3WlxUjG/voVA9
-# /HYJaISfb8rbII01YBwCA8sgsKxYoA5AY8WYIsGyWfVVa88nq2x2zm8jLfR+cWoj
-# ayL/ErhULSd+2DrZ8LaHlv1b0VysGMNNn3O3AamfV6peKOK5lDGCA4YwggOCAgEB
-# MHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTswOQYD
-# VQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2IFRpbWVTdGFt
-# cGluZyBDQQIQBUSv85SdCDmmv9s/X+VhFjANBglghkgBZQMEAgIFAKCB4TAaBgkq
-# hkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcNAQkFMQ8XDTI0MDczMTE5
-# MjAwM1owKwYLKoZIhvcNAQkQAgwxHDAaMBgwFgQUZvArMsLCyQ+CXc6qisnGTxmc
-# z0AwNwYLKoZIhvcNAQkQAi8xKDAmMCQwIgQg0vbkbe10IszR1EBXaEE2b4KK2lWa
-# rjMWr00amtQMeCgwPwYJKoZIhvcNAQkEMTIEMFHOjzKlZO/KiSa49V52xgHG3jSG
-# uzXXhGFLpVFscyECgLfGqARmxyz6NzLHFUQJ0zANBgkqhkiG9w0BAQEFAASCAgBF
-# I0IecOteiyuqv1PUW1TkcarlQbrlRxhDb5baajU5y6lP4IgnBjUy7YqLW4pFz/+g
-# OzVtgWh7VMGt6ZrOIuUjucqQ90pHaI2ukyCAKUe+I5LjJEngP//gZtXgTc4Avak2
-# YFDbfpn0iHgQy7/KZhMj0PYhrCV0v9GCrwbS5MUrpaq8rOXjSYLK8biGjWipEoyq
-# 2NIVLrF2EyrbrtdWddS/x4h6ZJM7wIHZcxEoam1st8Rc8+VUQra79khsvcqEqQEk
-# SLzzDUzQJGKf9f8TdfJ8K43zqyEQTYWDaDk7tFxC/YlwZEnTInuSLn43luSEqhp/
-# 0sAau1k3CxgW1V+nN7XrjhZDDgyR8aFtdQNVZpg17GW2aFDxQrKiKb23Au4sK/7V
-# vZmp+qPBdwTVgM54L9qi+QFUge5oWhfnd4zrKBkSItrscGOBN3LjQZSom2TZSwUE
-# Lmin5V5lDq5ip1DjQdkWlOTjt8NAVtjDLXTs0UamvjWB/dN4JmtX5Kc2CHAUe06e
-# Qo0PdbwEubVnVNhXOdus6C9Ty/Yp86kUemZcpvvKSgvp1Seu687rJp2VQ21IwIru
-# yTz9lJ547IjBEqELpda6p+aG5Wcz3WrV73JseSb9YQDNhrBZ04TciMVWqYPdiSRS
-# mkEDCgYEpHF5nShSjyjw9cQrP3Ncs4xtpn8hh2rfcg==
+# VGltZVN0YW1waW5nIENBMB4XDTI0MDkyNjAwMDAwMFoXDTM1MTEyNTIzNTk1OVow
+# QjELMAkGA1UEBhMCVVMxETAPBgNVBAoTCERpZ2lDZXJ0MSAwHgYDVQQDExdEaWdp
+# Q2VydCBUaW1lc3RhbXAgMjAyNDCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoC
+# ggIBAL5qc5/2lSGrljC6W23mWaO16P2RHxjEiDtqmeOlwf0KMCBDEr4IxHRGd7+L
+# 660x5XltSVhhK64zi9CeC9B6lUdXM0s71EOcRe8+CEJp+3R2O8oo76EO7o5tLusl
+# xdr9Qq82aKcpA9O//X6QE+AcaU/byaCagLD/GLoUb35SfWHh43rOH3bpLEx7pZ7a
+# vVnpUVmPvkxT8c2a2yC0WMp8hMu60tZR0ChaV76Nhnj37DEYTX9ReNZ8hIOYe4jl
+# 7/r419CvEYVIrH6sN00yx49boUuumF9i2T8UuKGn9966fR5X6kgXj3o5WHhHVO+N
+# BikDO0mlUh902wS/Eeh8F/UFaRp1z5SnROHwSJ+QQRZ1fisD8UTVDSupWJNstVki
+# qLq+ISTdEjJKGjVfIcsgA4l9cbk8Smlzddh4EfvFrpVNnes4c16Jidj5XiPVdsn5
+# n10jxmGpxoMc6iPkoaDhi6JjHd5ibfdp5uzIXp4P0wXkgNs+CO/CacBqU0R4k+8h
+# 6gYldp4FCMgrXdKWfM4N0u25OEAuEa3JyidxW48jwBqIJqImd93NRxvd1aepSeNe
+# REXAu2xUDEW8aqzFQDYmr9ZONuc2MhTMizchNULpUEoA6Vva7b1XCB+1rxvbKmLq
+# fY/M/SdV6mwWTyeVy5Z/JkvMFpnQy5wR14GJcv6dQ4aEKOX5AgMBAAGjggGLMIIB
+# hzAOBgNVHQ8BAf8EBAMCB4AwDAYDVR0TAQH/BAIwADAWBgNVHSUBAf8EDDAKBggr
+# BgEFBQcDCDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEwHwYDVR0j
+# BBgwFoAUuhbZbU2FL3MpdpovdYxqII+eyG8wHQYDVR0OBBYEFJ9XLAN3DigVkGal
+# Y17uT5IfdqBbMFoGA1UdHwRTMFEwT6BNoEuGSWh0dHA6Ly9jcmwzLmRpZ2ljZXJ0
+# LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQwOTZTSEEyNTZUaW1lU3RhbXBpbmdD
+# QS5jcmwwgZAGCCsGAQUFBwEBBIGDMIGAMCQGCCsGAQUFBzABhhhodHRwOi8vb2Nz
+# cC5kaWdpY2VydC5jb20wWAYIKwYBBQUHMAKGTGh0dHA6Ly9jYWNlcnRzLmRpZ2lj
+# ZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQwOTZTSEEyNTZUaW1lU3RhbXBp
+# bmdDQS5jcnQwDQYJKoZIhvcNAQELBQADggIBAD2tHh92mVvjOIQSR9lDkfYR25tO
+# CB3RKE/P09x7gUsmXqt40ouRl3lj+8QioVYq3igpwrPvBmZdrlWBb0HvqT00nFSX
+# gmUrDKNSQqGTdpjHsPy+LaalTW0qVjvUBhcHzBMutB6HzeledbDCzFzUy34VarPn
+# vIWrqVogK0qM8gJhh/+qDEAIdO/KkYesLyTVOoJ4eTq7gj9UFAL1UruJKlTnCVaM
+# 2UeUUW/8z3fvjxhN6hdT98Vr2FYlCS7Mbb4Hv5swO+aAXxWUm3WpByXtgVQxiBlT
+# VYzqfLDbe9PpBKDBfk+rabTFDZXoUke7zPgtd7/fvWTlCs30VAGEsshJmLbJ6ZbQ
+# /xll/HjO9JbNVekBv2Tgem+mLptR7yIrpaidRJXrI+UzB6vAlk/8a1u7cIqV0yef
+# 4uaZFORNekUgQHTqddmsPCEIYQP7xGxZBIhdmm4bhYsVA6G2WgNFYagLDBzpmk91
+# 04WQzYuVNsxyoVLObhx3RugaEGru+SojW4dHPoWrUhftNpFC5H7QEY7MhKRyrBe7
+# ucykW7eaCuWBsBb4HOKRFVDcrZgdwaSIqMDiCLg4D+TPVgKx2EgEdeoHNHT9l3ZD
+# BD+XgbF+23/zBjeCtxz+dL/9NWR6P2eZRi7zcEO1xwcdcqJsyz/JceENc2Sg8h3K
+# eFUCS7tpFk7CrDqkMIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkq
+# hkiG9w0BAQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5j
+# MRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBU
+# cnVzdGVkIFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBj
+# MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
+# MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
+# IENBMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAxoY1BkmzwT1ySVFV
+# xyUDxPKRN6mXUaHW0oPRnkyibaCwzIP5WvYRoUQVQl+kiPNo+n3znIkLf50fng8z
+# H1ATCyZzlm34V6gCff1DtITaEfFzsbPuK4CEiiIY3+vaPcQXf6sZKz5C3GeO6lE9
+# 8NZW1OcoLevTsbV15x8GZY2UKdPZ7Gnf2ZCHRgB720RBidx8ald68Dd5n12sy+iE
+# ZLRS8nZH92GDGd1ftFQLIWhuNyG7QKxfst5Kfc71ORJn7w6lY2zkpsUdzTYNXNXm
+# G6jBZHRAp8ByxbpOH7G1WE15/tePc5OsLDnipUjW8LAxE6lXKZYnLvWHpo9OdhVV
+# JnCYJn+gGkcgQ+NDY4B7dW4nJZCYOjgRs/b2nuY7W+yB3iIU2YIqx5K/oN7jPqJz
+# +ucfWmyU8lKVEStYdEAoq3NDzt9KoRxrOMUp88qqlnNCaJ+2RrOdOqPVA+C/8KI8
+# ykLcGEh/FDTP0kyr75s9/g64ZCr6dSgkQe1CvwWcZklSUPRR8zZJTYsg0ixXNXkr
+# qPNFYLwjjVj33GHek/45wPmyMKVM1+mYSlg+0wOI/rOP015LdhJRk8mMDDtbiiKo
+# wSYI+RQQEgN9XyO7ZONj4KbhPvbCdLI/Hgl27KtdRnXiYKNYCQEoAA6EVO7O6V3I
+# XjASvUaetdN2udIOa5kM0jO0zbECAwEAAaOCAV0wggFZMBIGA1UdEwEB/wQIMAYB
+# Af8CAQAwHQYDVR0OBBYEFLoW2W1NhS9zKXaaL3WMaiCPnshvMB8GA1UdIwQYMBaA
+# FOzX44LScV1kTN8uZz/nupiuHA9PMA4GA1UdDwEB/wQEAwIBhjATBgNVHSUEDDAK
+# BggrBgEFBQcDCDB3BggrBgEFBQcBAQRrMGkwJAYIKwYBBQUHMAGGGGh0dHA6Ly9v
+# Y3NwLmRpZ2ljZXJ0LmNvbTBBBggrBgEFBQcwAoY1aHR0cDovL2NhY2VydHMuZGln
+# aWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZFJvb3RHNC5jcnQwQwYDVR0fBDwwOjA4
+# oDagNIYyaHR0cDovL2NybDMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZFJv
+# b3RHNC5jcmwwIAYDVR0gBBkwFzAIBgZngQwBBAIwCwYJYIZIAYb9bAcBMA0GCSqG
+# SIb3DQEBCwUAA4ICAQB9WY7Ak7ZvmKlEIgF+ZtbYIULhsBguEE0TzzBTzr8Y+8dQ
+# XeJLKftwig2qKWn8acHPHQfpPmDI2AvlXFvXbYf6hCAlNDFnzbYSlm/EUExiHQwI
+# gqgWvalWzxVzjQEiJc6VaT9Hd/tydBTX/6tPiix6q4XNQ1/tYLaqT5Fmniye4Iqs
+# 5f2MvGQmh2ySvZ180HAKfO+ovHVPulr3qRCyXen/KFSJ8NWKcXZl2szwcqMj+sAn
+# gkSumScbqyQeJsG33irr9p6xeZmBo1aGqwpFyd/EjaDnmPv7pp1yr8THwcFqcdnG
+# E4AJxLafzYeHJLtPo0m5d2aR8XKc6UsCUqc3fpNTrDsdCEkPlM05et3/JWOZJyw9
+# P2un8WbDQc1PtkCbISFA0LcTJM3cHXg65J6t5TRxktcma+Q4c6umAU+9Pzt4rUyt
+# +8SVe+0KXzM5h0F4ejjpnOHdI/0dKNPH+ejxmF/7K9h+8kaddSweJywm228Vex4Z
+# iza4k9Tm8heZWcpw8De/mADfIBZPJ/tgZxahZrrdVcA6KYawmKAr7ZVBtzrVFZgx
+# tGIJDwq9gdkT/r+k0fNX2bwE+oLeMt8EifAAzV3C+dAjfwAL5HYCJtnwZXZCpimH
+# CUcr5n8apIUP/JiW9lVUKx+A+sDyDivl1vupL0QVSucTDh3bNzgaoSv27dZ8/DCC
+# BY0wggR1oAMCAQICEA6bGI750C3n79tQ4ghAGFowDQYJKoZIhvcNAQEMBQAwZTEL
+# MAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3
+# LmRpZ2ljZXJ0LmNvbTEkMCIGA1UEAxMbRGlnaUNlcnQgQXNzdXJlZCBJRCBSb290
+# IENBMB4XDTIyMDgwMTAwMDAwMFoXDTMxMTEwOTIzNTk1OVowYjELMAkGA1UEBhMC
+# VVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2ljZXJ0
+# LmNvbTEhMB8GA1UEAxMYRGlnaUNlcnQgVHJ1c3RlZCBSb290IEc0MIICIjANBgkq
+# hkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAv+aQc2jeu+RdSjwwIjBpM+zCpyUuySE9
+# 8orYWcLhKac9WKt2ms2uexuEDcQwH/MbpDgW61bGl20dq7J58soR0uRf1gU8Ug9S
+# H8aeFaV+vp+pVxZZVXKvaJNwwrK6dZlqczKU0RBEEC7fgvMHhOZ0O21x4i0MG+4g
+# 1ckgHWMpLc7sXk7Ik/ghYZs06wXGXuxbGrzryc/NrDRAX7F6Zu53yEioZldXn1RY
+# jgwrt0+nMNlW7sp7XeOtyU9e5TXnMcvak17cjo+A2raRmECQecN4x7axxLVqGDgD
+# EI3Y1DekLgV9iPWCPhCRcKtVgkEy19sEcypukQF8IUzUvK4bA3VdeGbZOjFEmjNA
+# vwjXWkmkwuapoGfdpCe8oU85tRFYF/ckXEaPZPfBaYh2mHY9WV1CdoeJl2l6SPDg
+# ohIbZpp0yt5LHucOY67m1O+SkjqePdwA5EUlibaaRBkrfsCUtNJhbesz2cXfSwQA
+# zH0clcOP9yGyshG3u3/y1YxwLEFgqrFjGESVGnZifvaAsPvoZKYz0YkH4b235kOk
+# GLimdwHhD5QMIR2yVCkliWzlDlJRR3S+Jqy2QXXeeqxfjT/JvNNBERJb5RBQ6zHF
+# ynIWIgnffEx1P2PsIV/EIFFrb7GrhotPwtZFX50g/KEexcCPorF+CiaZ9eRpL5gd
+# LfXZqbId5RsCAwEAAaOCATowggE2MA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYE
+# FOzX44LScV1kTN8uZz/nupiuHA9PMB8GA1UdIwQYMBaAFEXroq/0ksuCMS1Ri6en
+# IZ3zbcgPMA4GA1UdDwEB/wQEAwIBhjB5BggrBgEFBQcBAQRtMGswJAYIKwYBBQUH
+# MAGGGGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBDBggrBgEFBQcwAoY3aHR0cDov
+# L2NhY2VydHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0QXNzdXJlZElEUm9vdENBLmNy
+# dDBFBgNVHR8EPjA8MDqgOKA2hjRodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGln
+# aUNlcnRBc3N1cmVkSURSb290Q0EuY3JsMBEGA1UdIAQKMAgwBgYEVR0gADANBgkq
+# hkiG9w0BAQwFAAOCAQEAcKC/Q1xV5zhfoKN0Gz22Ftf3v1cHvZqsoYcs7IVeqRq7
+# IviHGmlUIu2kiHdtvRoU9BNKei8ttzjv9P+Aufih9/Jy3iS8UgPITtAq3votVs/5
+# 9PesMHqai7Je1M/RQ0SbQyHrlnKhSLSZy51PpwYDE3cnRNTnf+hZqPC/Lwum6fI0
+# POz3A8eHqNJMQBk1RmppVLC4oVaO7KTVPeix3P0c2PR3WlxUjG/voVA9/HYJaISf
+# b8rbII01YBwCA8sgsKxYoA5AY8WYIsGyWfVVa88nq2x2zm8jLfR+cWojayL/ErhU
+# LSd+2DrZ8LaHlv1b0VysGMNNn3O3AamfV6peKOK5lDGCA4YwggOCAgEBMHcwYzEL
+# MAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJE
+# aWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBD
+# QQIQC65mvFq6f5WHxvnpBOMzBDANBglghkgBZQMEAgIFAKCB4TAaBgkqhkiG9w0B
+# CQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcNAQkFMQ8XDTI1MDUxNTAyMTY1NVow
+# KwYLKoZIhvcNAQkQAgwxHDAaMBgwFgQU29OF7mLb0j575PZxSFCHJNWGW0UwNwYL
+# KoZIhvcNAQkQAi8xKDAmMCQwIgQgdnafqPJjLx9DCzojMK7WVnX+13PbBdZluQWT
+# mEOPmtswPwYJKoZIhvcNAQkEMTIEML1vdB49RsVa3GS9CVbm8CAhrFjACtK1rbZB
+# 3m2KOAoUFqGsD91iF+A5aLmCVukzGTANBgkqhkiG9w0BAQEFAASCAgBWY45KjrqA
+# 0TnsUR2ms5qn1nSTquQO8PR8QrAeZsk3239aWu8HxwaDyUGghT9q3KzYsfh4RiiL
+# y0kSb0Oe6SZOGxYuLaBxVGJdB2vvZAFQ61WFQDtW02SnA6FXAi5OMQzKpC2KJ4uk
+# FMmcwNTzsCgjU3cwNfDubjpmlxrkNh1ffgbqSiFZpNykUpmxEk7U4CLd2DYQXfzF
+# tlgdUkwzFHNogh5gRQFBQxCV39Sb0J0DlBrnj7Bh7P9/k+jcgd6IQn4IHZeZZ3So
+# m46802HPvg6jrSvGTgwQMLsxifn6wnxuH+BfGqLH8MLOSb51gIx26ClpvzKvhwTE
+# Id+bT5iW7KAR27R6dKlY3fK8e1WHKJQYP01jZyE6KogpbpXwbwxoyCwB1a9hgg/0
+# 6AjBlNzJwb5xA8IejISMv30+2LBh4jy0rwhlW2RACecx9hurQu+qNhQCy7WvtrDz
+# gKi3zkw9+o+w7hZlWy9SpFO96ez0w4uJO+ueuXWGApVfSKBTyZcusb5Fz7XnGddC
+# uzFeEsLuBU7QKWmhYzTWVT83WOrUpP6rTkLkaBW3vBCL1stK9qMk8sDTzeVxpKzQ
+# nLI+zpVJ5GiXCzu/qHHRsgFi4QaS4lQMAQRv0EAw9d+BCnqZxfFhreHUCDRpWKG8
+# 1unOzmB3k2NPy1fxVNh8YiWasAl1OepJXA==
 # SIG # End signature block

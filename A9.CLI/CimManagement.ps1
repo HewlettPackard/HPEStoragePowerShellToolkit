@@ -1,51 +1,64 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
-Function Show-A9CIM
+Function Get-A9CIM
 {
 <#
 .SYNOPSIS
-    Show the CIM server information
+    Show the CIM server information including policy
 .DESCRIPTION
     This cmdlet displays the CIM server service state being configured, either enabled or disabled. It also displays the server current running
     status, either active or inactive. It displays the current status of the HTTP and HTTPS ports and their port numbers. In addition, it shows the
     current status of the SLP port, that is either enabled or disabled.
-.PARAMETER Pol
-    Show CIM server policy information
 .EXAMPLE
     The following example shows the current CIM status:
-
-        PS:> Show-A9CIM
-
-        -Service- -State-- --SLP-- SLPPort -HTTP-- HTTPPort -HTTPS- HTTPSPort PGVer  CIMVer
-        Enabled   Active   Enabled     427 Enabled     5988 Enabled      5989 2.14.1 3.3.1
-
-.EXAMPLE
-    The following example shows the current CIM policy:
-
-        PS:> Show-A9CIM -Pol
-
-        --------------Policy---------------
-        replica_entity,one_hwid_per_view,use_pegasus_interop_namespace,no_tls_strict
+        PS:> Get-A9Cim
+        CIMVer    : 10.4.2
+        PGVer     : 2.14.1
+        SLP       : Disabled
+        SLPPort   : 427
+        HTTPS     : Disabled
+        Service   : Disabled
+        Policy    : {replica_entity, one_hwid_per_view, use_pegasus_interop_namespace, tls_strict}
+        HTTPSPort : 5989
+        State     : Inactive
 .NOTES
 	This command requires a SSH type connection.
-
 #>
 [CmdletBinding()]
-param(  [Parameter()]    [Switch]    $Pol
-)	
-	
+param(  [Parameter()]    [Switch]    $Policy
+)		
 Begin 
-{ Test-A9Connection -ClientType 'SshClient' 
-}
+    { Test-A9Connection -ClientType 'SshClient' 
+    }
 process
-{   $cmd = "showcim "
-    if ($Pol) {    $cmd += " -pol "    }	
-    $Result = Invoke-A9CLICommand -cmds $cmd
-    write-verbose " Executed the Show-CIM cmdlet" 
-    return 	$Result	
-
-}
+    {   $cmd = "showcim "
+        write-verbose "Executing the following SSH command `n`t $cmd"
+        $Result1 = Invoke-A9CLICommand -cmds $cmd
+        $cmd += " -pol " 	
+        write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result2 = Invoke-A9CLICommand -cmds $cmd
+    }
+end
+    {   if ( $Result1.count -gt 1)
+            {   $Result2 = @{Policy = @($Result2[1].split(',')) }                 
+                $tempFile = [IO.Path]::GetTempFileName()
+                        $Head = (($Result1[0].split(' ') | where-object {$_ -ne ''}).trim('-')) -join ","
+                        $Data = (($Result1[1].split(' ') | where-object {$_ -ne ''}).trim(' ')) -join ","
+                        $tempFile = [IO.Path]::GetTempFileName()
+                        Add-Content -Path $tempFile -Value $Head
+                        Add-Content -Path $tempFile -Value $Data
+                        $Result1 = Import-Csv $tempFile
+                        Remove-Item  $tempFile
+                        # Must force import as a Hashtable instead of a PSCustom Object or else I cant add them together
+                        $Result3 = ($result1 | convertto-json | convertfrom-json -asHashTable) + ($result2 | convertto-json | convertfrom-json -asHashTable)
+                        $Result3 = $Result3 | convertto-json | convertfrom-json
+            }
+        else 
+            {  Write-Warning "The Command did not complete properly"
+            }
+        return 	$Result3
+    }
 }
 
 Function Start-A9CIM
@@ -67,12 +80,12 @@ Function Start-A9CIM
 [CmdletBinding()]
 param()	
 begin
-{   Test-A9Connection -ClientType 'SshClient' 
-}	
+    {   Test-A9Connection -ClientType 'SshClient' 
+    }	
 process 
 {   $cmd = "startcim "
+    write-verbose "Executing the following SSH command `n`t $cmd"
     $Result = Invoke-A9CLICommand  -cmds  $cmd
-    write-verbose " Executed the Start-CIM cmdlet" 
     return 	$Result	
 }
 }
@@ -85,8 +98,6 @@ Function Set-A9CIM
 .DESCRIPTION
     The cmdlet sets properties of the CIM server, including options to enable/disable the HTTP and HTTPS ports for the CIM server. setcim allows
     a user to enable/disable the SLP port. The command also sets the CIM server policy.
-.PARAMETER F
-    Forces the operation of the setcim command, bypassing the typical confirmation message.
 .PARAMETER Slp
     Enables or disables the SLP port 427.
 .PARAMETER Http
@@ -109,23 +120,23 @@ Function Set-A9CIM
 .EXAMPLE
     To disable the HTTPS ports:
 
-    PS:> Set-A9CIM -F -Https Disable
+    PS:> Set-A9CIM -Https Disable
 .EXAMPLE
     To enable the HTTPS port:
 
-    PS:> Set-A9CIM -F -Https Enable
+    PS:> Set-A9CIM -Https Enable
 .EXAMPLE
     To disable the HTTP port and enable the HTTPS port:
 
-    PS:> Set-A9CIM -F -Http Disable -Https Enable
+    PS:> Set-A9CIM -Http Disable -Https Enable
 .EXAMPLE
     To set the no_use_pegasus_interop_namespace policy:
 
-    PS:> Set-A9CIM -F -Pol no_use_pegasus_interop_namespace
+    PS:> Set-A9CIM -Pol no_use_pegasus_interop_namespace
 .EXAMPLE
     To set the replica_entity policy:
 
-    PS:> Set-A9CIM -F -Pol replica_entity
+    PS:> Set-A9CIM -Pol replica_entity
 .NOTES
     This command requires a SSH type connection.
     Access to all domains is required to run this command.    You cannot disable both of the HTTP and HTTPS ports.
@@ -134,34 +145,30 @@ Function Set-A9CIM
     continue or not. The -F option forces the action without a warning message.
 #>
 [CmdletBinding()]
-param(  [Parameter()]   [Switch]    $F,
-        [Parameter()]   [ValidateSet("enable", "disable")]     
-                        [String]    $Slp,
-        [Parameter()]   [ValidateSet("enable", "disable")]      
-                        [String]    $Http,
-        [Parameter()]   [ValidateSet("enable", "disable")]
-                        [String]    $Https,
-        [Parameter()]   [ValidateSet("replica_entity", "no_replica_entity", "one_hwid_per_view", "no_one_hwid_per_view", "use_pegasus_interop_namespace", "no_use_pegasus_interop_namespace", "tls_strict", "no_tls_strict")]
-                        [String]    $Pol
+param(  [Parameter(parametersetname='SLP',mandatory)]       
+            [ValidateSet("enable", "disable")]          [String]    $Slp,
+        [Parameter(parametersetname='HTTP',mandatory)]
+            [ValidateSet("enable", "disable")]          [String]    $Http,
+        [Parameter(parametersetname='HTTPS',mandatory)]   
+            [ValidateSet("enable", "disable")]          [String]    $Https,
+        [Parameter(parametersetname='Policy',mandatory)]   
+            [ValidateSet("replica_entity", "no_replica_entity", "one_hwid_per_view", "no_one_hwid_per_view", "use_pegasus_interop_namespace", "no_use_pegasus_interop_namespace", "tls_strict", "no_tls_strict")]
+                                                        [String]    $Policy
 )	
 Begin	
-{   Test-A9Connection -ClientType 'SshClient'
-}
+    {   Test-A9Connection -ClientType 'SshClient'
+    }
 Process
-{   $cmd = "setcim "
-    if ($F) {    $cmd += " -f "    }
-    else    {    Return "Force set option is only supported with the Set-CIM cmdlet."    }
-    if (($Slp) -or ($Http) -or ($Https) -or ($Pol)) 
-        {   if ($Slp)   {   $cmd += " -slp $Slp"    }
-            if ($Http)  {   $cmd += " -http $Http"  }
-            if ($Https) {   $cmd += " -https $Https"}
-            if ($Pol)   {   $cmd += " -pol $Pol"    }
-        }
-    else{   Return "At least one of the options -Slp, -Http, -Https, or -Pol are required."
-        }
-    $Result = Invoke-A9CLICommand -cmds  $cmd
-    return 	$Result	
-}
+    {   $cmd = "setcim "
+        $cmd += " -f "
+        if ($Slp)   {   $cmd += " -slp $Slp"    }
+        if ($Http)  {   $cmd += " -http $Http"  }
+        if ($Https) {   $cmd += " -https $Https"}
+        if ($Policy){   $cmd += " -pol $Pol"    }
+        write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result = Invoke-A9CLICommand -cmds  $cmd
+        return 	$Result	
+    }
 }
 
 Function Stop-A9CIM
@@ -173,46 +180,47 @@ Function Stop-A9CIM
     The cmdlet stops the CIM server from servicing CIM requests.
 .PARAMETER F
     Specifies that the operation is forced. If this option is not used, the command requires confirmation before proceeding with its operation.
-.PARAMETER X
+.PARAMETER Immediate
     Specifies that the operation terminates the server immediately without graceful shutdown notice.
-
 .EXAMPLE
     The following example stops the CIM server without confirmation
 
-    PS:> Stop-A9CIM -F        
+    PS:> Stop-A9CIM       
 
     The following example stops the CIM server immediately without graceful shutdown notice and confirmation:
 
-    PS:> Stop-A9CIM -F -X 
+    PS:> Stop-A9CIM -Immediate
 .NOTES
-	This command requires a SSH type connection.      
+	This command requires a SSH type connection. 
+    Authority: Super, Service
+        Any role granted the cim_stop right
+    Usage:  
+    - Access to all domains is required to run this command.
+    - By default, the CIM server is not started until the startcim command is issued.     
 #>
 [CmdletBinding()]
-param(  [Parameter()]
-        [Switch]    $F,
-        [Parameter()]        
-        [Switch]    $X
+param(  [Parameter()]   [Switch]    $Immediate
     )	
 Begin	
-{   Test-A9Connection -ClientType 'SshClient'
-}
+    {   Test-A9Connection -ClientType 'SshClient'
+    }
 Process
-{   $cmd = "setcim "	
-    if ($F)     {    $cmd += " -f " }
-    else        {   Return "Force set option is only supported with the Stop-CIM cmdlet."}
-    if ($X) {    $cmd += " -x "}
-    $Result = Invoke-A9CLICommand -cmds  $cmd
-    return 	$Result	
-}
+    {   $cmd = "setcim "	
+        $cmd += " -f " 
+        if ($Immediate) {    $cmd += " -x "}
+        write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result = Invoke-A9CLICommand -cmds $cmd
+        return 	$Result	
+    }
 }
 
 
 # SIG # Begin signature block
-# MIIt2QYJKoZIhvcNAQcCoIItyjCCLcYCAQExDzANBglghkgBZQMEAgMFADCBmwYK
+# MIIt4gYJKoZIhvcNAQcCoIIt0zCCLc8CAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABECzPZwPXP+/
-# 4utptLtpLChDWW2M2QZNNZtGF5hnWthtsB3HMxkN6idXCAC0EL1rFMSVC7rOf8C4
-# zEAXLr6WMs7ToIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEC4XK+hBx8Z
+# 4H4ZqA/uTAJIGGUcWMmaoJngunKj6dLo5lSUCe2pX0EYIWv7RHjJUiv/JZ3mDgOi
+# Mmo6kNrhoeTsoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -305,152 +313,152 @@ Process
 # 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
 # tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
 # NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG5YwghuSAgEBMGkwVDELMAkGA1UEBhMCR0Ix
+# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG58wghubAgEBMGkwVDELMAkGA1UEBhMCR0Ix
 # GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQPytMdis1qI6dq66iiDrx0Ybrn+hgpc+CN/HNFZJoWu8HSEs4+v1EjYa
-# bs6vIxwsG2EqZ/wyYICezCsehi3nqCAwDQYJKoZIhvcNAQEBBQAEggGAmmPmZix2
-# rHzvI0EXmIKx4c5fwioVxE6VeNayLt1DdPuuT2OOG8TqPobFW/5SUOh/a85eR7yM
-# xjeAZYKldUBCTiIU0+FTylfM/3O6WdO93VJrIyMR6kg3YPQw1HdsoUh7r91wG5bR
-# wKJVwbaLv4VDP7f+3XLHEfDqKxo+cIja7Y4/meotlPbmT6LcTpMrdMeF4WzosuWQ
-# e/98udRMK6y7c2oHiD9InrSH8Z+JG7OoRrWYRNpx7jPU6/nqmx8yHJMXGe9Vz/4Z
-# wa52624TjkecgVFkou7N7euvaIYKlPQrFeZ5hbQvxGSgh3Wpe87JhLXEQ0q8FE+f
-# Wdm1KCVn7tv7PomPJ7kbarh6tXkT9ckiG556BA4OcfY7j+tIxgCVbo1eEoj0UU8z
-# OR0NmvlG2M3E6vxVh6DOtT2xVeJQRp9o5nyeV5TVGQSehb7s9XXOfjNzfZezDpUZ
-# 5Xu2E0oZSCot0hi0kGa4yly4hPNyRZBa1kRNLJa9rj128RS8JvSrr+paoYIY3zCC
-# GNsGCisGAQQBgjcDAwExghjLMIIYxwYJKoZIhvcNAQcCoIIYuDCCGLQCAQMxDzAN
-# BglghkgBZQMEAgIFADCCAQQGCyqGSIb3DQEJEAEEoIH0BIHxMIHuAgEBBgorBgEE
-# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEME64mklwto0mHpfj8nSW2DDqeONVH95l
-# Pot/SCfZ1PBIBpa6CVvhmQIMgEaJDmbCpgIVAKqjPS0KgStYplbvxiZfzP2WBWpO
-# GA8yMDI0MDczMTE5MTgwOVqgcqRwMG4xCzAJBgNVBAYTAkdCMRMwEQYDVQQIEwpN
-# YW5jaGVzdGVyMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxMDAuBgNVBAMTJ1Nl
-# Y3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgU2lnbmVyIFIzNaCCEv8wggZdMIIE
-# xaADAgECAhA6UmoshM5V5h1l/MwS2OmJMA0GCSqGSIb3DQEBDAUAMFUxCzAJBgNV
-# BAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLDAqBgNVBAMTI1NlY3Rp
-# Z28gUHVibGljIFRpbWUgU3RhbXBpbmcgQ0EgUjM2MB4XDTI0MDExNTAwMDAwMFoX
-# DTM1MDQxNDIzNTk1OVowbjELMAkGA1UEBhMCR0IxEzARBgNVBAgTCk1hbmNoZXN0
-# ZXIxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEwMC4GA1UEAxMnU2VjdGlnbyBQ
-# dWJsaWMgVGltZSBTdGFtcGluZyBTaWduZXIgUjM1MIICIjANBgkqhkiG9w0BAQEF
-# AAOCAg8AMIICCgKCAgEAjdFn9MFIm739OEk6TWGBm8PY3EWlYQQ2jQae45iWgPXU
-# GVuYoIa1xjTGIyuw3suUSBzKiyG0/c/Yn++d5mG6IyayljuGT9DeXQU9k8GWWj2/
-# BPoamg2fFctnPsdTYhMGxM06z1+Ft0Bav8ybww21ii/faiy+NhiUM195+cFqOtCp
-# JXxZ/lm9tpjmVmEqpAlRpfGmLhNdkqiEuDFTuD1GsV3jvuPuPGKUJTam3P53U4LM
-# 0UCxeDI8Qz40Qw9TPar6S02XExlc8X1YsiE6ETcTz+g1ImQ1OqFwEaxsMj/WoJT1
-# 8GG5KiNnS7n/X4iMwboAg3IjpcvEzw4AZCZowHyCzYhnFRM4PuNMVHYcTXGgvuq9
-# I7j4ke281x4e7/90Z5Wbk92RrLcS35hO30TABcGx3Q8+YLRy6o0k1w4jRefCMT7b
-# 5mTxtq5XPmKvtgfPuaWPkGZ/tbxInyNDA7YgOgccULjp4+D56g2iuzRCsLQ9ac6A
-# N4yRbqCYsG2rcIQ5INTyI2JzA2w1vsAHPRbUTeqVLDuNOY2gYIoKBWQsPYVoyzao
-# BVU6O5TG+a1YyfWkgVVS9nXKs8hVti3VpOV3aeuaHnjgC6He2CCDL9aW6gteUe0A
-# mC8XCtWwpePx6QW3ROZo8vSUe9AR7mMdu5+FzTmW8K13Bt8GX/YBFJO7LWzwKAUC
-# AwEAAaOCAY4wggGKMB8GA1UdIwQYMBaAFF9Y7UwxeqJhQo1SgLqzYZcZojKbMB0G
-# A1UdDgQWBBRo76QySWm2Ujgd6kM5LPQUap4MhTAOBgNVHQ8BAf8EBAMCBsAwDAYD
-# VR0TAQH/BAIwADAWBgNVHSUBAf8EDDAKBggrBgEFBQcDCDBKBgNVHSAEQzBBMDUG
-# DCsGAQQBsjEBAgEDCDAlMCMGCCsGAQUFBwIBFhdodHRwczovL3NlY3RpZ28uY29t
-# L0NQUzAIBgZngQwBBAIwSgYDVR0fBEMwQTA/oD2gO4Y5aHR0cDovL2NybC5zZWN0
-# aWdvLmNvbS9TZWN0aWdvUHVibGljVGltZVN0YW1waW5nQ0FSMzYuY3JsMHoGCCsG
-# AQUFBwEBBG4wbDBFBggrBgEFBQcwAoY5aHR0cDovL2NydC5zZWN0aWdvLmNvbS9T
-# ZWN0aWdvUHVibGljVGltZVN0YW1waW5nQ0FSMzYuY3J0MCMGCCsGAQUFBzABhhdo
-# dHRwOi8vb2NzcC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOCAYEAsNwuyfpP
-# NkyKL/bJT9XvGE8fnw7Gv/4SetmOkjK9hPPa7/Nsv5/MHuVus+aXwRFqM5Vu51qf
-# rHTwnVExcP2EHKr7IR+m/Ub7PamaeWfle5x8D0x/MsysICs00xtSNVxFywCvXx55
-# l6Wg3lXiPCui8N4s51mXS0Ht85fkXo3auZdo1O4lHzJLYX4RZovlVWD5EfwV6Ve1
-# G9UMslnm6pI0hyR0Zr95QWG0MpNPP0u05SHjq/YkPlDee3yYOECNMqnZ+j8onoUt
-# Z0oC8CkbOOk/AOoV4kp/6Ql2gEp3bNC7DOTlaCmH24DjpVgryn8FMklqEoK4Z3Io
-# UgV8R9qQLg1dr6/BjghGnj2XNA8ujta2JyoxpqpvyETZCYIUjIs69YiDjzftt37r
-# QVwIZsfCYv+DU5sh/StFL1x4rgNj2t8GccUfa/V3iFFW9lfIJWWsvtlC5XOOOQsw
-# r1UmVdNWQem4LwrlLgcdO/YAnHqY52QwnBLiAuUnuBeshWmfEb5oieIYMIIGFDCC
-# A/ygAwIBAgIQeiOu2lNplg+RyD5c9MfjPzANBgkqhkiG9w0BAQwFADBXMQswCQYD
-# VQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMS4wLAYDVQQDEyVTZWN0
-# aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIFJvb3QgUjQ2MB4XDTIxMDMyMjAwMDAw
-# MFoXDTM2MDMyMTIzNTk1OVowVTELMAkGA1UEBhMCR0IxGDAWBgNVBAoTD1NlY3Rp
-# Z28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMgVGltZSBTdGFtcGlu
-# ZyBDQSBSMzYwggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQDNmNhDQatu
-# givs9jN+JjTkiYzT7yISgFQ+7yavjA6Bg+OiIjPm/N/t3nC7wYUrUlY3mFyI32t2
-# o6Ft3EtxJXCc5MmZQZ8AxCbh5c6WzeJDB9qkQVa46xiYEpc81KnBkAWgsaXnLURo
-# YZzksHIzzCNxtIXnb9njZholGw9djnjkTdAA83abEOHQ4ujOGIaBhPXG2NdV8TNg
-# FWZ9BojlAvflxNMCOwkCnzlH4oCw5+4v1nssWeN1y4+RlaOywwRMUi54fr2vFsU5
-# QPrgb6tSjvEUh1EC4M29YGy/SIYM8ZpHadmVjbi3Pl8hJiTWw9jiCKv31pcAaeij
-# S9fc6R7DgyyLIGflmdQMwrNRxCulVq8ZpysiSYNi79tw5RHWZUEhnRfs/hsp/fwk
-# Xsynu1jcsUX+HuG8FLa2BNheUPtOcgw+vHJcJ8HnJCrcUWhdFczf8O+pDiyGhVYX
-# +bDDP3GhGS7TmKmGnbZ9N+MpEhWmbiAVPbgkqykSkzyYVr15OApZYK8CAwEAAaOC
-# AVwwggFYMB8GA1UdIwQYMBaAFPZ3at0//QET/xahbIICL9AKPRQlMB0GA1UdDgQW
-# BBRfWO1MMXqiYUKNUoC6s2GXGaIymzAOBgNVHQ8BAf8EBAMCAYYwEgYDVR0TAQH/
-# BAgwBgEB/wIBADATBgNVHSUEDDAKBggrBgEFBQcDCDARBgNVHSAECjAIMAYGBFUd
-# IAAwTAYDVR0fBEUwQzBBoD+gPYY7aHR0cDovL2NybC5zZWN0aWdvLmNvbS9TZWN0
-# aWdvUHVibGljVGltZVN0YW1waW5nUm9vdFI0Ni5jcmwwfAYIKwYBBQUHAQEEcDBu
-# MEcGCCsGAQUFBzAChjtodHRwOi8vY3J0LnNlY3RpZ28uY29tL1NlY3RpZ29QdWJs
-# aWNUaW1lU3RhbXBpbmdSb290UjQ2LnA3YzAjBggrBgEFBQcwAYYXaHR0cDovL29j
-# c3Auc2VjdGlnby5jb20wDQYJKoZIhvcNAQEMBQADggIBABLXeyCtDjVYDJ6BHSVY
-# /UwtZ3Svx2ImIfZVVGnGoUaGdltoX4hDskBMZx5NY5L6SCcwDMZhHOmbyMhyOVJD
-# wm1yrKYqGDHWzpwVkFJ+996jKKAXyIIaUf5JVKjccev3w16mNIUlNTkpJEor7edV
-# JZiRJVCAmWAaHcw9zP0hY3gj+fWp8MbOocI9Zn78xvm9XKGBp6rEs9sEiq/pwzvg
-# 2/KjXE2yWUQIkms6+yslCRqNXPjEnBnxuUB1fm6bPAV+Tsr/Qrd+mOCJemo06ldo
-# n4pJFbQd0TQVIMLv5koklInHvyaf6vATJP4DfPtKzSBPkKlOtyaFTAjD2Nu+di5h
-# ErEVVaMqSVbfPzd6kNXOhYm23EWm6N2s2ZHCHVhlUgHaC4ACMRCgXjYfQEDtYEK5
-# 4dUwPJXV7icz0rgCzs9VI29DwsjVZFpO4ZIVR33LwXyPDbYFkLqYmgHjR3tKVkhh
-# 9qKV2WCmBuC27pIOx6TYvyqiYbntinmpOqh/QPAnhDgexKG9GX/n1PggkGi9HCap
-# Zp8fRwg8RftwS21Ln61euBG0yONM6noD2XQPrFwpm3GcuqJMf0o8LLrFkSLRQNwx
-# PDDkWXhW+gZswbaiie5fd/W2ygcto78XCSPfFWveUOSZ5SqK95tBO8aTHmEa4lpJ
-# VD7HrTEn9jb1EGvxOb1cnn0CMIIGgjCCBGqgAwIBAgIQNsKwvXwbOuejs902y8l1
-# aDANBgkqhkiG9w0BAQwFADCBiDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCk5ldyBK
-# ZXJzZXkxFDASBgNVBAcTC0plcnNleSBDaXR5MR4wHAYDVQQKExVUaGUgVVNFUlRS
-# VVNUIE5ldHdvcmsxLjAsBgNVBAMTJVVTRVJUcnVzdCBSU0EgQ2VydGlmaWNhdGlv
-# biBBdXRob3JpdHkwHhcNMjEwMzIyMDAwMDAwWhcNMzgwMTE4MjM1OTU5WjBXMQsw
-# CQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMS4wLAYDVQQDEyVT
-# ZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIFJvb3QgUjQ2MIICIjANBgkqhkiG
-# 9w0BAQEFAAOCAg8AMIICCgKCAgEAiJ3YuUVnnR3d6LkmgZpUVMB8SQWbzFoVD9mU
-# EES0QUCBdxSZqdTkdizICFNeINCSJS+lV1ipnW5ihkQyC0cRLWXUJzodqpnMRs46
-# npiJPHrfLBOifjfhpdXJ2aHHsPHggGsCi7uE0awqKggE/LkYw3sqaBia67h/3awo
-# qNvGqiFRJ+OTWYmUCO2GAXsePHi+/JUNAax3kpqstbl3vcTdOGhtKShvZIvjwulR
-# H87rbukNyHGWX5tNK/WABKf+Gnoi4cmisS7oSimgHUI0Wn/4elNd40BFdSZ1Ewpu
-# ddZ+Wr7+Dfo0lcHflm/FDDrOJ3rWqauUP8hsokDoI7D/yUVI9DAE/WK3Jl3C4LKw
-# Ipn1mNzMyptRwsXKrop06m7NUNHdlTDEMovXAIDGAvYynPt5lutv8lZeI5w3MOlC
-# ybAZDpK3Dy1MKo+6aEtE9vtiTMzz/o2dYfdP0KWZwZIXbYsTIlg1YIetCpi5s14q
-# iXOpRsKqFKqav9R1R5vj3NgevsAsvxsAnI8Oa5s2oy25qhsoBIGo/zi6GpxFj+mO
-# dh35Xn91y72J4RGOJEoqzEIbW3q0b2iPuWLA911cRxgY5SJYubvjay3nSMbBPPFs
-# yl6mY4/WYucmyS9lo3l7jk27MAe145GWxK4O3m3gEFEIkv7kRmefDR7Oe2T1HxAn
-# ICQvr9sCAwEAAaOCARYwggESMB8GA1UdIwQYMBaAFFN5v1qqK0rPVIDh2JvAnfKy
-# A2bLMB0GA1UdDgQWBBT2d2rdP/0BE/8WoWyCAi/QCj0UJTAOBgNVHQ8BAf8EBAMC
-# AYYwDwYDVR0TAQH/BAUwAwEB/zATBgNVHSUEDDAKBggrBgEFBQcDCDARBgNVHSAE
-# CjAIMAYGBFUdIAAwUAYDVR0fBEkwRzBFoEOgQYY/aHR0cDovL2NybC51c2VydHJ1
-# c3QuY29tL1VTRVJUcnVzdFJTQUNlcnRpZmljYXRpb25BdXRob3JpdHkuY3JsMDUG
-# CCsGAQUFBwEBBCkwJzAlBggrBgEFBQcwAYYZaHR0cDovL29jc3AudXNlcnRydXN0
-# LmNvbTANBgkqhkiG9w0BAQwFAAOCAgEADr5lQe1oRLjlocXUEYfktzsljOt+2sgX
-# ke3Y8UPEooU5y39rAARaAdAxUeiX1ktLJ3+lgxtoLQhn5cFb3GF2SSZRX8ptQ6Iv
-# uD3wz/LNHKpQ5nX8hjsDLRhsyeIiJsms9yAWnvdYOdEMq1W61KE9JlBkB20XBee6
-# JaXx4UBErc+YuoSb1SxVf7nkNtUjPfcxuFtrQdRMRi/fInV/AobE8Gw/8yBMQKKa
-# Ht5eia8ybT8Y/Ffa6HAJyz9gvEOcF1VWXG8OMeM7Vy7Bs6mSIkYeYtddU1ux1dQL
-# bEGur18ut97wgGwDiGinCwKPyFO7ApcmVJOtlw9FVJxw/mL1TbyBns4zOgkaXFnn
-# fzg4qbSvnrwyj1NiurMp4pmAWjR+Pb/SIduPnmFzbSN/G8reZCL4fvGlvPFk4Uab
-# /JVCSmj59+/mB2Gn6G/UYOy8k60mKcmaAZsEVkhOFuoj4we8CYyaR9vd9PGZKSin
-# aZIkvVjbH/3nlLb0a7SBIkiRzfPfS9T+JesylbHa1LtRV9U/7m0q7Ma2CQ/t392i
-# oOssXW7oKLdOmMBl14suVFBmbzrt5V5cQPnwtd3UOTpS9oCG+ZZheiIvPgkDmA8F
-# zPsnfXW5qHELB43ET7HHFHeRPRYrMBKjkb8/IN7Po0d0hQoF4TeMM+zYAJzoKQnV
-# KOLg8pZVPT8xggSRMIIEjQIBATBpMFUxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9T
-# ZWN0aWdvIExpbWl0ZWQxLDAqBgNVBAMTI1NlY3RpZ28gUHVibGljIFRpbWUgU3Rh
-# bXBpbmcgQ0EgUjM2AhA6UmoshM5V5h1l/MwS2OmJMA0GCWCGSAFlAwQCAgUAoIIB
-# +TAaBgkqhkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcNAQkFMQ8XDTI0
-# MDczMTE5MTgwOVowPwYJKoZIhvcNAQkEMTIEMKN6+hsOboZzhMYL3wOz7BuwixdI
-# PqQWNlnqOe8Gr8G3y+WztgBM7f5YL7aG1qwtgTCCAXoGCyqGSIb3DQEJEAIMMYIB
-# aTCCAWUwggFhMBYEFPhgmBmm+4gs9+hSl/KhGVIaFndfMIGHBBTGrlTkeIbxfD1V
-# EkiMacNKevnC3TBvMFukWTBXMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGln
-# byBMaW1pdGVkMS4wLAYDVQQDEyVTZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5n
-# IFJvb3QgUjQ2AhB6I67aU2mWD5HIPlz0x+M/MIG8BBSFPWMtk4KCYXzQkDXEkd6S
-# wULaxzCBozCBjqSBizCBiDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCk5ldyBKZXJz
-# ZXkxFDASBgNVBAcTC0plcnNleSBDaXR5MR4wHAYDVQQKExVUaGUgVVNFUlRSVVNU
-# IE5ldHdvcmsxLjAsBgNVBAMTJVVTRVJUcnVzdCBSU0EgQ2VydGlmaWNhdGlvbiBB
-# dXRob3JpdHkCEDbCsL18Gzrno7PdNsvJdWgwDQYJKoZIhvcNAQEBBQAEggIAf/L7
-# 58PH1TkBWK/JW0KQt1wcTUHBS9EatQpAOmCOOBXpotrea5kMDXdSxYEOwdvNHsoQ
-# 8lyywNUbKQ4DGTHK5XXL3P9GrI4dTIpbPDqZbtqaat6EeW7NV2cigRM98/XBdbxa
-# 3eoPKIMBzg3v0PzwZ4/JXVNRWBzXpAfrJgFPd9ry3zC5IpYHVVQBsugdh9dFbymZ
-# wi+qs97SKneIZD7caGE9aU0i8v52C933OezkjnGkDYHHMR/r6brlcvPkNbT495T/
-# 7RqS5+J6srZeJQFdfJ00HsXnnv9paL1QfdH8sjafDjOYcplYOWgZA/vJX2sMhR0D
-# G8+77v8ybBWmG+F87A/CVWg2tU0o4rgfbYKzVnoHy5pLXMRPua/cjozYV+/90MCe
-# xM9xpz5GuWShojQ8I8+ypadmCzUGZ41eicBzcjp/JxkOSKRmjL4X0QcRvOR5LGsI
-# 9TTRpQGYerdJnCY/krXY7vVxOAZNmYNeZHrUAfNo/4HLcjC1ubsvqAbUtVxmE4DN
-# Cp2U/rQk4rTVg7L8y+n6JIqwq9VduldfrZhjFjTiLISvGui4OZ7WnzOJoROV8VVp
-# LHwLcpQbx4Dwn7VB1aWbK5SBfUJNZx2dz2zmv8AOnc55EavIwZdt80iq6vcLmr10
-# jxjEp8l7X7BrkU+N2cPsEkTCrRTWa9/TJPIa9Cs=
+# AQkEMUIEQIVNH2Z0/loNLoh0iE4iysOvroKyE0VR/xhz9SjiHW8aaR1be8cASmUA
+# FPUVg7lUL5kvFN0M6IPwrE0oqjZjhSwwDQYJKoZIhvcNAQEBBQAEggGAmKubSELQ
+# wyg0ZYtG0CSVFfDy9vSvD3TAqePxqQZyUDdCytkQpLqAi+bdKV4g/SikbhftJVXj
+# LvP9Z4ktO1JjRr6aAES3trlFcWqR3BFKKSHKTlszAVeyYJqHJnSc1CUawgQZ1Hcj
+# wo9fB9GUdHCMhL2OqxoOKYfmgog/FE6muXov5Uq68/r2pCbrGfvKZeyMpLuWmMYr
+# /ReQXSCAPQYuh3MUgGgMkUow21wH+DzXV4Ccz0RORcBsOdCYSSPYYT6Rwbm4x4Q3
+# ogdFogdJeYtbNT1ujuhnPD5MKcQReS/Z3gd5mMVC+6Ya3AHSc2kWmT3WNviqKLb1
+# ObMbrfxWu3RBuy2+r3YAgwwxhnirini6pBaplcs3zFbItxgb3ec4oNw1ScHcsNUh
+# T+l6/LNtBw2j42I4j39vAawvfvhM1hqNSxTi0Ttd2IU/taru+NxeTbKTg3CncIpj
+# bGDybGls0pmEIs5/qnIDOsA0X19XF2sAeMwEzYzYssh4P10SJm4ebhHloYIY6DCC
+# GOQGCisGAQQBgjcDAwExghjUMIIY0AYJKoZIhvcNAQcCoIIYwTCCGL0CAQMxDzAN
+# BglghkgBZQMEAgIFADCCAQcGCyqGSIb3DQEJEAEEoIH3BIH0MIHxAgEBBgorBgEE
+# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMABfPsfb/8LgNwTiXCq9HhuTQI+TDFWu
+# eunCqL/WtbC5EHeCy1QWKR6Pq17IlluExQIUWr9Uk6POM0Pu6Y4zRguivvYOBXoY
+# DzIwMjUwNTE1MDIxNDU4WqB2pHQwcjELMAkGA1UEBhMCR0IxFzAVBgNVBAgTDldl
+# c3QgWW9ya3NoaXJlMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxMDAuBgNVBAMT
+# J1NlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgU2lnbmVyIFIzNqCCEwQwggZi
+# MIIEyqADAgECAhEApCk7bh7d16c0CIetek63JDANBgkqhkiG9w0BAQwFADBVMQsw
+# CQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMSwwKgYDVQQDEyNT
+# ZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIENBIFIzNjAeFw0yNTAzMjcwMDAw
+# MDBaFw0zNjAzMjEyMzU5NTlaMHIxCzAJBgNVBAYTAkdCMRcwFQYDVQQIEw5XZXN0
+# IFlvcmtzaGlyZTEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTAwLgYDVQQDEydT
+# ZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIFNpZ25lciBSMzYwggIiMA0GCSqG
+# SIb3DQEBAQUAA4ICDwAwggIKAoICAQDThJX0bqRTePI9EEt4Egc83JSBU2dhrJ+w
+# Y7JgReuff5KQNhMuzVytzD+iXazATVPMHZpH/kkiMo1/vlAGFrYN2P7g0Q8oPEcR
+# 3h0SftFNYxxMh+bj3ZNbbYjwt8f4DsSHPT+xp9zoFuw0HOMdO3sWeA1+F8mhg6uS
+# 6BJpPwXQjNSHpVTCgd1gOmKWf12HSfSbnjl3kDm0kP3aIUAhsodBYZsJA1imWqkA
+# VqwcGfvs6pbfs/0GE4BJ2aOnciKNiIV1wDRZAh7rS/O+uTQcb6JVzBVmPP63k5xc
+# ZNzGo4DOTV+sM1nVrDycWEYS8bSS0lCSeclkTcPjQah9Xs7xbOBoCdmahSfg8Km8
+# ffq8PhdoAXYKOI+wlaJj+PbEuwm6rHcm24jhqQfQyYbOUFTKWFe901VdyMC4gRwR
+# Aq04FH2VTjBdCkhKts5Py7H73obMGrxN1uGgVyZho4FkqXA8/uk6nkzPH9QyHIED
+# 3c9CGIJ098hU4Ig2xRjhTbengoncXUeo/cfpKXDeUcAKcuKUYRNdGDlf8WnwbyqU
+# blj4zj1kQZSnZud5EtmjIdPLKce8UhKl5+EEJXQp1Fkc9y5Ivk4AZacGMCVG0e+w
+# wGsjcAADRO7Wga89r/jJ56IDK773LdIsL3yANVvJKdeeS6OOEiH6hpq2yT+jJ/lH
+# a9zEdqFqMwIDAQABo4IBjjCCAYowHwYDVR0jBBgwFoAUX1jtTDF6omFCjVKAurNh
+# lxmiMpswHQYDVR0OBBYEFIhhjKEqN2SBKGChmzHQjP0sAs5PMA4GA1UdDwEB/wQE
+# AwIGwDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMEoGA1Ud
+# IARDMEEwNQYMKwYBBAGyMQECAQMIMCUwIwYIKwYBBQUHAgEWF2h0dHBzOi8vc2Vj
+# dGlnby5jb20vQ1BTMAgGBmeBDAEEAjBKBgNVHR8EQzBBMD+gPaA7hjlodHRwOi8v
+# Y3JsLnNlY3RpZ28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5j
+# cmwwegYIKwYBBQUHAQEEbjBsMEUGCCsGAQUFBzAChjlodHRwOi8vY3J0LnNlY3Rp
+# Z28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcnQwIwYIKwYB
+# BQUHMAGGF2h0dHA6Ly9vY3NwLnNlY3RpZ28uY29tMA0GCSqGSIb3DQEBDAUAA4IB
+# gQACgT6khnJRIfllqS49Uorh5ZvMSxNEk4SNsi7qvu+bNdcuknHgXIaZyqcVmhrV
+# 3PHcmtQKt0blv/8t8DE4bL0+H0m2tgKElpUeu6wOH02BjCIYM6HLInbNHLf6R2qH
+# C1SUsJ02MWNqRNIT6GQL0Xm3LW7E6hDZmR8jlYzhZcDdkdw0cHhXjbOLsmTeS0Se
+# RJ1WJXEzqt25dbSOaaK7vVmkEVkOHsp16ez49Bc+Ayq/Oh2BAkSTFog43ldEKgHE
+# DBbCIyba2E8O5lPNan+BQXOLuLMKYS3ikTcp/Qw63dxyDCfgqXYUhxBpXnmeSO/W
+# A4NwdwP35lWNhmjIpNVZvhWoxDL+PxDdpph3+M5DroWGTc1ZuDa1iXmOFAK4iwTn
+# lWDg3QNRsRa9cnG3FBBpVHnHOEQj4GMkrOHdNDTbonEeGvZ+4nSZXrwCW4Wv2qyG
+# DBLlKk3kUW1pIScDCpm/chL6aUbnSsrtbepdtbCLiGanKVR/KC1gsR0tC6Q0RfWO
+# I4owggYUMIID/KADAgECAhB6I67aU2mWD5HIPlz0x+M/MA0GCSqGSIb3DQEBDAUA
+# MFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNV
+# BAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwHhcNMjEw
+# MzIyMDAwMDAwWhcNMzYwMzIxMjM1OTU5WjBVMQswCQYDVQQGEwJHQjEYMBYGA1UE
+# ChMPU2VjdGlnbyBMaW1pdGVkMSwwKgYDVQQDEyNTZWN0aWdvIFB1YmxpYyBUaW1l
+# IFN0YW1waW5nIENBIFIzNjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGB
+# AM2Y2ENBq26CK+z2M34mNOSJjNPvIhKAVD7vJq+MDoGD46IiM+b83+3ecLvBhStS
+# VjeYXIjfa3ajoW3cS3ElcJzkyZlBnwDEJuHlzpbN4kMH2qRBVrjrGJgSlzzUqcGQ
+# BaCxpectRGhhnOSwcjPMI3G0hedv2eNmGiUbD12OeORN0ADzdpsQ4dDi6M4YhoGE
+# 9cbY11XxM2AVZn0GiOUC9+XE0wI7CQKfOUfigLDn7i/WeyxZ43XLj5GVo7LDBExS
+# Lnh+va8WxTlA+uBvq1KO8RSHUQLgzb1gbL9Ihgzxmkdp2ZWNuLc+XyEmJNbD2OII
+# q/fWlwBp6KNL19zpHsODLIsgZ+WZ1AzCs1HEK6VWrxmnKyJJg2Lv23DlEdZlQSGd
+# F+z+Gyn9/CRezKe7WNyxRf4e4bwUtrYE2F5Q+05yDD68clwnweckKtxRaF0VzN/w
+# 76kOLIaFVhf5sMM/caEZLtOYqYadtn034ykSFaZuIBU9uCSrKRKTPJhWvXk4Cllg
+# rwIDAQABo4IBXDCCAVgwHwYDVR0jBBgwFoAU9ndq3T/9ARP/FqFsggIv0Ao9FCUw
+# HQYDVR0OBBYEFF9Y7UwxeqJhQo1SgLqzYZcZojKbMA4GA1UdDwEB/wQEAwIBhjAS
+# BgNVHRMBAf8ECDAGAQH/AgEAMBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQK
+# MAgwBgYEVR0gADBMBgNVHR8ERTBDMEGgP6A9hjtodHRwOi8vY3JsLnNlY3RpZ28u
+# Y29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdSb290UjQ2LmNybDB8BggrBgEF
+# BQcBAQRwMG4wRwYIKwYBBQUHMAKGO2h0dHA6Ly9jcnQuc2VjdGlnby5jb20vU2Vj
+# dGlnb1B1YmxpY1RpbWVTdGFtcGluZ1Jvb3RSNDYucDdjMCMGCCsGAQUFBzABhhdo
+# dHRwOi8vb2NzcC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOCAgEAEtd7IK0O
+# NVgMnoEdJVj9TC1ndK/HYiYh9lVUacahRoZ2W2hfiEOyQExnHk1jkvpIJzAMxmEc
+# 6ZvIyHI5UkPCbXKspioYMdbOnBWQUn733qMooBfIghpR/klUqNxx6/fDXqY0hSU1
+# OSkkSivt51UlmJElUICZYBodzD3M/SFjeCP59anwxs6hwj1mfvzG+b1coYGnqsSz
+# 2wSKr+nDO+Db8qNcTbJZRAiSazr7KyUJGo1c+MScGfG5QHV+bps8BX5Oyv9Ct36Y
+# 4Il6ajTqV2ifikkVtB3RNBUgwu/mSiSUice/Jp/q8BMk/gN8+0rNIE+QqU63JoVM
+# CMPY2752LmESsRVVoypJVt8/N3qQ1c6FibbcRabo3azZkcIdWGVSAdoLgAIxEKBe
+# Nh9AQO1gQrnh1TA8ldXuJzPSuALOz1Ujb0PCyNVkWk7hkhVHfcvBfI8NtgWQupia
+# AeNHe0pWSGH2opXZYKYG4Lbukg7HpNi/KqJhue2Keak6qH9A8CeEOB7Eob0Zf+fU
+# +CCQaL0cJqlmnx9HCDxF+3BLbUufrV64EbTI40zqegPZdA+sXCmbcZy6okx/Sjws
+# usWRItFA3DE8MORZeFb6BmzBtqKJ7l939bbKBy2jvxcJI98Va95Q5JnlKor3m0E7
+# xpMeYRriWklUPsetMSf2NvUQa/E5vVyefQIwggaCMIIEaqADAgECAhA2wrC9fBs6
+# 56Oz3TbLyXVoMA0GCSqGSIb3DQEBDAUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UE
+# CBMKTmV3IEplcnNleTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRo
+# ZSBVU0VSVFJVU1QgTmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0
+# aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0yMTAzMjIwMDAwMDBaFw0zODAxMTgyMzU5
+# NTlaMFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAs
+# BgNVBAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwggIi
+# MA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCIndi5RWedHd3ouSaBmlRUwHxJ
+# BZvMWhUP2ZQQRLRBQIF3FJmp1OR2LMgIU14g0JIlL6VXWKmdbmKGRDILRxEtZdQn
+# Oh2qmcxGzjqemIk8et8sE6J+N+Gl1cnZocew8eCAawKLu4TRrCoqCAT8uRjDeypo
+# GJrruH/drCio28aqIVEn45NZiZQI7YYBex48eL78lQ0BrHeSmqy1uXe9xN04aG0p
+# KG9ki+PC6VEfzutu6Q3IcZZfm00r9YAEp/4aeiLhyaKxLuhKKaAdQjRaf/h6U13j
+# QEV1JnUTCm511n5avv4N+jSVwd+Wb8UMOs4netapq5Q/yGyiQOgjsP/JRUj0MAT9
+# YrcmXcLgsrAimfWY3MzKm1HCxcquinTqbs1Q0d2VMMQyi9cAgMYC9jKc+3mW62/y
+# Vl4jnDcw6ULJsBkOkrcPLUwqj7poS0T2+2JMzPP+jZ1h90/QpZnBkhdtixMiWDVg
+# h60KmLmzXiqJc6lGwqoUqpq/1HVHm+Pc2B6+wCy/GwCcjw5rmzajLbmqGygEgaj/
+# OLoanEWP6Y52Hflef3XLvYnhEY4kSirMQhtberRvaI+5YsD3XVxHGBjlIli5u+Nr
+# LedIxsE88WzKXqZjj9Zi5ybJL2WjeXuOTbswB7XjkZbErg7ebeAQUQiS/uRGZ58N
+# Hs57ZPUfECcgJC+v2wIDAQABo4IBFjCCARIwHwYDVR0jBBgwFoAUU3m/WqorSs9U
+# gOHYm8Cd8rIDZsswHQYDVR0OBBYEFPZ3at0//QET/xahbIICL9AKPRQlMA4GA1Ud
+# DwEB/wQEAwIBhjAPBgNVHRMBAf8EBTADAQH/MBMGA1UdJQQMMAoGCCsGAQUFBwMI
+# MBEGA1UdIAQKMAgwBgYEVR0gADBQBgNVHR8ESTBHMEWgQ6BBhj9odHRwOi8vY3Js
+# LnVzZXJ0cnVzdC5jb20vVVNFUlRydXN0UlNBQ2VydGlmaWNhdGlvbkF1dGhvcml0
+# eS5jcmwwNQYIKwYBBQUHAQEEKTAnMCUGCCsGAQUFBzABhhlodHRwOi8vb2NzcC51
+# c2VydHJ1c3QuY29tMA0GCSqGSIb3DQEBDAUAA4ICAQAOvmVB7WhEuOWhxdQRh+S3
+# OyWM637ayBeR7djxQ8SihTnLf2sABFoB0DFR6JfWS0snf6WDG2gtCGflwVvcYXZJ
+# JlFfym1Doi+4PfDP8s0cqlDmdfyGOwMtGGzJ4iImyaz3IBae91g50QyrVbrUoT0m
+# UGQHbRcF57olpfHhQEStz5i6hJvVLFV/ueQ21SM99zG4W2tB1ExGL98idX8ChsTw
+# bD/zIExAopoe3l6JrzJtPxj8V9rocAnLP2C8Q5wXVVZcbw4x4ztXLsGzqZIiRh5i
+# 111TW7HV1AtsQa6vXy633vCAbAOIaKcLAo/IU7sClyZUk62XD0VUnHD+YvVNvIGe
+# zjM6CRpcWed/ODiptK+evDKPU2K6synimYBaNH49v9Ih24+eYXNtI38byt5kIvh+
+# 8aW88WThRpv8lUJKaPn37+YHYafob9Rg7LyTrSYpyZoBmwRWSE4W6iPjB7wJjJpH
+# 29308ZkpKKdpkiS9WNsf/eeUtvRrtIEiSJHN899L1P4l6zKVsdrUu1FX1T/ubSrs
+# xrYJD+3f3aKg6yxdbugot06YwGXXiy5UUGZvOu3lXlxA+fC13dQ5OlL2gIb5lmF6
+# Ii8+CQOYDwXM+yd9dbmocQsHjcRPsccUd5E9FiswEqORvz8g3s+jR3SFCgXhN4wz
+# 7NgAnOgpCdUo4uDyllU9PzGCBJIwggSOAgEBMGowVTELMAkGA1UEBhMCR0IxGDAW
+# BgNVBAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMg
+# VGltZSBTdGFtcGluZyBDQSBSMzYCEQCkKTtuHt3XpzQIh616TrckMA0GCWCGSAFl
+# AwQCAgUAoIIB+TAaBgkqhkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcN
+# AQkFMQ8XDTI1MDUxNTAyMTQ1OFowPwYJKoZIhvcNAQkEMTIEMGSlkbgEEz2I2krF
+# yr0heymEU9x8UQx+2K4WBRUt19sGGIy7F6znj+AcrZRvhsgXbzCCAXoGCyqGSIb3
+# DQEJEAIMMYIBaTCCAWUwggFhMBYEFDjJFIEQRLTcZj6T1HRLgUGGqbWxMIGHBBTG
+# rlTkeIbxfD1VEkiMacNKevnC3TBvMFukWTBXMQswCQYDVQQGEwJHQjEYMBYGA1UE
+# ChMPU2VjdGlnbyBMaW1pdGVkMS4wLAYDVQQDEyVTZWN0aWdvIFB1YmxpYyBUaW1l
+# IFN0YW1waW5nIFJvb3QgUjQ2AhB6I67aU2mWD5HIPlz0x+M/MIG8BBSFPWMtk4KC
+# YXzQkDXEkd6SwULaxzCBozCBjqSBizCBiDELMAkGA1UEBhMCVVMxEzARBgNVBAgT
+# Ck5ldyBKZXJzZXkxFDASBgNVBAcTC0plcnNleSBDaXR5MR4wHAYDVQQKExVUaGUg
+# VVNFUlRSVVNUIE5ldHdvcmsxLjAsBgNVBAMTJVVTRVJUcnVzdCBSU0EgQ2VydGlm
+# aWNhdGlvbiBBdXRob3JpdHkCEDbCsL18Gzrno7PdNsvJdWgwDQYJKoZIhvcNAQEB
+# BQAEggIAARU0AHEiqvTM68ETZJdWka3LtWfcmxjrdA5uwCIM30hC2bImD1djoNhG
+# JJoWXkqT69BywJbeYcvxJpSY0XIjTvKEZ6twG3O8F2mwKWRyhJwzzVZ9UJ3x4zx5
+# /0rZMKyyidetGiXDoIoQzR88rrzfW+wptYokpOxskR94ZnO4G1D4nCC6MVmqmTTR
+# +dMHP2IXZVzPFEheshBESSNSNZvOMuGJ5l45vzDfPj1M/jDuxjz8FzkhfaUb1MN+
+# c0nRrUwcW+V2LMMGweZnkOS/3SOLR9SOJ1AUY/SHHVYOqcwCgqiwwihxP4nGa/Bg
+# MPtX5+e5RfFOiD4+vCuRYMKo0dGJHleQe9sj2GKonKjMne5ZTHVzk5K+Nkr6SzkZ
+# aVE/u5rXiQmagZWW91L6LqsUBpgIrMA/t5tng2dtIgEulHq3t+WRLLa1AA4BRk4R
+# XiCigqvTRmK5r78gWL/ELOe90MPxvz2pCDxLVb8LFjRwG/kSQSOgRudBbU3XwgT8
+# nKdDUHlx8U2guz2QdH2qFMp/U94GAlkDQowXe6EuJdFg2Aghlg2rLJOChf9bHzDR
+# LGJc17wLpITEhsS9iqE8IBKPc/VXcgedruA2T5Yzdkw3IrRFUFml2EkkHoCvyST5
+# bcR0GD+Q36ca1TZh8iCdNuM1kwv5LSYW4Hafax4iW0bLnbh6lWs=
 # SIG # End signature block

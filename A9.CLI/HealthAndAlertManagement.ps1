@@ -9,57 +9,48 @@ Function Get-A9Alert
 	Display system alerts.
 .DESCRIPTION
 	The command displays the status of system alerts. When issued without options, all new customer alerts are displayed.
-.EXAMPLE
-	PS:> Get-A9Alert -N
-.EXAMPLE
-	PS:> Get-A9Alert -F
-.EXAMPLE
-	PS:> Get-A9Alert -All
-.PARAMETER N
-	Specifies that only new customer alerts are displayed. This is the default.
-.PARAMETER A
-	Specifies that only acknowledged alerts are displayed.
-.PARAMETER F
-	Specifies that only fixed alerts are displayed.
-.PARAMETER All
-	Specifies that all customer alerts are displayed.
-	The format of the alert display is controlled by the following options:
-.PARAMETER D
+.PARAMETER EventTypes
+	Dispays only the eventypes that are specified from the following selections; 'New','Acknowledged','Fixed','All','Service'
+	The Default selection is new, but this allows you to override this default behaviour.
+.PARAMETER Detailed
 	Specifies that detailed information is displayed. Cannot be specified
 	with the -oneline option.
 .PARAMETER Oneline
 	Specifies that summary information is displayed in a tabular form with one line per alert. For customer alerts, the message text will be
 	truncated if it is too long unless the -wide option is also specified.
-.PARAMETER Svc
-	Specifies that only service alerts are displayed. This option can only be used with the -d or -oneline formatting options.
 .PARAMETER Wide
 	Do not truncate the message text. Only valid for customer alerts and if the -oneline option is also specified.
+.EXAMPLE
+	PS:> Get-A9Alert -EventTypes New
+.EXAMPLE
+	PS:> Get-A9Alert -EventTypes Acknowledged
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$N,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$A,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$F,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$All,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$D,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Oneline,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Svc,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Wide
+param(	[Parameter()]							
+			[ValidateSet('New','Acknowledged','Fixed','All','Service')]
+												[string]	$EventTypes,
+		[Parameter()]							[switch]	$Detailed,
+		[Parameter()]							[switch]	$Oneline,
+		[Parameter()]							[switch]	$Wide
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " showalert "
-	if($N) 		{	$Cmd += " -n " 		}
-	if($A) 		{	$Cmd += " -a " 		}
-	if($F)		{	$Cmd += " -f " 		}
-	if($All)	{	$Cmd += " -all " 	}
-	if($D) 		{	$Cmd += " -d " 		}
-	if($Svc)	{	$Cmd += " -svc " 	}
-	if($Wide)	{	$Cmd += " -wide " 	}
-	if($Oneline){	$Cmd += " -oneline "}
+	switch($EventTypes)
+		{	'New'			{	$Cmd += " -n " 		}
+			'Acknowledged'	{	$Cmd += " -a " 		}
+			'Fixed'			{	$Cmd += " -f " 		}
+			'All'			{	$Cmd += " -all " 	}
+			'Service'		{	$Cmd += " -svc " 	}
+		}
+	if($Detailed) 		{	$Cmd += " -d " 		}
+	if($Wide)			{	$Cmd += " -wide " 	}
+	if($Oneline)		{	$Cmd += " -oneline "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -72,21 +63,17 @@ Function Get-A9EventLog_CLI
 	Show the system event log.
 .DESCRIPTION
 	The command displays the current system event log.
-.PARAMETER Min
+.PARAMETER Minutes
 	Specifies that only events occurring within the specified number of minutes are shown. The <number> is an integer from 1 through 2147483647.
-.PARAMETER More
-	Specifies that you can page through several events at a time.
-.PARAMETER Oneline
-	Specifies that each event is formatted as one line.
-.PARAMETER D
+.PARAMETER Detailed
 	Specifies that detailed information is displayed.
-.PARAMETER Startt
+.PARAMETER StartTime
 	Specifies that only events after a specified time are to be shown. The time argument can be specified as either <timespec>, <datespec>, or
 	both. If you would like to specify both a <timespec> and <datespec>, you must place quotation marks around them; for example, -startt "2012-10-29 00:00".
 		<timespec> Specified as the hour (hh), as interpreted on a 24 hour clock, where minutes (mm) and seconds (ss) can be optionally specified. Acceptable formats are hh:mm:ss or hhmm.
 		<datespec> Specified as the month (mm or month_name) and day (dd), where the year (yy) can be optionally specified. Acceptable formats are
 					mm/dd/yy, month_name dd, dd month_name yy, or yy-mm-dd. If the syntax yy-mm-dd is used, the year must be specified.
-.PARAMETER Endt
+.PARAMETER EndTime
 	Specifies that only events before a specified time are to be shown. The time argument can be specified as either <timespec>, <datespec>, or both.
 	See -startt for descriptions of <timespec> and <datespec>.
 
@@ -96,79 +83,106 @@ Function Get-A9EventLog_CLI
 
 	showeventlog -type Disk.* -type <tpdtcl client> -sev Major
 	The "-sev Major" displays all events of severity Major and with a type that matches either the regular expression Disk.* or <tpdtcl client>.
-.PARAMETER Sev
+.PARAMETER Severity
 	Specifies that only events with severities that match the specified pattern(s) are displayed. The supported severities include Fatal Critical, Major, Minor, Degraded, Informational and Debug
-.PARAMETER Nsev
+.PARAMETER NoSevevrity
 	Specifies that only events with severities that do not match the specified pattern(s) are displayed. The supported severities
 	include Fatal, Critical, Major, Minor, Degraded, Informational and Debug.
 .PARAMETER Class
 	Specifies that only events with classes that match the specified pattern(s) are displayed.
-.PARAMETER Nclass
+.PARAMETER NoClass
 	Specifies that only events with classes that do not match the specified pattern(s) are displayed.
 .PARAMETER Node
 	Specifies that only events from nodes that match the specified pattern(s) are displayed.
-.PARAMETER Nnode
+.PARAMETER NoNode
 	Specifies that only events from nodes that do not match the specified pattern(s) are displayed.
-.PARAMETER Type
+.PARAMETER Typed
 	Specifies that only events with types that match the specified pattern(s) are displayed.
-.PARAMETER Ntype
+.PARAMETER NoTyped
 	Specifies that only events with types that do not match the specified pattern(s) are displayed.
-.PARAMETER Msg
+.PARAMETER Message
 	Specifies that only events, whose messages match the specified pattern(s), are displayed.
-.PARAMETER Nmsg
+.PARAMETER NoMessage
 	Specifies that only events, whose messages do not match the specified pattern(s), are displayed.
-.PARAMETER Comp
+.PARAMETER Component
 	Specifies that only events, whose components match the specified pattern(s), are displayed.
-.PARAMETER Ncomp
+.PARAMETER NoComponent
 	Specifies that only events, whose components do not match the specified pattern(s), are displayed.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Min,
-	[Parameter(ValueFromPipeline=$true)]	[switch]	$More,
-	[Parameter(ValueFromPipeline=$true)]	[switch]	$Oneline,
-	[Parameter(ValueFromPipeline=$true)]	[switch]	$D,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Startt,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Endt,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Sev,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Nsev,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Class,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Nclass,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Node,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Nnode,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Type,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Ntype,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Msg,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Nmsg,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Comp,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Ncomp
+	[Parameter()]	[String]	$Min,
+	[Parameter()]	[switch]	$Detailed,
+	[Parameter()]	[String]	$StartTime,
+	[Parameter()]	[String]	$EndTime,
+	[Parameter()]
+		[ValidateSet('Fatal','Critical','Major','Minor','Degraded','Informational','Debug')]	
+											[String]	$Severity,
+	[Parameter()]	
+	[ValidateSet('Fatal','Critical','Major','Minor','Degraded','Informational','Debug')]	
+											[String]	$NoSevevrity,
+	[Parameter()]	[String]	$Class,
+	[Parameter()]	[String]	$NoClass,
+	[Parameter()]	[String]	$Node,
+	[Parameter()]	[String]	$NoNode,
+	[Parameter()]	[String]	$Typed,
+	[Parameter()]	[String]	$Notyped,
+	[Parameter()]	[String]	$Message,
+	[Parameter()]	[String]	$NoMessage,
+	[Parameter()]	[String]	$Component,
+	[Parameter()]	[String]	$NoComponent,
+	[Parameter()]	[switch]	$ShowRaw
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " showeventlog "
-	if($Min)	{	$Cmd += " -min $Min " }
-	if($More)	{	$Cmd += " -more " }
-	if($Oneline){	$Cmd += " -oneline " }
-	if($D) 		{	$Cmd += " -d " }
-	if($Startt)	{	$Cmd += " -startt $Startt " }
-	if($Endt)	{	$Cmd += " -endt $Endt " }
-	if($Sev)	{	$Cmd += " -sev $Sev " }
-	if($Nsev)	{	$Cmd += " -nsev $Nsev " }
-	if($Class)	{	$Cmd += " -class $Class " }
-	if($Nclass)	{	$Cmd += " -nclass $Nclass " }
-	if($Node)	{	$Cmd += " -node $Node " }
-	if($Nnode)	{	$Cmd += " -nnode $Nnode " }
-	if($Type)	{	$Cmd += " -type $Type " }
-	if($Ntype)	{	$Cmd += " -ntype $Ntype " }
-	if($Msg)	{	$Cmd += " -msg $Msg "	}
-	if($Nmsg)	{	$Cmd += " -nmsg $Nmsg " }
-	if($Comp)	{	$Cmd += " -comp $Comp " }
-	if($Ncomp)	{	$Cmd += " -ncomp $Ncomp " }
+	if($Minutes)		{	$Cmd += " -min $Minutes " }
+	if($Detailed)		{	$Cmd += " -d " }
+	if($StartTime)		{	$Cmd += " -startt $Starttime " }
+	if($EndTime)		{	$Cmd += " -endt $Endtime " }
+	if($Sevevrity)		{	$Cmd += " -sev $Severity " }
+	if($NoSevevrity)	{	$Cmd += " -nsev $Noseverity " }
+	if($Class)			{	$Cmd += " -class $Class " }
+	if($NoClass)		{	$Cmd += " -nclass $Nclass " }
+	if($Node)			{	$Cmd += " -node $Node " }
+	if($NoNode)			{	$Cmd += " -nnode $NoNode " }
+	if($Typed)			{	$Cmd += " -type $Typed " }
+	if($NoTyped)		{	$Cmd += " -ntype $NoTyped " }
+	if($Message)		{	$Cmd += " -msg $Message "	}
+	if($NoMessage)		{	$Cmd += " -nmsg $NoMessage " }
+	if($Component)		{	$Cmd += " -comp $Component " }
+	if($NoComponent)	{	$Cmd += " -ncomp $NoComponent " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
+}
+end
+{	$RunningIndex = 0
+	if ($ShowRaw) { return $Result }
+	$EventList = @()
+	$SingleEvent = @{}
+	write-verbose "The number of lines to process = $($Result.count)"
+	while($RunningIndex -lt $Result.count)
+	{	if( $Result[$RunningIndex].StartsWith('Time:'))
+			{	$result[$RunningIndex]
+				$V = $Result[$RunningIndex].split(":")
+				$SingleEvent[$V[0].trim()] = $V[1] 
+			}
+		elseif( $Result[$RunningIndex].trim() -ne '')
+			{	$V = $Result[$RunningIndex].split(":")
+				$SingleEvent[$V[0].trim()] = $V[1] 
+			}
+		else 
+			{ 	$EventList+=$SingleEvent
+				$SingleEvent=@{}
+				
+			}
+		$RunningIndex += 1
+	}
+	$Result = ( $EventList | Convertto-json | convertfrom-json )
 	Return $Result
 }
 }
@@ -184,7 +198,7 @@ Function Get-A9Health
 	Indicates the component to check. Use -list option to get the list of components.
 .PARAMETER Lite
 	Perform a minimal health check.
-.PARAMETER Svc
+.PARAMETER Service
 	Perform a thorough health check. This is the default option.
 .PARAMETER Full
 	Perform the maximum health check. This option cannot be used with the -lite option.
@@ -192,34 +206,35 @@ Function Get-A9Health
 	List all components that will be checked.
 .PARAMETER Quiet
 	Do not display which component is currently being checked. Do not display the footnote with the -list option.
-.PARAMETER D
+.PARAMETER Detailed
 	Display detailed information regarding the status of the system.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Lite,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Svc,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Full,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$List,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Quiet,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$D,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Component
+param(	[Parameter(ParameterSetName='Lite')]		[switch]	$Lite,
+		[Parameter(ParameterSetName='Service')]		[switch]	$Service,
+		[Parameter(ParameterSetName='Full')]		[switch]	$Full,
+		[Parameter()]								[switch]	$List,
+		[Parameter()]								[switch]	$Quiet,
+		[Parameter()]								[switch]	$Detailed,
+		[Parameter(ParameterSetName='Component')]	[String]	$Component
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " checkhealth "
-	if($Lite) 	{	$Cmd += " -lite " 	}
-	if($Svc)	{	$Cmd += " -svc "	}
-	if($Full)	{	$Cmd += " -full " 	}
-	if($List)	{	$Cmd += " -list " 	}
-	if($Quiet)	{	$Cmd += " -quiet " 	}
-	if($D)		{	$Cmd += " -d " 		}
-	if($Component){	$Cmd += " $Component "}
+	if($Lite) 		{	$Cmd += " -lite " 	}
+	if($Service)	{	$Cmd += " -svc "	}
+	if($Full)		{	$Cmd += " -full " 	}
+	if($List)		{	$Cmd += " -list " 	}
+	if($Quiet)		{	$Cmd += " -quiet " 	}
+	if($Detailed)	{	$Cmd += " -d " 		}
+	if($Component)	{	$Cmd += " $Component "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-Return $Result
+	Return $Result
 }
 }
 
@@ -234,25 +249,22 @@ Function Remove-A9Alerts
 	Indicates a specific alert to be removed from the system. This specifier can be repeated to remove multiple alerts. If this specifier is not used, the -a option must be used.
 .PARAMETER All
 	Specifies all alerts from the system and prompts removal for each alert. If this option is not used, then the <alert_ID> specifier must be used.
-.PARAMETER F
-	Specifies that the command is forced. If this option is not used and there are alerts in the "new" state, the command requires confirmation
-	before proceeding with the operation.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ParameterSetName='All', Mandatory=$true, ValueFromPipeline=$true)]	[switch]	$All,
-		[Parameter(ValueFromPipeline=$true)]											[switch]	$F,
-		[Parameter(ParameterSetName='Id',  Mandatory=$true, ValueFromPipeline=$true)]	[String]	$Alert_ID
+param(	[Parameter(ParameterSetName='All', Mandatory)]	[switch]	$All,
+		[Parameter(ParameterSetName='Id',  Mandatory)]	[String]	$Alert_ID
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " removealert "
-	if($F) 			{	$Cmd += " -f "	}
+	$Cmd += " -f "
 	if($All)		{	$Cmd += " -a "	}
-	if($Alert_ID){	$Cmd += " $Alert_ID "}
+	if($Alert_ID)	{	$Cmd += " $Alert_ID "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -307,17 +319,18 @@ Process
 	if($Fixed)		{	$Cmd += " fixed " }
 	if($All)		{	$Cmd += " -a " }
 	if($Alert_ID){	$Cmd += " $Alert_ID " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
 # SIG # Begin signature block
-# MIIt2AYJKoZIhvcNAQcCoIItyTCCLcUCAQExDzANBglghkgBZQMEAgMFADCBmwYK
+# MIIt4gYJKoZIhvcNAQcCoIIt0zCCLc8CAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEC5ehi4mqjT
-# QEOIo4ZA9WOwr9PoEouUINfaUNlybp3CPSaQs3g3SiVQGSP6L1GXtIKBQspPzm95
-# oh1RWf3ta+NZoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEBAu2teAL1c
+# qVsYyFPvj5DwgFMzNHWwcVuSdrVZALwQ6IfAsITfdtb4foTLktTZXr6uDFhnJQ7M
+# fOp1uEp5QCFKoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -410,152 +423,152 @@ Process
 # 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
 # tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
 # NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG5UwghuRAgEBMGkwVDELMAkGA1UEBhMCR0Ix
+# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG58wghubAgEBMGkwVDELMAkGA1UEBhMCR0Ix
 # GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQM6W9jjBH3PnJwBBBElLwOLtVjtEM8GFFqSJT8CrtxRduSAmoNVQsgn5
-# rP64pKmTZIpbXEmIlo2tHhb+TweFCqIwDQYJKoZIhvcNAQEBBQAEggGAbm6b0zDZ
-# z5vAYqproGZniE6lP2W8CEnOezomGlM5Ajt/iqhWClCjxziDGpLG8bV3osZOFl9f
-# hb1a/XrLJ9xVPfPn6PlFcH+EohTq+oRjUYtB1k8yoCJ6A+dh6/5+Yv4JYJsnXky8
-# tTyMr6jXvSC3uDIFINuW7yL1bBgdp4rsOkJ/5sORF1U3FumQdbSqmw5sWyQpg8tR
-# J3mhlcJc9yUp3vZ/1B9mi9EZnutdupqF8VBTqJsUAj+qbbedPj3Y+BQs/Yr1HOUd
-# HrefSk8+QH0MvvylgxsvJm70zk7Rwvvo4aQkun/BJHgU7ajstWhTgq3cs2uOHXVJ
-# 3SnseeI/wJA1Dn4qISr7yzvZc7ZctKRIhVAL2OviVTu+blcefG7Ok5bkbfPPXEe3
-# RmVh2788bMkt7xju2kUAYG6O7GH0bgDJSnKtn1gL33n+c3BtmiEToK3RR30nlg7M
-# GS+LJbH9ZTRqmVAjOtcsRPYwDOmXCONSC0aci8NIyISAtnJTU8ORBaIGoYIY3jCC
-# GNoGCisGAQQBgjcDAwExghjKMIIYxgYJKoZIhvcNAQcCoIIYtzCCGLMCAQMxDzAN
-# BglghkgBZQMEAgIFADCCAQMGCyqGSIb3DQEJEAEEoIHzBIHwMIHtAgEBBgorBgEE
-# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMLy88Zd9Y4+lMnrkTeneFue+GmqRgb/l
-# 7ey6AhmC6nGRR1EjzwL9VKBLV/HKdGwhhAIUacVpBsfWRxbPkuGpNSLaaKMG7H4Y
-# DzIwMjQwNzMxMTkyMTQxWqBypHAwbjELMAkGA1UEBhMCR0IxEzARBgNVBAgTCk1h
-# bmNoZXN0ZXIxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEwMC4GA1UEAxMnU2Vj
-# dGlnbyBQdWJsaWMgVGltZSBTdGFtcGluZyBTaWduZXIgUjM1oIIS/zCCBl0wggTF
-# oAMCAQICEDpSaiyEzlXmHWX8zBLY6YkwDQYJKoZIhvcNAQEMBQAwVTELMAkGA1UE
-# BhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGln
-# byBQdWJsaWMgVGltZSBTdGFtcGluZyBDQSBSMzYwHhcNMjQwMTE1MDAwMDAwWhcN
-# MzUwNDE0MjM1OTU5WjBuMQswCQYDVQQGEwJHQjETMBEGA1UECBMKTWFuY2hlc3Rl
-# cjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTAwLgYDVQQDEydTZWN0aWdvIFB1
-# YmxpYyBUaW1lIFN0YW1waW5nIFNpZ25lciBSMzUwggIiMA0GCSqGSIb3DQEBAQUA
-# A4ICDwAwggIKAoICAQCN0Wf0wUibvf04STpNYYGbw9jcRaVhBDaNBp7jmJaA9dQZ
-# W5ighrXGNMYjK7Dey5RIHMqLIbT9z9if753mYbojJrKWO4ZP0N5dBT2TwZZaPb8E
-# +hqaDZ8Vy2c+x1NiEwbEzTrPX4W3QFq/zJvDDbWKL99qLL42GJQzX3n5wWo60Kkl
-# fFn+Wb22mOZWYSqkCVGl8aYuE12SqIS4MVO4PUaxXeO+4+48YpQlNqbc/ndTgszR
-# QLF4MjxDPjRDD1M9qvpLTZcTGVzxfViyIToRNxPP6DUiZDU6oXARrGwyP9aglPXw
-# YbkqI2dLuf9fiIzBugCDciOly8TPDgBkJmjAfILNiGcVEzg+40xUdhxNcaC+6r0j
-# uPiR7bzXHh7v/3RnlZuT3ZGstxLfmE7fRMAFwbHdDz5gtHLqjSTXDiNF58IxPtvm
-# ZPG2rlc+Yq+2B8+5pY+QZn+1vEifI0MDtiA6BxxQuOnj4PnqDaK7NEKwtD1pzoA3
-# jJFuoJiwbatwhDkg1PIjYnMDbDW+wAc9FtRN6pUsO405jaBgigoFZCw9hWjLNqgF
-# VTo7lMb5rVjJ9aSBVVL2dcqzyFW2LdWk5Xdp65oeeOALod7YIIMv1pbqC15R7QCY
-# LxcK1bCl4/HpBbdE5mjy9JR70BHuYx27n4XNOZbwrXcG3wZf9gEUk7stbPAoBQID
-# AQABo4IBjjCCAYowHwYDVR0jBBgwFoAUX1jtTDF6omFCjVKAurNhlxmiMpswHQYD
-# VR0OBBYEFGjvpDJJabZSOB3qQzks9BRqngyFMA4GA1UdDwEB/wQEAwIGwDAMBgNV
-# HRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMEoGA1UdIARDMEEwNQYM
-# KwYBBAGyMQECAQMIMCUwIwYIKwYBBQUHAgEWF2h0dHBzOi8vc2VjdGlnby5jb20v
-# Q1BTMAgGBmeBDAEEAjBKBgNVHR8EQzBBMD+gPaA7hjlodHRwOi8vY3JsLnNlY3Rp
-# Z28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcmwwegYIKwYB
-# BQUHAQEEbjBsMEUGCCsGAQUFBzAChjlodHRwOi8vY3J0LnNlY3RpZ28uY29tL1Nl
-# Y3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcnQwIwYIKwYBBQUHMAGGF2h0
-# dHA6Ly9vY3NwLnNlY3RpZ28uY29tMA0GCSqGSIb3DQEBDAUAA4IBgQCw3C7J+k82
-# TIov9slP1e8YTx+fDsa//hJ62Y6SMr2E89rv82y/n8we5W6z5pfBEWozlW7nWp+s
-# dPCdUTFw/YQcqvshH6b9Rvs9qZp5Z+V7nHwPTH8yzKwgKzTTG1I1XEXLAK9fHnmX
-# paDeVeI8K6Lw3iznWZdLQe3zl+Rejdq5l2jU7iUfMkthfhFmi+VVYPkR/BXpV7Ub
-# 1QyyWebqkjSHJHRmv3lBYbQyk08/S7TlIeOr9iQ+UN57fJg4QI0yqdn6PyiehS1n
-# SgLwKRs46T8A6hXiSn/pCXaASnds0LsM5OVoKYfbgOOlWCvKfwUySWoSgrhncihS
-# BXxH2pAuDV2vr8GOCEaePZc0Dy6O1rYnKjGmqm/IRNkJghSMizr1iIOPN+23futB
-# XAhmx8Ji/4NTmyH9K0UvXHiuA2Pa3wZxxR9r9XeIUVb2V8glZay+2ULlc445CzCv
-# VSZV01ZB6bgvCuUuBx079gCcepjnZDCcEuIC5Se4F6yFaZ8RvmiJ4hgwggYUMIID
-# /KADAgECAhB6I67aU2mWD5HIPlz0x+M/MA0GCSqGSIb3DQEBDAUAMFcxCzAJBgNV
-# BAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNVBAMTJVNlY3Rp
-# Z28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwHhcNMjEwMzIyMDAwMDAw
-# WhcNMzYwMzIxMjM1OTU5WjBVMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGln
-# byBMaW1pdGVkMSwwKgYDVQQDEyNTZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5n
-# IENBIFIzNjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAM2Y2ENBq26C
-# K+z2M34mNOSJjNPvIhKAVD7vJq+MDoGD46IiM+b83+3ecLvBhStSVjeYXIjfa3aj
-# oW3cS3ElcJzkyZlBnwDEJuHlzpbN4kMH2qRBVrjrGJgSlzzUqcGQBaCxpectRGhh
-# nOSwcjPMI3G0hedv2eNmGiUbD12OeORN0ADzdpsQ4dDi6M4YhoGE9cbY11XxM2AV
-# Zn0GiOUC9+XE0wI7CQKfOUfigLDn7i/WeyxZ43XLj5GVo7LDBExSLnh+va8WxTlA
-# +uBvq1KO8RSHUQLgzb1gbL9Ihgzxmkdp2ZWNuLc+XyEmJNbD2OIIq/fWlwBp6KNL
-# 19zpHsODLIsgZ+WZ1AzCs1HEK6VWrxmnKyJJg2Lv23DlEdZlQSGdF+z+Gyn9/CRe
-# zKe7WNyxRf4e4bwUtrYE2F5Q+05yDD68clwnweckKtxRaF0VzN/w76kOLIaFVhf5
-# sMM/caEZLtOYqYadtn034ykSFaZuIBU9uCSrKRKTPJhWvXk4CllgrwIDAQABo4IB
-# XDCCAVgwHwYDVR0jBBgwFoAU9ndq3T/9ARP/FqFsggIv0Ao9FCUwHQYDVR0OBBYE
-# FF9Y7UwxeqJhQo1SgLqzYZcZojKbMA4GA1UdDwEB/wQEAwIBhjASBgNVHRMBAf8E
-# CDAGAQH/AgEAMBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQKMAgwBgYEVR0g
-# ADBMBgNVHR8ERTBDMEGgP6A9hjtodHRwOi8vY3JsLnNlY3RpZ28uY29tL1NlY3Rp
-# Z29QdWJsaWNUaW1lU3RhbXBpbmdSb290UjQ2LmNybDB8BggrBgEFBQcBAQRwMG4w
-# RwYIKwYBBQUHMAKGO2h0dHA6Ly9jcnQuc2VjdGlnby5jb20vU2VjdGlnb1B1Ymxp
-# Y1RpbWVTdGFtcGluZ1Jvb3RSNDYucDdjMCMGCCsGAQUFBzABhhdodHRwOi8vb2Nz
-# cC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOCAgEAEtd7IK0ONVgMnoEdJVj9
-# TC1ndK/HYiYh9lVUacahRoZ2W2hfiEOyQExnHk1jkvpIJzAMxmEc6ZvIyHI5UkPC
-# bXKspioYMdbOnBWQUn733qMooBfIghpR/klUqNxx6/fDXqY0hSU1OSkkSivt51Ul
-# mJElUICZYBodzD3M/SFjeCP59anwxs6hwj1mfvzG+b1coYGnqsSz2wSKr+nDO+Db
-# 8qNcTbJZRAiSazr7KyUJGo1c+MScGfG5QHV+bps8BX5Oyv9Ct36Y4Il6ajTqV2if
-# ikkVtB3RNBUgwu/mSiSUice/Jp/q8BMk/gN8+0rNIE+QqU63JoVMCMPY2752LmES
-# sRVVoypJVt8/N3qQ1c6FibbcRabo3azZkcIdWGVSAdoLgAIxEKBeNh9AQO1gQrnh
-# 1TA8ldXuJzPSuALOz1Ujb0PCyNVkWk7hkhVHfcvBfI8NtgWQupiaAeNHe0pWSGH2
-# opXZYKYG4Lbukg7HpNi/KqJhue2Keak6qH9A8CeEOB7Eob0Zf+fU+CCQaL0cJqlm
-# nx9HCDxF+3BLbUufrV64EbTI40zqegPZdA+sXCmbcZy6okx/SjwsusWRItFA3DE8
-# MORZeFb6BmzBtqKJ7l939bbKBy2jvxcJI98Va95Q5JnlKor3m0E7xpMeYRriWklU
-# PsetMSf2NvUQa/E5vVyefQIwggaCMIIEaqADAgECAhA2wrC9fBs656Oz3TbLyXVo
-# MA0GCSqGSIb3DQEBDAUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKTmV3IEpl
-# cnNleTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJV
-# U1QgTmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9u
-# IEF1dGhvcml0eTAeFw0yMTAzMjIwMDAwMDBaFw0zODAxMTgyMzU5NTlaMFcxCzAJ
-# BgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNVBAMTJVNl
-# Y3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwggIiMA0GCSqGSIb3
-# DQEBAQUAA4ICDwAwggIKAoICAQCIndi5RWedHd3ouSaBmlRUwHxJBZvMWhUP2ZQQ
-# RLRBQIF3FJmp1OR2LMgIU14g0JIlL6VXWKmdbmKGRDILRxEtZdQnOh2qmcxGzjqe
-# mIk8et8sE6J+N+Gl1cnZocew8eCAawKLu4TRrCoqCAT8uRjDeypoGJrruH/drCio
-# 28aqIVEn45NZiZQI7YYBex48eL78lQ0BrHeSmqy1uXe9xN04aG0pKG9ki+PC6VEf
-# zutu6Q3IcZZfm00r9YAEp/4aeiLhyaKxLuhKKaAdQjRaf/h6U13jQEV1JnUTCm51
-# 1n5avv4N+jSVwd+Wb8UMOs4netapq5Q/yGyiQOgjsP/JRUj0MAT9YrcmXcLgsrAi
-# mfWY3MzKm1HCxcquinTqbs1Q0d2VMMQyi9cAgMYC9jKc+3mW62/yVl4jnDcw6ULJ
-# sBkOkrcPLUwqj7poS0T2+2JMzPP+jZ1h90/QpZnBkhdtixMiWDVgh60KmLmzXiqJ
-# c6lGwqoUqpq/1HVHm+Pc2B6+wCy/GwCcjw5rmzajLbmqGygEgaj/OLoanEWP6Y52
-# Hflef3XLvYnhEY4kSirMQhtberRvaI+5YsD3XVxHGBjlIli5u+NrLedIxsE88WzK
-# XqZjj9Zi5ybJL2WjeXuOTbswB7XjkZbErg7ebeAQUQiS/uRGZ58NHs57ZPUfECcg
-# JC+v2wIDAQABo4IBFjCCARIwHwYDVR0jBBgwFoAUU3m/WqorSs9UgOHYm8Cd8rID
-# ZsswHQYDVR0OBBYEFPZ3at0//QET/xahbIICL9AKPRQlMA4GA1UdDwEB/wQEAwIB
-# hjAPBgNVHRMBAf8EBTADAQH/MBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQK
-# MAgwBgYEVR0gADBQBgNVHR8ESTBHMEWgQ6BBhj9odHRwOi8vY3JsLnVzZXJ0cnVz
-# dC5jb20vVVNFUlRydXN0UlNBQ2VydGlmaWNhdGlvbkF1dGhvcml0eS5jcmwwNQYI
-# KwYBBQUHAQEEKTAnMCUGCCsGAQUFBzABhhlodHRwOi8vb2NzcC51c2VydHJ1c3Qu
-# Y29tMA0GCSqGSIb3DQEBDAUAA4ICAQAOvmVB7WhEuOWhxdQRh+S3OyWM637ayBeR
-# 7djxQ8SihTnLf2sABFoB0DFR6JfWS0snf6WDG2gtCGflwVvcYXZJJlFfym1Doi+4
-# PfDP8s0cqlDmdfyGOwMtGGzJ4iImyaz3IBae91g50QyrVbrUoT0mUGQHbRcF57ol
-# pfHhQEStz5i6hJvVLFV/ueQ21SM99zG4W2tB1ExGL98idX8ChsTwbD/zIExAopoe
-# 3l6JrzJtPxj8V9rocAnLP2C8Q5wXVVZcbw4x4ztXLsGzqZIiRh5i111TW7HV1Ats
-# Qa6vXy633vCAbAOIaKcLAo/IU7sClyZUk62XD0VUnHD+YvVNvIGezjM6CRpcWed/
-# ODiptK+evDKPU2K6synimYBaNH49v9Ih24+eYXNtI38byt5kIvh+8aW88WThRpv8
-# lUJKaPn37+YHYafob9Rg7LyTrSYpyZoBmwRWSE4W6iPjB7wJjJpH29308ZkpKKdp
-# kiS9WNsf/eeUtvRrtIEiSJHN899L1P4l6zKVsdrUu1FX1T/ubSrsxrYJD+3f3aKg
-# 6yxdbugot06YwGXXiy5UUGZvOu3lXlxA+fC13dQ5OlL2gIb5lmF6Ii8+CQOYDwXM
-# +yd9dbmocQsHjcRPsccUd5E9FiswEqORvz8g3s+jR3SFCgXhN4wz7NgAnOgpCdUo
-# 4uDyllU9PzGCBJEwggSNAgEBMGkwVTELMAkGA1UEBhMCR0IxGDAWBgNVBAoTD1Nl
-# Y3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMgVGltZSBTdGFt
-# cGluZyBDQSBSMzYCEDpSaiyEzlXmHWX8zBLY6YkwDQYJYIZIAWUDBAICBQCgggH5
-# MBoGCSqGSIb3DQEJAzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjQw
-# NzMxMTkyMTQxWjA/BgkqhkiG9w0BCQQxMgQwfO9Vr+iNqb2QWqJXqAIZpykoEGF0
-# jWGCHWwFbsnIqWAiCoHNXAZ+4wD7JrtR29XMMIIBegYLKoZIhvcNAQkQAgwxggFp
-# MIIBZTCCAWEwFgQU+GCYGab7iCz36FKX8qEZUhoWd18wgYcEFMauVOR4hvF8PVUS
-# SIxpw0p6+cLdMG8wW6RZMFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdv
-# IExpbWl0ZWQxLjAsBgNVBAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcg
-# Um9vdCBSNDYCEHojrtpTaZYPkcg+XPTH4z8wgbwEFIU9Yy2TgoJhfNCQNcSR3pLB
-# QtrHMIGjMIGOpIGLMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKTmV3IEplcnNl
-# eTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJVU1Qg
-# TmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9uIEF1
-# dGhvcml0eQIQNsKwvXwbOuejs902y8l1aDANBgkqhkiG9w0BAQEFAASCAgAphcvU
-# um4hm+YVlN6SXYZanivKsWVuj0VbnbPoesjzLHWW6wvD9K+DUu5ENR4UDbzZeBFi
-# R6XQ3bRshkIyKP9e/AOZwcb0wwpNBbnRKkGzFvsHkKfv+38N4IgIDXFgaQDP7yog
-# Av1l+fCz4qy22Unbci3UKhcLQeRdjOKIKlnoxLfUgZ6VidqH+be58eka92mpbpmB
-# rqH/0kQUr/WXyTSvc4eXTC/o/EboAR/TGBrO1HuUw90nruq0CaXHTKpDXNOtjKIo
-# 6/inqTaXruoIJi6bWUUK1s5lsukVIjvEUJw98pViHbzaXCtbM1UMaMuGJXQUyTrE
-# S75PTjMrWOvFaE+E/Jdd+qCF7gHNO9jWLhAMH47yZh10rYs5emtXTOEWJI8CtX2t
-# DKcdbJGvNlwkDooUSi3gaIsPxKjxexhOpqYYOnNGkOlW0Mg/3uPZs83dzw8/dWaD
-# s8wVbNcbnf73MUb81BiSh+SeiQF0uK5vo0PwKbX2/DwTGBlihmZRUaYSkLdMYN/j
-# KmKM/k7t6+HSF1rMDEen+vWbTjINxMcIG4uDqaQY0nGVF89/l94/Itcyv9wbeV2z
-# qwQ3Gu9FLzQwYy6CVAWwYx6UY6K5lYjmDyl4AtropwSO+jx69L8Z6KHh2Wy5YBOu
-# vXbTCk0QrHewWepcb1tKlFWbXCKUxyrEWm/mKQ==
+# AQkEMUIEQB9L/33TPK5gp2K2Aoc8wdGMHBhYylB7oV8Uhe9UgGKmMqj5VzkRqlKP
+# kfSdWsMJznwmX96ALo4pt0vCXy1inJAwDQYJKoZIhvcNAQEBBQAEggGALS7j61dW
+# RCjbWdTA8l9GSDweJb9DZZ3N4UuG0HQi3Sj0MluodlMyBOr3duFGTzJkZI76aUU3
+# +HKpSA/7vzrZfF6sdHQNy1QrBOHxhMjJ3fkl+tT/BVmLCKItsYCGKVgje/SLaKFb
+# +DPBHYg8+VqCh8bmDlD2Ujq7zqFApsYIWMEKHiuDYl3uar8qJR49l9voKYQfCbpS
+# TlTFwvFVLopVPJuLPLNGE7Gd6/ls4hcI2fAkAnVZhm54bF3tKJ996encluKWQMNs
+# 7lh/4Zb17oWb5GjGH3HCUjj1H1jr3Q2HBUU16+3zosMRGR0vjJkhxuHN8/Hj+p0G
+# +9kHBhXPpEkheEI5wbc6ysyfp+Vcv0bpW9Wlb/4w15vZ1NPLdxLuAGU8L3Zd6TQB
+# uPrIoSquMXkALoFH4stFiKN73zLMVXDD8MqOpwro3MAtHDJrYoxR43N3Oho9JwJR
+# 8g+7TLynISmckHjecjCyoMWk/TVxkz/QP8vomVgvKebRTQNUgn08P1OroYIY6DCC
+# GOQGCisGAQQBgjcDAwExghjUMIIY0AYJKoZIhvcNAQcCoIIYwTCCGL0CAQMxDzAN
+# BglghkgBZQMEAgIFADCCAQcGCyqGSIb3DQEJEAEEoIH3BIH0MIHxAgEBBgorBgEE
+# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMJJ8AW61Dt9YF/jCWPcm9g0AJIUIUQPs
+# EVGMRw3P5ZdxFPnk2nEc3OWkiL01jJQljwIUReCzKTinPJweQlmhpd734NedHHsY
+# DzIwMjUwNTE1MDIxODI3WqB2pHQwcjELMAkGA1UEBhMCR0IxFzAVBgNVBAgTDldl
+# c3QgWW9ya3NoaXJlMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxMDAuBgNVBAMT
+# J1NlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgU2lnbmVyIFIzNqCCEwQwggZi
+# MIIEyqADAgECAhEApCk7bh7d16c0CIetek63JDANBgkqhkiG9w0BAQwFADBVMQsw
+# CQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMSwwKgYDVQQDEyNT
+# ZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIENBIFIzNjAeFw0yNTAzMjcwMDAw
+# MDBaFw0zNjAzMjEyMzU5NTlaMHIxCzAJBgNVBAYTAkdCMRcwFQYDVQQIEw5XZXN0
+# IFlvcmtzaGlyZTEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTAwLgYDVQQDEydT
+# ZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIFNpZ25lciBSMzYwggIiMA0GCSqG
+# SIb3DQEBAQUAA4ICDwAwggIKAoICAQDThJX0bqRTePI9EEt4Egc83JSBU2dhrJ+w
+# Y7JgReuff5KQNhMuzVytzD+iXazATVPMHZpH/kkiMo1/vlAGFrYN2P7g0Q8oPEcR
+# 3h0SftFNYxxMh+bj3ZNbbYjwt8f4DsSHPT+xp9zoFuw0HOMdO3sWeA1+F8mhg6uS
+# 6BJpPwXQjNSHpVTCgd1gOmKWf12HSfSbnjl3kDm0kP3aIUAhsodBYZsJA1imWqkA
+# VqwcGfvs6pbfs/0GE4BJ2aOnciKNiIV1wDRZAh7rS/O+uTQcb6JVzBVmPP63k5xc
+# ZNzGo4DOTV+sM1nVrDycWEYS8bSS0lCSeclkTcPjQah9Xs7xbOBoCdmahSfg8Km8
+# ffq8PhdoAXYKOI+wlaJj+PbEuwm6rHcm24jhqQfQyYbOUFTKWFe901VdyMC4gRwR
+# Aq04FH2VTjBdCkhKts5Py7H73obMGrxN1uGgVyZho4FkqXA8/uk6nkzPH9QyHIED
+# 3c9CGIJ098hU4Ig2xRjhTbengoncXUeo/cfpKXDeUcAKcuKUYRNdGDlf8WnwbyqU
+# blj4zj1kQZSnZud5EtmjIdPLKce8UhKl5+EEJXQp1Fkc9y5Ivk4AZacGMCVG0e+w
+# wGsjcAADRO7Wga89r/jJ56IDK773LdIsL3yANVvJKdeeS6OOEiH6hpq2yT+jJ/lH
+# a9zEdqFqMwIDAQABo4IBjjCCAYowHwYDVR0jBBgwFoAUX1jtTDF6omFCjVKAurNh
+# lxmiMpswHQYDVR0OBBYEFIhhjKEqN2SBKGChmzHQjP0sAs5PMA4GA1UdDwEB/wQE
+# AwIGwDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMEoGA1Ud
+# IARDMEEwNQYMKwYBBAGyMQECAQMIMCUwIwYIKwYBBQUHAgEWF2h0dHBzOi8vc2Vj
+# dGlnby5jb20vQ1BTMAgGBmeBDAEEAjBKBgNVHR8EQzBBMD+gPaA7hjlodHRwOi8v
+# Y3JsLnNlY3RpZ28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5j
+# cmwwegYIKwYBBQUHAQEEbjBsMEUGCCsGAQUFBzAChjlodHRwOi8vY3J0LnNlY3Rp
+# Z28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcnQwIwYIKwYB
+# BQUHMAGGF2h0dHA6Ly9vY3NwLnNlY3RpZ28uY29tMA0GCSqGSIb3DQEBDAUAA4IB
+# gQACgT6khnJRIfllqS49Uorh5ZvMSxNEk4SNsi7qvu+bNdcuknHgXIaZyqcVmhrV
+# 3PHcmtQKt0blv/8t8DE4bL0+H0m2tgKElpUeu6wOH02BjCIYM6HLInbNHLf6R2qH
+# C1SUsJ02MWNqRNIT6GQL0Xm3LW7E6hDZmR8jlYzhZcDdkdw0cHhXjbOLsmTeS0Se
+# RJ1WJXEzqt25dbSOaaK7vVmkEVkOHsp16ez49Bc+Ayq/Oh2BAkSTFog43ldEKgHE
+# DBbCIyba2E8O5lPNan+BQXOLuLMKYS3ikTcp/Qw63dxyDCfgqXYUhxBpXnmeSO/W
+# A4NwdwP35lWNhmjIpNVZvhWoxDL+PxDdpph3+M5DroWGTc1ZuDa1iXmOFAK4iwTn
+# lWDg3QNRsRa9cnG3FBBpVHnHOEQj4GMkrOHdNDTbonEeGvZ+4nSZXrwCW4Wv2qyG
+# DBLlKk3kUW1pIScDCpm/chL6aUbnSsrtbepdtbCLiGanKVR/KC1gsR0tC6Q0RfWO
+# I4owggYUMIID/KADAgECAhB6I67aU2mWD5HIPlz0x+M/MA0GCSqGSIb3DQEBDAUA
+# MFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNV
+# BAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwHhcNMjEw
+# MzIyMDAwMDAwWhcNMzYwMzIxMjM1OTU5WjBVMQswCQYDVQQGEwJHQjEYMBYGA1UE
+# ChMPU2VjdGlnbyBMaW1pdGVkMSwwKgYDVQQDEyNTZWN0aWdvIFB1YmxpYyBUaW1l
+# IFN0YW1waW5nIENBIFIzNjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGB
+# AM2Y2ENBq26CK+z2M34mNOSJjNPvIhKAVD7vJq+MDoGD46IiM+b83+3ecLvBhStS
+# VjeYXIjfa3ajoW3cS3ElcJzkyZlBnwDEJuHlzpbN4kMH2qRBVrjrGJgSlzzUqcGQ
+# BaCxpectRGhhnOSwcjPMI3G0hedv2eNmGiUbD12OeORN0ADzdpsQ4dDi6M4YhoGE
+# 9cbY11XxM2AVZn0GiOUC9+XE0wI7CQKfOUfigLDn7i/WeyxZ43XLj5GVo7LDBExS
+# Lnh+va8WxTlA+uBvq1KO8RSHUQLgzb1gbL9Ihgzxmkdp2ZWNuLc+XyEmJNbD2OII
+# q/fWlwBp6KNL19zpHsODLIsgZ+WZ1AzCs1HEK6VWrxmnKyJJg2Lv23DlEdZlQSGd
+# F+z+Gyn9/CRezKe7WNyxRf4e4bwUtrYE2F5Q+05yDD68clwnweckKtxRaF0VzN/w
+# 76kOLIaFVhf5sMM/caEZLtOYqYadtn034ykSFaZuIBU9uCSrKRKTPJhWvXk4Cllg
+# rwIDAQABo4IBXDCCAVgwHwYDVR0jBBgwFoAU9ndq3T/9ARP/FqFsggIv0Ao9FCUw
+# HQYDVR0OBBYEFF9Y7UwxeqJhQo1SgLqzYZcZojKbMA4GA1UdDwEB/wQEAwIBhjAS
+# BgNVHRMBAf8ECDAGAQH/AgEAMBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQK
+# MAgwBgYEVR0gADBMBgNVHR8ERTBDMEGgP6A9hjtodHRwOi8vY3JsLnNlY3RpZ28u
+# Y29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdSb290UjQ2LmNybDB8BggrBgEF
+# BQcBAQRwMG4wRwYIKwYBBQUHMAKGO2h0dHA6Ly9jcnQuc2VjdGlnby5jb20vU2Vj
+# dGlnb1B1YmxpY1RpbWVTdGFtcGluZ1Jvb3RSNDYucDdjMCMGCCsGAQUFBzABhhdo
+# dHRwOi8vb2NzcC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOCAgEAEtd7IK0O
+# NVgMnoEdJVj9TC1ndK/HYiYh9lVUacahRoZ2W2hfiEOyQExnHk1jkvpIJzAMxmEc
+# 6ZvIyHI5UkPCbXKspioYMdbOnBWQUn733qMooBfIghpR/klUqNxx6/fDXqY0hSU1
+# OSkkSivt51UlmJElUICZYBodzD3M/SFjeCP59anwxs6hwj1mfvzG+b1coYGnqsSz
+# 2wSKr+nDO+Db8qNcTbJZRAiSazr7KyUJGo1c+MScGfG5QHV+bps8BX5Oyv9Ct36Y
+# 4Il6ajTqV2ifikkVtB3RNBUgwu/mSiSUice/Jp/q8BMk/gN8+0rNIE+QqU63JoVM
+# CMPY2752LmESsRVVoypJVt8/N3qQ1c6FibbcRabo3azZkcIdWGVSAdoLgAIxEKBe
+# Nh9AQO1gQrnh1TA8ldXuJzPSuALOz1Ujb0PCyNVkWk7hkhVHfcvBfI8NtgWQupia
+# AeNHe0pWSGH2opXZYKYG4Lbukg7HpNi/KqJhue2Keak6qH9A8CeEOB7Eob0Zf+fU
+# +CCQaL0cJqlmnx9HCDxF+3BLbUufrV64EbTI40zqegPZdA+sXCmbcZy6okx/Sjws
+# usWRItFA3DE8MORZeFb6BmzBtqKJ7l939bbKBy2jvxcJI98Va95Q5JnlKor3m0E7
+# xpMeYRriWklUPsetMSf2NvUQa/E5vVyefQIwggaCMIIEaqADAgECAhA2wrC9fBs6
+# 56Oz3TbLyXVoMA0GCSqGSIb3DQEBDAUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UE
+# CBMKTmV3IEplcnNleTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRo
+# ZSBVU0VSVFJVU1QgTmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0
+# aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0yMTAzMjIwMDAwMDBaFw0zODAxMTgyMzU5
+# NTlaMFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAs
+# BgNVBAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwggIi
+# MA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCIndi5RWedHd3ouSaBmlRUwHxJ
+# BZvMWhUP2ZQQRLRBQIF3FJmp1OR2LMgIU14g0JIlL6VXWKmdbmKGRDILRxEtZdQn
+# Oh2qmcxGzjqemIk8et8sE6J+N+Gl1cnZocew8eCAawKLu4TRrCoqCAT8uRjDeypo
+# GJrruH/drCio28aqIVEn45NZiZQI7YYBex48eL78lQ0BrHeSmqy1uXe9xN04aG0p
+# KG9ki+PC6VEfzutu6Q3IcZZfm00r9YAEp/4aeiLhyaKxLuhKKaAdQjRaf/h6U13j
+# QEV1JnUTCm511n5avv4N+jSVwd+Wb8UMOs4netapq5Q/yGyiQOgjsP/JRUj0MAT9
+# YrcmXcLgsrAimfWY3MzKm1HCxcquinTqbs1Q0d2VMMQyi9cAgMYC9jKc+3mW62/y
+# Vl4jnDcw6ULJsBkOkrcPLUwqj7poS0T2+2JMzPP+jZ1h90/QpZnBkhdtixMiWDVg
+# h60KmLmzXiqJc6lGwqoUqpq/1HVHm+Pc2B6+wCy/GwCcjw5rmzajLbmqGygEgaj/
+# OLoanEWP6Y52Hflef3XLvYnhEY4kSirMQhtberRvaI+5YsD3XVxHGBjlIli5u+Nr
+# LedIxsE88WzKXqZjj9Zi5ybJL2WjeXuOTbswB7XjkZbErg7ebeAQUQiS/uRGZ58N
+# Hs57ZPUfECcgJC+v2wIDAQABo4IBFjCCARIwHwYDVR0jBBgwFoAUU3m/WqorSs9U
+# gOHYm8Cd8rIDZsswHQYDVR0OBBYEFPZ3at0//QET/xahbIICL9AKPRQlMA4GA1Ud
+# DwEB/wQEAwIBhjAPBgNVHRMBAf8EBTADAQH/MBMGA1UdJQQMMAoGCCsGAQUFBwMI
+# MBEGA1UdIAQKMAgwBgYEVR0gADBQBgNVHR8ESTBHMEWgQ6BBhj9odHRwOi8vY3Js
+# LnVzZXJ0cnVzdC5jb20vVVNFUlRydXN0UlNBQ2VydGlmaWNhdGlvbkF1dGhvcml0
+# eS5jcmwwNQYIKwYBBQUHAQEEKTAnMCUGCCsGAQUFBzABhhlodHRwOi8vb2NzcC51
+# c2VydHJ1c3QuY29tMA0GCSqGSIb3DQEBDAUAA4ICAQAOvmVB7WhEuOWhxdQRh+S3
+# OyWM637ayBeR7djxQ8SihTnLf2sABFoB0DFR6JfWS0snf6WDG2gtCGflwVvcYXZJ
+# JlFfym1Doi+4PfDP8s0cqlDmdfyGOwMtGGzJ4iImyaz3IBae91g50QyrVbrUoT0m
+# UGQHbRcF57olpfHhQEStz5i6hJvVLFV/ueQ21SM99zG4W2tB1ExGL98idX8ChsTw
+# bD/zIExAopoe3l6JrzJtPxj8V9rocAnLP2C8Q5wXVVZcbw4x4ztXLsGzqZIiRh5i
+# 111TW7HV1AtsQa6vXy633vCAbAOIaKcLAo/IU7sClyZUk62XD0VUnHD+YvVNvIGe
+# zjM6CRpcWed/ODiptK+evDKPU2K6synimYBaNH49v9Ih24+eYXNtI38byt5kIvh+
+# 8aW88WThRpv8lUJKaPn37+YHYafob9Rg7LyTrSYpyZoBmwRWSE4W6iPjB7wJjJpH
+# 29308ZkpKKdpkiS9WNsf/eeUtvRrtIEiSJHN899L1P4l6zKVsdrUu1FX1T/ubSrs
+# xrYJD+3f3aKg6yxdbugot06YwGXXiy5UUGZvOu3lXlxA+fC13dQ5OlL2gIb5lmF6
+# Ii8+CQOYDwXM+yd9dbmocQsHjcRPsccUd5E9FiswEqORvz8g3s+jR3SFCgXhN4wz
+# 7NgAnOgpCdUo4uDyllU9PzGCBJIwggSOAgEBMGowVTELMAkGA1UEBhMCR0IxGDAW
+# BgNVBAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMg
+# VGltZSBTdGFtcGluZyBDQSBSMzYCEQCkKTtuHt3XpzQIh616TrckMA0GCWCGSAFl
+# AwQCAgUAoIIB+TAaBgkqhkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcN
+# AQkFMQ8XDTI1MDUxNTAyMTgyN1owPwYJKoZIhvcNAQkEMTIEMLyiojVYBy4XjDKg
+# 8JYNp+IMWeVFL6QGizG2UEbPmj++CBqxOrD+hOzVQImYYoWPeDCCAXoGCyqGSIb3
+# DQEJEAIMMYIBaTCCAWUwggFhMBYEFDjJFIEQRLTcZj6T1HRLgUGGqbWxMIGHBBTG
+# rlTkeIbxfD1VEkiMacNKevnC3TBvMFukWTBXMQswCQYDVQQGEwJHQjEYMBYGA1UE
+# ChMPU2VjdGlnbyBMaW1pdGVkMS4wLAYDVQQDEyVTZWN0aWdvIFB1YmxpYyBUaW1l
+# IFN0YW1waW5nIFJvb3QgUjQ2AhB6I67aU2mWD5HIPlz0x+M/MIG8BBSFPWMtk4KC
+# YXzQkDXEkd6SwULaxzCBozCBjqSBizCBiDELMAkGA1UEBhMCVVMxEzARBgNVBAgT
+# Ck5ldyBKZXJzZXkxFDASBgNVBAcTC0plcnNleSBDaXR5MR4wHAYDVQQKExVUaGUg
+# VVNFUlRSVVNUIE5ldHdvcmsxLjAsBgNVBAMTJVVTRVJUcnVzdCBSU0EgQ2VydGlm
+# aWNhdGlvbiBBdXRob3JpdHkCEDbCsL18Gzrno7PdNsvJdWgwDQYJKoZIhvcNAQEB
+# BQAEggIAPl6zvJesTFGst1HuGT8VGXeYeDHfW/ffXe+oN6Jb7B7Rz1dhJKe27Ygm
+# FVjt4qtByA0Gk9SklpbIp/gvB/L7HPQQPvizI5RhQjSCP4RuWLJVH4r7M8xfdQ7p
+# gPGoBkMiHUVvo+rASDhkKvGVlRj0zQzsF3YeVhZeP6E5JnpNLYnY0S7qKUvY7Vza
+# 2Dd373FwpiQQVYn+EfLGNDswdZFmZCPuou2L11bqQb8DfNO3UhvbpbRh1IuPRq/e
+# d6CL9qpcxRCRhSN/o9NbVWIWeOjBWYhWFVmXE7Ss83Ww7Ekjnlm25Nv55/g56Ava
+# hJ3cWcCIOoRATV8m66dGA0qaZZ2/d6Y9gqk+IygLQjQ9clPvTCwsQjh4z/hTSPNk
+# PENKPDQ6/W8gumJC+uo6ffkrSXMVewrz74Xo9OBcWdMvD9uKfmkjX+PJGt+TSSPz
+# 09z5muaYDeh9DIEG4HRoVo/NBRr0Ptg35DAk9wPmb8cG7SwfmW5v4ErvXlWRBvfB
+# epzOK2dUlYpk0DgzyBi9gQHVKxoc2E1XyrVzXS1MzSkEdA+j2Cj1U/owroFmXYhc
+# MdhbVvxAuaSugkXTEAQ5Oo/b2lCx2HTGA8pAbOfvffX5bmn+r2lzFFwNQcLFeHS0
+# Yj717OUUl4bT6nN76LzYsRUFFaYXLAxgIhyIQF9tyHPhYaOC6gE=
 # SIG # End signature block

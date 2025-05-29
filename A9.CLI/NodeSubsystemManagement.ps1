@@ -9,11 +9,11 @@ Function Find-A9Node
 	Locate a node by blinking its LEDs.
 .DESCRIPTION
 	The command helps locate a particular node or its components by illuminating LEDs on the node.
-.PARAMETER T
+.PARAMETER Time
 	Specifies the number of seconds to illuminate the LEDs. For HPE 3PAR 7000 and HPE 3PAR 8000 storage systems, the default time to illuminate the LEDs is 15
 	minutes with a maximum time of one hour. For STR (Safe to Remove) systems, the default time is one hour with a maximum time of one week. For all
 	other systems, the default time is 60 seconds with a maximum time of 255 seconds. Issuing "Find-Node -t 0 <nodeid>" will turn off LEDs immediately.
-.PARAMETER Ps
+.PARAMETER PowerSupply
 	Only the service LED for the specified power supply will blink. Accepted values for <psid> are 0 and 1.
 .PARAMETER Pci
 	Only the service LED corresponding to the PCI card in the specified slot will blink. Accepted values for <slot> are 0 through 8.
@@ -22,21 +22,23 @@ Function Find-A9Node
 	Accepted values for <fanid> are 0, 1 and 2 for HPE 3PAR 20000 systems.
 .PARAMETER Drive
 	Only the service LED corresponding to the node's internal drive will blink.
-.PARAMETER Bat
+.PARAMETER Battery
 	Only the service LED on the battery backup unit will blink.
 .PARAMETER NodeID
 	Indicates which node the locatenode operation will act on. Accepted
 	values are 0 through 7.
+.EXAMPLE
+	PS:> Fine-A9Node -Time 360 -PowerSupply 0
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$T,
-		[Parameter()]	[String]	$Ps,
+param(	[Parameter()]	[String]	$Time,
+		[Parameter()]	[String]	$PowerSupply,
 		[Parameter()]	[String]	$Pci,
 		[Parameter()]	[String]	$Fan,
 		[Parameter()]	[switch]	$Drive,
-		[Parameter()]	[switch]	$Bat,
+		[Parameter()]	[switch]	$Battery,
 		[Parameter()]	[String]	$NodeID
 )
 Begin
@@ -44,13 +46,14 @@ Begin
 }
 process
 {	$Cmd = " locatenode "
-	if($T)	{	$Cmd += " -t $T " }
-	if($Ps)		{	$Cmd += " -ps $Ps " 	}
-	if($Pci) 	{	$Cmd += " -pci $Pci " 	}
-	if($Fan)	{	$Cmd += " -fan $Fan " 	}
-	if($Drive)	{	$Cmd += " -drive " 		}
-	if($Bat)	{	$Cmd += " -bat " 		}
-	if($NodeID) {	$Cmd += " $NodeID " 	}
+	if($Time)		{	$Cmd += " -t $T " }
+	if($PowerSupply){	$Cmd += " -ps $Ps " 	}
+	if($Pci) 		{	$Cmd += " -pci $Pci " 	}
+	if($Fan)		{	$Cmd += " -fan $Fan " 	}
+	if($Drive)		{	$Cmd += " -drive " 		}
+	if($Battery)	{	$Cmd += " -bat " 		}
+	if($NodeID) 	{	$Cmd += " $NodeID " 	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -64,7 +67,7 @@ Function Find-A9System
 .DESCRIPTION
     The command helps locate a storage system by illuminating the blue UID LEDs or by alternating the node status LEDs amber and green on all
     nodes of the storage system. By default, the LEDs in all connected cages will illuminate blue or will oscillate green and amber, depending on the system or cage model.
-.PARAMETER T
+.PARAMETER Time
 	Specifies the number of seconds to illuminate or blink the LEDs. default may vary depending on the system model. For example, the default time 
 	for HPE 3PAR 7000 and HPE 3PAR 8000 storage systems is 15 minutes, with a maximum time of one hour. The default time for 9000 and 20000 systems 
 	is 60 minutes, with a maximum of 604,800 seconds (one week).
@@ -75,12 +78,12 @@ Function Find-A9System
 .EXAMPLE
 	In the following example, a storage system is identified by illuminating or blinking the LEDs on all drive cages in the system for 90 seconds. 
 	
-	PS:> Find-A9System_CLI -T 90
+	PS:> Find-A9System -Time 90
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$T,
+param(	[Parameter()]	[String]	$Time,
 		[Parameter()]	[String]	$NodeList,
 		[Parameter()]	[switch]	$NoCage
 )
@@ -89,141 +92,12 @@ Begin
 }
 process
 {	$Cmd = " locatesys "
-	if($T) 			{	$Cmd += " -t $T " }
+	if($Time) 		{	$Cmd += " -t $T " }
 	if($NodeList) 	{	$Cmd += " -nodes $NodeList " }
 	if($NoCage)		{	$Cmd += " -nocage " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
-}
-}
-
-Function Get-A9System_CLI
-{
-<#
-.SYNOPSIS
-    Displays the Storage system information. 
-.DESCRIPTION
-    Command displays the Storage system information.
-.EXAMPLE
-    PS:> Get-A9System_CLI 
-
-	Command displays the Storage system information.such as system name, model, serial number, and system capacity information.
-.EXAMPLE
-    PS:> Get-A9System_CLI -SystemCapacity
-
-	Lists Storage system space information in MB(1024^2 bytes)
-.EXAMPLE	
-	PS:> Get-A9System_CLI -DevType FC
-.PARAMETER Detailed
-	Specifies that more detailed information about the system is displayed.
-.PARAMETER SystemParameters
-	Specifies that the system parameters are displayed.
-.PARAMETER Fan
-	Displays the system fan information.
-.PARAMETER SystemCapacity
-	Displays the system capacity information in MiB.
-.PARAMETER vvSpace
-	Displays the system capacity information in MiB with an emphasis on VVs.
-.PARAMETER Domainspace
-	Displays the system capacity information broken down by domain in MiB.
-.PARAMETER Descriptor
-	Displays the system descriptor properties.
-.PARAMETER DevType FC|NL|SSD
-	Displays the system capacity information where the disks must have a device type string matching the specified device type; either Fast
-	Class (FC), Nearline (NL), Solid State Drive (SSD). This option can only be issued with -space or -vvspace.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	
-        [Parameter()]	[switch]    $Detailed,
-        [Parameter()]   [switch]    $SystemParameters,
-        [Parameter()]   [switch]    $Fan,
-        [Parameter()]   [switch]    $SystemCapacity,
-        [Parameter()]   [switch]    $vvSpace,
-        [Parameter()]   [switch]    $DomainSpace,
-        [Parameter()]   [switch]    $Descriptor,
-        [Parameter()]   [String]    $DevType
-    )
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$sysinfocmd = "showsys "
-    if ($Detailed) 			{    $sysinfocmd += " -d " 		}
-    if ($SystemParameters) 	{    $sysinfocmd += " -param "	}
-    if ($Fan) 				{    $sysinfocmd += " -fan "	}
-    if ($SystemCapacity) 	{    $sysinfocmd += " -space " 	}
-    if ($vvSpace) 			{    $sysinfocmd += " -vvspace "}
-    if ($DomainSpace) 		{    $sysinfocmd += " -domainspace "}
-    if ($Descriptor) 		{	$sysinfocmd += " -desc "	}
-    if ($DevType) 			{    $sysinfocmd += " -devtype $DevType"}
-    write-verbose "Get system information " 
-    $Result3 = Invoke-A9CLICommand -cmds  $sysinfocmd	
-    if ($Fan -or $DomainSpace -or $sysinfocmd -eq "showsys ") 
-		{	$incre = "True"
-			$FirstCnt = 1
-			$rCount = $Result3.Count
-			$noOfColumns = 0        
-			if ($Fan) {		$FirstCnt = 0 }
-			if ($DomainSpace) {    $rCount = $Result3.Count - 3   }
-			$tempFile = [IO.Path]::GetTempFileName()
-			if ($Result3.Count -gt 1) 
-				{	foreach ($s in  $Result3[$FirstCnt..$rCount] ) 
-						{	$s = [regex]::Replace($s, "^ +", "")
-							if (!$DomainSpace) {    $s = [regex]::Replace($s, "-", "")    }				
-							$s = [regex]::Replace($s, " +", ",")
-							if ($noOfColumns -eq 0) 
-								{    $noOfColumns = $s.Split(",").Count;    }
-							else{	$noOfValues = $s.Split(",").Count;
-									if ($noOfValues -ge $noOfColumns) 
-										{  	[System.Collections.ArrayList]$CharArray1 = $s.Split(",");
-											if ($noOfValues -eq 12) 
-												{	$CharArray1[2] = $CharArray1[2] + " " + $CharArray1[3];
-													$CharArray1.RemoveAt(3);
-													$s = $CharArray1 -join ',';
-												}
-											elseif ($noOfValues -eq 13) 
-												{	$CharArray1[2] = $CharArray1[2] + " " + $CharArray1[3] + " " + $CharArray1[4];
-													$CharArray1.RemoveAt(4);
-													$CharArray1.RemoveAt(3);
-													$s = $CharArray1 -join ',';
-												}
-										}
-								}
-							if ($DomainSpace) 
-								{	if ($incre -eq "True") 
-										{	$sTemp = $s.Split(',')											
-											$sTemp[1] = "Used_Legacy(MiB)"				
-											$sTemp[2] = "Snp_Legacy(MiB)"
-											$sTemp[3] = "Base_Private(MiB)"				
-											$sTemp[4] = "Snp_Private(MiB)"
-											$sTemp[5] = "Shared_CPG(MiB)"				
-											$sTemp[6] = "Free_CPG(MiB)"
-											$sTemp[7] = "Unmapped(MiB)"	
-											$sTemp[8] = "Total(MiB)"
-											$sTemp[9] = "Compact_Efficiency"
-											$sTemp[10] = "Dedup_Efficiency"
-											$sTemp[11] = "Compress_Efficiency"
-											$sTemp[12] = "DataReduce_Efficiency"
-											$sTemp[13] = "Overprov_Efficiency"
-											$newTemp = [regex]::Replace($sTemp, "^ ", "")			
-											$newTemp = [regex]::Replace($sTemp, " ", ",")				
-											$newTemp = $newTemp.Trim()
-											$s = $newTemp							
-										}
-								}				
-							Add-Content -Path $tempFile -Value $s				
-							$incre = "False"
-						}
-					Import-Csv $tempFile			
-					Remove-Item $tempFile
-				}
-			else{	Remove-Item $tempFile
-					return	$Result3			
-				}
-		}		
-    else{    return	$Result3    }	
 }
 }
 
@@ -234,16 +108,6 @@ Function Ping-A9RCIPPorts
 	Verifying That the Servers Are Connected
 .DESCRIPTION
 	Verifying That the Servers Are Connected.
-.EXAMPLE	
-	PS:> Ping-A9RCIPPorts -IP_address 192.168.245.5 -NSP 0:3:1
-.EXAMPLE
-	PS:> Ping-A9RCIPPorts -count 2 -IP_address 192.168.245.5 -NSP 0:3:1
-.EXAMPLE
-	PS:> Ping-A9RCIPPorts -wait 2 -IP_address 192.168.245.5 -NSP 0:3:1
-.EXAMPLE
-	PS:> Ping-A9RCIPPorts -size 2 -IP_address 192.168.245.5 -NSP 0:3:1
-.EXAMPLE
-	PS:> Ping-A9RCIPPorts -PF -IP_address 192.168.245.5 -NSP 0:3:1
 .PARAMETER IP_address
 	IP address on the secondary system to ping
 .PARAMETER NSP
@@ -261,6 +125,16 @@ Function Ping-A9RCIPPorts
 .PARAMETER count
 	Specifies the number of replies accepted by the system before
 	terminating the command. The default is 1; the maximum value is 25.
+.EXAMPLE	
+	PS:> Ping-A9RCIPPorts -IP_address 192.168.245.5 -NSP 0:3:1
+.EXAMPLE
+	PS:> Ping-A9RCIPPorts -count 2 -IP_address 192.168.245.5 -NSP 0:3:1
+.EXAMPLE
+	PS:> Ping-A9RCIPPorts -wait 2 -IP_address 192.168.245.5 -NSP 0:3:1
+.EXAMPLE
+	PS:> Ping-A9RCIPPorts -size 2 -IP_address 192.168.245.5 -NSP 0:3:1
+.EXAMPLE
+	PS:> Ping-A9RCIPPorts -PF -IP_address 192.168.245.5 -NSP 0:3:1
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -283,6 +157,7 @@ process
 	if($PF)		{	$Cmds +=" -pf"	}
 	$Cmds +=" $IP_address "	
 	$Cmds +=" $NSP "
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$result = Invoke-A9CLICommand  -cmds $Cmds	
 	return $result	
 }
@@ -296,20 +171,14 @@ Function Set-A9Battery
 .DESCRIPTION
 	The command may be used to set battery information such as the battery's expiration date, its recharging 
 	time, and its serial number. This information gives the system administrator a record or log of the battery age and battery charge status.
-.EXAMPLE
-	The following example resets the battery test log and the recharging time
-	for a newly installed battery on node 2, power supply 1, and battery 0, with
-	an expiration date of July 4, 2006:
-	
-	PS:> Set-A9Battery -X " 07/04/2006" -Node_ID 2 -Powersupply_ID 1 -Battery_ID 0	
-.PARAMETER S
+.PARAMETER Serial
 	Specifies the serial number of the battery using a limit of 31 alphanumeric characters.
 	This option is not supported on HPE 3PAR 10000 and 20000 systems.
-.PARAMETER X	
+.PARAMETER Expiration	
 	Specifies the expiration date of the battery (mm/dd/yyyy). The expiration date cannot extend beyond 2037.
-.PARAMETER L
+.PARAMETER LogReset
 	Specifies that the battery test log is reset and all previous test log entries are cleared.
-.PARAMETER R
+.PARAMETER RechargeReset
 	Specifies that the battery recharge time is reset and that 10 hours of charging time are required for the battery to be fully charged. This option is deprecated.
 .PARAMETER Node_ID
 	Specifies the node number where the battery is installed. Node_ID is an integer from 0 through 7.
@@ -317,15 +186,21 @@ Function Set-A9Battery
 	Specifies the power supply number on the node using either 0 (left side from the rear of the node) or 1 (right side from the rear of the node).
 .PARAMETER Battery_ID
 	Specifies the battery number on the power supply where 0 is the first battery.
+.EXAMPLE
+	The following example resets the battery test log and the recharging time
+	for a newly installed battery on node 2, power supply 1, and battery 0, with
+	an expiration date of July 4, 2006:
+	
+	PS:> Set-A9Battery -X " 07/04/2006" -Node_ID 2 -Powersupply_ID 1 -Battery_ID 0	
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
-	[Parameter()]					[String]	$S,
-	[Parameter()]					[String]	$X,
-	[Parameter()]					[switch]	$L,
-	[Parameter()]					[switch]	$R,
+	[Parameter()]					[String]	$Serial,
+	[Parameter()]					[String]	$Expiration,
+	[Parameter()]					[switch]	$LogReset,
+	[Parameter()]					[switch]	$RechargeReset,
 	[Parameter()]					[String]	$Node_ID,
 	[Parameter(Mandatory=$True)]	[String]	$Powersupply_ID,
 	[Parameter()]					[String]	$Battery_ID
@@ -335,13 +210,14 @@ Begin
 }
 process	
 {	$Cmd = " setbattery "
-	if($S)				{	$Cmd += " -s $S "}
-	if($X)				{	$Cmd += " -x $X " }
-	if($L)				{	$Cmd += " -l " }
-	if($R)				{	$Cmd += " -r " }
+	if($Serial)			{	$Cmd += " -s $Serial "}
+	if($Expiration)		{	$Cmd += " -x $Expiration " }
+	if($LogReset)		{	$Cmd += " -l " }
+	if($RechargeReset)	{	$Cmd += " -r " }
 	if($Node_ID)		{	$Cmd += " $Node_ID "	}
 	if($Powersupply_ID)	{	$Cmd += " $Powersupply_ID "}
 	if($Battery_ID)		{	$Cmd += " $Battery_ID "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
@@ -412,6 +288,24 @@ Function Set-A9HostPorts
 	Configure settings of the array
 .DESCRIPTION
 	Configures with settings specified in the text file
+.PARAMETER FCConfigFile
+	Specify the config file containing FC host controllers information
+.PARAMETER iSCSIConfigFile
+	Specify the config file containing iSCSI host controllers information
+.PARAMETER LDConfigFile
+	Specify the config file containing Logical Disks information
+.PARAMETER Demo
+	Switch to list the commands to be executed 
+.PARAMETER RCIPConfiguration
+	Go for  RCIP Configuration
+.PARAMETER RCFCConfiguration
+	Go for  RCFC Configuration
+.PARAMETER Port_IP
+	port ip address
+.PARAMETER NetMask
+	Net Mask Name
+.PARAMETER NSP
+	NSP Name 
 .EXAMPLE
 	PS:> Set-A9HostPorts -FCConfigFile FC-Nodes.CSV
 
@@ -431,63 +325,38 @@ Function Set-A9HostPorts
 .EXAMPLE	
 	PS:> Set-A9HostPorts -RCIPConfiguration -Port_IP 0.0.0.0 -NetMask xyz -NSP 1:2:3> for rcip port
 .EXAMPLE	
-	PS:> Set-A9HostPorts -RCFCConfiguration -NSP 1:2:3>
+	PS:> Set-A9HostPorts -RCFCConfiguration -NSP 1:2:3
 	
 	For RCFC port  
-.PARAMETER FCConfigFile
-	Specify the config file containing FC host controllers information
-.PARAMETER iSCSIConfigFile
-	Specify the config file containing iSCSI host controllers information
-.PARAMETER LDConfigFile
-	Specify the config file containing Logical Disks information
-.PARAMETER Demo
-	Switch to list the commands to be executed 
-.PARAMETER RCIPConfiguration
-	Go for  RCIP Configuration
-.PARAMETER RCFCConfiguration
-	Go for  RCFC Configuration
-.PARAMETER Port_IP
-	port ip address
-.PARAMETER NetMask
-	Net Mask Name
-.PARAMETER NSP
-	NSP Name 
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-Param(		[Parameter()]	[String]	$FCConfigFile,
-			[Parameter()]	[String]	$iSCSIConfigFile,		
-			[Parameter()]	[String]	$LDConfigFile,
-			[Parameter()]	[switch]	$RCIPConfiguration,
-			[Parameter()]	[switch]	$RCFCConfiguration,
-			[Parameter()]	[String]	$Port_IP,
-			[Parameter()]	[String]	$NetMask,
-			[Parameter()]	[String]	$NSP,
-			[Parameter()]	[switch]	$Demo
+Param(		[Parameter(ParameterSetName='FCCF',Mandatory)]		[String]	$FCConfigFile,
+			[Parameter(ParameterSetName='ICF',Mandatory)]		[String]	$iSCSIConfigFile,		
+			[Parameter(ParameterSetName='LDCF',Mandatory)]		[String]	$LDConfigFile,
+			[Parameter(ParameterSetName='RCIPFCCF',Mandatory)]	[switch]	$RCIPConfiguration,
+			[Parameter(ParameterSetName='RCFCCF',Mandatory)]	[switch]	$RCFCConfiguration,
+			[Parameter(ParameterSetName='RCIPFCCF',Mandatory)]
+																[String]	$Port_IP,
+			[Parameter(ParameterSetName='RCIPFCCF',Mandatory)]	
+																[String]	$NetMask,
+			[Parameter(ParameterSetName='RCIPFCCF',Mandatory)]	
+			[Parameter(ParameterSetName='RCFCCF',Mandatory)]	[String]	$NSP
 	)
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
-{	if (!(($FCConfigFile) -or ($iSCSIConfigFile) -or ($LDConfigFile) -or ($RCIPConfiguration) -or ($RCFCConfiguration))) 
-		{	return "FAILURE : No config file selected"
-		}
-	if ($RCIPConfiguration)
-		{	$Cmds="controlport rcip addr -f "
-			if($Port_IP)	{	$Cmds=" $Port_IP "	}
-			else			{	return "port_IP required with RCIPConfiguration Option"	}
-			if($NetMask)	{	$Cmds=" $NetMask "	}
-			else			{	return "NetMask required with RCIPConfiguration Option"	}
-			if($NSP)		{	$Cmds=" $NSP "		}
-			else			{	return "NSP required with RCIPConfiguration Option"		}
+{	if ($RCIPConfiguration)
+		{	$Cmds="controlport rcip addr -f $Port_IP $NetMask $NSP "
+			write-verbose "Executing the following SSH command `n`t $cmdS"
 			$result = Invoke-A9CLICommand -cmds $Cmds
 			return $result
 		}
 	if ($RCFCConfiguration)
-		{	$Cmds="controlport rcfc init -f "	
-			if($NSP)	{	$Cmds=" $NSP "	}
-			else		{	return "NSP required with RCFCConfiguration Option"	}
+		{	$Cmds="controlport rcfc init -f $NSP "
+			write-verbose "Executing the following SSH command `n`t $cmdS"
 			$result = Invoke-A9CLICommand -cmds $Cmds
 			return $result
 		}
@@ -498,13 +367,18 @@ process
 					foreach ( $p in $ListofFCPorts)
 						{	$Port = $p.Controller 
 							Write-Verbose  "Set port $Port offline " 
+							write-verbose "Executing the following SSH command `n`t $cmdS"
 							$Cmds = "controlport offline -f $Port"
+							write-verbose "Executing the following SSH command `n`t $cmdS"
 							Invoke-A9CLICommand -cmds $Cmds
 							Write-Verbose  "Configuring port $Port as host " 
+							write-verbose "Executing the following SSH command `n`t $cmdS"
 							$Cmds= "controlport config host -ct point -f $Port"
+							write-verbose "Executing the following SSH command `n`t $cmdS"
 							Invoke-A9CLICommand -cmds $Cmds
 							Write-Verbose  "Resetting port $Port " 
 							$Cmds="controlport rst -f $Port"
+							write-verbose "Executing the following SSH command `n`t $cmdS"
 							Invoke-A9CLICommand -cmds $Cmds
 						}
 				}	
@@ -529,14 +403,17 @@ process
 							if ($bDHCP)
 								{	Write-Verbose  "Enabling DHCP on port $Port " 
 									$Cmds = "controliscsiport dhcp on -f $Port"
+									write-verbose "Executing the following SSH command `n`t $cmdS"
 									Invoke-A9CLICommand -cmds $Cmds			
 								}
 							else
 								{	Write-Verbose  "Setting IP address and subnet on port $Port " 
 									$Cmds = "controliscsiport addr $IPAddr $IPSubnet -f $Port"
+									write-verbose "Executing the following SSH command `n`t $cmdS"
 									Invoke-A9CLICommand -cmds $Cmds
 									Write-Verbose  "Setting gateway on port $Port " 
 									$Cmds = "controliscsiport gw $IPgw -f $Port"
+									write-verbose "Executing the following SSH command `n`t $cmdS"
 									Invoke-A9CLICommand -cmds $Cmds
 								}				
 						}
@@ -555,21 +432,21 @@ Function Set-A9NodeProperties
 	set the properties of the node components.
 .DESCRIPTION
 	The command sets properties of the node components such as serial number of the power supply.
-.EXAMPLE
-	PS:> Set-A9NodeProperties -PS_ID 1 -S xxx -Node_ID 1
-.PARAMETER S
+.PARAMETER Serial
 	Specify the serial number. It is up to 8 characters in length.
 .PARAMETER PS_ID
 	Specifies the power supply ID.
 .PARAMETER Node_ID
 	Specifies the node ID.
+.EXAMPLE
+	PS:> Set-A9NodeProperties -PS_ID 1 -S xxx -Node_ID 1
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param( 	[Parameter(Mandatory=$True)]	[String]	$PS_ID,
-		[Parameter(Mandatory=$True)]	[String]	$S,
-		[Parameter()]					[String]	$Node_ID	
+param( 	[Parameter(Mandatory)]	[String]	$PS_ID,
+		[Parameter(Mandatory)]	[String]	$Serial,
+		[Parameter()]			[String]	$Node_ID	
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -577,8 +454,9 @@ Begin
 process
 {	$Cmd = " setnode ps "
 	if($PS_ID)		{	$Cmd += " $PS_ID "	}	
-	if($S) 			{	$Cmd += " -s $S " 	} 
+	if($Serial) 	{	$Cmd += " -s $S " 	} 
 	if($Node_ID) 	{	$Cmd += " $Node_ID "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -591,6 +469,10 @@ Function Set-A9NodesDate
 	Sets date and time information.
 .DESCRIPTION
 	The command allows you to set the system time and date on all nodes.
+.PARAMETER Tzlist
+	Displays a timezone within a group, if a group is specified. If a group is not specified, displays a list of valid groups.
+.PARAMETER TzGroup
+	Displays a timezone within a group, if a group is specified. it alwase use with -Tzlist.
 .EXAMPLE
 	The following example displays the timezones with the -tzlist option:
 	
@@ -603,10 +485,6 @@ Function Set-A9NodesDate
 	The following example shows the timezone being set:
 
 	PS:> Set-A9NodesDate  -Tzlist -TzGroup "Etc/GMT"
-.PARAMETER Tzlist
-	Displays a timezone within a group, if a group is specified. If a group is not specified, displays a list of valid groups.
-.PARAMETER TzGroup
-	Displays a timezone within a group, if a group is specified. it alwase use with -Tzlist.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -623,6 +501,7 @@ process
 		{	$Cmd += " -tzlist "
 			if($TzGroup) 	{	$Cmd += " $TzGroup " }
 		}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
@@ -680,6 +559,7 @@ process
 	if($Force_iderecovery) 	{	$Cmd += " force_iderecovery " 	} 
 	if($Force_idewipe) 		{	$Cmd += " force_idewipe " 		}
 	if($Export_vluns) 		{	$Cmd += " export_vluns " 		}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -698,16 +578,12 @@ Function Show-A9Battery
 .PARAMETER Showcols
 	Explicitly select the columns to be shown using a comma-separated list of column names.  
 	For this option, the full column names are shown in the header.
-.PARAMETER D
+.PARAMETER Detailed
 	Specifies that detailed battery information, including battery test information, serial numbers, and expiration dates, is displayed.
 .PARAMETER Log
 	Show battery test log information. This option is not supported on HPE 3PAR 7000 nor on HPE 3PAR 8000 series systems.
-.PARAMETER I
+.PARAMETER Inventory
 	Show battery inventory information.
-.PARAMETER State
-	Show detailed battery state information.
-.PARAMETER S
-	This is the same as -state. This option is deprecated and will be removed in a future release.
 .PARAMETER Svc
 	Displays inventory information with HPE serial number, spare part etc. This option must be used with -i option and it is not supported on HPE 3PAR 10000 systems.
 .PARAMETER Node_ID
@@ -719,10 +595,9 @@ Function Show-A9Battery
 param(
 	[Parameter()]	[switch]	$Listcols,
 	[Parameter()]	[String]	$Showcols,
-	[Parameter()]	[switch]	$D,
+	[Parameter()]	[switch]	$Detailed,
 	[Parameter()]	[switch]	$Log,
-	[Parameter()]	[switch]	$I,
-	[Parameter()]	[switch]	$State,
+	[Parameter()]	[switch]	$Inventory,
 	[Parameter()]	[switch]	$Svc,
 	[Parameter()]	[String]	$Node_ID
 )
@@ -737,16 +612,19 @@ process
 			return $Result
 		}
 	if($Showcols)	{	$Cmd += " -showcols $Showcols "}
-	if($D)			{	$Cmd += " -d " 		}
+	if($Detailed)	{	$Cmd += " -d " 		}
 	if($Log)		{	$Cmd += " -log "	}
-	if($I)			{	$Cmd += " -i "		}
-	if($State)		{	$Cmd += " -state "	}
+	if($Inventory)	{	$Cmd += " -i "		}
 	if($Svc)		{	$Cmd += " -svc "	}
 	if($Node_ID)	{	$Cmd += " $Node_ID "}
 	$Cmd
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1)
-		{	if($D)	{	Return  $Result		}
+}
+End
+{	if($Result.count -gt 1)
+		{	if($Detailed)	
+					{	Return  $Result		}
 			else	{	$tempFile = [IO.Path]::GetTempFileName()
 						$LastItem = $Result.Count   
 						foreach ($S in  $Result[0..$LastItem] )
@@ -762,11 +640,11 @@ process
 											}
 								Add-Content -Path $tempfile -Value $s				
 							}
-						Import-Csv $tempFile 
+						$Result = Import-Csv $tempFile 
 						Remove-Item $tempFile
 					}
 		}
-	else{	Return  $Result}
+	Return  $Result
 }
 }
 
@@ -777,6 +655,11 @@ Function Show-A9EEProm
 	Show node EEPROM information.
 .DESCRIPTION
 	The command displays node EEPROM log information.
+.PARAMETER Dead
+	Specifies that an EEPROM log for a node that has not started or successfully joined the cluster be displayed. If this option is used, it must be followed by a non empty list of nodes.
+.PARAMETER Node_ID
+	Specifies the node ID for which EEPROM log information is retrieved. Multiple node IDs are separated with a single space (0 1 2). 
+	If no specifiers are used, the EEPROM log for all nodes is displayed.
 .EXAMPLE
 	The following example displays the EEPROM log for all nodes:
 	PS:> Show-A9EEProm
@@ -786,11 +669,6 @@ Function Show-A9EEProm
 	PS:> Show-A9EEProm -Dead 
 .EXAMPLE
 	PS:> Show-A9EEProm -Dead -Node_ID 0
-.PARAMETER Dead
-	Specifies that an EEPROM log for a node that has not started or successfully joined the cluster be displayed. If this option is used, it must be followed by a non empty list of nodes.
-.PARAMETER Node_ID
-	Specifies the node ID for which EEPROM log information is retrieved. Multiple node IDs are separated with a single space (0 1 2). 
-	If no specifiers are used, the EEPROM log for all nodes is displayed.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -805,6 +683,7 @@ process
 {	$Cmd = " showeeprom "
 	if($Dead)	{	$Cmd += " -dead "}
 	if($Node_ID)	{	$Cmd += " $Node_ID "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -840,7 +719,9 @@ Function Get-A9SystemInformation
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$Option
+param(	[Parameter()]	
+		[ValidateSet("d","param","fan","space","vvspace","domainspace","desc","devtype","date")]
+						[String]	$Option
 	)	
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -849,44 +730,38 @@ process
 {	$sysinfocmd = "showsys "
 	$Option = $Option.toLower()
 	if ($Option)
-		{	$a = "d","param","fan","space","vvspace","domainspace","desc","devtype","date"
-			$l=$Option
-			if($a -eq $l)
-				{	$sysinfocmd+=" -$option "
-					if($Option -eq "date")
-						{	$Result = Invoke-A9CLICommand -cmds  "showdate"
-							write-verbose "Get system date information " 
-							write-verbose "Get system fan information cmd -> showdate " 
-							$tempFile = [IO.Path]::GetTempFileName()
-							Add-Content -Path $tempFile -Value "Node,Date"
-							foreach ($s in  $Result[1..$Result.Count] )
-								{	$splits = $s.split(" ")
-									$var1 = $splits[0].trim()
-									$var2 = ""
-									foreach ($t in $splits[1..$splits.Count])
-										{	if(-not $t)	{	continue	}
-											$var2 += $t+" "	
-										}
-									$var3 = $var1+","+$var2
-									Add-Content -Path $tempFile -Value $var3
+		{	$sysinfocmd+=" -$option "
+			if($Option -eq "date")
+				{	write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  "showdate"
+					write-verbose "Get system date information " 
+					write-verbose "Get system fan information cmd -> showdate " 
+					$tempFile = [IO.Path]::GetTempFileName()
+					Add-Content -Path $tempFile -Value "Node,Date"
+					foreach ($s in  $Result[1..$Result.Count] )
+						{	$splits = $s.split(" ")
+							$var1 = $splits[0].trim()
+							$var2 = ""
+							foreach ($t in $splits[1..$splits.Count])
+								{	if(-not $t)	{	continue	}	
+									$var2 += $t+" "	
 								}
-							Import-Csv $tempFile
-							Remove-Item $tempFile
-							return
-						}	
-					else
-						{	$Result = Invoke-A9CLICommand -cmds  $sysinfocmd
-							return $Result
+							$var3 = $var1+","+$var2
+							Add-Content -Path $tempFile -Value $var3
 						}
-				}
+					$Result = Import-Csv $tempFile
+					Remove-Item $tempFile
+				}	
 			else
-				{	Return "FAILURE : -option :- $option is an Incorrect option  [d,param,fan,space,vvspace,domainspace,desc,devtype]  can be used only . "
+				{	write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $sysinfocmd
 				}
 		}
 	else
-		{	$Result = Invoke-A9CLICommand -cmds  $sysinfocmd
-			return $Result 
-		}		
+		{	write-verbose "Executing the following SSH command `n`t $cmd"
+			$Result = Invoke-A9CLICommand -cmds  $sysinfocmd 
+		}
+	return $Result		
 }
 }
 
@@ -920,8 +795,6 @@ Function Show-A9FCOEStatistics
 	Shows the values from when the system was last initiated.
 .NOTES
 	This command requires a SSH type connection.
-.NOTES
-	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]		[String]	$D,
@@ -948,8 +821,8 @@ Process
 	if($Fullcounts)	{	$Cmd += " -fullcounts " }
 	if($Prev)		{	$Cmd += " -prev " }
 	if($Begin)		{	$Cmd += " -begin " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Write-Verbose  "Executing function : Show-FCOEStatistics command -->"  
 	Return $Result
 }
 }
@@ -961,6 +834,12 @@ Function Show-A9Firmwaredb
 	Show database of current firmware levels.
 .DESCRIPTION
 	Displays the current database of firmware levels for possible upgrade. If issued without any options, the firmware for all vendors is displayed.
+.PARAMETER VendorName
+	Specifies that the firmware vendor from the SCSI database file is displayed.
+.PARAMETER Load
+	Reloads the SCSI database file into the system.
+.PARAMETER All
+	Specifies current and past firmware entries are displayed. If not specified, only current entries are displayed.
 .EXAMPLE
 	PS:> Show-A9Firmwaredb
 .EXAMPLE
@@ -968,19 +847,13 @@ Function Show-A9Firmwaredb
 .EXAMPLE
 	PS:> Show-A9Firmwaredb -All
 .EXAMPLE
-	PS:> Show-A9Firmwaredb -L
-.PARAMETER VendorName
-	Specifies that the firmware vendor from the SCSI database file is displayed.
-.PARAMETER L
-	Reloads the SCSI database file into the system.
-.PARAMETER All
-	Specifies current and past firmware entries are displayed. If not specified, only current entries are displayed.
+	PS:> Show-A9Firmwaredb -Load
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$VendorName,
-		[Parameter()]	[switch]	$L,
+		[Parameter()]	[switch]	$Load,
 		[Parameter()]	[switch]	$All	
 )
 Begin
@@ -989,8 +862,9 @@ Begin
 Process
 {	$Cmd = " showfirmwaredb "
 	if($VendorName)	{	$Cmd += " -n $VendorName "}
-	if($L)			{	$Cmd += " -l "	}
+	if($Load)		{	$Cmd += " -l "	}
 	if($All)		{	$Cmd += " -all " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1013,6 +887,7 @@ Begin
 }
 process
 {	$Cmd = " showtocgen "
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1025,20 +900,6 @@ Function Show-A9iSCSISessionStatistics
 	The Show-iSCSISessionStatistics command displays the iSCSI session statistics.
 .DESCRIPTION  
 	The Show-iSCSISessionStatistics command displays the iSCSI session statistics.
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -Delay 2
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -NodeList 1
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -SlotList 1
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -PortList 1
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -Prev
 .PARAMETER Iterations 
 	The command stops after a user-defined <number> of iterations.
 .PARAMETER Delay
@@ -1054,6 +915,22 @@ Function Show-A9iSCSISessionStatistics
 	Shows the differences from the previous sample.
 .PARAMETER Begin
 	Shows the values from when the system was last initiated.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Show-A9iSCSISessionStatistics
+.EXAMPLE
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1
+.EXAMPLE
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -Delay 2
+.EXAMPLE
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -NodeList 1
+.EXAMPLE
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -SlotList 1
+.EXAMPLE
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -PortList 1
+.EXAMPLE
+	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -Prev
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1064,7 +941,8 @@ param(	[Parameter(mandatory=$true)]	[String]	$Iterations,
 		[Parameter()]	[String]	$SlotList,
 		[Parameter()]	[String]	$PortList,		
 		[Parameter()]	[Switch]	$Previous,	
-		[Parameter()]	[Switch]	$Begin
+		[Parameter()]	[Switch]	$Begin,
+		[parameter()]	[switch]	$ShowRaw
 )	
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -1078,7 +956,9 @@ process
 	if($PortList)	{	$cmd+=" -ports $PortList "	}	
 	if($Previous)	{	$cmd+=" -prev "	}
 	if($Begin)		{	$cmd+=" -begin "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if ($ShowRaw) { return $Result }
 	if($Result -match "Total" -and $Result.Count -gt 5)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count - 3 
@@ -1153,24 +1033,6 @@ Function Show-A9iSCSIStatistics
 	The command displays the iSCSI statistics.
 .DESCRIPTION  
 	The command displays the iSCSI statistics.
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -Delay 2
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -NodeList 1
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -SlotList 1
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -PortList 1
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -Fullcounts
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -Prev
-.EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -Begin
 .PARAMETER Iterations 
 	The command stops after a user-defined <number> of iterations.
 .PARAMETER Delay
@@ -1196,8 +1058,24 @@ Function Show-A9iSCSIStatistics
 	Shows the differences from the previous sample.
 .PARAMETER Begin
 	Shows the values from when the system was last initiated.
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -Delay 2
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -NodeList 1
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -SlotList 1
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -PortList 1
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -Fullcounts
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -Prev
+.EXAMPLE
+	PS:> Show-A9iSCSIStatistics -Iterations 1 -Begin
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1225,6 +1103,7 @@ process
 	if($Fullcounts)	{	$cmd+=" -fullcounts "	}
 	if($Prev)		{	$cmd+=" -prev "	}
 	if($Begin)		{	$cmd+=" -begin "	}	
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Show-iSCSIStatistics command that displays information iSNS table for iSCSI ports in the system  " 	
 	if($Result -match "Total" -or $Result.Count -gt 1)
@@ -1278,23 +1157,24 @@ Function Show-A9NetworkDetail
 	Show the network configuration and status
 .DESCRIPTION
 	The command displays the configuration and status of the administration network interfaces, including the configured gateway and network time protocol (NTP) server.
+.PARAMETER Detailed
+	Show detailed information.
 .EXAMPLE 
 	The following example displays the status of the system administration network interfaces:
 	PS:> Show-A9NetworkDetail -D
-.PARAMETER D
-	Show detailed information.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[switch]	$D
+param(	[Parameter()]	[switch]	$Detailed
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
 {	$Cmd = " shownet "
-	if($D)	{	$Cmd += " -d "}
+	if($Detailed)	{	$Cmd += " -d "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1307,14 +1187,14 @@ Function Show-A9NodeEnvironmentStatus
 	Show node environmental status (voltages, temperatures).
 .DESCRIPTION
 	The command displays the node operating environment status, including voltages and temperatures.
+.PARAMETER Node_ID
+	Specifies the ID of the node whose environment status is displayed. Multiple node IDs can be specified as a series of integers separated by
+	a space (1 2 3). If no option is used, then the environment status of all nodes is displayed.
 .EXAMPLE
 	The following example displays the operating environment status for all nodes
 	in the system:
 
 	PS:> Show-A9NodeEnvironmentStatus
-.PARAMETER Node_ID
-	Specifies the ID of the node whose environment status is displayed. Multiple node IDs can be specified as a series of integers separated by
-	a space (1 2 3). If no option is used, then the environment status of all nodes is displayed.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1327,6 +1207,7 @@ Begin
 process
 {	$Cmd = " shownodeenv "
 	if($Node_ID)	{	$Cmd += " -n $Node_ID "} 
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1339,12 +1220,6 @@ Function Show-A9iSCSISession
 	Shows the iSCSI sessions.
 .DESCRIPTION  
 	The command shows the iSCSI sessions.
-.EXAMPLE
-	PS:> Show-A9iSCSISession
-.EXAMPLE
-	PS:> Show-A9iSCSISession -NSP 1:2:1
-.EXAMPLE
-	PS:> Show-A9iSCSISession -Detailed -NSP 1:2:1
 .PARAMETER Detailed
     Specifies that more detailed information about the iSCSI session is displayed. If this option is not used, then only summary information
     about the iSCSI session is displayed.
@@ -1352,6 +1227,12 @@ Function Show-A9iSCSISession
     Specifies the connection state of current iSCSI sessions. If this option is not used, then only summary information about the iSCSI session is displayed.
 .PARAMETER NSP
 	Requests that information for a specified port is displayed.
+.EXAMPLE
+	PS:> Show-A9iSCSISession
+.EXAMPLE
+	PS:> Show-A9iSCSISession -NSP 1:2:1
+.EXAMPLE
+	PS:> Show-A9iSCSISession -Detailed -NSP 1:2:1
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1368,6 +1249,7 @@ process
 	if ($Detailed)	{	$cmd+=" -d "	}
 	if ($ConnectionState)	{	$cmd+=" -state "	}
 	if ($NSP)	{	$cmd+=" $NSP "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	if($Result -match "total")
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -1398,19 +1280,6 @@ Function Show-A9NodeProperties
 .DESCRIPTION
 	The command displays an overview of the node-specific properties and its component information. Various command options can be used to
 	display the properties of PCI cards, CPUs, Physical Memory, IDE drives, and Power Supplies.
-.EXAMPLE
-	The following example displays the operating environment status for all
-	nodes in the system:
-	
-	PS:> Show-A9NodeProperties
-.EXAMPLE
-	The following examples display detailed information (-d option) for the nodes including their components in a table format. The shownode -d command
-	can be used to display the tail information of the nodes including their components in name and value pairs.
-
-	PS:> Show-A9NodeProperties - Mem
-	PS:> Show-A9NodeProperties - Mem -Node_ID 1	
-    
-	The following options are for node summary and inventory information:
 .PARAMETER Listcols
 	List the columns available to be shown with the -showcols option described below (see 'clihelp -col Show-NodeProperties' for help on each column).
 	By default (if none of the information selection options below are specified) the following columns are shown:
@@ -1464,6 +1333,19 @@ Function Show-A9NodeProperties
 	Displays inventory information with HPE serial number, spare part etc. This option must be used with -i option and it is not supported on HPE 3PAR 10000 systems
 .PARAMETER Node_ID
 	Displays the node information for the specified node ID(s). This specifier is not required. Node_ID is an integer from 0 through 7.
+.EXAMPLE
+	The following example displays the operating environment status for all
+	nodes in the system:
+	
+	PS:> Show-A9NodeProperties
+.EXAMPLE
+	The following examples display detailed information (-d option) for the nodes including their components in a table format. The shownode -d command
+	can be used to display the tail information of the nodes including their components in name and value pairs.
+
+	PS:> Show-A9NodeProperties - Mem
+	PS:> Show-A9NodeProperties - Mem -Node_ID 1	
+    
+	The following options are for node summary and inventory information:
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1492,6 +1374,7 @@ process
 { 	$Cmd = " shownode "
 	if($Listcols)
 		{	$Cmd += " -listcols "
+			write-verbose "Executing the following SSH command `n`t $cmd"
 			$Result = Invoke-A9CLICommand -cmds  $Cmd
 			return $Result
 		}
@@ -1510,6 +1393,7 @@ process
 	if($Uptime)		{	$Cmd += " -uptime " }
 	if($Svc) 		{	$Cmd += " -svc " }
 	if($Node_ID)	{	$Cmd += " $Node_ID " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	if($I -Or $D -Or $VerboseD)	{	Return  $Result	}
@@ -1673,6 +1557,7 @@ process
 	if($PFC)		{	$Cmd += " -pfc " }
 	if($PG)			{	$Cmd += " -pg " }
 	if($NSP)		{ 	$Cmd += " $NSP " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
@@ -1685,12 +1570,12 @@ Function Show-A9PortISNS
 	The command shows iSNS host information for iSCSI ports in the system.
 .DESCRIPTION 
 	The command shows iSNS host information for iSCSI ports in the system.
+.PARAMETER NSP
+	Specifies the port for which information about devices on that port are displayed.
 .EXAMPLE	
 	PS:> Show-PortISNS
 .EXAMPLE	
 	PS:> Show-PortISNS -NSP 1:2:3
-.PARAMETER NSP
-	Specifies the port for which information about devices on that port are displayed.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1703,51 +1588,89 @@ Begin
 process
 {	$cmd= "showportisns "	
 	if ($NSP)	{	$cmd+=" $NSP "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
-	write-verbose "  Executing  Show-PortISNS command that displays information iSNS table for iSCSI ports in the system  " 
 	if($Result -match "N:S:P")
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -2 		
 			foreach ($s in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s," +",",")
-					$s= [regex]::Replace($s,"-","")
-					$s= $s.Trim() 	
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 					Add-Content -Path $tempFile -Value $s				
 				}			
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			remove-item $tempFile
 		}
-	if($Result -match "N:S:P")	{	return  " Success : Executing Show-PortISNS"	}
-	else	{	return  $Result	}
+	if($Result -match "N:S:P")	{	write-host " Success : Executing Show-PortISNS" -ForegroundColor green	}
+	return  $Result
 }	
 } 
 
-Function Show-A9SystemManager
+Function Get-A9SystemManager
 {
 <#
 .SYNOPSIS
 	Show system manager startup state.
 .DESCRIPTION
 	The displays startup state information about the system manager.
-.PARAMETER D
+.PARAMETER Detailed
 	Shows additional detailed information if available.
-.PARAMETER L
+.PARAMETER Locks
 	Shows field service diagnostics for System Manager specific Config Locks and MCALLs, and system-wide ioctl system calls.
+.EXAMPLE 
+	PS:> Show-A9SystemManager -Detailed
+
+	System is up and running from 2024-10-28 13:57:01 MDT
+.EXAMPLE
+	PS:> Show-A9SystemManager -Locks
+
+	Config lock hold PID:        0
+	Config lock hold seconds:    0
+	System Manager ioctl count:  7
+	System ioctl count:          10
+	System ioctl detail counts:
+		-All ioctl Count- ------------------Barrier ioctl Counts-------------------
+	Node             Total Not Defined System Manager TOC Server PD Scrub DAR Server
+		0                 3           0              0          0        0          0
+		1                 1           0              0          0        0          0
+		2                 3           0              0          0        0          0
+		3                 3           0              0          0        0          0
+	----------------------------------------------------------------------------------
+	Totals                10           0              0          0        0          0
+	System ioctl detail:
+	Node Sec Outstanding     PID Source PID Source Node Type      Number Name
+	0               0 8401245         na          na NA      c056141d VVCMD_GET_NEXT_DDS_REQ
+	0               0 8399248         na          na NA      c056141e VVCMD_GET_NEXT_DDS_REP
+	0               0 8401453       7627           1 Sys Mgr c0561462 SCCMD_GETINFO_IOCTL
+	1               0 8390406       7627           1 Sys Mgr c0561462 SCCMD_GETINFO_IOCTL
+	2               0 8399235         na          na NA      c056141e VVCMD_GET_NEXT_DDS_REP
+	2               0 8389784         na          na NA      c056141d VVCMD_GET_NEXT_DDS_REQ
+	2               0 8389780       7627           1 Sys Mgr c0561462 SCCMD_GETINFO_IOCTL
+	3               0 8389846         na          na NA      c056141d VVCMD_GET_NEXT_DDS_REQ
+	3               0 8401202         na          na NA      c056141e VVCMD_GET_NEXT_DDS_REP
+	3               0 8401403       7627           1 Sys Mgr c0561462 SCCMD_GETINFO_IOCTL
+	-------------------------------------------------------------------------------------------
+	10 Total Count
+	System Manager mcall count:  2
+	System Manager mcall detail:
+		PID mSec Outstanding Name
+	2533668                0 MC_LOCKINFO
+	------------------------------------
+		1 Total Count
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[switch]	$D,
-		[Parameter()]	[switch]	$L
+param(	[Parameter()]	[switch]	$Detailed,
+		[Parameter()]	[switch]	$Locks
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
 {	$Cmd = " showsysmgr "
-	if($D)	{	$Cmd += " -d "	}
-	if($L)	{	$Cmd += " -l "}
+	if($Detailed)	{	$Cmd += " -d "	}
+	if($Locks)		{	$Cmd += " -l "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1770,6 +1693,7 @@ Begin
 }
 process
 {	$Cmd = " showtoc "
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1798,6 +1722,7 @@ Begin
 process
 {	$Cmd = " startnoderescue "
 	if($Node)	{	$Cmd += " -node $Node " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1923,6 +1848,7 @@ process
 					else		{	return " -d can only be used with -sfp"}
 				}
 	if($NSP)	{	$Cmds+=" $NSP"	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result=Invoke-A9CLICommand  -cmds $Cmds 	
 	$LastItem = $Result.Count -2  
 	if($SFP -and $D){	return $Result	}
@@ -1934,18 +1860,15 @@ process
 					$s= [regex]::Replace($s,"-","")
 					$s= [regex]::Replace($s,"\s+",",") 		
 					$s= [regex]::Replace($s,"/HW_Addr","") 
-					$s= [regex]::Replace($s,"N:S:P","Device")
+					# $s= [regex]::Replace($s,"N:S:P","Device")
 					$s= $s.Trim() 	
 					Add-Content -Path $tempFile -Value $s				
 				}
-			Import-Csv $tempFile
+			$Result = Import-Csv $tempFile
 			remove-item $tempFile
+			write-host 'Success : Executing Get-HostPorts' -ForegroundColor green
 		}
-	else	{	return  $Result	}
-	if($Result -match "N:S:P")
-		{	return  " Success : Executing Get-HostPorts"
-		}
-	else	{	return  $Result	}	
+	return $Result	
 }
 }
 
@@ -1958,7 +1881,7 @@ Function Get-A9Node
 	The command displays an overview of the node-specific properties
 	and its component information. Various command options can be used to
 	display the properties of PCI cards, CPUs, Physical Memory, IDE drives,
-	and Power Supplies.
+	and Power Supplies. For the Alletra MP B10000, no options are valid.
 .PARAMETER Listcols
 	List the columns available to be shown with the -showcols option
 	described below (see 'clihelp -col Get-Node' for help on each column).
@@ -2077,12 +2000,13 @@ process
 	if($Uptime)	{	$Cmd += " -uptime " }
 	if($Svc) 	{	$Cmd += " -svc " 	}
 	if($NodeID)	{ 	$Cmd += " $NodeID " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -1  
 			$incre = "True"
-			foreach ($s in  $Result[1..$LastItem] )
+			foreach ($s in  $Result[0..$LastItem] )
 				{	$s= [regex]::Replace($s,"^ ","")
 					$s= [regex]::Replace($s,"^ ","")
 					$s= [regex]::Replace($s,"^ ","")		
@@ -2092,8 +2016,8 @@ process
 					if($incre -eq "True")
 						{	$sTemp1=$s				
 							$sTemp = $sTemp1.Split(',')							
-							$sTemp[6] = "Control-Mem(MB)"
-							$sTemp[7] = "Data-Mem(MB)"
+							# $sTemp[6] = "Control-Mem(MB)"
+							# $sTemp[7] = "Data-Mem(MB)"
 							$newTemp= [regex]::Replace($sTemp,"^ ","")			
 							$newTemp= [regex]::Replace($sTemp," ",",")				
 							$newTemp= $newTemp.Trim()
@@ -2102,11 +2026,12 @@ process
 					Add-Content -Path $tempfile -Value $s
 					$incre = "False"		
 				}
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			remove-item $tempFile	
+
 		}
-	if($Result.count -gt 1)	{	return  " Success : Executing Get-Node"}
-	else					{	return  $Result	}
+	if($Result.count -gt 1)	{	write-host " Success : Executing Get-Node" -ForegroundColor green }
+	return  $Result
 }
 }
 
@@ -2117,18 +2042,7 @@ Function Get-A9Target
 	Show information about unrecognized targets.
 .DESCRIPTION
 	The command displays information about unrecognized targets.
-.EXAMPLE
-	PS:> Get-A9Target 
-.EXAMPLE 
-	PS:> Get-A9Target -Lun -Node_WWN 2FF70002AC00001F
-.EXAMPLE 
-	PS:> Get-A9Target -Lun -All
-.EXAMPLE 	
-	PS:> Get-A9Target -Inq -Page 0 -LUN_WWN  50002AC00001001F
-.EXAMPLE 
-	PS:> Get-A9Target -Inq -Page 0 -D -LUN_WWN  50002AC00001001F
-.EXAMPLE 	
-	PS:> Get-A9Target -Mode -Page 0x3 -D -LUN_WWN  50002AC00001001F 
+
 .PARAMETER Lun
 	Displays the exported Logical Unit Numbers (LUNs) from the unknown
 	targets. Use the "all" specifier to display the exported LUNs from all
@@ -2147,6 +2061,18 @@ Function Get-A9Target
 	Specifies that the rescan is forced. If this option is not used, the rescan will be suppressed if the peer ports have already been rescanned within the last 10 seconds.
 .PARAMETER Rescan
 	Rescan the peer ports to find the unknown targets.
+.EXAMPLE
+	PS:> Get-A9Target 
+.EXAMPLE 
+	PS:> Get-A9Target -Lun -Node_WWN 2FF70002AC00001F
+.EXAMPLE 
+	PS:> Get-A9Target -Lun -All
+.EXAMPLE 	
+	PS:> Get-A9Target -Inq -Page 0 -LUN_WWN  50002AC00001001F
+.EXAMPLE 
+	PS:> Get-A9Target -Inq -Page 0 -D -LUN_WWN  50002AC00001001F
+.EXAMPLE 	
+	PS:> Get-A9Target -Mode -Page 0x3 -D -LUN_WWN  50002AC00001001F 
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -2178,7 +2104,7 @@ process
 	if($Rescan)	{	$Cmd += " -rescan " }
 	if($Node_WWN){	$Cmd += " $Node_WWN " }
 	if($LUN_WWN){	$Cmd += " $LUN_WWN " }
-	write-host "$Cmd"
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
@@ -2191,12 +2117,12 @@ Function Show-A9PortARP
 	The command shows the ARP table for iSCSI ports in the system.
 .DESCRIPTION  
 	The command shows the ARP table for iSCSI ports in the system.
+.PARAMETER NSP
+	Specifies the port for which information about devices on that port are displayed.
 .EXAMPLE
 	PS:> Show-A9PortARP
 .EXAMPLE
 	PS:> Show-A9PortARP -NSP 1:2:3
-.PARAMETER NSP
-	Specifies the port for which information about devices on that port are displayed.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -2209,6 +2135,7 @@ Begin
 Process	
 {	$cmd= "showportarp "	
 	if ($NSP)	{	$cmd+=" $NSP "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	if($Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -2246,7 +2173,7 @@ Function Show-A9UnrecognizedTargetsInfo
 	Specify the SCSI page number for the inquiry and mode information. <num> is a hex number. For SCSI inquiry information, the valid <num>
 	is 0, 80, 83, and c0. For SCSI mode information, the valid <num> is 3 and 4. This option needs to be used together with -inq or -mode. 
 	If this option is not specified, the default <num> is 0.
-.PARAMETER D
+.PARAMETER Detailed
 	Display the detail information of SCSI inquiry or mode page information.
 .PARAMETER Force
 	Specifies that the rescan is forced. If this option is not used, the rescan will be suppressed if the peer ports have already
@@ -2275,7 +2202,7 @@ param(	[Parameter()]	[switch]	$Lun,
 		[Parameter()]	[switch]	$Inq,
 		[Parameter()]	[switch]	$Mode,
 		[Parameter()]	[String]	$Page,
-		[Parameter()]	[switch]	$D,
+		[Parameter()]	[switch]	$Detailed,
 		[Parameter()]	[switch]	$Force,
 		[Parameter()]	[switch]	$VerboseE,
 		[Parameter()]	[switch]	$Rescan,
@@ -2293,13 +2220,14 @@ Process
 	if($Inq)		{ 	$Cmd += " -inq "}
 	if($Mode)		{	$Cmd += " -mode "	}
 	if($Page)		{	$Cmd += " -page $Page "	}
-	if($D)			{	$Cmd += " -d "}
+	if($Detailed)	{	$Cmd += " -d "}
 	if($Force) 		{	$Cmd += " -force " }
 	if($VerboseE)	{	$Cmd += " -verbose "}
 	if($Rescan)		{	$Cmd += " -rescan "}
 	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "}
 	if($Node_WWN)	{	$Cmd += " $Node_WWN "}
 	if($LUN_WWN)	{	$Cmd += " $LUN_WWN "}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -2358,17 +2286,18 @@ Process
     if ($PortNSP) 		{    $cmd += "$PortNSP"		   }
     elseif (($Node) -and ($Slot) -and ($Port)) {    $cmd += "$($Node):$($Slot):$($Port)"    }
     else 				{           Return "Node, slot and plot details are required" }
-    $Result = Invoke-A9CLICommand -cmds  $cmd
+    write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $cmd
     return 	$Result	
 }
 }
 
 # SIG # Begin signature block
-# MIIsWwYJKoZIhvcNAQcCoIIsTDCCLEgCAQExDzANBglghkgBZQMEAgMFADCBmwYK
+# MIIt4gYJKoZIhvcNAQcCoIIt0zCCLc8CAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEB95Gp1C4zU
-# 91Itn6WniAU9qMS1uJI3o0mTx5hxJiIBIcqkezGqyRt20B1qPufGJE5nAVDrFp4y
-# D76XwJ04Ki9joIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEDakkyHwBku
+# HsnPz2vSK60wB21MEzYWpBLi8sa7QVNqsOxRb66bUlN2ke7bvKkJ+BkGagiNIOs0
+# rI0+36V4G9gKoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -2461,144 +2390,152 @@ Process
 # 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
 # tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
 # NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCGhgwghoUAgEBMGkwVDELMAkGA1UEBhMCR0Ix
+# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG58wghubAgEBMGkwVDELMAkGA1UEBhMCR0Ix
 # GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQA+t0nJCKLbjFYX+W0owcns5LwP6gJLg30m4NJTKdeLS4JMAVP3rMGJO
-# RBVZEVTjpu5h8ykNNfOqz7pMzvNxKY4wDQYJKoZIhvcNAQEBBQAEggGAExbMyTix
-# uKPyBT89NbTMZjn5XVLSxEHjN28gsTAnEcflpeMNNk9VVs+P1CnrymjjmcxgcYMb
-# M9UfHX03nV+0YEILOSX3LQFRT1zjRiPYxfBiHlKFbdBltR8/9DvrLjIPlMXRyyUk
-# PThXHFE7SHtSDEV4dPzRUFobqTtmMb9ixTRD3BLqzv+yoEB0dOl7zYk2OgHAZEhF
-# zi70YESB1ExYyPN6bb/I2GnVaqQz1FGfNuTm2JMwozL3N0XeYdb8fHMzCQYf6TIZ
-# PsImptLudJ7/JgR0U+MaeCya68AkDCxrZtb3gUZl82ieEcKGdbgQbKslvyE9tbkC
-# jy2W0cboHMudUGiVxLHpIfvuYjJ1Cc21pku7nk5Cg/xhnreGhd1TlkjfaBfrhp3z
-# rkkI6MBWfn4/pIpTjqrRdurquiw9Z3Mz0I4uHtkUIA16WtGV1PtfF04pxT+Rogjq
-# vLWvXtM68gX4/AErB3H0C5aFErPgxIA2AUiweQ+B79GWyiDd81ghz4O8oYIXYTCC
-# F10GCisGAQQBgjcDAwExghdNMIIXSQYJKoZIhvcNAQcCoIIXOjCCFzYCAQMxDzAN
-# BglghkgBZQMEAgIFADCBiAYLKoZIhvcNAQkQAQSgeQR3MHUCAQEGCWCGSAGG/WwH
-# ATBBMA0GCWCGSAFlAwQCAgUABDBkhIfdKoR549gfEFQQ0GNuwtCWLmxabeLDkhiL
-# 2OWKezNpmTVacX7HqIT+xrBmnjACEQDxRI197ZienNKyYzaNhLnwGA8yMDI0MDcz
-# MTE5MjM1N1qgghMJMIIGwjCCBKqgAwIBAgIQBUSv85SdCDmmv9s/X+VhFjANBgkq
-# hkiG9w0BAQsFADBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIElu
-# Yy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYg
-# VGltZVN0YW1waW5nIENBMB4XDTIzMDcxNDAwMDAwMFoXDTM0MTAxMzIzNTk1OVow
-# SDELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMSAwHgYDVQQD
-# ExdEaWdpQ2VydCBUaW1lc3RhbXAgMjAyMzCCAiIwDQYJKoZIhvcNAQEBBQADggIP
-# ADCCAgoCggIBAKNTRYcdg45brD5UsyPgz5/X5dLnXaEOCdwvSKOXejsqnGfcYhVY
-# wamTEafNqrJq3RApih5iY2nTWJw1cb86l+uUUI8cIOrHmjsvlmbjaedp/lvD1isg
-# HMGXlLSlUIHyz8sHpjBoyoNC2vx/CSSUpIIa2mq62DvKXd4ZGIX7ReoNYWyd/nFe
-# xAaaPPDFLnkPG2ZS48jWPl/aQ9OE9dDH9kgtXkV1lnX+3RChG4PBuOZSlbVH13gp
-# OWvgeFmX40QrStWVzu8IF+qCZE3/I+PKhu60pCFkcOvV5aDaY7Mu6QXuqvYk9R28
-# mxyyt1/f8O52fTGZZUdVnUokL6wrl76f5P17cz4y7lI0+9S769SgLDSb495uZBkH
-# NwGRDxy1Uc2qTGaDiGhiu7xBG3gZbeTZD+BYQfvYsSzhUa+0rRUGFOpiCBPTaR58
-# ZE2dD9/O0V6MqqtQFcmzyrzXxDtoRKOlO0L9c33u3Qr/eTQQfqZcClhMAD6FaXXH
-# g2TWdc2PEnZWpST618RrIbroHzSYLzrqawGw9/sqhux7UjipmAmhcbJsca8+uG+W
-# 1eEQE/5hRwqM/vC2x9XH3mwk8L9CgsqgcT2ckpMEtGlwJw1Pt7U20clfCKRwo+wK
-# 8REuZODLIivK8SgTIUlRfgZm0zu++uuRONhRB8qUt+JQofM604qDy0B7AgMBAAGj
-# ggGLMIIBhzAOBgNVHQ8BAf8EBAMCB4AwDAYDVR0TAQH/BAIwADAWBgNVHSUBAf8E
-# DDAKBggrBgEFBQcDCDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEw
-# HwYDVR0jBBgwFoAUuhbZbU2FL3MpdpovdYxqII+eyG8wHQYDVR0OBBYEFKW27xPn
-# 783QZKHVVqllMaPe1eNJMFoGA1UdHwRTMFEwT6BNoEuGSWh0dHA6Ly9jcmwzLmRp
-# Z2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQwOTZTSEEyNTZUaW1lU3Rh
-# bXBpbmdDQS5jcmwwgZAGCCsGAQUFBwEBBIGDMIGAMCQGCCsGAQUFBzABhhhodHRw
-# Oi8vb2NzcC5kaWdpY2VydC5jb20wWAYIKwYBBQUHMAKGTGh0dHA6Ly9jYWNlcnRz
-# LmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQwOTZTSEEyNTZUaW1l
-# U3RhbXBpbmdDQS5jcnQwDQYJKoZIhvcNAQELBQADggIBAIEa1t6gqbWYF7xwjU+K
-# PGic2CX/yyzkzepdIpLsjCICqbjPgKjZ5+PF7SaCinEvGN1Ott5s1+FgnCvt7T1I
-# jrhrunxdvcJhN2hJd6PrkKoS1yeF844ektrCQDifXcigLiV4JZ0qBXqEKZi2V3mP
-# 2yZWK7Dzp703DNiYdk9WuVLCtp04qYHnbUFcjGnRuSvExnvPnPp44pMadqJpddNQ
-# 5EQSviANnqlE0PjlSXcIWiHFtM+YlRpUurm8wWkZus8W8oM3NG6wQSbd3lqXTzON
-# 1I13fXVFoaVYJmoDRd7ZULVQjK9WvUzF4UbFKNOt50MAcN7MmJ4ZiQPq1JE3701S
-# 88lgIcRWR+3aEUuMMsOI5ljitts++V+wQtaP4xeR0arAVeOGv6wnLEHQmjNKqDbU
-# uXKWfpd5OEhfysLcPTLfddY2Z1qJ+Panx+VPNTwAvb6cKmx5AdzaROY63jg7B145
-# WPR8czFVoIARyxQMfq68/qTreWWqaNYiyjvrmoI1VygWy2nyMpqy0tg6uLFGhmu6
-# F/3Ed2wVbK6rr3M66ElGt9V/zLY4wNjsHPW2obhDLN9OTH0eaHDAdwrUAuBcYLso
-# /zjlUlrWrBciI0707NMX+1Br/wd3H3GXREHJuEbTbDJ8WC9nR2XlG3O2mflrLAZG
-# 70Ee8PBf4NvZrZCARK+AEEGKMIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipe
-# WzANBgkqhkiG9w0BAQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNl
-# cnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdp
-# Q2VydCBUcnVzdGVkIFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1
-# OTU5WjBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5
-# BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0
-# YW1waW5nIENBMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAxoY1Bkmz
-# wT1ySVFVxyUDxPKRN6mXUaHW0oPRnkyibaCwzIP5WvYRoUQVQl+kiPNo+n3znIkL
-# f50fng8zH1ATCyZzlm34V6gCff1DtITaEfFzsbPuK4CEiiIY3+vaPcQXf6sZKz5C
-# 3GeO6lE98NZW1OcoLevTsbV15x8GZY2UKdPZ7Gnf2ZCHRgB720RBidx8ald68Dd5
-# n12sy+iEZLRS8nZH92GDGd1ftFQLIWhuNyG7QKxfst5Kfc71ORJn7w6lY2zkpsUd
-# zTYNXNXmG6jBZHRAp8ByxbpOH7G1WE15/tePc5OsLDnipUjW8LAxE6lXKZYnLvWH
-# po9OdhVVJnCYJn+gGkcgQ+NDY4B7dW4nJZCYOjgRs/b2nuY7W+yB3iIU2YIqx5K/
-# oN7jPqJz+ucfWmyU8lKVEStYdEAoq3NDzt9KoRxrOMUp88qqlnNCaJ+2RrOdOqPV
-# A+C/8KI8ykLcGEh/FDTP0kyr75s9/g64ZCr6dSgkQe1CvwWcZklSUPRR8zZJTYsg
-# 0ixXNXkrqPNFYLwjjVj33GHek/45wPmyMKVM1+mYSlg+0wOI/rOP015LdhJRk8mM
-# DDtbiiKowSYI+RQQEgN9XyO7ZONj4KbhPvbCdLI/Hgl27KtdRnXiYKNYCQEoAA6E
-# VO7O6V3IXjASvUaetdN2udIOa5kM0jO0zbECAwEAAaOCAV0wggFZMBIGA1UdEwEB
-# /wQIMAYBAf8CAQAwHQYDVR0OBBYEFLoW2W1NhS9zKXaaL3WMaiCPnshvMB8GA1Ud
-# IwQYMBaAFOzX44LScV1kTN8uZz/nupiuHA9PMA4GA1UdDwEB/wQEAwIBhjATBgNV
-# HSUEDDAKBggrBgEFBQcDCDB3BggrBgEFBQcBAQRrMGkwJAYIKwYBBQUHMAGGGGh0
-# dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBBBggrBgEFBQcwAoY1aHR0cDovL2NhY2Vy
-# dHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZFJvb3RHNC5jcnQwQwYDVR0f
-# BDwwOjA4oDagNIYyaHR0cDovL2NybDMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1
-# c3RlZFJvb3RHNC5jcmwwIAYDVR0gBBkwFzAIBgZngQwBBAIwCwYJYIZIAYb9bAcB
-# MA0GCSqGSIb3DQEBCwUAA4ICAQB9WY7Ak7ZvmKlEIgF+ZtbYIULhsBguEE0TzzBT
-# zr8Y+8dQXeJLKftwig2qKWn8acHPHQfpPmDI2AvlXFvXbYf6hCAlNDFnzbYSlm/E
-# UExiHQwIgqgWvalWzxVzjQEiJc6VaT9Hd/tydBTX/6tPiix6q4XNQ1/tYLaqT5Fm
-# niye4Iqs5f2MvGQmh2ySvZ180HAKfO+ovHVPulr3qRCyXen/KFSJ8NWKcXZl2szw
-# cqMj+sAngkSumScbqyQeJsG33irr9p6xeZmBo1aGqwpFyd/EjaDnmPv7pp1yr8TH
-# wcFqcdnGE4AJxLafzYeHJLtPo0m5d2aR8XKc6UsCUqc3fpNTrDsdCEkPlM05et3/
-# JWOZJyw9P2un8WbDQc1PtkCbISFA0LcTJM3cHXg65J6t5TRxktcma+Q4c6umAU+9
-# Pzt4rUyt+8SVe+0KXzM5h0F4ejjpnOHdI/0dKNPH+ejxmF/7K9h+8kaddSweJywm
-# 228Vex4Ziza4k9Tm8heZWcpw8De/mADfIBZPJ/tgZxahZrrdVcA6KYawmKAr7ZVB
-# tzrVFZgxtGIJDwq9gdkT/r+k0fNX2bwE+oLeMt8EifAAzV3C+dAjfwAL5HYCJtnw
-# ZXZCpimHCUcr5n8apIUP/JiW9lVUKx+A+sDyDivl1vupL0QVSucTDh3bNzgaoSv2
-# 7dZ8/DCCBY0wggR1oAMCAQICEA6bGI750C3n79tQ4ghAGFowDQYJKoZIhvcNAQEM
-# BQAwZTELMAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UE
-# CxMQd3d3LmRpZ2ljZXJ0LmNvbTEkMCIGA1UEAxMbRGlnaUNlcnQgQXNzdXJlZCBJ
-# RCBSb290IENBMB4XDTIyMDgwMTAwMDAwMFoXDTMxMTEwOTIzNTk1OVowYjELMAkG
-# A1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRp
-# Z2ljZXJ0LmNvbTEhMB8GA1UEAxMYRGlnaUNlcnQgVHJ1c3RlZCBSb290IEc0MIIC
-# IjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAv+aQc2jeu+RdSjwwIjBpM+zC
-# pyUuySE98orYWcLhKac9WKt2ms2uexuEDcQwH/MbpDgW61bGl20dq7J58soR0uRf
-# 1gU8Ug9SH8aeFaV+vp+pVxZZVXKvaJNwwrK6dZlqczKU0RBEEC7fgvMHhOZ0O21x
-# 4i0MG+4g1ckgHWMpLc7sXk7Ik/ghYZs06wXGXuxbGrzryc/NrDRAX7F6Zu53yEio
-# ZldXn1RYjgwrt0+nMNlW7sp7XeOtyU9e5TXnMcvak17cjo+A2raRmECQecN4x7ax
-# xLVqGDgDEI3Y1DekLgV9iPWCPhCRcKtVgkEy19sEcypukQF8IUzUvK4bA3VdeGbZ
-# OjFEmjNAvwjXWkmkwuapoGfdpCe8oU85tRFYF/ckXEaPZPfBaYh2mHY9WV1CdoeJ
-# l2l6SPDgohIbZpp0yt5LHucOY67m1O+SkjqePdwA5EUlibaaRBkrfsCUtNJhbesz
-# 2cXfSwQAzH0clcOP9yGyshG3u3/y1YxwLEFgqrFjGESVGnZifvaAsPvoZKYz0YkH
-# 4b235kOkGLimdwHhD5QMIR2yVCkliWzlDlJRR3S+Jqy2QXXeeqxfjT/JvNNBERJb
-# 5RBQ6zHFynIWIgnffEx1P2PsIV/EIFFrb7GrhotPwtZFX50g/KEexcCPorF+CiaZ
-# 9eRpL5gdLfXZqbId5RsCAwEAAaOCATowggE2MA8GA1UdEwEB/wQFMAMBAf8wHQYD
-# VR0OBBYEFOzX44LScV1kTN8uZz/nupiuHA9PMB8GA1UdIwQYMBaAFEXroq/0ksuC
-# MS1Ri6enIZ3zbcgPMA4GA1UdDwEB/wQEAwIBhjB5BggrBgEFBQcBAQRtMGswJAYI
-# KwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBDBggrBgEFBQcwAoY3
-# aHR0cDovL2NhY2VydHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0QXNzdXJlZElEUm9v
-# dENBLmNydDBFBgNVHR8EPjA8MDqgOKA2hjRodHRwOi8vY3JsMy5kaWdpY2VydC5j
-# b20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3JsMBEGA1UdIAQKMAgwBgYEVR0g
-# ADANBgkqhkiG9w0BAQwFAAOCAQEAcKC/Q1xV5zhfoKN0Gz22Ftf3v1cHvZqsoYcs
-# 7IVeqRq7IviHGmlUIu2kiHdtvRoU9BNKei8ttzjv9P+Aufih9/Jy3iS8UgPITtAq
-# 3votVs/59PesMHqai7Je1M/RQ0SbQyHrlnKhSLSZy51PpwYDE3cnRNTnf+hZqPC/
-# Lwum6fI0POz3A8eHqNJMQBk1RmppVLC4oVaO7KTVPeix3P0c2PR3WlxUjG/voVA9
-# /HYJaISfb8rbII01YBwCA8sgsKxYoA5AY8WYIsGyWfVVa88nq2x2zm8jLfR+cWoj
-# ayL/ErhULSd+2DrZ8LaHlv1b0VysGMNNn3O3AamfV6peKOK5lDGCA4YwggOCAgEB
-# MHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTswOQYD
-# VQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2IFRpbWVTdGFt
-# cGluZyBDQQIQBUSv85SdCDmmv9s/X+VhFjANBglghkgBZQMEAgIFAKCB4TAaBgkq
-# hkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcNAQkFMQ8XDTI0MDczMTE5
-# MjM1N1owKwYLKoZIhvcNAQkQAgwxHDAaMBgwFgQUZvArMsLCyQ+CXc6qisnGTxmc
-# z0AwNwYLKoZIhvcNAQkQAi8xKDAmMCQwIgQg0vbkbe10IszR1EBXaEE2b4KK2lWa
-# rjMWr00amtQMeCgwPwYJKoZIhvcNAQkEMTIEMDlcMOqSxAdmG+uSyzDfzU2AqIV+
-# wnUPKtzlmXkL9Yh4poAoIGDxIfe6eL/pgdzwJzANBgkqhkiG9w0BAQEFAASCAgBv
-# KmJhjjouVHhGi44CP0GoKl5cxRZcLqBP11aPsWIk8Pr9qApr3z7u8HHds6ZxagYg
-# T/qg45q7yn+0nqoNVFwpdooIoNbXlcbka4REkzCCA2FW+Fx1YugnrJOOgvUMpfoZ
-# eCNRoq1eeltFZ7v2+KUcPmXKAz3my5up4S2mK7Ik6OY4ABdeRqZ3nYz/aEtXqih1
-# Kjp1jsrcsxA/xyCrCWye5ayFHcFxt4kInyRAtOPcmtegHOsyhYLPRi16sweMdBR2
-# +/3trOeNijiEWTAjZ6UNahtSIQn20lERcEEkKCbs29/3Nw5Njfbjg+D5rH1X3Rli
-# 5acUMqkpR39o8/F9FuOe5cY6UE1JuBzpnOexzMCCk6youEVYA+uEd6mJiwaQD2XT
-# +cJ8HrQr2ilwxThRihLAs4S3GsX3oMmX8rEbiE5zhshEPeJgZTgOX8TtOnhuB1qW
-# odrd9kZDzaDrh3KnqA0SEPrmwTu14fgB0ul/jgkHJ2bA4yZu+r6XeoQNCBWdDkUw
-# bELIpgi6HFWltSPkzgQVMYVtLCilobNItjYe+s70s/2Eagaw6Wzg01Aa+IBXWivu
-# NgAmjQGalTT98n81O2fkqdyVQ+ogacrgTWZ1l03uO0gBXItN3hR3BEJ3+HlHMguW
-# BP9CGx9wAjs2rXLgjH+J7Wdavs0b3RHKJfD2M/p92Q==
+# AQkEMUIEQCZVqJCWobbB89QAOikT50I4B23URhk8UVnAxn8vCIsKlGzPuaYgNsOC
+# j/Y7yZ9aisLvhtuaEroLi/SVm3qmanowDQYJKoZIhvcNAQEBBQAEggGAY8rCnlHo
+# CkAjW9w+C1m4UrjMxcr0ijXey06V/DBEaMvQX0viImbzczNAVL7HCcrElOsw8FBp
+# D3HlcRv1EhVcsxh1PMHktTikzmAwP8Ie8Nw3P/odBUCYIzPS4/nEKBUWudPPVOT5
+# AtLlajCCIkaWNwDjza7FyWxqi2m8Z0Coyj9oqpAeLT68qBGqHiTogp3YI/orV3SR
+# h4HChgZ0FswYoKaKajd6cecElxuuFONdT3iKlqKs3jUhMSHEAJLyuulDYYxjABww
+# AgSI5A6F3Kgge7cE6MclvV45SIx+9LGC9LGEHRX+Gw7cRKCCVBn3OBacqwha+oRI
+# PqcnDXoNKEpLpba5kKp/meNkaCFt4YTU/yJo261CztQRyXQX7D/bBoQdh24Vivf5
+# 2hXPlmQWZK85UUUXhFXuhQBQ7Cm6GYTs8XggYZbmM4cxBisUdCwFDYDetnBRZR4c
+# dV+3UrRklcn92ElEs0tMmJ8mOfQ6gji6pCv4l/lTAlXcWBBieIuIJz1toYIY6DCC
+# GOQGCisGAQQBgjcDAwExghjUMIIY0AYJKoZIhvcNAQcCoIIYwTCCGL0CAQMxDzAN
+# BglghkgBZQMEAgIFADCCAQcGCyqGSIb3DQEJEAEEoIH3BIH0MIHxAgEBBgorBgEE
+# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMORbr/24fCT16iAyS1qrga8433dmFKYz
+# HIKfSrT90lgnq0aYIsXXJoI5huNAop+bZwIUW4hRO/dbc3UwZNa2rGIuAm5AATIY
+# DzIwMjUwNTE1MDIyMDM3WqB2pHQwcjELMAkGA1UEBhMCR0IxFzAVBgNVBAgTDldl
+# c3QgWW9ya3NoaXJlMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxMDAuBgNVBAMT
+# J1NlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgU2lnbmVyIFIzNqCCEwQwggZi
+# MIIEyqADAgECAhEApCk7bh7d16c0CIetek63JDANBgkqhkiG9w0BAQwFADBVMQsw
+# CQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMSwwKgYDVQQDEyNT
+# ZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIENBIFIzNjAeFw0yNTAzMjcwMDAw
+# MDBaFw0zNjAzMjEyMzU5NTlaMHIxCzAJBgNVBAYTAkdCMRcwFQYDVQQIEw5XZXN0
+# IFlvcmtzaGlyZTEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTAwLgYDVQQDEydT
+# ZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIFNpZ25lciBSMzYwggIiMA0GCSqG
+# SIb3DQEBAQUAA4ICDwAwggIKAoICAQDThJX0bqRTePI9EEt4Egc83JSBU2dhrJ+w
+# Y7JgReuff5KQNhMuzVytzD+iXazATVPMHZpH/kkiMo1/vlAGFrYN2P7g0Q8oPEcR
+# 3h0SftFNYxxMh+bj3ZNbbYjwt8f4DsSHPT+xp9zoFuw0HOMdO3sWeA1+F8mhg6uS
+# 6BJpPwXQjNSHpVTCgd1gOmKWf12HSfSbnjl3kDm0kP3aIUAhsodBYZsJA1imWqkA
+# VqwcGfvs6pbfs/0GE4BJ2aOnciKNiIV1wDRZAh7rS/O+uTQcb6JVzBVmPP63k5xc
+# ZNzGo4DOTV+sM1nVrDycWEYS8bSS0lCSeclkTcPjQah9Xs7xbOBoCdmahSfg8Km8
+# ffq8PhdoAXYKOI+wlaJj+PbEuwm6rHcm24jhqQfQyYbOUFTKWFe901VdyMC4gRwR
+# Aq04FH2VTjBdCkhKts5Py7H73obMGrxN1uGgVyZho4FkqXA8/uk6nkzPH9QyHIED
+# 3c9CGIJ098hU4Ig2xRjhTbengoncXUeo/cfpKXDeUcAKcuKUYRNdGDlf8WnwbyqU
+# blj4zj1kQZSnZud5EtmjIdPLKce8UhKl5+EEJXQp1Fkc9y5Ivk4AZacGMCVG0e+w
+# wGsjcAADRO7Wga89r/jJ56IDK773LdIsL3yANVvJKdeeS6OOEiH6hpq2yT+jJ/lH
+# a9zEdqFqMwIDAQABo4IBjjCCAYowHwYDVR0jBBgwFoAUX1jtTDF6omFCjVKAurNh
+# lxmiMpswHQYDVR0OBBYEFIhhjKEqN2SBKGChmzHQjP0sAs5PMA4GA1UdDwEB/wQE
+# AwIGwDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMEoGA1Ud
+# IARDMEEwNQYMKwYBBAGyMQECAQMIMCUwIwYIKwYBBQUHAgEWF2h0dHBzOi8vc2Vj
+# dGlnby5jb20vQ1BTMAgGBmeBDAEEAjBKBgNVHR8EQzBBMD+gPaA7hjlodHRwOi8v
+# Y3JsLnNlY3RpZ28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5j
+# cmwwegYIKwYBBQUHAQEEbjBsMEUGCCsGAQUFBzAChjlodHRwOi8vY3J0LnNlY3Rp
+# Z28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcnQwIwYIKwYB
+# BQUHMAGGF2h0dHA6Ly9vY3NwLnNlY3RpZ28uY29tMA0GCSqGSIb3DQEBDAUAA4IB
+# gQACgT6khnJRIfllqS49Uorh5ZvMSxNEk4SNsi7qvu+bNdcuknHgXIaZyqcVmhrV
+# 3PHcmtQKt0blv/8t8DE4bL0+H0m2tgKElpUeu6wOH02BjCIYM6HLInbNHLf6R2qH
+# C1SUsJ02MWNqRNIT6GQL0Xm3LW7E6hDZmR8jlYzhZcDdkdw0cHhXjbOLsmTeS0Se
+# RJ1WJXEzqt25dbSOaaK7vVmkEVkOHsp16ez49Bc+Ayq/Oh2BAkSTFog43ldEKgHE
+# DBbCIyba2E8O5lPNan+BQXOLuLMKYS3ikTcp/Qw63dxyDCfgqXYUhxBpXnmeSO/W
+# A4NwdwP35lWNhmjIpNVZvhWoxDL+PxDdpph3+M5DroWGTc1ZuDa1iXmOFAK4iwTn
+# lWDg3QNRsRa9cnG3FBBpVHnHOEQj4GMkrOHdNDTbonEeGvZ+4nSZXrwCW4Wv2qyG
+# DBLlKk3kUW1pIScDCpm/chL6aUbnSsrtbepdtbCLiGanKVR/KC1gsR0tC6Q0RfWO
+# I4owggYUMIID/KADAgECAhB6I67aU2mWD5HIPlz0x+M/MA0GCSqGSIb3DQEBDAUA
+# MFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNV
+# BAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwHhcNMjEw
+# MzIyMDAwMDAwWhcNMzYwMzIxMjM1OTU5WjBVMQswCQYDVQQGEwJHQjEYMBYGA1UE
+# ChMPU2VjdGlnbyBMaW1pdGVkMSwwKgYDVQQDEyNTZWN0aWdvIFB1YmxpYyBUaW1l
+# IFN0YW1waW5nIENBIFIzNjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGB
+# AM2Y2ENBq26CK+z2M34mNOSJjNPvIhKAVD7vJq+MDoGD46IiM+b83+3ecLvBhStS
+# VjeYXIjfa3ajoW3cS3ElcJzkyZlBnwDEJuHlzpbN4kMH2qRBVrjrGJgSlzzUqcGQ
+# BaCxpectRGhhnOSwcjPMI3G0hedv2eNmGiUbD12OeORN0ADzdpsQ4dDi6M4YhoGE
+# 9cbY11XxM2AVZn0GiOUC9+XE0wI7CQKfOUfigLDn7i/WeyxZ43XLj5GVo7LDBExS
+# Lnh+va8WxTlA+uBvq1KO8RSHUQLgzb1gbL9Ihgzxmkdp2ZWNuLc+XyEmJNbD2OII
+# q/fWlwBp6KNL19zpHsODLIsgZ+WZ1AzCs1HEK6VWrxmnKyJJg2Lv23DlEdZlQSGd
+# F+z+Gyn9/CRezKe7WNyxRf4e4bwUtrYE2F5Q+05yDD68clwnweckKtxRaF0VzN/w
+# 76kOLIaFVhf5sMM/caEZLtOYqYadtn034ykSFaZuIBU9uCSrKRKTPJhWvXk4Cllg
+# rwIDAQABo4IBXDCCAVgwHwYDVR0jBBgwFoAU9ndq3T/9ARP/FqFsggIv0Ao9FCUw
+# HQYDVR0OBBYEFF9Y7UwxeqJhQo1SgLqzYZcZojKbMA4GA1UdDwEB/wQEAwIBhjAS
+# BgNVHRMBAf8ECDAGAQH/AgEAMBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQK
+# MAgwBgYEVR0gADBMBgNVHR8ERTBDMEGgP6A9hjtodHRwOi8vY3JsLnNlY3RpZ28u
+# Y29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdSb290UjQ2LmNybDB8BggrBgEF
+# BQcBAQRwMG4wRwYIKwYBBQUHMAKGO2h0dHA6Ly9jcnQuc2VjdGlnby5jb20vU2Vj
+# dGlnb1B1YmxpY1RpbWVTdGFtcGluZ1Jvb3RSNDYucDdjMCMGCCsGAQUFBzABhhdo
+# dHRwOi8vb2NzcC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOCAgEAEtd7IK0O
+# NVgMnoEdJVj9TC1ndK/HYiYh9lVUacahRoZ2W2hfiEOyQExnHk1jkvpIJzAMxmEc
+# 6ZvIyHI5UkPCbXKspioYMdbOnBWQUn733qMooBfIghpR/klUqNxx6/fDXqY0hSU1
+# OSkkSivt51UlmJElUICZYBodzD3M/SFjeCP59anwxs6hwj1mfvzG+b1coYGnqsSz
+# 2wSKr+nDO+Db8qNcTbJZRAiSazr7KyUJGo1c+MScGfG5QHV+bps8BX5Oyv9Ct36Y
+# 4Il6ajTqV2ifikkVtB3RNBUgwu/mSiSUice/Jp/q8BMk/gN8+0rNIE+QqU63JoVM
+# CMPY2752LmESsRVVoypJVt8/N3qQ1c6FibbcRabo3azZkcIdWGVSAdoLgAIxEKBe
+# Nh9AQO1gQrnh1TA8ldXuJzPSuALOz1Ujb0PCyNVkWk7hkhVHfcvBfI8NtgWQupia
+# AeNHe0pWSGH2opXZYKYG4Lbukg7HpNi/KqJhue2Keak6qH9A8CeEOB7Eob0Zf+fU
+# +CCQaL0cJqlmnx9HCDxF+3BLbUufrV64EbTI40zqegPZdA+sXCmbcZy6okx/Sjws
+# usWRItFA3DE8MORZeFb6BmzBtqKJ7l939bbKBy2jvxcJI98Va95Q5JnlKor3m0E7
+# xpMeYRriWklUPsetMSf2NvUQa/E5vVyefQIwggaCMIIEaqADAgECAhA2wrC9fBs6
+# 56Oz3TbLyXVoMA0GCSqGSIb3DQEBDAUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UE
+# CBMKTmV3IEplcnNleTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRo
+# ZSBVU0VSVFJVU1QgTmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0
+# aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0yMTAzMjIwMDAwMDBaFw0zODAxMTgyMzU5
+# NTlaMFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAs
+# BgNVBAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwggIi
+# MA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCIndi5RWedHd3ouSaBmlRUwHxJ
+# BZvMWhUP2ZQQRLRBQIF3FJmp1OR2LMgIU14g0JIlL6VXWKmdbmKGRDILRxEtZdQn
+# Oh2qmcxGzjqemIk8et8sE6J+N+Gl1cnZocew8eCAawKLu4TRrCoqCAT8uRjDeypo
+# GJrruH/drCio28aqIVEn45NZiZQI7YYBex48eL78lQ0BrHeSmqy1uXe9xN04aG0p
+# KG9ki+PC6VEfzutu6Q3IcZZfm00r9YAEp/4aeiLhyaKxLuhKKaAdQjRaf/h6U13j
+# QEV1JnUTCm511n5avv4N+jSVwd+Wb8UMOs4netapq5Q/yGyiQOgjsP/JRUj0MAT9
+# YrcmXcLgsrAimfWY3MzKm1HCxcquinTqbs1Q0d2VMMQyi9cAgMYC9jKc+3mW62/y
+# Vl4jnDcw6ULJsBkOkrcPLUwqj7poS0T2+2JMzPP+jZ1h90/QpZnBkhdtixMiWDVg
+# h60KmLmzXiqJc6lGwqoUqpq/1HVHm+Pc2B6+wCy/GwCcjw5rmzajLbmqGygEgaj/
+# OLoanEWP6Y52Hflef3XLvYnhEY4kSirMQhtberRvaI+5YsD3XVxHGBjlIli5u+Nr
+# LedIxsE88WzKXqZjj9Zi5ybJL2WjeXuOTbswB7XjkZbErg7ebeAQUQiS/uRGZ58N
+# Hs57ZPUfECcgJC+v2wIDAQABo4IBFjCCARIwHwYDVR0jBBgwFoAUU3m/WqorSs9U
+# gOHYm8Cd8rIDZsswHQYDVR0OBBYEFPZ3at0//QET/xahbIICL9AKPRQlMA4GA1Ud
+# DwEB/wQEAwIBhjAPBgNVHRMBAf8EBTADAQH/MBMGA1UdJQQMMAoGCCsGAQUFBwMI
+# MBEGA1UdIAQKMAgwBgYEVR0gADBQBgNVHR8ESTBHMEWgQ6BBhj9odHRwOi8vY3Js
+# LnVzZXJ0cnVzdC5jb20vVVNFUlRydXN0UlNBQ2VydGlmaWNhdGlvbkF1dGhvcml0
+# eS5jcmwwNQYIKwYBBQUHAQEEKTAnMCUGCCsGAQUFBzABhhlodHRwOi8vb2NzcC51
+# c2VydHJ1c3QuY29tMA0GCSqGSIb3DQEBDAUAA4ICAQAOvmVB7WhEuOWhxdQRh+S3
+# OyWM637ayBeR7djxQ8SihTnLf2sABFoB0DFR6JfWS0snf6WDG2gtCGflwVvcYXZJ
+# JlFfym1Doi+4PfDP8s0cqlDmdfyGOwMtGGzJ4iImyaz3IBae91g50QyrVbrUoT0m
+# UGQHbRcF57olpfHhQEStz5i6hJvVLFV/ueQ21SM99zG4W2tB1ExGL98idX8ChsTw
+# bD/zIExAopoe3l6JrzJtPxj8V9rocAnLP2C8Q5wXVVZcbw4x4ztXLsGzqZIiRh5i
+# 111TW7HV1AtsQa6vXy633vCAbAOIaKcLAo/IU7sClyZUk62XD0VUnHD+YvVNvIGe
+# zjM6CRpcWed/ODiptK+evDKPU2K6synimYBaNH49v9Ih24+eYXNtI38byt5kIvh+
+# 8aW88WThRpv8lUJKaPn37+YHYafob9Rg7LyTrSYpyZoBmwRWSE4W6iPjB7wJjJpH
+# 29308ZkpKKdpkiS9WNsf/eeUtvRrtIEiSJHN899L1P4l6zKVsdrUu1FX1T/ubSrs
+# xrYJD+3f3aKg6yxdbugot06YwGXXiy5UUGZvOu3lXlxA+fC13dQ5OlL2gIb5lmF6
+# Ii8+CQOYDwXM+yd9dbmocQsHjcRPsccUd5E9FiswEqORvz8g3s+jR3SFCgXhN4wz
+# 7NgAnOgpCdUo4uDyllU9PzGCBJIwggSOAgEBMGowVTELMAkGA1UEBhMCR0IxGDAW
+# BgNVBAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMg
+# VGltZSBTdGFtcGluZyBDQSBSMzYCEQCkKTtuHt3XpzQIh616TrckMA0GCWCGSAFl
+# AwQCAgUAoIIB+TAaBgkqhkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcN
+# AQkFMQ8XDTI1MDUxNTAyMjAzN1owPwYJKoZIhvcNAQkEMTIEMM3ZY57V1gjjCrMI
+# j4xMalgig19UA5SKO/fK6LGZdGOpDxdVZT7AzR0RB55u79XvqTCCAXoGCyqGSIb3
+# DQEJEAIMMYIBaTCCAWUwggFhMBYEFDjJFIEQRLTcZj6T1HRLgUGGqbWxMIGHBBTG
+# rlTkeIbxfD1VEkiMacNKevnC3TBvMFukWTBXMQswCQYDVQQGEwJHQjEYMBYGA1UE
+# ChMPU2VjdGlnbyBMaW1pdGVkMS4wLAYDVQQDEyVTZWN0aWdvIFB1YmxpYyBUaW1l
+# IFN0YW1waW5nIFJvb3QgUjQ2AhB6I67aU2mWD5HIPlz0x+M/MIG8BBSFPWMtk4KC
+# YXzQkDXEkd6SwULaxzCBozCBjqSBizCBiDELMAkGA1UEBhMCVVMxEzARBgNVBAgT
+# Ck5ldyBKZXJzZXkxFDASBgNVBAcTC0plcnNleSBDaXR5MR4wHAYDVQQKExVUaGUg
+# VVNFUlRSVVNUIE5ldHdvcmsxLjAsBgNVBAMTJVVTRVJUcnVzdCBSU0EgQ2VydGlm
+# aWNhdGlvbiBBdXRob3JpdHkCEDbCsL18Gzrno7PdNsvJdWgwDQYJKoZIhvcNAQEB
+# BQAEggIAVkgbMBTCgT6D0LP0w0m8J7ULDoxuLVTJaLaYNjp9J/fpdOoeOi2+E7BU
+# 8wI1BDE6YPQNhsOKtQRdjGGl2Nqyd7C9D6WyIhaxWfDqLwqDkd4ErYI+aGj+AZUl
+# aryuYdyrJFlWGK+92G6GHOVWq6CRJ3It9g03q12jyTlPUuA5s3MnTe5LELbJ5FDP
+# E4lI6zNgNVxHxzUW+KcueHVIQwpP3mW+AQAcxf3Q2zPkSMpp4NyotolFIGEdaIgE
+# UEFsQzYIpWcHZ1X80Sx6qjVQLBV4aRi9EVsJerx6jdajZDNE49DCn3sORwXcdKhF
+# 2EAr+ebKfLacq8Fa/GytFgp7pIpOkOcQ7k+LVpQUXl/yEL+OGR6JJJCII5AiqsH0
+# VfjsXJ33aejWfIWwlXadt6WAuxapT35NpNzn2dDi2tCp5CKOWnRZvnnMc0tZH3el
+# eNu0AccICc6dUnGnezlIP9EeNCVKKYuYeYXTz/y4LnbFxZLH/FZHSsyYyL0YgIwr
+# 7b1L9RmoGiT6QI6TWgnvm8N1XcclDt7KtLbvgiXpY1fN+mGv0Le3+X5wu2bLNtt7
+# +0QtHqaaj6fsfqXGX7PPhTQ80tcRBfqR63Ev7f0GcHwFIW5eWMzRz4h6xYOSE7kE
+# nQcgMYUexz+bRljyPcHEWhpPvUzdpikjAYJZmV83oAyUWzmFl90=
 # SIG # End signature block

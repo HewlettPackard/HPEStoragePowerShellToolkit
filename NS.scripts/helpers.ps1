@@ -1,6 +1,4 @@
 # HPE Alletra 6K and Nimble PowerShell Toolkit.
-# File: helpers.ps1
-# Description: This file contains common helper routines. These functions are called by generated SDK Cmdlet functions.
 #
 # © Copyright 2023 Hewlett Packard Enterprise Development LP.
 function Connect-NSGroup {
@@ -465,7 +463,8 @@ function Invoke-NimbleStorageAPIAction()
 }
 
 
-function ValidateServerCertificate() {
+function ValidateServerCertificate() 
+{
 param(  [Parameter(Mandatory,Position=0)]   [string]$Group 
 )
     $Code = @'
@@ -506,38 +505,42 @@ param(  [Parameter(Mandatory,Position=0)]   [string]$Group
 '@
 
 if ($PSEdition -ne 'Core')
-{   $webrequest=[net.webrequest]::Create("https://$Group")
-    try { $response=$webrequest.getresponse() } catch {}
-    $cert=$webrequest.servicepoint.certificate
-    if($cert -ne $null)
-        {   $Thumbprint = $webrequest.ServicePoint.Certificate.GetCertHashString()
-            $bytes=$cert.export([security.cryptography.x509certificates.x509contenttype]::cert)
-            $tfile=[system.io.path]::getTempFileName()
-            set-content -value $bytes -encoding byte -path $tfile
-            $certdetails = $cert | select * | ft -AutoSize | Out-String
-            if ($($GlobalImportServerCertificate))  
-            {   try{    $output =import-certificate -filepath $tfile -certStoreLocation 'Cert:\localmachine\Root'
-                        $certdetails = $output | select -Property Thumbprint,subject | ft -AutoSize | Out-String
-                    }
-                catch{  Write-Error "Failed to import the server certificate `n`n $_.Exception.Message"  -ErrorAction Stop
-                    }
-                Write-Host "Successfully imported the server certificate `n $certdetails"
-            }
-            else
-            {   if((Get-ChildItem -Path Cert:\LocalMachine\root | Where-Object {$_.Thumbprint -eq $Thumbprint}))
-                        { 
-                        }                
-                    else
-                        {   write-Error "The security certificate presented by host $Group was not issued by a trusted certificate authority. Please verify the certificate details shown below and use ImportServerCertificate command line parameter to proceed. `n $certdetails `n`n" -ErrorAction Stop 
+    {   $webrequest=[net.webrequest]::Create("https://$Group")
+        try { $response=$webrequest.getresponse() } catch {}
+        $cert=$webrequest.servicepoint.certificate
+        if($cert -ne $null)
+            {   $Thumbprint = $webrequest.ServicePoint.Certificate.GetCertHashString()
+                $bytes=$cert.export([security.cryptography.x509certificates.x509contenttype]::cert)
+                $tfile=[system.io.path]::getTempFileName()
+                set-content -value $bytes -encoding byte -path $tfile
+                $certdetails = $cert | select * | ft -AutoSize | Out-String
+                if ($($GlobalImportServerCertificate))  
+                {   try{    $output =import-certificate -filepath $tfile -certStoreLocation 'Cert:\localmachine\Root'
+                            $certdetails = $output | select -Property Thumbprint,subject | ft -AutoSize | Out-String
                         }
+                    catch{  Write-Error "Failed to import the server certificate `n`n $_.Exception.Message"  -ErrorAction Stop
+                        }
+                    Write-Host "Successfully imported the server certificate `n $certdetails"
+                }
+                else
+                {   if((Get-ChildItem -Path Cert:\LocalMachine\root | Where-Object {$_.Thumbprint -eq $Thumbprint}))
+                            { 
+                            }                
+                        else
+                            {   write-Error "The security certificate presented by host $Group was not issued by a trusted certificate authority. Please verify the certificate details shown below and use ImportServerCertificate command line parameter to proceed. `n $certdetails `n`n" -ErrorAction Stop 
+                            }
+                }
+                ResolveIPtoHost $cert.subject $Group
             }
-            ResolveIPtoHost $cert.subject $Group
-        }
-    else{   Write-Error "Failed to import the server certificate `n`n"  -ErrorAction Stop
-        }  
-}
+        else{   Write-Error "Failed to import the server certificate `n`n"  -ErrorAction Stop
+            }  
+    }
 else 
-{   Add-Type $Code
+    {   try     {    Add-Type $Code -errorAction SilentlyContinue
+                }
+        catch   {   Write-Verbose "The Add-Type command was not successful."
+                }
+    }
     $Certs = [CertificateCapture.Utility]::CapturedCertificates
     $Handler = [System.Net.Http.HttpClientHandler]::new()
     $Handler.ServerCertificateCustomValidationCallback = [CertificateCapture.Utility]::ValidationCallback
@@ -567,78 +570,57 @@ else
                 {   write-Error "The security certificate presented by host $Group was not issued by a trusted certificate authority. Please verify the certificate details shown below and use ImportServerCertificate command line parameter to proceed. `n $certdetails `n`n" -ErrorAction Stop 
                 }
             }
-            ResolveIPtoHost $cert.subject $Group
+            try {   ResolveIPtoHost $cert.subject $Group -errorAction stop
+                }
+            catch
+                {   Write-Host $_
+                }
         }
-        else
+    else
         {   Write-Error "Failed to import the server certificate `n`n"  -ErrorAction Stop
         }
 }
-}
 
-function ResolveIPtoHost{
 
- param(
-    [Parameter(Mandatory)]
-        [string]$CertSubject, 
-        
-    [Parameter(Mandatory)]
-        [string]$Group
-        )
-
-            # we will check if the host name given as input matches the host name in the certificate.
-            # if IP is given as input and the certificate has hostname (FQDN) then we will use the hostname name but 
-            # before that we will ensurelookup from hostname to IP works.
-            
-            $cert_hostname = ($CertSubject.Substring(($CertSubject.IndexOf("=")+1),($CertSubject.IndexOf(",")-3))).trim()
-            
-            # check if the input and cert hostname matches, if yes we are good to go
-            # Else the input must have ben the IP address, we will if cert hostname can be resolved to match the input hostname (IP).
-            if ($Group -ne $cert_hostname)
-            {
-                # we will look up the DNS to resolve the cert_hostname. 
-                # we could do this with either cert hostname or ibput hostname(IP), but cert hostname has better chance of getting resolved.
-                
-                try
-                {
-                    $resolved_name = [System.Net.DNS]::GetHostEntry($cert_hostname).AddressList 
+function ResolveIPtoHost
+{   <#  we will check if the host name given as input matches the host name in the certificate.
+        if IP is given as input and the certificate has hostname (FQDN) then we will use the hostname name but 
+        before that we will ensurelookup from hostname to IP works.
+    #>
+param(  [Parameter(Mandatory)]  [string]    $CertSubject, 
+        [Parameter(Mandatory)]  [string]    $Group
+    )
+process
+{   $cert_hostname = ($CertSubject.Substring(($CertSubject.IndexOf("=")+1),($CertSubject.IndexOf(",")-3))).trim()
+    # check if the input and cert hostname matches, if yes we are good to go
+    # Else the input must have ben the IP address, we will if cert hostname can be resolved to match the input hostname (IP).
+    if ($Group -ne $cert_hostname)
+        {   # we will look up the DNS to resolve the cert_hostname. 
+            # we could do this with either cert hostname or ibput hostname(IP), but cert hostname has better chance of getting resolved.
+            try{    $resolved_name = [System.Net.DNS]::GetHostEntry($cert_hostname).AddressList 
                     $resolved_name = $resolved_name | select -ExpandProperty IPAddressToString
-                   # $Group = $resolved_name
+                    # $Group = $resolved_name
                     # will come here if the host got resolved.
-                    
-                     Write-Verbose " $cert_hostname is host-name for provided input $Group IP address"
-                    
+                    Write-Verbose " $cert_hostname is host-name for provided input $Group IP address"
                     if ($resolved_name -ne $Group)             
-                    {
-                        # most probably this will not happen, just to be defensive adding this code.
-                        # this is the same host as the certificate hostname got resolved to the input hostname(IP)
-                        # we  will start using the cert hostname for all the calls from this point in this session.
-                        
-                        Write-Error "Unable to resolve the certificate hostname to match the provided input hostname/IP. `n`n $_.Exception.Message"  -ErrorAction Stop
-                    }
+                        {   # most probably this will not happen, just to be defensive adding this code.
+                            # this is the same host as the certificate hostname got resolved to the input hostname(IP)
+                            # we  will start using the cert hostname for all the calls from this point in this session.
+                            Write-Error "Unable to resolve the certificate hostname to match the provided input hostname/IP. `n`n $_.Exception.Message"  -ErrorAction Stop
+                        }
                     else
-                    {
-                        # we are good to go.
-                        Write-Verbose " Resolved name and input name matches: $Group IP address"
-                        $global:Group = $cert_hostname
-                    }
-
+                        {   Write-Verbose " Resolved name and input name matches: $Group IP address"
+                            $global:Group = $cert_hostname
+                        }
                 }
-                catch 
-                {
-                    # unable to resolve the cert hostname. Host not reachable. Error out!.
-                    Write-Error "Unable to resolve the certificate hostname. Host not reachable. `n`n $_.Exception.Message"  -ErrorAction Stop
+            catch 
+                {   Write-Error "Unable to resolve the certificate hostname. Host not reachable. `n`n $_.Exception.Message"  -ErrorAction Stop
                 }
-
-            }
-            else
-            {
-                # we are good to go. 
-                
-                Write-Verbose "Host-name given as input matches with certificate name"
-            }
-             
-
-
+        }
+    else
+        {   Write-Verbose "Host-name given as input matches with certificate name"
+        }
+}
 }
 
 Function APIExceptionHandler
@@ -685,11 +667,11 @@ Function APIExceptionHandler
 }
 
 # SIG # Begin signature block
-# MIIt2AYJKoZIhvcNAQcCoIItyTCCLcUCAQExDzANBglghkgBZQMEAgMFADCBmwYK
+# MIIsVAYJKoZIhvcNAQcCoIIsRTCCLEECAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEDzCKBQ0cqH
-# RyNl4KYr6plPQlsXWm5l9J0f8+gSQ5rMridFIyIywnIMwieyXn9wmg/xWHrZem58
-# kgYEDXxIO925oIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEAuM/gxCywF
+# pz6ZuoTSoLeeB8jBq/xkTvesHnsqGxt3dZQL5HY+AUS30Xk3PpEpW4Nz/jPHTyIg
+# nftb1JIOQyG/oIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -782,152 +764,144 @@ Function APIExceptionHandler
 # 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
 # tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
 # NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG5UwghuRAgEBMGkwVDELMAkGA1UEBhMCR0Ix
+# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCGhEwghoNAgEBMGkwVDELMAkGA1UEBhMCR0Ix
 # GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQAbzI7Ga8KShE1ujpFILhLeZKYq36LBg50BVFvZS/XDkIxGg9FJmciAX
-# guYF16Jaf21JZFvXFgNUytSEoXakCPEwDQYJKoZIhvcNAQEBBQAEggGANL3yfoAW
-# txRw6PICsjzmVsLY9TJKnZ2yg3mc0981YomyZY++zIWwEsjNeWJTN5VE3jZoumwW
-# 7Ukjuoc2Jg1rmCeIrpi2vcewpQpLKoDq+QuHXZmH4kXaH53Qxt0UGOLGIxrfXqq3
-# gg6BRc0j98cgWnfk7nn29QbJksU4jnspVufEX2MYv8zzhCg39Ki452tcfKzhlOVn
-# ZJP0LUpL2khg6QiStuyAqY1soqmwulwHElehgjxXT43NHB1Df5Sw393vfcYqQ8Xc
-# uDQgEcHKMyOikVVTbhVBDj+Cws2rSdunjzfi0sCm7C4MwUuG3lkbDcNpflxFae4N
-# SNLbymr18BHnDVq7LKcE4cPoZ5GGQcCPvCBsG7ubO9Xi1sivolfOKdu+Lm1SMEvP
-# bSNmgVIWjB53SApZcdjWWiEHteG/i50T8mFg/lYYJIBOlnHH5nnN/kc7DdDeovbF
-# c2w4C6Z2Ot4TcGZNWDUFJLmxFKKX/4PW50b4ZochTAtNiOXcv22EzChBoYIY3jCC
-# GNoGCisGAQQBgjcDAwExghjKMIIYxgYJKoZIhvcNAQcCoIIYtzCCGLMCAQMxDzAN
-# BglghkgBZQMEAgIFADCCAQMGCyqGSIb3DQEJEAEEoIHzBIHwMIHtAgEBBgorBgEE
-# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMIs4ylmGrs+KGc7BEq8y3waano2X0CMp
-# qR52HAlpfvSmNHnurx+PzZXOUD7qRVcMIwIUCAOLX8bZ2Otsqso1mbH03fkL/kMY
-# DzIwMjQwNzMxMjA1MTI3WqBypHAwbjELMAkGA1UEBhMCR0IxEzARBgNVBAgTCk1h
-# bmNoZXN0ZXIxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEwMC4GA1UEAxMnU2Vj
-# dGlnbyBQdWJsaWMgVGltZSBTdGFtcGluZyBTaWduZXIgUjM1oIIS/zCCBl0wggTF
-# oAMCAQICEDpSaiyEzlXmHWX8zBLY6YkwDQYJKoZIhvcNAQEMBQAwVTELMAkGA1UE
-# BhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGln
-# byBQdWJsaWMgVGltZSBTdGFtcGluZyBDQSBSMzYwHhcNMjQwMTE1MDAwMDAwWhcN
-# MzUwNDE0MjM1OTU5WjBuMQswCQYDVQQGEwJHQjETMBEGA1UECBMKTWFuY2hlc3Rl
-# cjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTAwLgYDVQQDEydTZWN0aWdvIFB1
-# YmxpYyBUaW1lIFN0YW1waW5nIFNpZ25lciBSMzUwggIiMA0GCSqGSIb3DQEBAQUA
-# A4ICDwAwggIKAoICAQCN0Wf0wUibvf04STpNYYGbw9jcRaVhBDaNBp7jmJaA9dQZ
-# W5ighrXGNMYjK7Dey5RIHMqLIbT9z9if753mYbojJrKWO4ZP0N5dBT2TwZZaPb8E
-# +hqaDZ8Vy2c+x1NiEwbEzTrPX4W3QFq/zJvDDbWKL99qLL42GJQzX3n5wWo60Kkl
-# fFn+Wb22mOZWYSqkCVGl8aYuE12SqIS4MVO4PUaxXeO+4+48YpQlNqbc/ndTgszR
-# QLF4MjxDPjRDD1M9qvpLTZcTGVzxfViyIToRNxPP6DUiZDU6oXARrGwyP9aglPXw
-# YbkqI2dLuf9fiIzBugCDciOly8TPDgBkJmjAfILNiGcVEzg+40xUdhxNcaC+6r0j
-# uPiR7bzXHh7v/3RnlZuT3ZGstxLfmE7fRMAFwbHdDz5gtHLqjSTXDiNF58IxPtvm
-# ZPG2rlc+Yq+2B8+5pY+QZn+1vEifI0MDtiA6BxxQuOnj4PnqDaK7NEKwtD1pzoA3
-# jJFuoJiwbatwhDkg1PIjYnMDbDW+wAc9FtRN6pUsO405jaBgigoFZCw9hWjLNqgF
-# VTo7lMb5rVjJ9aSBVVL2dcqzyFW2LdWk5Xdp65oeeOALod7YIIMv1pbqC15R7QCY
-# LxcK1bCl4/HpBbdE5mjy9JR70BHuYx27n4XNOZbwrXcG3wZf9gEUk7stbPAoBQID
-# AQABo4IBjjCCAYowHwYDVR0jBBgwFoAUX1jtTDF6omFCjVKAurNhlxmiMpswHQYD
-# VR0OBBYEFGjvpDJJabZSOB3qQzks9BRqngyFMA4GA1UdDwEB/wQEAwIGwDAMBgNV
-# HRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMEoGA1UdIARDMEEwNQYM
-# KwYBBAGyMQECAQMIMCUwIwYIKwYBBQUHAgEWF2h0dHBzOi8vc2VjdGlnby5jb20v
-# Q1BTMAgGBmeBDAEEAjBKBgNVHR8EQzBBMD+gPaA7hjlodHRwOi8vY3JsLnNlY3Rp
-# Z28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcmwwegYIKwYB
-# BQUHAQEEbjBsMEUGCCsGAQUFBzAChjlodHRwOi8vY3J0LnNlY3RpZ28uY29tL1Nl
-# Y3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcnQwIwYIKwYBBQUHMAGGF2h0
-# dHA6Ly9vY3NwLnNlY3RpZ28uY29tMA0GCSqGSIb3DQEBDAUAA4IBgQCw3C7J+k82
-# TIov9slP1e8YTx+fDsa//hJ62Y6SMr2E89rv82y/n8we5W6z5pfBEWozlW7nWp+s
-# dPCdUTFw/YQcqvshH6b9Rvs9qZp5Z+V7nHwPTH8yzKwgKzTTG1I1XEXLAK9fHnmX
-# paDeVeI8K6Lw3iznWZdLQe3zl+Rejdq5l2jU7iUfMkthfhFmi+VVYPkR/BXpV7Ub
-# 1QyyWebqkjSHJHRmv3lBYbQyk08/S7TlIeOr9iQ+UN57fJg4QI0yqdn6PyiehS1n
-# SgLwKRs46T8A6hXiSn/pCXaASnds0LsM5OVoKYfbgOOlWCvKfwUySWoSgrhncihS
-# BXxH2pAuDV2vr8GOCEaePZc0Dy6O1rYnKjGmqm/IRNkJghSMizr1iIOPN+23futB
-# XAhmx8Ji/4NTmyH9K0UvXHiuA2Pa3wZxxR9r9XeIUVb2V8glZay+2ULlc445CzCv
-# VSZV01ZB6bgvCuUuBx079gCcepjnZDCcEuIC5Se4F6yFaZ8RvmiJ4hgwggYUMIID
-# /KADAgECAhB6I67aU2mWD5HIPlz0x+M/MA0GCSqGSIb3DQEBDAUAMFcxCzAJBgNV
-# BAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNVBAMTJVNlY3Rp
-# Z28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwHhcNMjEwMzIyMDAwMDAw
-# WhcNMzYwMzIxMjM1OTU5WjBVMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGln
-# byBMaW1pdGVkMSwwKgYDVQQDEyNTZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5n
-# IENBIFIzNjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAM2Y2ENBq26C
-# K+z2M34mNOSJjNPvIhKAVD7vJq+MDoGD46IiM+b83+3ecLvBhStSVjeYXIjfa3aj
-# oW3cS3ElcJzkyZlBnwDEJuHlzpbN4kMH2qRBVrjrGJgSlzzUqcGQBaCxpectRGhh
-# nOSwcjPMI3G0hedv2eNmGiUbD12OeORN0ADzdpsQ4dDi6M4YhoGE9cbY11XxM2AV
-# Zn0GiOUC9+XE0wI7CQKfOUfigLDn7i/WeyxZ43XLj5GVo7LDBExSLnh+va8WxTlA
-# +uBvq1KO8RSHUQLgzb1gbL9Ihgzxmkdp2ZWNuLc+XyEmJNbD2OIIq/fWlwBp6KNL
-# 19zpHsODLIsgZ+WZ1AzCs1HEK6VWrxmnKyJJg2Lv23DlEdZlQSGdF+z+Gyn9/CRe
-# zKe7WNyxRf4e4bwUtrYE2F5Q+05yDD68clwnweckKtxRaF0VzN/w76kOLIaFVhf5
-# sMM/caEZLtOYqYadtn034ykSFaZuIBU9uCSrKRKTPJhWvXk4CllgrwIDAQABo4IB
-# XDCCAVgwHwYDVR0jBBgwFoAU9ndq3T/9ARP/FqFsggIv0Ao9FCUwHQYDVR0OBBYE
-# FF9Y7UwxeqJhQo1SgLqzYZcZojKbMA4GA1UdDwEB/wQEAwIBhjASBgNVHRMBAf8E
-# CDAGAQH/AgEAMBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQKMAgwBgYEVR0g
-# ADBMBgNVHR8ERTBDMEGgP6A9hjtodHRwOi8vY3JsLnNlY3RpZ28uY29tL1NlY3Rp
-# Z29QdWJsaWNUaW1lU3RhbXBpbmdSb290UjQ2LmNybDB8BggrBgEFBQcBAQRwMG4w
-# RwYIKwYBBQUHMAKGO2h0dHA6Ly9jcnQuc2VjdGlnby5jb20vU2VjdGlnb1B1Ymxp
-# Y1RpbWVTdGFtcGluZ1Jvb3RSNDYucDdjMCMGCCsGAQUFBzABhhdodHRwOi8vb2Nz
-# cC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOCAgEAEtd7IK0ONVgMnoEdJVj9
-# TC1ndK/HYiYh9lVUacahRoZ2W2hfiEOyQExnHk1jkvpIJzAMxmEc6ZvIyHI5UkPC
-# bXKspioYMdbOnBWQUn733qMooBfIghpR/klUqNxx6/fDXqY0hSU1OSkkSivt51Ul
-# mJElUICZYBodzD3M/SFjeCP59anwxs6hwj1mfvzG+b1coYGnqsSz2wSKr+nDO+Db
-# 8qNcTbJZRAiSazr7KyUJGo1c+MScGfG5QHV+bps8BX5Oyv9Ct36Y4Il6ajTqV2if
-# ikkVtB3RNBUgwu/mSiSUice/Jp/q8BMk/gN8+0rNIE+QqU63JoVMCMPY2752LmES
-# sRVVoypJVt8/N3qQ1c6FibbcRabo3azZkcIdWGVSAdoLgAIxEKBeNh9AQO1gQrnh
-# 1TA8ldXuJzPSuALOz1Ujb0PCyNVkWk7hkhVHfcvBfI8NtgWQupiaAeNHe0pWSGH2
-# opXZYKYG4Lbukg7HpNi/KqJhue2Keak6qH9A8CeEOB7Eob0Zf+fU+CCQaL0cJqlm
-# nx9HCDxF+3BLbUufrV64EbTI40zqegPZdA+sXCmbcZy6okx/SjwsusWRItFA3DE8
-# MORZeFb6BmzBtqKJ7l939bbKBy2jvxcJI98Va95Q5JnlKor3m0E7xpMeYRriWklU
-# PsetMSf2NvUQa/E5vVyefQIwggaCMIIEaqADAgECAhA2wrC9fBs656Oz3TbLyXVo
-# MA0GCSqGSIb3DQEBDAUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKTmV3IEpl
-# cnNleTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJV
-# U1QgTmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9u
-# IEF1dGhvcml0eTAeFw0yMTAzMjIwMDAwMDBaFw0zODAxMTgyMzU5NTlaMFcxCzAJ
-# BgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNVBAMTJVNl
-# Y3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwggIiMA0GCSqGSIb3
-# DQEBAQUAA4ICDwAwggIKAoICAQCIndi5RWedHd3ouSaBmlRUwHxJBZvMWhUP2ZQQ
-# RLRBQIF3FJmp1OR2LMgIU14g0JIlL6VXWKmdbmKGRDILRxEtZdQnOh2qmcxGzjqe
-# mIk8et8sE6J+N+Gl1cnZocew8eCAawKLu4TRrCoqCAT8uRjDeypoGJrruH/drCio
-# 28aqIVEn45NZiZQI7YYBex48eL78lQ0BrHeSmqy1uXe9xN04aG0pKG9ki+PC6VEf
-# zutu6Q3IcZZfm00r9YAEp/4aeiLhyaKxLuhKKaAdQjRaf/h6U13jQEV1JnUTCm51
-# 1n5avv4N+jSVwd+Wb8UMOs4netapq5Q/yGyiQOgjsP/JRUj0MAT9YrcmXcLgsrAi
-# mfWY3MzKm1HCxcquinTqbs1Q0d2VMMQyi9cAgMYC9jKc+3mW62/yVl4jnDcw6ULJ
-# sBkOkrcPLUwqj7poS0T2+2JMzPP+jZ1h90/QpZnBkhdtixMiWDVgh60KmLmzXiqJ
-# c6lGwqoUqpq/1HVHm+Pc2B6+wCy/GwCcjw5rmzajLbmqGygEgaj/OLoanEWP6Y52
-# Hflef3XLvYnhEY4kSirMQhtberRvaI+5YsD3XVxHGBjlIli5u+NrLedIxsE88WzK
-# XqZjj9Zi5ybJL2WjeXuOTbswB7XjkZbErg7ebeAQUQiS/uRGZ58NHs57ZPUfECcg
-# JC+v2wIDAQABo4IBFjCCARIwHwYDVR0jBBgwFoAUU3m/WqorSs9UgOHYm8Cd8rID
-# ZsswHQYDVR0OBBYEFPZ3at0//QET/xahbIICL9AKPRQlMA4GA1UdDwEB/wQEAwIB
-# hjAPBgNVHRMBAf8EBTADAQH/MBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQK
-# MAgwBgYEVR0gADBQBgNVHR8ESTBHMEWgQ6BBhj9odHRwOi8vY3JsLnVzZXJ0cnVz
-# dC5jb20vVVNFUlRydXN0UlNBQ2VydGlmaWNhdGlvbkF1dGhvcml0eS5jcmwwNQYI
-# KwYBBQUHAQEEKTAnMCUGCCsGAQUFBzABhhlodHRwOi8vb2NzcC51c2VydHJ1c3Qu
-# Y29tMA0GCSqGSIb3DQEBDAUAA4ICAQAOvmVB7WhEuOWhxdQRh+S3OyWM637ayBeR
-# 7djxQ8SihTnLf2sABFoB0DFR6JfWS0snf6WDG2gtCGflwVvcYXZJJlFfym1Doi+4
-# PfDP8s0cqlDmdfyGOwMtGGzJ4iImyaz3IBae91g50QyrVbrUoT0mUGQHbRcF57ol
-# pfHhQEStz5i6hJvVLFV/ueQ21SM99zG4W2tB1ExGL98idX8ChsTwbD/zIExAopoe
-# 3l6JrzJtPxj8V9rocAnLP2C8Q5wXVVZcbw4x4ztXLsGzqZIiRh5i111TW7HV1Ats
-# Qa6vXy633vCAbAOIaKcLAo/IU7sClyZUk62XD0VUnHD+YvVNvIGezjM6CRpcWed/
-# ODiptK+evDKPU2K6synimYBaNH49v9Ih24+eYXNtI38byt5kIvh+8aW88WThRpv8
-# lUJKaPn37+YHYafob9Rg7LyTrSYpyZoBmwRWSE4W6iPjB7wJjJpH29308ZkpKKdp
-# kiS9WNsf/eeUtvRrtIEiSJHN899L1P4l6zKVsdrUu1FX1T/ubSrsxrYJD+3f3aKg
-# 6yxdbugot06YwGXXiy5UUGZvOu3lXlxA+fC13dQ5OlL2gIb5lmF6Ii8+CQOYDwXM
-# +yd9dbmocQsHjcRPsccUd5E9FiswEqORvz8g3s+jR3SFCgXhN4wz7NgAnOgpCdUo
-# 4uDyllU9PzGCBJEwggSNAgEBMGkwVTELMAkGA1UEBhMCR0IxGDAWBgNVBAoTD1Nl
-# Y3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMgVGltZSBTdGFt
-# cGluZyBDQSBSMzYCEDpSaiyEzlXmHWX8zBLY6YkwDQYJYIZIAWUDBAICBQCgggH5
-# MBoGCSqGSIb3DQEJAzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjQw
-# NzMxMjA1MTI3WjA/BgkqhkiG9w0BCQQxMgQwtyUbco+HJwsYoBCwrxFD5Dtz9rbA
-# WDIHQSonKHM7hHhRcoLSXg9DTv7P4AR6rseDMIIBegYLKoZIhvcNAQkQAgwxggFp
-# MIIBZTCCAWEwFgQU+GCYGab7iCz36FKX8qEZUhoWd18wgYcEFMauVOR4hvF8PVUS
-# SIxpw0p6+cLdMG8wW6RZMFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdv
-# IExpbWl0ZWQxLjAsBgNVBAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcg
-# Um9vdCBSNDYCEHojrtpTaZYPkcg+XPTH4z8wgbwEFIU9Yy2TgoJhfNCQNcSR3pLB
-# QtrHMIGjMIGOpIGLMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKTmV3IEplcnNl
-# eTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJVU1Qg
-# TmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9uIEF1
-# dGhvcml0eQIQNsKwvXwbOuejs902y8l1aDANBgkqhkiG9w0BAQEFAASCAgAy/D1t
-# jIs/VY6dfkcz1pndJtG57O3ip026lkkx4hrGoM+5B1xwP2ASAXYBHr35oJt0A3Wx
-# VjbcoWF1ASkc/EL464YmV1GBLcyKEt5K/hkPTv9Fk8dfQoONtkOK7ZxYJlGagD4N
-# fm7GbSZ7i0KhqqhSGF27caxDMMJng7W4XAq6yN7vQ+SLZHjqEj4+6jBavhGtluGD
-# CLDAh0w+yLA8Ovg0SoVPo4I1//TdL0DqJD4keE69RxfdneZ6dhXR9TCSASLItvhu
-# WlR+JbDhfGg/MzVr8GSVQvfYQWp+xyH08CQK8uctPL8ZbLpJ2lz6dajfdew021Kt
-# qkC6FDP0Yk0dI2qRdZcwrxnNWs87EH3YiksunfRu+6qDjO4kumysyLu7kuwmcZie
-# MxWjZjYsyb3u0PHWpdURBbF1MLazBOsc+mjYIXdcC9gKLhqJtF4M24jm4USvnYKN
-# dk0Kw0T2I0Lk0X/J7iOfukkaRKv7nSxULFC/Fk9nNzMgGc0rAXfhSe41wWjtwGoG
-# qb7hFFhWOsTjn2ZQh9+af5kFqwGGk4wPccwFS06i5jjfs3KYSxQpbSO9+MSNMwtL
-# BCMnJmuTHxgKKc4XRbjTWZb76ABEHf8mr8/dyhFvGcVEiPXpZMlT1h3NmmiubIbz
-# dU2wThvG4By43HyQ+740OBrTzWYj4dTwF/c4jg==
+# AQkEMUIEQJWb+E3kkOJWfBQBZ1HL3VSUH2NRIlDzjzBi8awNN1cJLBCRBQY+BS6g
+# nFiJpWb1j4N1c84h0d+GyMw8KVdYnX8wDQYJKoZIhvcNAQEBBQAEggGASMLK7p/q
+# ez7OA+X2IVm93Mf/o2v8nHnLxXmdQZHmichH6p3I5mMpsOdrQcs8VR9+WhwKyoB0
+# IsPk6zoXZxUlN33uw4ZMKaRdQCRfbmLqj/Z4tjRjCfbwbXkZDDELmiWQgf5HNRXO
+# d3NuhElbK4SLIwwwJ5Mdefb1WreADzw4pFA6U33EWbJ0OOhuAJ0xCXjKNLP2EIsT
+# fHi7oSWgzShLKNjcHbPamLF/w92CXXqIPTHJxU+eRbaeDcJ8FpT0BNGMpjyOgRfO
+# fvaG3sxR8voSC4dUW2cMtZvWS8jigoYHEszwYwhx1S4vY2hzjF6i062qDN8f38gt
+# sC4S9Vs9U9eCuMkPZoRLzz86Vq0eR1HxX4SXk3UY5iTB+qCASx32AemWKPeNnGa9
+# mfXsVFA4/F0I+b/tEvOyS/tHzeRiuKJOTa/2xdawtp03eKV87eP96lJ33NExjtb6
+# 61Gbq7RP1zQwyrwwtqvJeWpHrDjB+JFa4O/vhiM5wOsbFzb8UpCLkPy0oYIXWjCC
+# F1YGCisGAQQBgjcDAwExghdGMIIXQgYJKoZIhvcNAQcCoIIXMzCCFy8CAQMxDzAN
+# BglghkgBZQMEAgIFADCBhwYLKoZIhvcNAQkQAQSgeAR2MHQCAQEGCWCGSAGG/WwH
+# ATBBMA0GCWCGSAFlAwQCAgUABDBosbNzoBP7yl9/WF+pIMzpt7MtznPxjh3TZkX4
+# xjmKptuZFOnLV+D/yXRBidllXmECEDK0NQ5J0+ZZzrvhwGvXAbYYDzIwMjUwNTE1
+# MjIyOTE2WqCCEwMwgga8MIIEpKADAgECAhALrma8Wrp/lYfG+ekE4zMEMA0GCSqG
+# SIb3DQEBCwUAMGMxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5j
+# LjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBU
+# aW1lU3RhbXBpbmcgQ0EwHhcNMjQwOTI2MDAwMDAwWhcNMzUxMTI1MjM1OTU5WjBC
+# MQswCQYDVQQGEwJVUzERMA8GA1UEChMIRGlnaUNlcnQxIDAeBgNVBAMTF0RpZ2lD
+# ZXJ0IFRpbWVzdGFtcCAyMDI0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKC
+# AgEAvmpzn/aVIauWMLpbbeZZo7Xo/ZEfGMSIO2qZ46XB/QowIEMSvgjEdEZ3v4vr
+# rTHleW1JWGErrjOL0J4L0HqVR1czSzvUQ5xF7z4IQmn7dHY7yijvoQ7ujm0u6yXF
+# 2v1CrzZopykD07/9fpAT4BxpT9vJoJqAsP8YuhRvflJ9YeHjes4fduksTHulntq9
+# WelRWY++TFPxzZrbILRYynyEy7rS1lHQKFpXvo2GePfsMRhNf1F41nyEg5h7iOXv
+# +vjX0K8RhUisfqw3TTLHj1uhS66YX2LZPxS4oaf33rp9HlfqSBePejlYeEdU740G
+# KQM7SaVSH3TbBL8R6HwX9QVpGnXPlKdE4fBIn5BBFnV+KwPxRNUNK6lYk2y1WSKo
+# ur4hJN0SMkoaNV8hyyADiX1xuTxKaXN12HgR+8WulU2d6zhzXomJ2PleI9V2yfmf
+# XSPGYanGgxzqI+ShoOGLomMd3mJt92nm7Mheng/TBeSA2z4I78JpwGpTRHiT7yHq
+# BiV2ngUIyCtd0pZ8zg3S7bk4QC4RrcnKJ3FbjyPAGogmoiZ33c1HG93Vp6lJ415E
+# RcC7bFQMRbxqrMVANiav1k425zYyFMyLNyE1QulQSgDpW9rtvVcIH7WvG9sqYup9
+# j8z9J1XqbBZPJ5XLln8mS8wWmdDLnBHXgYly/p1DhoQo5fkCAwEAAaOCAYswggGH
+# MA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsG
+# AQUFBwMIMCAGA1UdIAQZMBcwCAYGZ4EMAQQCMAsGCWCGSAGG/WwHATAfBgNVHSME
+# GDAWgBS6FtltTYUvcyl2mi91jGogj57IbzAdBgNVHQ4EFgQUn1csA3cOKBWQZqVj
+# Xu5Pkh92oFswWgYDVR0fBFMwUTBPoE2gS4ZJaHR0cDovL2NybDMuZGlnaWNlcnQu
+# Y29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFtcGluZ0NB
+# LmNybDCBkAYIKwYBBQUHAQEEgYMwgYAwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3Nw
+# LmRpZ2ljZXJ0LmNvbTBYBggrBgEFBQcwAoZMaHR0cDovL2NhY2VydHMuZGlnaWNl
+# cnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFtcGlu
+# Z0NBLmNydDANBgkqhkiG9w0BAQsFAAOCAgEAPa0eH3aZW+M4hBJH2UOR9hHbm04I
+# HdEoT8/T3HuBSyZeq3jSi5GXeWP7xCKhVireKCnCs+8GZl2uVYFvQe+pPTScVJeC
+# ZSsMo1JCoZN2mMew/L4tpqVNbSpWO9QGFwfMEy60HofN6V51sMLMXNTLfhVqs+e8
+# haupWiArSozyAmGH/6oMQAh078qRh6wvJNU6gnh5OruCP1QUAvVSu4kqVOcJVozZ
+# R5RRb/zPd++PGE3qF1P3xWvYViUJLsxtvge/mzA75oBfFZSbdakHJe2BVDGIGVNV
+# jOp8sNt70+kEoMF+T6tptMUNlehSR7vM+C13v9+9ZOUKzfRUAYSyyEmYtsnpltD/
+# GWX8eM70ls1V6QG/ZOB6b6Yum1HvIiulqJ1Elesj5TMHq8CWT/xrW7twipXTJ5/i
+# 5pkU5E16RSBAdOp12aw8IQhhA/vEbFkEiF2abhuFixUDobZaA0VhqAsMHOmaT3XT
+# hZDNi5U2zHKhUs5uHHdG6BoQau75KiNbh0c+hatSF+02kULkftARjsyEpHKsF7u5
+# zKRbt5oK5YGwFvgc4pEVUNytmB3BpIiowOIIuDgP5M9WArHYSAR16gc0dP2XdkME
+# P5eBsX7bf/MGN4K3HP50v/01ZHo/Z5lGLvNwQ7XHBx1yomzLP8lx4Q1zZKDyHcp4
+# VQJLu2kWTsKsOqQwggauMIIElqADAgECAhAHNje3JFR82Ees/ShmKl5bMA0GCSqG
+# SIb3DQEBCwUAMGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMx
+# GTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IFRy
+# dXN0ZWQgUm9vdCBHNDAeFw0yMjAzMjMwMDAwMDBaFw0zNzAzMjIyMzU5NTlaMGMx
+# CzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMy
+# RGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcg
+# Q0EwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDGhjUGSbPBPXJJUVXH
+# JQPE8pE3qZdRodbSg9GeTKJtoLDMg/la9hGhRBVCX6SI82j6ffOciQt/nR+eDzMf
+# UBMLJnOWbfhXqAJ9/UO0hNoR8XOxs+4rgISKIhjf69o9xBd/qxkrPkLcZ47qUT3w
+# 1lbU5ygt69OxtXXnHwZljZQp09nsad/ZkIdGAHvbREGJ3HxqV3rwN3mfXazL6IRk
+# tFLydkf3YYMZ3V+0VAshaG43IbtArF+y3kp9zvU5EmfvDqVjbOSmxR3NNg1c1eYb
+# qMFkdECnwHLFuk4fsbVYTXn+149zk6wsOeKlSNbwsDETqVcplicu9Yemj052FVUm
+# cJgmf6AaRyBD40NjgHt1biclkJg6OBGz9vae5jtb7IHeIhTZgirHkr+g3uM+onP6
+# 5x9abJTyUpURK1h0QCirc0PO30qhHGs4xSnzyqqWc0Jon7ZGs506o9UD4L/wojzK
+# QtwYSH8UNM/STKvvmz3+DrhkKvp1KCRB7UK/BZxmSVJQ9FHzNklNiyDSLFc1eSuo
+# 80VgvCONWPfcYd6T/jnA+bIwpUzX6ZhKWD7TA4j+s4/TXkt2ElGTyYwMO1uKIqjB
+# Jgj5FBASA31fI7tk42PgpuE+9sJ0sj8eCXbsq11GdeJgo1gJASgADoRU7s7pXche
+# MBK9Rp6103a50g5rmQzSM7TNsQIDAQABo4IBXTCCAVkwEgYDVR0TAQH/BAgwBgEB
+# /wIBADAdBgNVHQ4EFgQUuhbZbU2FL3MpdpovdYxqII+eyG8wHwYDVR0jBBgwFoAU
+# 7NfjgtJxXWRM3y5nP+e6mK4cD08wDgYDVR0PAQH/BAQDAgGGMBMGA1UdJQQMMAoG
+# CCsGAQUFBwMIMHcGCCsGAQUFBwEBBGswaTAkBggrBgEFBQcwAYYYaHR0cDovL29j
+# c3AuZGlnaWNlcnQuY29tMEEGCCsGAQUFBzAChjVodHRwOi8vY2FjZXJ0cy5kaWdp
+# Y2VydC5jb20vRGlnaUNlcnRUcnVzdGVkUm9vdEc0LmNydDBDBgNVHR8EPDA6MDig
+# NqA0hjJodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVkUm9v
+# dEc0LmNybDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEwDQYJKoZI
+# hvcNAQELBQADggIBAH1ZjsCTtm+YqUQiAX5m1tghQuGwGC4QTRPPMFPOvxj7x1Bd
+# 4ksp+3CKDaopafxpwc8dB+k+YMjYC+VcW9dth/qEICU0MWfNthKWb8RQTGIdDAiC
+# qBa9qVbPFXONASIlzpVpP0d3+3J0FNf/q0+KLHqrhc1DX+1gtqpPkWaeLJ7giqzl
+# /Yy8ZCaHbJK9nXzQcAp876i8dU+6WvepELJd6f8oVInw1YpxdmXazPByoyP6wCeC
+# RK6ZJxurJB4mwbfeKuv2nrF5mYGjVoarCkXJ38SNoOeY+/umnXKvxMfBwWpx2cYT
+# gAnEtp/Nh4cku0+jSbl3ZpHxcpzpSwJSpzd+k1OsOx0ISQ+UzTl63f8lY5knLD0/
+# a6fxZsNBzU+2QJshIUDQtxMkzdwdeDrknq3lNHGS1yZr5Dhzq6YBT70/O3itTK37
+# xJV77QpfMzmHQXh6OOmc4d0j/R0o08f56PGYX/sr2H7yRp11LB4nLCbbbxV7HhmL
+# NriT1ObyF5lZynDwN7+YAN8gFk8n+2BnFqFmut1VwDophrCYoCvtlUG3OtUVmDG0
+# YgkPCr2B2RP+v6TR81fZvAT6gt4y3wSJ8ADNXcL50CN/AAvkdgIm2fBldkKmKYcJ
+# RyvmfxqkhQ/8mJb2VVQrH4D6wPIOK+XW+6kvRBVK5xMOHds3OBqhK/bt1nz8MIIF
+# jTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0BAQwFADBlMQsw
+# CQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cu
+# ZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVkIElEIFJvb3Qg
+# Q0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQswCQYDVQQGEwJV
+# UzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQu
+# Y29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVkIFJvb3QgRzQwggIiMA0GCSqG
+# SIb3DQEBAQUAA4ICDwAwggIKAoICAQC/5pBzaN675F1KPDAiMGkz7MKnJS7JIT3y
+# ithZwuEppz1Yq3aaza57G4QNxDAf8xukOBbrVsaXbR2rsnnyyhHS5F/WBTxSD1If
+# xp4VpX6+n6lXFllVcq9ok3DCsrp1mWpzMpTREEQQLt+C8weE5nQ7bXHiLQwb7iDV
+# ySAdYyktzuxeTsiT+CFhmzTrBcZe7FsavOvJz82sNEBfsXpm7nfISKhmV1efVFiO
+# DCu3T6cw2Vbuyntd463JT17lNecxy9qTXtyOj4DatpGYQJB5w3jHtrHEtWoYOAMQ
+# jdjUN6QuBX2I9YI+EJFwq1WCQTLX2wRzKm6RAXwhTNS8rhsDdV14Ztk6MUSaM0C/
+# CNdaSaTC5qmgZ92kJ7yhTzm1EVgX9yRcRo9k98FpiHaYdj1ZXUJ2h4mXaXpI8OCi
+# EhtmmnTK3kse5w5jrubU75KSOp493ADkRSWJtppEGSt+wJS00mFt6zPZxd9LBADM
+# fRyVw4/3IbKyEbe7f/LVjHAsQWCqsWMYRJUadmJ+9oCw++hkpjPRiQfhvbfmQ6QY
+# uKZ3AeEPlAwhHbJUKSWJbOUOUlFHdL4mrLZBdd56rF+NP8m800ERElvlEFDrMcXK
+# chYiCd98THU/Y+whX8QgUWtvsauGi0/C1kVfnSD8oR7FwI+isX4KJpn15GkvmB0t
+# 9dmpsh3lGwIDAQABo4IBOjCCATYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQU
+# 7NfjgtJxXWRM3y5nP+e6mK4cD08wHwYDVR0jBBgwFoAUReuir/SSy4IxLVGLp6ch
+# nfNtyA8wDgYDVR0PAQH/BAQDAgGGMHkGCCsGAQUFBwEBBG0wazAkBggrBgEFBQcw
+# AYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tMEMGCCsGAQUFBzAChjdodHRwOi8v
+# Y2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3J0
+# MEUGA1UdHwQ+MDwwOqA4oDaGNGh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdp
+# Q2VydEFzc3VyZWRJRFJvb3RDQS5jcmwwEQYDVR0gBAowCDAGBgRVHSAAMA0GCSqG
+# SIb3DQEBDAUAA4IBAQBwoL9DXFXnOF+go3QbPbYW1/e/Vwe9mqyhhyzshV6pGrsi
+# +IcaaVQi7aSId229GhT0E0p6Ly23OO/0/4C5+KH38nLeJLxSA8hO0Cre+i1Wz/n0
+# 96wwepqLsl7Uz9FDRJtDIeuWcqFItJnLnU+nBgMTdydE1Od/6Fmo8L8vC6bp8jQ8
+# 7PcDx4eo0kxAGTVGamlUsLihVo7spNU96LHc/RzY9HdaXFSMb++hUD38dglohJ9v
+# ytsgjTVgHAIDyyCwrFigDkBjxZgiwbJZ9VVrzyerbHbObyMt9H5xaiNrIv8SuFQt
+# J37YOtnwtoeW/VvRXKwYw02fc7cBqZ9Xql4o4rmUMYIDhjCCA4ICAQEwdzBjMQsw
+# CQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRp
+# Z2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENB
+# AhALrma8Wrp/lYfG+ekE4zMEMA0GCWCGSAFlAwQCAgUAoIHhMBoGCSqGSIb3DQEJ
+# AzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjUwNTE1MjIyOTE2WjAr
+# BgsqhkiG9w0BCRACDDEcMBowGDAWBBTb04XuYtvSPnvk9nFIUIck1YZbRTA3Bgsq
+# hkiG9w0BCRACLzEoMCYwJDAiBCB2dp+o8mMvH0MLOiMwrtZWdf7Xc9sF1mW5BZOY
+# Q4+a2zA/BgkqhkiG9w0BCQQxMgQwPYYBe9+eUtkihzLH2xyV8ZYTn2xXzPbNUON9
+# mvjEIwzqM++tmr7UfNP1y37UbphdMA0GCSqGSIb3DQEBAQUABIICABZ8Lbbg27xl
+# uVCxEWEOQiGZhmUDiMhAnXy/aj7MgFWzkUxlChGza8fbqiI6QJA8NOMwZFR24gUI
+# D5ddrmdc5Z5ol4yAHS/Qp277JRS3bbBJtKmzUvmvnp3d6AnAe9iE7k8BKmD7QGLv
+# gGVCLa3KRhvv6tkheQe+b7NbXpP/i1k89WVj006s26QpEbH3WhghbIuD/HMjMpoY
+# KwWOQobQ1a15PHFtuUAt8IQwwmcuEERXgVbg0cK/1KUBc9muA9zCoxT2edxL91WF
+# mLqabOJ8dBy7kXv1oKq2DL19CK6AIJnyQdlkidCe0U97LtbgJyvTdJJH9ZMTXDsN
+# oB3ajySjk6qirfcRyVt+vh6HuZsNEYr4Dwg84kTQKPeQ2SFlX3D16SQCsR5vhQ8i
+# aCA2zKDdbAkVk7GrZYqhaqr8x9O4UNc6BVrzrdkZAaudO/vW5LYkO2G3mTk5YCoY
+# iiVJiR6Y5HJyHyz4chgZBPHDyMR61qybpr7e2jNKXCBi3jjdnDzKF291JDmJP6zy
+# zXFkGXZfjbWAjKGvZcp5+zsoppKKO5AgKzsrs0ORdLjFlARVD+QMj5OZvZHxzwVZ
+# rlEZguK1O2fQn4LIHT54bBvit9KZz6W20g6yWIwWypkBKV76HnK+1LlrJaOBeIGj
+# pTdYtyD7uvW2p2+Lou0aIf2gD9OJq42k
 # SIG # End signature block

@@ -61,7 +61,7 @@ Function Connect-A9API
 {
 <#	
 .SYNOPSIS
-	Create a WSAPI session key
+	Create a WSAPI session key to a 3Par, Primera, Alletra9000 or AlletraMP-B10000 type array.
 .DESCRIPTION
 	To use Web Services, you must create a session key. Use the same username and password that you use to
 	access the storage system through the 3PAR CLI or the 3PAR MC. Creating this authorization allows
@@ -75,6 +75,9 @@ Function Connect-A9API
 .EXAMPLE
     New-WSAPIConnection -ArrayFQDNorIPAddress 10.10.10.10 -SANUserName XYZ -SANPassword XYZ@123 -ArrayType alletra9000
 	create a session key with Alletra 9000 array.
+.EXAMPLE
+    New-WSAPIConnection -ArrayFQDNorIPAddress 10.10.10.10 -SANUserName XYZ -SANPassword XYZ@123 -ArrayType 'alletraMP-B10000'
+	create a session key with Alletra 9000 array.
 .PARAMETER ArrayFQDNorIPAddress 
     Specify the Array FQDN or Array IP address.
 .PARAMETER UserName 
@@ -82,14 +85,14 @@ Function Connect-A9API
 .PARAMETER Password 
     Specify the password 
 .PARAMETER ArrayType
-	Specify the array type ie. 3Par, Primera or Alletra9000
+	Specify the array type ie. 3Par, Primera Alletra9000, or AlletraMP-B10000
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$ArrayFQDNorIPAddress,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$SANUserName,
-		[Parameter(ValueFromPipeline=$true)]								[String]	$SANPassword,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-		[ValidateSet("3par", "Primera", "Alletra9000", IgnoreCase=$false, ErrorMessage="Value '{0}' is invalid. Try one of: '{1}' and remember it is case sensitive")]
+param(	[Parameter(Mandatory)]				[String]	$ArrayFQDNorIPAddress,
+		[Parameter(Mandatory)]				[String]	$SANUserName,
+		[Parameter()]						[String]	$SANPassword,
+		[Parameter(Mandatory)]
+		[ValidateSet("3par", "Primera", "Alletra9000", "AlletraMP-B10000", IgnoreCase=$false, ErrorMessage="Value '{0}' is invalid. Try one of: '{1}' and remember it is case sensitive")]
 																			[String]	$ArrayType
 	)
 process
@@ -123,6 +126,9 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 		{	$APIurl = "https://$($ArrayFQDNorIPAddress):443/api/v1" 	
 		}
 	elseif($ArrayType.ToLower() -eq "alletra9000")
+		{	$APIurl = "https://$($ArrayFQDNorIPAddress):443/api/v1" 	
+		}
+	elseif($ArrayType.ToLower() -eq "alletramp-b10000")
 		{	$APIurl = "https://$($ArrayFQDNorIPAddress):443/api/v1" 	
 		}
 	else
@@ -160,11 +166,14 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 		{	Write-error "Stop: No key Generated"
 			return 		
 		}
-	write-verbose "New-Connection: Initiating Get-System_WSAPI call to test the offered key"	
+	write-verbose "New-Connection: Initiating Get-System call to test the offered key"	
 	if 		($ArrayType -eq "3par") 		
 			{	$APIurl = 'https://' + $ArrayFQDNorIPAddress + ':8080/api/v1' 
 			}
-	Elseif (($ArrayType -eq "Primera") -or ($ArrayType -eq "Alletra9000")) 
+	Elseif (($ArrayType -eq "Primera") -or ($ArrayType -eq "Alletra9000") ) 
+			{	$APIurl = 'https://' + $ArrayFQDNorIPAddress + ':443/api/v1'
+			}
+	Elseif (($ArrayType -eq "AlletraMP-B10000")) 
 			{	$APIurl = 'https://' + $ArrayFQDNorIPAddress + ':443/api/v1'
 			}
 	$url = $APIurl + '/system'
@@ -213,6 +222,11 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 	$ModPath = $CurrentModulePath + '\HPEAlletra9000andPrimeraand3Par_API.psd1'	
 	write-host "The path to the module is $ModPath" -ForegroundColor green
 	import-module $ModPath -scope global -force
+	if($ArrayType.ToLower() -eq "3par")
+		{	$ModPath = $CurrentModulePath + '\HPE3ParFilePersona.psd1'	
+			write-host "The path to the module is $ModPath" -ForegroundColor green
+			import-module $ModPath -scope global -force
+		}
 	return $SANZ
 }
 }
@@ -278,10 +292,10 @@ Function Connect-A9SSH
     Specify Array Name or Array IP Address
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]    $ArrayNameOrIPAddress,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$SANUserName,	
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$SANPassword,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$AcceptKey
+param(	[Parameter(Mandatory)]	[String]    $ArrayNameOrIPAddress,
+		[Parameter(Mandatory)]	[String]	$SANUserName,	
+		[Parameter(Mandatory)]	[String]	$SANPassword,
+		[Parameter()]			[switch]	$AcceptKey
 		)
 Process
 {	$CurrentModulePath = (Get-Module HPEStorage).path
@@ -317,11 +331,13 @@ Process
 				UserName 	= $SANUserName
 				epwdFile 	= "Secure String"			
 				CLIType 	= "SshClient"
-				CLIDir 		= "Null"			
+				CLIDir 		= "Null"	
+				SessionObj  = $Session		
 			}
 	$global:SANConnection = $SANC
 	#-- Obtain more Details by retrieving System Details via a CLI call --
-	# $Result3 = Invoke-A9CLICommand -Connection $SANC -cmds "showsys "	
+	write-verbose 'Invoke-A9CLICommand -Connection $SANC -cmds "showsys "'	
+
 	$R1 = Invoke-SSHCommand -Command "showsys " -SessionId $SANC.SessionId
 	if ($R1.ExitStatus -eq 0) 	{	$Result3 = $R1.Output	}
 	$FirstCnt = 1
@@ -365,7 +381,7 @@ Process
 	$global:ConnectionType = "CLI"
 	Write-verbose "End: If there are no errors reported on the console then the SAN connection object is set and ready to be used. $ArrayName and $Connectiontype"		
 	$global:SANConnection = $SANC
-	write-host "Attempting to load the HPE 3Par / Primera / Alletra9000 PowerShell Commands that support SSH connectivity. " -ForegroundColor green
+	write-host "Attempting to load the HPE 3Par / Primera / Alletra9000 / AlletraMP-B10000 PowerShell Commands that support SSH connectivity. " -ForegroundColor green
 	$CurrentModulePath = (Get-Module HPEStorage).path
 	[string]$CurrentModulePath = Split-Path $CurrentModulePath -Parent
 	$ModPath = $CurrentModulePath + '\HPEAlletra9000andPrimeraand3Par_CLI.psd1'	
@@ -382,7 +398,7 @@ Function Connect-HPESAN
 	Connect to a HPE SAN Device
 .DESCRIPTION
 	Connect to a HPE SAN Device. Once you connect to the appropriate array type, the correct comamnds will be loaded to manage that specific array type. In the case
-	of a Alletra9000/Primera/3Par style array the connection command will attempt both an API and a SSH type connection if available. Note that if the command is 
+	of a AlletraMP-B10000/Alletra9000/Primera/3Par style array the connection command will attempt both an API and a SSH type connection if available. Note that if the command is 
 	sucessful for both connection types all commands will be available, however if the array device only supports SSH connections, then on the SSH based commands will be 
 	loaded and visiable, and if the array only supports the WSAPI type commands, the API based commnads will be available.
 	In the case of the Alletra5000/6000/NimbleStorage type devices, the connection will always be API based.
@@ -390,7 +406,7 @@ Function Connect-HPESAN
 .PARAMETER ArrayNameOrIPAddress
 	The IP Address or Array name that will resolve via name service to the IP Address of the target device to connect to.
 .PARAMETER ArrayType
-	This will define which type of array the connection command will attept to connect to. The valid options are 3PAR, Primera, Alletra9K, Alletra6K, Nimble, and MSA.
+	This will define which type of array the connection command will attept to connect to. The valid options are 3PAR, Primera, Alletra9K, AlletraMP-B10K, Alletra6K, Nimble, and MSA.
 .PARAMETER Credential
 	This is a standard PowerShell Credential type, you can use the value (Get-Credential) as a value here if you want a popup to appear that lets you insert you username
 	and passsowrd. If you do not fill in this value, the command will ask you for your credentials.
@@ -474,14 +490,14 @@ Function Connect-HPESAN
 [CmdletBinding()]
 param(	[Parameter(Mandatory=$true)]												[String]    $ArrayNameOrIPAddress,
 		[Parameter(Mandatory=$true)]
-		[ValidateSet('Alletra9000','Primera','3PAR','Nimble','Alletra6000','MSA')]	[String]    $ArrayType,
+		[ValidateSet('AlletraMP-B10000', 'Alletra9000','Primera','3PAR','Nimble','Alletra6000','MSA')]	[String]    $ArrayType,
 		[Parameter(Mandatory=$true)]												[System.Management.Automation.PSCredential] $Credential
 		)
 Process
 {	$CurrentModulePath = (Get-Module HPEStorage).path
 	[string]$CurrentModulePath = Split-Path $CurrentModulePath -Parent
 	$ModPath = $CurrentModulePath	
-	if ($ArrayType -eq 'Alletra9000' -or $ArrayType -eq 'Primera' -or $ArrayType -eq '3Par')
+	if ($ArrayType -eq 'Alletra9000' -or $ArrayType -eq 'Primera' -or $ArrayType -eq '3Par' -or $ArrayType -eq 'AlletraMP-B10000')
 			{	write-Verbose "You will be connected to a $ArrayType at the location $ArrayNameOrIPAddress"
 				$pass = $Credential.GetNetworkCredential().password 
 				$user = $Credential.GetNetworkCredential().username
@@ -490,6 +506,9 @@ Process
 				connect-A9API -ArrayFQDNorIPAddress $ArrayNameOrIPAddress -SANUserName $user -SANPassword $pass -ArrayType $ArrayType
 				Write-host "To View the list of commands available to you that utilize the API please use 'Get-Command -module HPEAlletra9000AndPrimeraAnd3Par_API'." -ForegroundColor Green
 				Write-host "To View the list of commands available to you that utilize the CLI please use 'Get-Command -module HPEAlletra9000AndPrimeraAnd3Par_CLI'." -ForegroundColor Green
+				if ( $ArrayType -eq '3Par')
+				{	Write-host "Since the array is of type 3Par, the optional File Persona Commands will be loaded. To view a list of these commands use 'Get-Command -module HPE3ParFilePersona " -ForegroundColor Green
+				}
 				write-verbose 'Removing non-used modules'
 				if ( [boolean](get-module -name HPEAlletra6000andNimbleStorage) )	{ remove-module -name HPEAlletra6000andNimbleStorage }
 				if ( [boolean](get-module -name HPEMSA ) 						)	{ remove-module -name HPEMSA }
@@ -654,12 +673,13 @@ else{   write-verbose "Running Codebase for PowerShell Core."
 }
 }
 	
+
 # SIG # Begin signature block
-# MIIt2AYJKoZIhvcNAQcCoIItyTCCLcUCAQExDzANBglghkgBZQMEAgMFADCBmwYK
+# MIIsVAYJKoZIhvcNAQcCoIIsRTCCLEECAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEBL0YG6ZXDn
-# VVK3Z6ZlQurAp/fn2ZcNYPOyqPn28eq0Za/+trpdTacXUydJade3MXTKKdXh5kby
-# oXgrgDQS/ABToIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEDoCn5gX+wJ
+# H5owRkczyNexhPLlrD67LQgJVXQPawR/GPHB8JSfY4Qu0X5n9WuNqX+k6UHf4Rr3
+# yeGQxok4GbqCoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -752,152 +772,144 @@ else{   write-verbose "Running Codebase for PowerShell Core."
 # 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
 # tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
 # NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG5UwghuRAgEBMGkwVDELMAkGA1UEBhMCR0Ix
+# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCGhEwghoNAgEBMGkwVDELMAkGA1UEBhMCR0Ix
 # GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQGU5TGRWWV0LKY/PJ6Deu08F4WgyjVTleRbi87izyyLi7pOa4tt37/GW
-# GLu9seUvkq6pp/hGzC1npWnVyRvi3HwwDQYJKoZIhvcNAQEBBQAEggGAjkbhG/6v
-# KErNtHPnuRWlhjx5LtBNGJ0j4ImRFI2KTH2YerCQf96DihCCj8H/J3DZRhPNaNdd
-# T/5cmaAZ1SpNCYfLPp2DgTODCisttf42uz1FyYJflAgk5LgYbUPlOYPdObJdkLEU
-# MfEE9eQPLHAvtzB5hltgoR5mpX4qKWLWknbQNn5gpbb8C09+m/ZDTwBAyc+ljpTW
-# nAkgqBYNzgwXZ1PpNTKB96ShBzKim9XiPc9l8jPNsNErp7I/MdULnDYqVrJEMqni
-# fcFlfrH+v6TvC8zh37aWXLSZJM70fM8/ItWdJUY8SyXDlQlDb+inmXZJ2qFv6XAy
-# 5P2f4MW1OBb51CrWR4YixtAoQVbW4U/Ttl3RlveEEA0AENp2hFtE7W3C3vz+IfN2
-# 3LY4IwO1ZYTvFOQ50n5BfYnpD23inbjn5a7KkNnz8ptUhlUyQ13Y2CT20CoqSjr/
-# +CEdDESOozznZhB9qZBEEQLovqGGCLm2SQkqLqGoQQo/7bIL3DQHqckUoYIY3jCC
-# GNoGCisGAQQBgjcDAwExghjKMIIYxgYJKoZIhvcNAQcCoIIYtzCCGLMCAQMxDzAN
-# BglghkgBZQMEAgIFADCCAQMGCyqGSIb3DQEJEAEEoIHzBIHwMIHtAgEBBgorBgEE
-# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMPAlXIguemhmTN0BKbdWtS2dspsPDnqK
-# xTc6b0CAQ7FvmcumF51vUFsZoa1WTPVeGgIUUp5eLxACHp7PmV/PHziJvLbdhHIY
-# DzIwMjQwNzMxMTgxNTM4WqBypHAwbjELMAkGA1UEBhMCR0IxEzARBgNVBAgTCk1h
-# bmNoZXN0ZXIxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEwMC4GA1UEAxMnU2Vj
-# dGlnbyBQdWJsaWMgVGltZSBTdGFtcGluZyBTaWduZXIgUjM1oIIS/zCCBl0wggTF
-# oAMCAQICEDpSaiyEzlXmHWX8zBLY6YkwDQYJKoZIhvcNAQEMBQAwVTELMAkGA1UE
-# BhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGln
-# byBQdWJsaWMgVGltZSBTdGFtcGluZyBDQSBSMzYwHhcNMjQwMTE1MDAwMDAwWhcN
-# MzUwNDE0MjM1OTU5WjBuMQswCQYDVQQGEwJHQjETMBEGA1UECBMKTWFuY2hlc3Rl
-# cjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTAwLgYDVQQDEydTZWN0aWdvIFB1
-# YmxpYyBUaW1lIFN0YW1waW5nIFNpZ25lciBSMzUwggIiMA0GCSqGSIb3DQEBAQUA
-# A4ICDwAwggIKAoICAQCN0Wf0wUibvf04STpNYYGbw9jcRaVhBDaNBp7jmJaA9dQZ
-# W5ighrXGNMYjK7Dey5RIHMqLIbT9z9if753mYbojJrKWO4ZP0N5dBT2TwZZaPb8E
-# +hqaDZ8Vy2c+x1NiEwbEzTrPX4W3QFq/zJvDDbWKL99qLL42GJQzX3n5wWo60Kkl
-# fFn+Wb22mOZWYSqkCVGl8aYuE12SqIS4MVO4PUaxXeO+4+48YpQlNqbc/ndTgszR
-# QLF4MjxDPjRDD1M9qvpLTZcTGVzxfViyIToRNxPP6DUiZDU6oXARrGwyP9aglPXw
-# YbkqI2dLuf9fiIzBugCDciOly8TPDgBkJmjAfILNiGcVEzg+40xUdhxNcaC+6r0j
-# uPiR7bzXHh7v/3RnlZuT3ZGstxLfmE7fRMAFwbHdDz5gtHLqjSTXDiNF58IxPtvm
-# ZPG2rlc+Yq+2B8+5pY+QZn+1vEifI0MDtiA6BxxQuOnj4PnqDaK7NEKwtD1pzoA3
-# jJFuoJiwbatwhDkg1PIjYnMDbDW+wAc9FtRN6pUsO405jaBgigoFZCw9hWjLNqgF
-# VTo7lMb5rVjJ9aSBVVL2dcqzyFW2LdWk5Xdp65oeeOALod7YIIMv1pbqC15R7QCY
-# LxcK1bCl4/HpBbdE5mjy9JR70BHuYx27n4XNOZbwrXcG3wZf9gEUk7stbPAoBQID
-# AQABo4IBjjCCAYowHwYDVR0jBBgwFoAUX1jtTDF6omFCjVKAurNhlxmiMpswHQYD
-# VR0OBBYEFGjvpDJJabZSOB3qQzks9BRqngyFMA4GA1UdDwEB/wQEAwIGwDAMBgNV
-# HRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMEoGA1UdIARDMEEwNQYM
-# KwYBBAGyMQECAQMIMCUwIwYIKwYBBQUHAgEWF2h0dHBzOi8vc2VjdGlnby5jb20v
-# Q1BTMAgGBmeBDAEEAjBKBgNVHR8EQzBBMD+gPaA7hjlodHRwOi8vY3JsLnNlY3Rp
-# Z28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcmwwegYIKwYB
-# BQUHAQEEbjBsMEUGCCsGAQUFBzAChjlodHRwOi8vY3J0LnNlY3RpZ28uY29tL1Nl
-# Y3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcnQwIwYIKwYBBQUHMAGGF2h0
-# dHA6Ly9vY3NwLnNlY3RpZ28uY29tMA0GCSqGSIb3DQEBDAUAA4IBgQCw3C7J+k82
-# TIov9slP1e8YTx+fDsa//hJ62Y6SMr2E89rv82y/n8we5W6z5pfBEWozlW7nWp+s
-# dPCdUTFw/YQcqvshH6b9Rvs9qZp5Z+V7nHwPTH8yzKwgKzTTG1I1XEXLAK9fHnmX
-# paDeVeI8K6Lw3iznWZdLQe3zl+Rejdq5l2jU7iUfMkthfhFmi+VVYPkR/BXpV7Ub
-# 1QyyWebqkjSHJHRmv3lBYbQyk08/S7TlIeOr9iQ+UN57fJg4QI0yqdn6PyiehS1n
-# SgLwKRs46T8A6hXiSn/pCXaASnds0LsM5OVoKYfbgOOlWCvKfwUySWoSgrhncihS
-# BXxH2pAuDV2vr8GOCEaePZc0Dy6O1rYnKjGmqm/IRNkJghSMizr1iIOPN+23futB
-# XAhmx8Ji/4NTmyH9K0UvXHiuA2Pa3wZxxR9r9XeIUVb2V8glZay+2ULlc445CzCv
-# VSZV01ZB6bgvCuUuBx079gCcepjnZDCcEuIC5Se4F6yFaZ8RvmiJ4hgwggYUMIID
-# /KADAgECAhB6I67aU2mWD5HIPlz0x+M/MA0GCSqGSIb3DQEBDAUAMFcxCzAJBgNV
-# BAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNVBAMTJVNlY3Rp
-# Z28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwHhcNMjEwMzIyMDAwMDAw
-# WhcNMzYwMzIxMjM1OTU5WjBVMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGln
-# byBMaW1pdGVkMSwwKgYDVQQDEyNTZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5n
-# IENBIFIzNjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAM2Y2ENBq26C
-# K+z2M34mNOSJjNPvIhKAVD7vJq+MDoGD46IiM+b83+3ecLvBhStSVjeYXIjfa3aj
-# oW3cS3ElcJzkyZlBnwDEJuHlzpbN4kMH2qRBVrjrGJgSlzzUqcGQBaCxpectRGhh
-# nOSwcjPMI3G0hedv2eNmGiUbD12OeORN0ADzdpsQ4dDi6M4YhoGE9cbY11XxM2AV
-# Zn0GiOUC9+XE0wI7CQKfOUfigLDn7i/WeyxZ43XLj5GVo7LDBExSLnh+va8WxTlA
-# +uBvq1KO8RSHUQLgzb1gbL9Ihgzxmkdp2ZWNuLc+XyEmJNbD2OIIq/fWlwBp6KNL
-# 19zpHsODLIsgZ+WZ1AzCs1HEK6VWrxmnKyJJg2Lv23DlEdZlQSGdF+z+Gyn9/CRe
-# zKe7WNyxRf4e4bwUtrYE2F5Q+05yDD68clwnweckKtxRaF0VzN/w76kOLIaFVhf5
-# sMM/caEZLtOYqYadtn034ykSFaZuIBU9uCSrKRKTPJhWvXk4CllgrwIDAQABo4IB
-# XDCCAVgwHwYDVR0jBBgwFoAU9ndq3T/9ARP/FqFsggIv0Ao9FCUwHQYDVR0OBBYE
-# FF9Y7UwxeqJhQo1SgLqzYZcZojKbMA4GA1UdDwEB/wQEAwIBhjASBgNVHRMBAf8E
-# CDAGAQH/AgEAMBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQKMAgwBgYEVR0g
-# ADBMBgNVHR8ERTBDMEGgP6A9hjtodHRwOi8vY3JsLnNlY3RpZ28uY29tL1NlY3Rp
-# Z29QdWJsaWNUaW1lU3RhbXBpbmdSb290UjQ2LmNybDB8BggrBgEFBQcBAQRwMG4w
-# RwYIKwYBBQUHMAKGO2h0dHA6Ly9jcnQuc2VjdGlnby5jb20vU2VjdGlnb1B1Ymxp
-# Y1RpbWVTdGFtcGluZ1Jvb3RSNDYucDdjMCMGCCsGAQUFBzABhhdodHRwOi8vb2Nz
-# cC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOCAgEAEtd7IK0ONVgMnoEdJVj9
-# TC1ndK/HYiYh9lVUacahRoZ2W2hfiEOyQExnHk1jkvpIJzAMxmEc6ZvIyHI5UkPC
-# bXKspioYMdbOnBWQUn733qMooBfIghpR/klUqNxx6/fDXqY0hSU1OSkkSivt51Ul
-# mJElUICZYBodzD3M/SFjeCP59anwxs6hwj1mfvzG+b1coYGnqsSz2wSKr+nDO+Db
-# 8qNcTbJZRAiSazr7KyUJGo1c+MScGfG5QHV+bps8BX5Oyv9Ct36Y4Il6ajTqV2if
-# ikkVtB3RNBUgwu/mSiSUice/Jp/q8BMk/gN8+0rNIE+QqU63JoVMCMPY2752LmES
-# sRVVoypJVt8/N3qQ1c6FibbcRabo3azZkcIdWGVSAdoLgAIxEKBeNh9AQO1gQrnh
-# 1TA8ldXuJzPSuALOz1Ujb0PCyNVkWk7hkhVHfcvBfI8NtgWQupiaAeNHe0pWSGH2
-# opXZYKYG4Lbukg7HpNi/KqJhue2Keak6qH9A8CeEOB7Eob0Zf+fU+CCQaL0cJqlm
-# nx9HCDxF+3BLbUufrV64EbTI40zqegPZdA+sXCmbcZy6okx/SjwsusWRItFA3DE8
-# MORZeFb6BmzBtqKJ7l939bbKBy2jvxcJI98Va95Q5JnlKor3m0E7xpMeYRriWklU
-# PsetMSf2NvUQa/E5vVyefQIwggaCMIIEaqADAgECAhA2wrC9fBs656Oz3TbLyXVo
-# MA0GCSqGSIb3DQEBDAUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKTmV3IEpl
-# cnNleTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJV
-# U1QgTmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9u
-# IEF1dGhvcml0eTAeFw0yMTAzMjIwMDAwMDBaFw0zODAxMTgyMzU5NTlaMFcxCzAJ
-# BgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNVBAMTJVNl
-# Y3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwggIiMA0GCSqGSIb3
-# DQEBAQUAA4ICDwAwggIKAoICAQCIndi5RWedHd3ouSaBmlRUwHxJBZvMWhUP2ZQQ
-# RLRBQIF3FJmp1OR2LMgIU14g0JIlL6VXWKmdbmKGRDILRxEtZdQnOh2qmcxGzjqe
-# mIk8et8sE6J+N+Gl1cnZocew8eCAawKLu4TRrCoqCAT8uRjDeypoGJrruH/drCio
-# 28aqIVEn45NZiZQI7YYBex48eL78lQ0BrHeSmqy1uXe9xN04aG0pKG9ki+PC6VEf
-# zutu6Q3IcZZfm00r9YAEp/4aeiLhyaKxLuhKKaAdQjRaf/h6U13jQEV1JnUTCm51
-# 1n5avv4N+jSVwd+Wb8UMOs4netapq5Q/yGyiQOgjsP/JRUj0MAT9YrcmXcLgsrAi
-# mfWY3MzKm1HCxcquinTqbs1Q0d2VMMQyi9cAgMYC9jKc+3mW62/yVl4jnDcw6ULJ
-# sBkOkrcPLUwqj7poS0T2+2JMzPP+jZ1h90/QpZnBkhdtixMiWDVgh60KmLmzXiqJ
-# c6lGwqoUqpq/1HVHm+Pc2B6+wCy/GwCcjw5rmzajLbmqGygEgaj/OLoanEWP6Y52
-# Hflef3XLvYnhEY4kSirMQhtberRvaI+5YsD3XVxHGBjlIli5u+NrLedIxsE88WzK
-# XqZjj9Zi5ybJL2WjeXuOTbswB7XjkZbErg7ebeAQUQiS/uRGZ58NHs57ZPUfECcg
-# JC+v2wIDAQABo4IBFjCCARIwHwYDVR0jBBgwFoAUU3m/WqorSs9UgOHYm8Cd8rID
-# ZsswHQYDVR0OBBYEFPZ3at0//QET/xahbIICL9AKPRQlMA4GA1UdDwEB/wQEAwIB
-# hjAPBgNVHRMBAf8EBTADAQH/MBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQK
-# MAgwBgYEVR0gADBQBgNVHR8ESTBHMEWgQ6BBhj9odHRwOi8vY3JsLnVzZXJ0cnVz
-# dC5jb20vVVNFUlRydXN0UlNBQ2VydGlmaWNhdGlvbkF1dGhvcml0eS5jcmwwNQYI
-# KwYBBQUHAQEEKTAnMCUGCCsGAQUFBzABhhlodHRwOi8vb2NzcC51c2VydHJ1c3Qu
-# Y29tMA0GCSqGSIb3DQEBDAUAA4ICAQAOvmVB7WhEuOWhxdQRh+S3OyWM637ayBeR
-# 7djxQ8SihTnLf2sABFoB0DFR6JfWS0snf6WDG2gtCGflwVvcYXZJJlFfym1Doi+4
-# PfDP8s0cqlDmdfyGOwMtGGzJ4iImyaz3IBae91g50QyrVbrUoT0mUGQHbRcF57ol
-# pfHhQEStz5i6hJvVLFV/ueQ21SM99zG4W2tB1ExGL98idX8ChsTwbD/zIExAopoe
-# 3l6JrzJtPxj8V9rocAnLP2C8Q5wXVVZcbw4x4ztXLsGzqZIiRh5i111TW7HV1Ats
-# Qa6vXy633vCAbAOIaKcLAo/IU7sClyZUk62XD0VUnHD+YvVNvIGezjM6CRpcWed/
-# ODiptK+evDKPU2K6synimYBaNH49v9Ih24+eYXNtI38byt5kIvh+8aW88WThRpv8
-# lUJKaPn37+YHYafob9Rg7LyTrSYpyZoBmwRWSE4W6iPjB7wJjJpH29308ZkpKKdp
-# kiS9WNsf/eeUtvRrtIEiSJHN899L1P4l6zKVsdrUu1FX1T/ubSrsxrYJD+3f3aKg
-# 6yxdbugot06YwGXXiy5UUGZvOu3lXlxA+fC13dQ5OlL2gIb5lmF6Ii8+CQOYDwXM
-# +yd9dbmocQsHjcRPsccUd5E9FiswEqORvz8g3s+jR3SFCgXhN4wz7NgAnOgpCdUo
-# 4uDyllU9PzGCBJEwggSNAgEBMGkwVTELMAkGA1UEBhMCR0IxGDAWBgNVBAoTD1Nl
-# Y3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMgVGltZSBTdGFt
-# cGluZyBDQSBSMzYCEDpSaiyEzlXmHWX8zBLY6YkwDQYJYIZIAWUDBAICBQCgggH5
-# MBoGCSqGSIb3DQEJAzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjQw
-# NzMxMTgxNTM4WjA/BgkqhkiG9w0BCQQxMgQwg1tE6Ngrm1hHDDSMt6qwEC+wdzRl
-# GI//hZaH79wzZXV97TvY/ohTrTOQE28/WWHBMIIBegYLKoZIhvcNAQkQAgwxggFp
-# MIIBZTCCAWEwFgQU+GCYGab7iCz36FKX8qEZUhoWd18wgYcEFMauVOR4hvF8PVUS
-# SIxpw0p6+cLdMG8wW6RZMFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdv
-# IExpbWl0ZWQxLjAsBgNVBAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcg
-# Um9vdCBSNDYCEHojrtpTaZYPkcg+XPTH4z8wgbwEFIU9Yy2TgoJhfNCQNcSR3pLB
-# QtrHMIGjMIGOpIGLMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKTmV3IEplcnNl
-# eTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJVU1Qg
-# TmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9uIEF1
-# dGhvcml0eQIQNsKwvXwbOuejs902y8l1aDANBgkqhkiG9w0BAQEFAASCAgAtiWTD
-# Yv9xkgs+dp3Bh4rzMIblADy2x0ifJd1nW2d9PIB1xFSY8FAJ/4PMn91nM3Mf18rt
-# KhX9c8Iikm5oAGkj3VL5VUUXwrM8IBR/hqeXWTw6SqOX13zRAVDkxsWligczPw2t
-# VJbtgKe1mniP/F/5mfit9msXmmoeJS9HDtD+mPVLDqz3kXeH2nUgCzKgwvfUbBbb
-# /0lxHWLCyoORSU6oLGdx8OckTsn9uRWlNnDSBsDFvLkSmmKWLbnzXxO3aTlWiU4e
-# xEkV+7WIchTSjyyRqwLH4nD1uVhuB3qaezy3LNEGvFeX3R15N/qfXh1qRdHIvHzj
-# xFuJWAC0KCil6QJ9QP4hO13kfFMMFFP8kJEeuIGi3PpcVQvmrrhfR2yR9VrH/rNA
-# mBK3UEFtk6rCsR2tIEMK9MiTDE5pHa2az9AqI4Dmm1ZDewqov5KHcJE+4+lC0gEq
-# IjSP8uDswrspxUbAn2dkFF77+CfJWcRWFlmwLbt2MkDkVzR6BPs5253M1RwkSeoj
-# C7k0WEjxW+o/cntA2oyEi+dm0+9DtL1eGXhJ5lgI+6Fk/MsaZzG7xnNchPJrSdkK
-# W38jC+d0LOyAQojEBvvwVBQTRpCDEf+4ZY/jHnGar0lx/5nq48Vj4cDoSVza52i4
-# TLDSVb9xf9PccMd+lBQUisJclmoppNVxOkEYDQ==
+# AQkEMUIEQNpwOU0kvEwqbIBr0M/Hch+v4QQTuCT1FG+7jDCI7xE5L0aN3a8XSVRC
+# K4w6VVzUjN55SAB5IdApj8heJSt9IUEwDQYJKoZIhvcNAQEBBQAEggGAl/zlkwEl
+# Gc+CTMZTjFhOTMbNOO6iDEU+JD7CzUclP6V0Du9izieLFrCAmTYQA14WWMUCM70F
+# WQUopiR7rgM57IgMHRIcSbpHfmuEu6S4ksxtRlwpTWEGwZK5jDbRNZj7pu6LwwBh
+# co3YKXkwJYpJej2pM0wDaYBPhJe287UNwJfWTbWDEgRed+bpsn66H2nj6wpDW92f
+# z4Q0ApGV5qMhYD2AepP5dofxqItkMQAVD8xF3c4LbXH3/ZJJGyEBfyUeqceoYqE/
+# NeIzg5dV6Qatcb1uVFMgctxi/jdgHlmybxPcPbGoFcFr/grqWmdF8nrMmfh97Bop
+# HCgD3UpEd4tDlhJfpS3IZZCd+4tFvVxhiETna7LvEprVOmDwZvefAxGKvbGNqImi
+# PYlfyF45ZcoExyMA3DH/+DZF7/+xqTseYz8rZm9CI+W+KwrO1cdJXAKxVQ2jBE+o
+# jH2b/mG9+Iv0EPoLRdVwq+Y36sNAVe9OjLTnb93FkZjK4NI3W0bmpQItoYIXWjCC
+# F1YGCisGAQQBgjcDAwExghdGMIIXQgYJKoZIhvcNAQcCoIIXMzCCFy8CAQMxDzAN
+# BglghkgBZQMEAgIFADCBhwYLKoZIhvcNAQkQAQSgeAR2MHQCAQEGCWCGSAGG/WwH
+# ATBBMA0GCWCGSAFlAwQCAgUABDDQSTJxWL++9f3b4LyHc6A1Q/nSFVGy2CFRnORs
+# 1/7QPScUKOJg1ZEEx0nJlHqJTP4CEF66hg0lgAPHjjHG3yb+jhgYDzIwMjUwNTE1
+# MjMzNjM3WqCCEwMwgga8MIIEpKADAgECAhALrma8Wrp/lYfG+ekE4zMEMA0GCSqG
+# SIb3DQEBCwUAMGMxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5j
+# LjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBU
+# aW1lU3RhbXBpbmcgQ0EwHhcNMjQwOTI2MDAwMDAwWhcNMzUxMTI1MjM1OTU5WjBC
+# MQswCQYDVQQGEwJVUzERMA8GA1UEChMIRGlnaUNlcnQxIDAeBgNVBAMTF0RpZ2lD
+# ZXJ0IFRpbWVzdGFtcCAyMDI0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKC
+# AgEAvmpzn/aVIauWMLpbbeZZo7Xo/ZEfGMSIO2qZ46XB/QowIEMSvgjEdEZ3v4vr
+# rTHleW1JWGErrjOL0J4L0HqVR1czSzvUQ5xF7z4IQmn7dHY7yijvoQ7ujm0u6yXF
+# 2v1CrzZopykD07/9fpAT4BxpT9vJoJqAsP8YuhRvflJ9YeHjes4fduksTHulntq9
+# WelRWY++TFPxzZrbILRYynyEy7rS1lHQKFpXvo2GePfsMRhNf1F41nyEg5h7iOXv
+# +vjX0K8RhUisfqw3TTLHj1uhS66YX2LZPxS4oaf33rp9HlfqSBePejlYeEdU740G
+# KQM7SaVSH3TbBL8R6HwX9QVpGnXPlKdE4fBIn5BBFnV+KwPxRNUNK6lYk2y1WSKo
+# ur4hJN0SMkoaNV8hyyADiX1xuTxKaXN12HgR+8WulU2d6zhzXomJ2PleI9V2yfmf
+# XSPGYanGgxzqI+ShoOGLomMd3mJt92nm7Mheng/TBeSA2z4I78JpwGpTRHiT7yHq
+# BiV2ngUIyCtd0pZ8zg3S7bk4QC4RrcnKJ3FbjyPAGogmoiZ33c1HG93Vp6lJ415E
+# RcC7bFQMRbxqrMVANiav1k425zYyFMyLNyE1QulQSgDpW9rtvVcIH7WvG9sqYup9
+# j8z9J1XqbBZPJ5XLln8mS8wWmdDLnBHXgYly/p1DhoQo5fkCAwEAAaOCAYswggGH
+# MA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsG
+# AQUFBwMIMCAGA1UdIAQZMBcwCAYGZ4EMAQQCMAsGCWCGSAGG/WwHATAfBgNVHSME
+# GDAWgBS6FtltTYUvcyl2mi91jGogj57IbzAdBgNVHQ4EFgQUn1csA3cOKBWQZqVj
+# Xu5Pkh92oFswWgYDVR0fBFMwUTBPoE2gS4ZJaHR0cDovL2NybDMuZGlnaWNlcnQu
+# Y29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFtcGluZ0NB
+# LmNybDCBkAYIKwYBBQUHAQEEgYMwgYAwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3Nw
+# LmRpZ2ljZXJ0LmNvbTBYBggrBgEFBQcwAoZMaHR0cDovL2NhY2VydHMuZGlnaWNl
+# cnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFtcGlu
+# Z0NBLmNydDANBgkqhkiG9w0BAQsFAAOCAgEAPa0eH3aZW+M4hBJH2UOR9hHbm04I
+# HdEoT8/T3HuBSyZeq3jSi5GXeWP7xCKhVireKCnCs+8GZl2uVYFvQe+pPTScVJeC
+# ZSsMo1JCoZN2mMew/L4tpqVNbSpWO9QGFwfMEy60HofN6V51sMLMXNTLfhVqs+e8
+# haupWiArSozyAmGH/6oMQAh078qRh6wvJNU6gnh5OruCP1QUAvVSu4kqVOcJVozZ
+# R5RRb/zPd++PGE3qF1P3xWvYViUJLsxtvge/mzA75oBfFZSbdakHJe2BVDGIGVNV
+# jOp8sNt70+kEoMF+T6tptMUNlehSR7vM+C13v9+9ZOUKzfRUAYSyyEmYtsnpltD/
+# GWX8eM70ls1V6QG/ZOB6b6Yum1HvIiulqJ1Elesj5TMHq8CWT/xrW7twipXTJ5/i
+# 5pkU5E16RSBAdOp12aw8IQhhA/vEbFkEiF2abhuFixUDobZaA0VhqAsMHOmaT3XT
+# hZDNi5U2zHKhUs5uHHdG6BoQau75KiNbh0c+hatSF+02kULkftARjsyEpHKsF7u5
+# zKRbt5oK5YGwFvgc4pEVUNytmB3BpIiowOIIuDgP5M9WArHYSAR16gc0dP2XdkME
+# P5eBsX7bf/MGN4K3HP50v/01ZHo/Z5lGLvNwQ7XHBx1yomzLP8lx4Q1zZKDyHcp4
+# VQJLu2kWTsKsOqQwggauMIIElqADAgECAhAHNje3JFR82Ees/ShmKl5bMA0GCSqG
+# SIb3DQEBCwUAMGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMx
+# GTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IFRy
+# dXN0ZWQgUm9vdCBHNDAeFw0yMjAzMjMwMDAwMDBaFw0zNzAzMjIyMzU5NTlaMGMx
+# CzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMy
+# RGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcg
+# Q0EwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDGhjUGSbPBPXJJUVXH
+# JQPE8pE3qZdRodbSg9GeTKJtoLDMg/la9hGhRBVCX6SI82j6ffOciQt/nR+eDzMf
+# UBMLJnOWbfhXqAJ9/UO0hNoR8XOxs+4rgISKIhjf69o9xBd/qxkrPkLcZ47qUT3w
+# 1lbU5ygt69OxtXXnHwZljZQp09nsad/ZkIdGAHvbREGJ3HxqV3rwN3mfXazL6IRk
+# tFLydkf3YYMZ3V+0VAshaG43IbtArF+y3kp9zvU5EmfvDqVjbOSmxR3NNg1c1eYb
+# qMFkdECnwHLFuk4fsbVYTXn+149zk6wsOeKlSNbwsDETqVcplicu9Yemj052FVUm
+# cJgmf6AaRyBD40NjgHt1biclkJg6OBGz9vae5jtb7IHeIhTZgirHkr+g3uM+onP6
+# 5x9abJTyUpURK1h0QCirc0PO30qhHGs4xSnzyqqWc0Jon7ZGs506o9UD4L/wojzK
+# QtwYSH8UNM/STKvvmz3+DrhkKvp1KCRB7UK/BZxmSVJQ9FHzNklNiyDSLFc1eSuo
+# 80VgvCONWPfcYd6T/jnA+bIwpUzX6ZhKWD7TA4j+s4/TXkt2ElGTyYwMO1uKIqjB
+# Jgj5FBASA31fI7tk42PgpuE+9sJ0sj8eCXbsq11GdeJgo1gJASgADoRU7s7pXche
+# MBK9Rp6103a50g5rmQzSM7TNsQIDAQABo4IBXTCCAVkwEgYDVR0TAQH/BAgwBgEB
+# /wIBADAdBgNVHQ4EFgQUuhbZbU2FL3MpdpovdYxqII+eyG8wHwYDVR0jBBgwFoAU
+# 7NfjgtJxXWRM3y5nP+e6mK4cD08wDgYDVR0PAQH/BAQDAgGGMBMGA1UdJQQMMAoG
+# CCsGAQUFBwMIMHcGCCsGAQUFBwEBBGswaTAkBggrBgEFBQcwAYYYaHR0cDovL29j
+# c3AuZGlnaWNlcnQuY29tMEEGCCsGAQUFBzAChjVodHRwOi8vY2FjZXJ0cy5kaWdp
+# Y2VydC5jb20vRGlnaUNlcnRUcnVzdGVkUm9vdEc0LmNydDBDBgNVHR8EPDA6MDig
+# NqA0hjJodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVkUm9v
+# dEc0LmNybDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEwDQYJKoZI
+# hvcNAQELBQADggIBAH1ZjsCTtm+YqUQiAX5m1tghQuGwGC4QTRPPMFPOvxj7x1Bd
+# 4ksp+3CKDaopafxpwc8dB+k+YMjYC+VcW9dth/qEICU0MWfNthKWb8RQTGIdDAiC
+# qBa9qVbPFXONASIlzpVpP0d3+3J0FNf/q0+KLHqrhc1DX+1gtqpPkWaeLJ7giqzl
+# /Yy8ZCaHbJK9nXzQcAp876i8dU+6WvepELJd6f8oVInw1YpxdmXazPByoyP6wCeC
+# RK6ZJxurJB4mwbfeKuv2nrF5mYGjVoarCkXJ38SNoOeY+/umnXKvxMfBwWpx2cYT
+# gAnEtp/Nh4cku0+jSbl3ZpHxcpzpSwJSpzd+k1OsOx0ISQ+UzTl63f8lY5knLD0/
+# a6fxZsNBzU+2QJshIUDQtxMkzdwdeDrknq3lNHGS1yZr5Dhzq6YBT70/O3itTK37
+# xJV77QpfMzmHQXh6OOmc4d0j/R0o08f56PGYX/sr2H7yRp11LB4nLCbbbxV7HhmL
+# NriT1ObyF5lZynDwN7+YAN8gFk8n+2BnFqFmut1VwDophrCYoCvtlUG3OtUVmDG0
+# YgkPCr2B2RP+v6TR81fZvAT6gt4y3wSJ8ADNXcL50CN/AAvkdgIm2fBldkKmKYcJ
+# RyvmfxqkhQ/8mJb2VVQrH4D6wPIOK+XW+6kvRBVK5xMOHds3OBqhK/bt1nz8MIIF
+# jTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0BAQwFADBlMQsw
+# CQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cu
+# ZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVkIElEIFJvb3Qg
+# Q0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQswCQYDVQQGEwJV
+# UzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQu
+# Y29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVkIFJvb3QgRzQwggIiMA0GCSqG
+# SIb3DQEBAQUAA4ICDwAwggIKAoICAQC/5pBzaN675F1KPDAiMGkz7MKnJS7JIT3y
+# ithZwuEppz1Yq3aaza57G4QNxDAf8xukOBbrVsaXbR2rsnnyyhHS5F/WBTxSD1If
+# xp4VpX6+n6lXFllVcq9ok3DCsrp1mWpzMpTREEQQLt+C8weE5nQ7bXHiLQwb7iDV
+# ySAdYyktzuxeTsiT+CFhmzTrBcZe7FsavOvJz82sNEBfsXpm7nfISKhmV1efVFiO
+# DCu3T6cw2Vbuyntd463JT17lNecxy9qTXtyOj4DatpGYQJB5w3jHtrHEtWoYOAMQ
+# jdjUN6QuBX2I9YI+EJFwq1WCQTLX2wRzKm6RAXwhTNS8rhsDdV14Ztk6MUSaM0C/
+# CNdaSaTC5qmgZ92kJ7yhTzm1EVgX9yRcRo9k98FpiHaYdj1ZXUJ2h4mXaXpI8OCi
+# EhtmmnTK3kse5w5jrubU75KSOp493ADkRSWJtppEGSt+wJS00mFt6zPZxd9LBADM
+# fRyVw4/3IbKyEbe7f/LVjHAsQWCqsWMYRJUadmJ+9oCw++hkpjPRiQfhvbfmQ6QY
+# uKZ3AeEPlAwhHbJUKSWJbOUOUlFHdL4mrLZBdd56rF+NP8m800ERElvlEFDrMcXK
+# chYiCd98THU/Y+whX8QgUWtvsauGi0/C1kVfnSD8oR7FwI+isX4KJpn15GkvmB0t
+# 9dmpsh3lGwIDAQABo4IBOjCCATYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQU
+# 7NfjgtJxXWRM3y5nP+e6mK4cD08wHwYDVR0jBBgwFoAUReuir/SSy4IxLVGLp6ch
+# nfNtyA8wDgYDVR0PAQH/BAQDAgGGMHkGCCsGAQUFBwEBBG0wazAkBggrBgEFBQcw
+# AYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tMEMGCCsGAQUFBzAChjdodHRwOi8v
+# Y2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3J0
+# MEUGA1UdHwQ+MDwwOqA4oDaGNGh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdp
+# Q2VydEFzc3VyZWRJRFJvb3RDQS5jcmwwEQYDVR0gBAowCDAGBgRVHSAAMA0GCSqG
+# SIb3DQEBDAUAA4IBAQBwoL9DXFXnOF+go3QbPbYW1/e/Vwe9mqyhhyzshV6pGrsi
+# +IcaaVQi7aSId229GhT0E0p6Ly23OO/0/4C5+KH38nLeJLxSA8hO0Cre+i1Wz/n0
+# 96wwepqLsl7Uz9FDRJtDIeuWcqFItJnLnU+nBgMTdydE1Od/6Fmo8L8vC6bp8jQ8
+# 7PcDx4eo0kxAGTVGamlUsLihVo7spNU96LHc/RzY9HdaXFSMb++hUD38dglohJ9v
+# ytsgjTVgHAIDyyCwrFigDkBjxZgiwbJZ9VVrzyerbHbObyMt9H5xaiNrIv8SuFQt
+# J37YOtnwtoeW/VvRXKwYw02fc7cBqZ9Xql4o4rmUMYIDhjCCA4ICAQEwdzBjMQsw
+# CQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRp
+# Z2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENB
+# AhALrma8Wrp/lYfG+ekE4zMEMA0GCWCGSAFlAwQCAgUAoIHhMBoGCSqGSIb3DQEJ
+# AzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjUwNTE1MjMzNjM3WjAr
+# BgsqhkiG9w0BCRACDDEcMBowGDAWBBTb04XuYtvSPnvk9nFIUIck1YZbRTA3Bgsq
+# hkiG9w0BCRACLzEoMCYwJDAiBCB2dp+o8mMvH0MLOiMwrtZWdf7Xc9sF1mW5BZOY
+# Q4+a2zA/BgkqhkiG9w0BCQQxMgQwRKCtKcARXqZNc90cBxpwaukWi3neih9qWhUT
+# hWW3BzAn0SBj1ulMME8I8FDa6ovaMA0GCSqGSIb3DQEBAQUABIICAFvXkR05VJwX
+# u7BJuooebwrBizNRHkruX158eliFJveJL1ruetbueI2/Dfap7m+TrKSIjxOVhRb/
+# HHMwNAnt3yeov6VTJc9bxYZNKG0rp+fmeXnRzrld7P0sILA3E7I8oUywZ4Aiu3Jk
+# pBo8aVrXJsZD+uBTQgjsCEAjD0xE9RH807gSbTLEEPyF8pgIkJeMJQS/DtU1sF14
+# uBlcE06All3yc3RE+1s+p/c7GBAJqk7AZeyjpWZmHSX4wuj0rmJsjT2UNVoDMrmJ
+# 5c2ZMhWXxDNU+2fBkGTtrYaQyAgtO9262fGsA7CA3K0tXv/5KqmPtWeswULkI8rH
+# MQDebpLHJzwECdj+9/JQxfwEgSWBHB4drkl1S6nfkvGtyqfX6dydO+x+4E2IeQJ2
+# 3/5Vcd4RyjlUz86hKjqDV5jxfmKmR8Esjrrb8vNtPHvhDowClvvH0inc+KzHtcKu
+# RZ6sTWKhWr2EoM7Xp7urnbJK+zrIE03n/qBdj3405gWHk53P+21lRJvfixTf8NUF
+# GG1OhlW7nHDvvfM4IG3jAq9OP20CDi4qi6e9FFJ69/sDIiQtfELE2FGf2jui4RWF
+# p6qPj9pmsG7l1apyY6+DMqCy6cLXiKV7CvYHyGdfkSW/bH2riHmxPQHICBwFNbZT
+# 8HiSrKJCaNY6cmD7B820sPkfeYEh0Mdi
 # SIG # End signature block

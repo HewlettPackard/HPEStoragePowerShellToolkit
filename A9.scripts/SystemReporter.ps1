@@ -105,19 +105,19 @@ Function Get-A9CacheMemoryStatisticsDataReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$NodeId,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,		
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$NodeId,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,		
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -291,21 +291,21 @@ Function Get-A9CPGSpaceDataReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$CpgName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$DiskType,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$RAIDType,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,	
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$CpgName,
+		[Parameter()]	[String]	$DiskType,
+		[Parameter()]	[String]	$RAIDType,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,	
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -469,19 +469,19 @@ Function Get-A9CPGStatisticalDataReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter.
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$CpgName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$CpgName,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -626,19 +626,19 @@ Function Get-A9CPUStatisticalDataReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$NodeId,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$NodeId,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -793,18 +793,18 @@ Function Get-A9PDCapacityReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Id,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$DiskType,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$RPM,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$Id,
+		[Parameter()]	[String]	$DiskType,
+		[Parameter()]	[String]	$RPM,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -967,21 +967,21 @@ Function Get-A9PDStatisticsReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Id,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$DiskType,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$RPM,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$Id,
+		[Parameter()]	[String]	$DiskType,
+		[Parameter()]	[String]	$RPM,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
 		[Parameter(mPipeline=$true)]			[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1166,21 +1166,21 @@ Function Get-A9PDSpaceReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Id,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$DiskType,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$RPM,	
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$Id,
+		[Parameter()]	[String]	$DiskType,
+		[Parameter()]	[String]	$RPM,	
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1349,20 +1349,20 @@ Function Get-A9PortStatisticsReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$NSP,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$PortType,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$NSP,
+		[Parameter()]	[String]	$PortType,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1544,21 +1544,21 @@ Function Get-A9QoSStatisticalReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$VvSetName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Domain,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$All_Others,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]	$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$VvSetName,
+		[Parameter()]	[String]	$Domain,
+		[Parameter()]	[Switch]	$All_Others,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]	$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1753,20 +1753,20 @@ Function Get-A9RCopyStatisticalReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$TargetName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$NSP,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$TargetName,
+		[Parameter()]	[String]	$NSP,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1967,22 +1967,22 @@ Function Get-A9RCopyVolumeStatisticalReports
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$vvName,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$TargetName,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Mode,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$RCopyGroup,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+	[Parameter()]	[Switch]	$VersusTime,
+	[Parameter()]	[Switch]	$AtTime,
+	[Parameter()]	[Switch]	$Frequency_Hires,
+	[Parameter()]	[Switch]	$Frequency_Hourly,
+	[Parameter()]	[Switch]	$Frequency_Daily,
+	[Parameter()]	[String]	$vvName,
+	[Parameter()]	[String]	$TargetName,
+	[Parameter()]	[String]	$Mode,
+	[Parameter()]	[String]	$RCopyGroup,
+	[Parameter()]	[String]	$Groupby,
+	[Parameter()]	[String]	$Summary,
+	[Parameter()]	[String]	$Compareby,
+	[Parameter()]	[int]		$NoOfRecords,
+	[Parameter()]	[String]	$ComparebyField,
+	[Parameter()]	[String]	$GETime,
+	[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -2162,24 +2162,24 @@ Function Get-A9vLunStatisticsReports
 	Lase thane time For At Time query expressions, you can use the sampleTime parameter
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-		[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$VlunId,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$VvName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$HostName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$VvSetName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$HostSetName,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$NSP,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-		[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+Param(	[Parameter()]	[Switch]	$VersusTime,
+		[Parameter()]	[Switch]	$AtTime,
+		[Parameter()]	[Switch]	$Frequency_Hires,
+		[Parameter()]	[Switch]	$Frequency_Hourly,
+		[Parameter()]	[Switch]	$Frequency_Daily,
+		[Parameter()]	[String]	$VlunId,
+		[Parameter()]	[String]	$VvName,
+		[Parameter()]	[String]	$HostName,
+		[Parameter()]	[String]	$VvSetName,
+		[Parameter()]	[String]	$HostSetName,
+		[Parameter()]	[String]	$NSP,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[int]		$NoOfRecords,
+		[Parameter()]	[String]	$ComparebyField,
+		[Parameter()]	[String]	$GETime,
+		[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -2381,23 +2381,23 @@ Function Get-A9VvSpaceReports
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$VersusTime,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$AtTime,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hires,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Hourly,
-	[Parameter(ValueFromPipeline=$true)]	[Switch]	$Frequency_Daily,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$VvName,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$VvSetName,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$UserCPG,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$SnapCPG,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$ProvType,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Groupby,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Summary,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Compareby,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$NoOfRecords,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$ComparebyField,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$GETime,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$LETime
+	[Parameter()]	[Switch]	$VersusTime,
+	[Parameter()]	[Switch]	$AtTime,
+	[Parameter()]	[Switch]	$Frequency_Hires,
+	[Parameter()]	[Switch]	$Frequency_Hourly,
+	[Parameter()]	[Switch]	$Frequency_Daily,
+	[Parameter()]	[String]	$VvName,
+	[Parameter()]	[String]	$VvSetName,
+	[Parameter()]	[String]	$UserCPG,
+	[Parameter()]	[String]	$SnapCPG,
+	[Parameter()]	[String]	$ProvType,
+	[Parameter()]	[String]	$Groupby,
+	[Parameter()]	[String]	$Summary,
+	[Parameter()]	[String]	$Compareby,
+	[Parameter()]	[int]		$NoOfRecords,
+	[Parameter()]	[String]	$ComparebyField,
+	[Parameter()]	[String]	$GETime,
+	[Parameter()]	[String]	$LETime
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -2467,101 +2467,14 @@ Process
 }	
 }
 
-Function Add-A9DiskType
-{
-<#
-.SYNOPSIS
-    find and add disk type to temp variable.
-.DESCRIPTION
-    find and add disk type to temp variable. 
-.EXAMPLE
-    Add-A9DiskType -Dt $td
 
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$DT
-	)
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$lista = $DT.split(",")		
-	$count = 1
-	[string]$DTyp
-	foreach($sub in $lista)
-		{	$val_Fix = "FC","NL","SSD","SCM"
-			$val_Input =$sub
-			if($val_Fix -eq $val_Input)
-				{	if($val_Input.ToUpper() -eq "FC")	{	$DTyp = $DTyp + "1"	}
-					if($val_Input.ToUpper() -eq "NL")	{	$DTyp = $DTyp + "2"	}
-					if($val_Input.ToUpper() -eq "SSD")	{	$DTyp = $DTyp + "3"	}
-					if($val_Input.ToUpper() -eq "SCM")	{	$DTyp = $DTyp + "4"	}
-					if($lista.Count -gt 1)
-						{	if($lista.Count -ne $count)
-								{	$DTyp = $DTyp + ","
-									$count = $count + 1
-								}				
-						}
-				}
-			else
-				{ 	write-error "FAILURE : -DiskType :- $DT is an Incorrect, Please Use [ FC | NL | SSD | SCM] only ."
-					Return 
-				}						
-		}
-	return $DTyp.Trim()		
-}
-}
-
-Function Add-A9RedType
-{
-<#
-.SYNOPSIS
-    find and add Red type to temp variable.
-.DESCRIPTION
-    find and add Red type to temp variable. 
-.EXAMPLE
-    Add-A9RedType -RT $td
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$RT
-	)
-Begin 
-{	Test-A9Connection -ClientType 'API' 
-}
-Process 
-{	$lista = $RT.split(",")		
-	$count = 1
-	[string]$RType
-	foreach($sub in $lista)
-		{	$val_Fix = "R0","R1","R5","R6"
-			$val_Input =$sub
-			if($val_Fix -eq $val_Input)
-				{	if($val_Input.ToUpper() -eq "R0")	{	$RType = $RType + "1"	}
-					if($val_Input.ToUpper() -eq "R1")	{	$RType = $RType + "2"	}
-					if($val_Input.ToUpper() -eq "R5")	{	$RType = $RType + "3"	}
-					if($val_Input.ToUpper() -eq "R6")	{	$RType = $RType + "4"	}
-					if($lista.Count -gt 1)
-						{	if($lista.Count -ne $count)
-								{	$RType = $RType + ","
-									$count = $count + 1
-								}				
-						}
-				}
-			else
-			{ 	write-error "FAILURE : -RedType :- $RT is an Incorrect, Please Use [ R0 | R1 | R5 | R6 ] only ."
-				Return 
-			}						
-		}
-	return $RType.Trim()		
-}
-}
 
 # SIG # Begin signature block
-# MIIsWwYJKoZIhvcNAQcCoIIsTDCCLEgCAQExDzANBglghkgBZQMEAgMFADCBmwYK
+# MIIt4gYJKoZIhvcNAQcCoIIt0zCCLc8CAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEAkSM1ViqXx
-# y3HaSSKlihSDMlSeuRl5YSnoUqdZ4L0br3QmQETfHn1pkgUM1w3bcTpQ3ctw37kO
-# IG20enLg8RfioIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEDspa8a3yv2
+# Zqp/CD2+U99pR9nVOpZ7J2OZjTT0dWMwz3gp0g1jpMjNcf0dDhjuui9mMrIANAFY
+# DagocGbsghGJoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -2654,144 +2567,152 @@ Process
 # 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
 # tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
 # NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCGhgwghoUAgEBMGkwVDELMAkGA1UEBhMCR0Ix
+# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG58wghubAgEBMGkwVDELMAkGA1UEBhMCR0Ix
 # GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQMWpwUGDysb1POD/4lBWTwB5GXwrRWXXuleyfxJSX9hOi1pvuKkxQnEf
-# b7agqKmko0qLjfcdSd7nqrtN1BMmvOUwDQYJKoZIhvcNAQEBBQAEggGAUZeASjWX
-# b6WTPVmO4XH3FEQN3TWY/gQbtw0pZ/8RvZtD5S9C0Y3P6GaE36N97urK72zv5Ik0
-# 3PpMV9ASMsEWT3vNxEVtiCEwfkWX4zaM7JwaCroV1/I3YnN8whIQ6uhVXMYMsclK
-# lg66CynYr6hQebQ1hieAsD1AvP/eGB3ALFA+yH3cZ9J5vniBunjpF7gjv9aea30J
-# TcCQ7c0Wgw4HQ1lYgLsWfCoP0pjU0M6uXMcA5zthWRzN3H8Ctogn1hZm30dMxCZr
-# sAPRioF1JRqyjB5FLeswxyUxabAwxzyf0hlcyhzre17EKwwJL3eqF+GT+kS5PKo2
-# tJSGKM6On77MyFquuOcqqc8k9jo26ZtshFYFfGcRkwCDR1jQH4X/BTNmJwE6EFQf
-# e1/bqamFKR1RLE0ZB1jZlAfUL0GiS2k67Eg97tXzmA3zQNM6G9DafIefdP4eft8t
-# 4D3ydG0UNj3wzjuNpb85jDLaPudt0tnaFJaHmsqiFUDwYKkH+p8SFnDyoYIXYTCC
-# F10GCisGAQQBgjcDAwExghdNMIIXSQYJKoZIhvcNAQcCoIIXOjCCFzYCAQMxDzAN
-# BglghkgBZQMEAgIFADCBiAYLKoZIhvcNAQkQAQSgeQR3MHUCAQEGCWCGSAGG/WwH
-# ATBBMA0GCWCGSAFlAwQCAgUABDCLwjlgi/IsQto/mc40J3c60rTf/Doj4Lj4L6Jj
-# vPEKRPD9xcZXihvma51FHr5brHwCEQDJ5dyvxS2ZjLu2k1B6V9auGA8yMDI0MDcz
-# MTIwMjMzM1qgghMJMIIGwjCCBKqgAwIBAgIQBUSv85SdCDmmv9s/X+VhFjANBgkq
-# hkiG9w0BAQsFADBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIElu
-# Yy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYg
-# VGltZVN0YW1waW5nIENBMB4XDTIzMDcxNDAwMDAwMFoXDTM0MTAxMzIzNTk1OVow
-# SDELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMSAwHgYDVQQD
-# ExdEaWdpQ2VydCBUaW1lc3RhbXAgMjAyMzCCAiIwDQYJKoZIhvcNAQEBBQADggIP
-# ADCCAgoCggIBAKNTRYcdg45brD5UsyPgz5/X5dLnXaEOCdwvSKOXejsqnGfcYhVY
-# wamTEafNqrJq3RApih5iY2nTWJw1cb86l+uUUI8cIOrHmjsvlmbjaedp/lvD1isg
-# HMGXlLSlUIHyz8sHpjBoyoNC2vx/CSSUpIIa2mq62DvKXd4ZGIX7ReoNYWyd/nFe
-# xAaaPPDFLnkPG2ZS48jWPl/aQ9OE9dDH9kgtXkV1lnX+3RChG4PBuOZSlbVH13gp
-# OWvgeFmX40QrStWVzu8IF+qCZE3/I+PKhu60pCFkcOvV5aDaY7Mu6QXuqvYk9R28
-# mxyyt1/f8O52fTGZZUdVnUokL6wrl76f5P17cz4y7lI0+9S769SgLDSb495uZBkH
-# NwGRDxy1Uc2qTGaDiGhiu7xBG3gZbeTZD+BYQfvYsSzhUa+0rRUGFOpiCBPTaR58
-# ZE2dD9/O0V6MqqtQFcmzyrzXxDtoRKOlO0L9c33u3Qr/eTQQfqZcClhMAD6FaXXH
-# g2TWdc2PEnZWpST618RrIbroHzSYLzrqawGw9/sqhux7UjipmAmhcbJsca8+uG+W
-# 1eEQE/5hRwqM/vC2x9XH3mwk8L9CgsqgcT2ckpMEtGlwJw1Pt7U20clfCKRwo+wK
-# 8REuZODLIivK8SgTIUlRfgZm0zu++uuRONhRB8qUt+JQofM604qDy0B7AgMBAAGj
-# ggGLMIIBhzAOBgNVHQ8BAf8EBAMCB4AwDAYDVR0TAQH/BAIwADAWBgNVHSUBAf8E
-# DDAKBggrBgEFBQcDCDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEw
-# HwYDVR0jBBgwFoAUuhbZbU2FL3MpdpovdYxqII+eyG8wHQYDVR0OBBYEFKW27xPn
-# 783QZKHVVqllMaPe1eNJMFoGA1UdHwRTMFEwT6BNoEuGSWh0dHA6Ly9jcmwzLmRp
-# Z2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQwOTZTSEEyNTZUaW1lU3Rh
-# bXBpbmdDQS5jcmwwgZAGCCsGAQUFBwEBBIGDMIGAMCQGCCsGAQUFBzABhhhodHRw
-# Oi8vb2NzcC5kaWdpY2VydC5jb20wWAYIKwYBBQUHMAKGTGh0dHA6Ly9jYWNlcnRz
-# LmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQwOTZTSEEyNTZUaW1l
-# U3RhbXBpbmdDQS5jcnQwDQYJKoZIhvcNAQELBQADggIBAIEa1t6gqbWYF7xwjU+K
-# PGic2CX/yyzkzepdIpLsjCICqbjPgKjZ5+PF7SaCinEvGN1Ott5s1+FgnCvt7T1I
-# jrhrunxdvcJhN2hJd6PrkKoS1yeF844ektrCQDifXcigLiV4JZ0qBXqEKZi2V3mP
-# 2yZWK7Dzp703DNiYdk9WuVLCtp04qYHnbUFcjGnRuSvExnvPnPp44pMadqJpddNQ
-# 5EQSviANnqlE0PjlSXcIWiHFtM+YlRpUurm8wWkZus8W8oM3NG6wQSbd3lqXTzON
-# 1I13fXVFoaVYJmoDRd7ZULVQjK9WvUzF4UbFKNOt50MAcN7MmJ4ZiQPq1JE3701S
-# 88lgIcRWR+3aEUuMMsOI5ljitts++V+wQtaP4xeR0arAVeOGv6wnLEHQmjNKqDbU
-# uXKWfpd5OEhfysLcPTLfddY2Z1qJ+Panx+VPNTwAvb6cKmx5AdzaROY63jg7B145
-# WPR8czFVoIARyxQMfq68/qTreWWqaNYiyjvrmoI1VygWy2nyMpqy0tg6uLFGhmu6
-# F/3Ed2wVbK6rr3M66ElGt9V/zLY4wNjsHPW2obhDLN9OTH0eaHDAdwrUAuBcYLso
-# /zjlUlrWrBciI0707NMX+1Br/wd3H3GXREHJuEbTbDJ8WC9nR2XlG3O2mflrLAZG
-# 70Ee8PBf4NvZrZCARK+AEEGKMIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipe
-# WzANBgkqhkiG9w0BAQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNl
-# cnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdp
-# Q2VydCBUcnVzdGVkIFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1
-# OTU5WjBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5
-# BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0
-# YW1waW5nIENBMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAxoY1Bkmz
-# wT1ySVFVxyUDxPKRN6mXUaHW0oPRnkyibaCwzIP5WvYRoUQVQl+kiPNo+n3znIkL
-# f50fng8zH1ATCyZzlm34V6gCff1DtITaEfFzsbPuK4CEiiIY3+vaPcQXf6sZKz5C
-# 3GeO6lE98NZW1OcoLevTsbV15x8GZY2UKdPZ7Gnf2ZCHRgB720RBidx8ald68Dd5
-# n12sy+iEZLRS8nZH92GDGd1ftFQLIWhuNyG7QKxfst5Kfc71ORJn7w6lY2zkpsUd
-# zTYNXNXmG6jBZHRAp8ByxbpOH7G1WE15/tePc5OsLDnipUjW8LAxE6lXKZYnLvWH
-# po9OdhVVJnCYJn+gGkcgQ+NDY4B7dW4nJZCYOjgRs/b2nuY7W+yB3iIU2YIqx5K/
-# oN7jPqJz+ucfWmyU8lKVEStYdEAoq3NDzt9KoRxrOMUp88qqlnNCaJ+2RrOdOqPV
-# A+C/8KI8ykLcGEh/FDTP0kyr75s9/g64ZCr6dSgkQe1CvwWcZklSUPRR8zZJTYsg
-# 0ixXNXkrqPNFYLwjjVj33GHek/45wPmyMKVM1+mYSlg+0wOI/rOP015LdhJRk8mM
-# DDtbiiKowSYI+RQQEgN9XyO7ZONj4KbhPvbCdLI/Hgl27KtdRnXiYKNYCQEoAA6E
-# VO7O6V3IXjASvUaetdN2udIOa5kM0jO0zbECAwEAAaOCAV0wggFZMBIGA1UdEwEB
-# /wQIMAYBAf8CAQAwHQYDVR0OBBYEFLoW2W1NhS9zKXaaL3WMaiCPnshvMB8GA1Ud
-# IwQYMBaAFOzX44LScV1kTN8uZz/nupiuHA9PMA4GA1UdDwEB/wQEAwIBhjATBgNV
-# HSUEDDAKBggrBgEFBQcDCDB3BggrBgEFBQcBAQRrMGkwJAYIKwYBBQUHMAGGGGh0
-# dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBBBggrBgEFBQcwAoY1aHR0cDovL2NhY2Vy
-# dHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZFJvb3RHNC5jcnQwQwYDVR0f
-# BDwwOjA4oDagNIYyaHR0cDovL2NybDMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1
-# c3RlZFJvb3RHNC5jcmwwIAYDVR0gBBkwFzAIBgZngQwBBAIwCwYJYIZIAYb9bAcB
-# MA0GCSqGSIb3DQEBCwUAA4ICAQB9WY7Ak7ZvmKlEIgF+ZtbYIULhsBguEE0TzzBT
-# zr8Y+8dQXeJLKftwig2qKWn8acHPHQfpPmDI2AvlXFvXbYf6hCAlNDFnzbYSlm/E
-# UExiHQwIgqgWvalWzxVzjQEiJc6VaT9Hd/tydBTX/6tPiix6q4XNQ1/tYLaqT5Fm
-# niye4Iqs5f2MvGQmh2ySvZ180HAKfO+ovHVPulr3qRCyXen/KFSJ8NWKcXZl2szw
-# cqMj+sAngkSumScbqyQeJsG33irr9p6xeZmBo1aGqwpFyd/EjaDnmPv7pp1yr8TH
-# wcFqcdnGE4AJxLafzYeHJLtPo0m5d2aR8XKc6UsCUqc3fpNTrDsdCEkPlM05et3/
-# JWOZJyw9P2un8WbDQc1PtkCbISFA0LcTJM3cHXg65J6t5TRxktcma+Q4c6umAU+9
-# Pzt4rUyt+8SVe+0KXzM5h0F4ejjpnOHdI/0dKNPH+ejxmF/7K9h+8kaddSweJywm
-# 228Vex4Ziza4k9Tm8heZWcpw8De/mADfIBZPJ/tgZxahZrrdVcA6KYawmKAr7ZVB
-# tzrVFZgxtGIJDwq9gdkT/r+k0fNX2bwE+oLeMt8EifAAzV3C+dAjfwAL5HYCJtnw
-# ZXZCpimHCUcr5n8apIUP/JiW9lVUKx+A+sDyDivl1vupL0QVSucTDh3bNzgaoSv2
-# 7dZ8/DCCBY0wggR1oAMCAQICEA6bGI750C3n79tQ4ghAGFowDQYJKoZIhvcNAQEM
-# BQAwZTELMAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UE
-# CxMQd3d3LmRpZ2ljZXJ0LmNvbTEkMCIGA1UEAxMbRGlnaUNlcnQgQXNzdXJlZCBJ
-# RCBSb290IENBMB4XDTIyMDgwMTAwMDAwMFoXDTMxMTEwOTIzNTk1OVowYjELMAkG
-# A1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRp
-# Z2ljZXJ0LmNvbTEhMB8GA1UEAxMYRGlnaUNlcnQgVHJ1c3RlZCBSb290IEc0MIIC
-# IjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAv+aQc2jeu+RdSjwwIjBpM+zC
-# pyUuySE98orYWcLhKac9WKt2ms2uexuEDcQwH/MbpDgW61bGl20dq7J58soR0uRf
-# 1gU8Ug9SH8aeFaV+vp+pVxZZVXKvaJNwwrK6dZlqczKU0RBEEC7fgvMHhOZ0O21x
-# 4i0MG+4g1ckgHWMpLc7sXk7Ik/ghYZs06wXGXuxbGrzryc/NrDRAX7F6Zu53yEio
-# ZldXn1RYjgwrt0+nMNlW7sp7XeOtyU9e5TXnMcvak17cjo+A2raRmECQecN4x7ax
-# xLVqGDgDEI3Y1DekLgV9iPWCPhCRcKtVgkEy19sEcypukQF8IUzUvK4bA3VdeGbZ
-# OjFEmjNAvwjXWkmkwuapoGfdpCe8oU85tRFYF/ckXEaPZPfBaYh2mHY9WV1CdoeJ
-# l2l6SPDgohIbZpp0yt5LHucOY67m1O+SkjqePdwA5EUlibaaRBkrfsCUtNJhbesz
-# 2cXfSwQAzH0clcOP9yGyshG3u3/y1YxwLEFgqrFjGESVGnZifvaAsPvoZKYz0YkH
-# 4b235kOkGLimdwHhD5QMIR2yVCkliWzlDlJRR3S+Jqy2QXXeeqxfjT/JvNNBERJb
-# 5RBQ6zHFynIWIgnffEx1P2PsIV/EIFFrb7GrhotPwtZFX50g/KEexcCPorF+CiaZ
-# 9eRpL5gdLfXZqbId5RsCAwEAAaOCATowggE2MA8GA1UdEwEB/wQFMAMBAf8wHQYD
-# VR0OBBYEFOzX44LScV1kTN8uZz/nupiuHA9PMB8GA1UdIwQYMBaAFEXroq/0ksuC
-# MS1Ri6enIZ3zbcgPMA4GA1UdDwEB/wQEAwIBhjB5BggrBgEFBQcBAQRtMGswJAYI
-# KwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBDBggrBgEFBQcwAoY3
-# aHR0cDovL2NhY2VydHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0QXNzdXJlZElEUm9v
-# dENBLmNydDBFBgNVHR8EPjA8MDqgOKA2hjRodHRwOi8vY3JsMy5kaWdpY2VydC5j
-# b20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3JsMBEGA1UdIAQKMAgwBgYEVR0g
-# ADANBgkqhkiG9w0BAQwFAAOCAQEAcKC/Q1xV5zhfoKN0Gz22Ftf3v1cHvZqsoYcs
-# 7IVeqRq7IviHGmlUIu2kiHdtvRoU9BNKei8ttzjv9P+Aufih9/Jy3iS8UgPITtAq
-# 3votVs/59PesMHqai7Je1M/RQ0SbQyHrlnKhSLSZy51PpwYDE3cnRNTnf+hZqPC/
-# Lwum6fI0POz3A8eHqNJMQBk1RmppVLC4oVaO7KTVPeix3P0c2PR3WlxUjG/voVA9
-# /HYJaISfb8rbII01YBwCA8sgsKxYoA5AY8WYIsGyWfVVa88nq2x2zm8jLfR+cWoj
-# ayL/ErhULSd+2DrZ8LaHlv1b0VysGMNNn3O3AamfV6peKOK5lDGCA4YwggOCAgEB
-# MHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTswOQYD
-# VQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2IFRpbWVTdGFt
-# cGluZyBDQQIQBUSv85SdCDmmv9s/X+VhFjANBglghkgBZQMEAgIFAKCB4TAaBgkq
-# hkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcNAQkFMQ8XDTI0MDczMTIw
-# MjMzM1owKwYLKoZIhvcNAQkQAgwxHDAaMBgwFgQUZvArMsLCyQ+CXc6qisnGTxmc
-# z0AwNwYLKoZIhvcNAQkQAi8xKDAmMCQwIgQg0vbkbe10IszR1EBXaEE2b4KK2lWa
-# rjMWr00amtQMeCgwPwYJKoZIhvcNAQkEMTIEMJpFK0ByAHWR0L6qAy3zGfELSmFH
-# hQMo0O3M7JAUaliCYMiWLISkd3xgzOxlviRmYDANBgkqhkiG9w0BAQEFAASCAgA2
-# QPRvC/4jn9+rq2xhanS3CPpQjJKWAezaZIZxZLUEEE6CgK7ns/yPPwbOR0jHmSkR
-# aYIIUcb9gmLKEtkgLjD3JXuy0M20kDYLH2c510Re0ZyaWGPMds1gfXgqT7N1GiL7
-# 1+SAVHh4ULeILfTB1birEGk0CKEoqMbQl3247KfF3aaRiCHgNmWu+arkcbHy9Ov5
-# yUkxPJRsLWKqjEt1vLrlK3tcpPgNVvjIR3fo7UMTYlIbC3DxesAWYkSy8BIQ6O+T
-# 7ns35fKx4C+TqeKsIXgzHQTf9hF92S0wyHfnbGq5tnApW0FDHGVBSPU7BWqG70+V
-# VlOx7Qff6nJg8is/rny/DpMOaLg0a1ENipcTMP5+WzCbJ5+KacWmowY8AdznXi5U
-# B0T4YfGOWi26YoawSj0932BoAp62PjnjUweR5obFehCt8uEyH44oy56JcYXDN92A
-# 8vWbG80TDL8TdZu9fX3l8pxKDV9z99LNoVQCihHVz4Qbv7o5umTpOwCxH9yywNDa
-# lwWj9gHzF/me8etqt3r2/GZYSmfdWqoyBw8la9F51BVQ1loh13397//irlDueDvi
-# T37ZzphCI8ssM+WwOfja/Z28Y0qqwZxNHv4uD6JXAWCvovX1kkekTVtODEtEYYKD
-# 0nS/a0OEq9h3rGSB8QbHDe0M5/wP/MGEZEqTss3TQQ==
+# AQkEMUIEQEttgYSrvV32wtFa3SGtxGIpDfpaE3tjiqqwyEgDrrWnFncB1SDKH0p4
+# Isvt+siADu4npTUm2elM9JERtsQwoWUwDQYJKoZIhvcNAQEBBQAEggGAWRXjMKgr
+# Nx+f6JN2/Z0g7NGLvk89GcSd1kAf2GE31GmOJdbhtB1YAbAa49bs6g6lxTgB8RaH
+# YVL0TWi65KlNB9T1dVrtYHu3IZVwFpnsOfWsur5NFlTWAvXgEEi8y1UqZJeUGoei
+# BOb6RVn7IALp2btRuO8/s3CxinkzZLFfNffVFimjWcqhCbvnokFBTOzxaac8mAzD
+# aaNilwOMJWrZ4tJZwcAS6H3WrgKigMH52wMdAzSAvwXAj2l0L3rebE7jPlbFu64W
+# nqmL1kFPN6emaQUoH2cxTuzO5WseXPzBOi1JWj5JORRDVJbo5P1jWUPFsVjni/Vu
+# 0iOtwri2PzzD/egDONTAeVWscIDt0xOBvRWWLsqrzPTDl7P67rMYVurvPDvo3x21
+# cAIN5uhi9WbT3NJoQVSh7WlCix0vaMQaOsogTkOsZAJz12vrgcz2Sus8jpHTR8RP
+# gFe8qTZLHmnQXlw55XdJE9N+cnql5/TA+jUm3LHheunCpKdoj7/e7DL8oYIY6DCC
+# GOQGCisGAQQBgjcDAwExghjUMIIY0AYJKoZIhvcNAQcCoIIYwTCCGL0CAQMxDzAN
+# BglghkgBZQMEAgIFADCCAQcGCyqGSIb3DQEJEAEEoIH3BIH0MIHxAgEBBgorBgEE
+# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMBWv7oIPld139A1cPF0NoubAg5RZk6cR
+# /hx4VImr7ZwdiFTjuUJa9giQ8VBm+ouocAIUQXtZ5YeS27p7SkaoEYoBKL6Qfd0Y
+# DzIwMjUwNTE1MjI1NzUyWqB2pHQwcjELMAkGA1UEBhMCR0IxFzAVBgNVBAgTDldl
+# c3QgWW9ya3NoaXJlMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxMDAuBgNVBAMT
+# J1NlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgU2lnbmVyIFIzNqCCEwQwggZi
+# MIIEyqADAgECAhEApCk7bh7d16c0CIetek63JDANBgkqhkiG9w0BAQwFADBVMQsw
+# CQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMSwwKgYDVQQDEyNT
+# ZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIENBIFIzNjAeFw0yNTAzMjcwMDAw
+# MDBaFw0zNjAzMjEyMzU5NTlaMHIxCzAJBgNVBAYTAkdCMRcwFQYDVQQIEw5XZXN0
+# IFlvcmtzaGlyZTEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTAwLgYDVQQDEydT
+# ZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIFNpZ25lciBSMzYwggIiMA0GCSqG
+# SIb3DQEBAQUAA4ICDwAwggIKAoICAQDThJX0bqRTePI9EEt4Egc83JSBU2dhrJ+w
+# Y7JgReuff5KQNhMuzVytzD+iXazATVPMHZpH/kkiMo1/vlAGFrYN2P7g0Q8oPEcR
+# 3h0SftFNYxxMh+bj3ZNbbYjwt8f4DsSHPT+xp9zoFuw0HOMdO3sWeA1+F8mhg6uS
+# 6BJpPwXQjNSHpVTCgd1gOmKWf12HSfSbnjl3kDm0kP3aIUAhsodBYZsJA1imWqkA
+# VqwcGfvs6pbfs/0GE4BJ2aOnciKNiIV1wDRZAh7rS/O+uTQcb6JVzBVmPP63k5xc
+# ZNzGo4DOTV+sM1nVrDycWEYS8bSS0lCSeclkTcPjQah9Xs7xbOBoCdmahSfg8Km8
+# ffq8PhdoAXYKOI+wlaJj+PbEuwm6rHcm24jhqQfQyYbOUFTKWFe901VdyMC4gRwR
+# Aq04FH2VTjBdCkhKts5Py7H73obMGrxN1uGgVyZho4FkqXA8/uk6nkzPH9QyHIED
+# 3c9CGIJ098hU4Ig2xRjhTbengoncXUeo/cfpKXDeUcAKcuKUYRNdGDlf8WnwbyqU
+# blj4zj1kQZSnZud5EtmjIdPLKce8UhKl5+EEJXQp1Fkc9y5Ivk4AZacGMCVG0e+w
+# wGsjcAADRO7Wga89r/jJ56IDK773LdIsL3yANVvJKdeeS6OOEiH6hpq2yT+jJ/lH
+# a9zEdqFqMwIDAQABo4IBjjCCAYowHwYDVR0jBBgwFoAUX1jtTDF6omFCjVKAurNh
+# lxmiMpswHQYDVR0OBBYEFIhhjKEqN2SBKGChmzHQjP0sAs5PMA4GA1UdDwEB/wQE
+# AwIGwDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMEoGA1Ud
+# IARDMEEwNQYMKwYBBAGyMQECAQMIMCUwIwYIKwYBBQUHAgEWF2h0dHBzOi8vc2Vj
+# dGlnby5jb20vQ1BTMAgGBmeBDAEEAjBKBgNVHR8EQzBBMD+gPaA7hjlodHRwOi8v
+# Y3JsLnNlY3RpZ28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5j
+# cmwwegYIKwYBBQUHAQEEbjBsMEUGCCsGAQUFBzAChjlodHRwOi8vY3J0LnNlY3Rp
+# Z28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcnQwIwYIKwYB
+# BQUHMAGGF2h0dHA6Ly9vY3NwLnNlY3RpZ28uY29tMA0GCSqGSIb3DQEBDAUAA4IB
+# gQACgT6khnJRIfllqS49Uorh5ZvMSxNEk4SNsi7qvu+bNdcuknHgXIaZyqcVmhrV
+# 3PHcmtQKt0blv/8t8DE4bL0+H0m2tgKElpUeu6wOH02BjCIYM6HLInbNHLf6R2qH
+# C1SUsJ02MWNqRNIT6GQL0Xm3LW7E6hDZmR8jlYzhZcDdkdw0cHhXjbOLsmTeS0Se
+# RJ1WJXEzqt25dbSOaaK7vVmkEVkOHsp16ez49Bc+Ayq/Oh2BAkSTFog43ldEKgHE
+# DBbCIyba2E8O5lPNan+BQXOLuLMKYS3ikTcp/Qw63dxyDCfgqXYUhxBpXnmeSO/W
+# A4NwdwP35lWNhmjIpNVZvhWoxDL+PxDdpph3+M5DroWGTc1ZuDa1iXmOFAK4iwTn
+# lWDg3QNRsRa9cnG3FBBpVHnHOEQj4GMkrOHdNDTbonEeGvZ+4nSZXrwCW4Wv2qyG
+# DBLlKk3kUW1pIScDCpm/chL6aUbnSsrtbepdtbCLiGanKVR/KC1gsR0tC6Q0RfWO
+# I4owggYUMIID/KADAgECAhB6I67aU2mWD5HIPlz0x+M/MA0GCSqGSIb3DQEBDAUA
+# MFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNV
+# BAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwHhcNMjEw
+# MzIyMDAwMDAwWhcNMzYwMzIxMjM1OTU5WjBVMQswCQYDVQQGEwJHQjEYMBYGA1UE
+# ChMPU2VjdGlnbyBMaW1pdGVkMSwwKgYDVQQDEyNTZWN0aWdvIFB1YmxpYyBUaW1l
+# IFN0YW1waW5nIENBIFIzNjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGB
+# AM2Y2ENBq26CK+z2M34mNOSJjNPvIhKAVD7vJq+MDoGD46IiM+b83+3ecLvBhStS
+# VjeYXIjfa3ajoW3cS3ElcJzkyZlBnwDEJuHlzpbN4kMH2qRBVrjrGJgSlzzUqcGQ
+# BaCxpectRGhhnOSwcjPMI3G0hedv2eNmGiUbD12OeORN0ADzdpsQ4dDi6M4YhoGE
+# 9cbY11XxM2AVZn0GiOUC9+XE0wI7CQKfOUfigLDn7i/WeyxZ43XLj5GVo7LDBExS
+# Lnh+va8WxTlA+uBvq1KO8RSHUQLgzb1gbL9Ihgzxmkdp2ZWNuLc+XyEmJNbD2OII
+# q/fWlwBp6KNL19zpHsODLIsgZ+WZ1AzCs1HEK6VWrxmnKyJJg2Lv23DlEdZlQSGd
+# F+z+Gyn9/CRezKe7WNyxRf4e4bwUtrYE2F5Q+05yDD68clwnweckKtxRaF0VzN/w
+# 76kOLIaFVhf5sMM/caEZLtOYqYadtn034ykSFaZuIBU9uCSrKRKTPJhWvXk4Cllg
+# rwIDAQABo4IBXDCCAVgwHwYDVR0jBBgwFoAU9ndq3T/9ARP/FqFsggIv0Ao9FCUw
+# HQYDVR0OBBYEFF9Y7UwxeqJhQo1SgLqzYZcZojKbMA4GA1UdDwEB/wQEAwIBhjAS
+# BgNVHRMBAf8ECDAGAQH/AgEAMBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQK
+# MAgwBgYEVR0gADBMBgNVHR8ERTBDMEGgP6A9hjtodHRwOi8vY3JsLnNlY3RpZ28u
+# Y29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdSb290UjQ2LmNybDB8BggrBgEF
+# BQcBAQRwMG4wRwYIKwYBBQUHMAKGO2h0dHA6Ly9jcnQuc2VjdGlnby5jb20vU2Vj
+# dGlnb1B1YmxpY1RpbWVTdGFtcGluZ1Jvb3RSNDYucDdjMCMGCCsGAQUFBzABhhdo
+# dHRwOi8vb2NzcC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOCAgEAEtd7IK0O
+# NVgMnoEdJVj9TC1ndK/HYiYh9lVUacahRoZ2W2hfiEOyQExnHk1jkvpIJzAMxmEc
+# 6ZvIyHI5UkPCbXKspioYMdbOnBWQUn733qMooBfIghpR/klUqNxx6/fDXqY0hSU1
+# OSkkSivt51UlmJElUICZYBodzD3M/SFjeCP59anwxs6hwj1mfvzG+b1coYGnqsSz
+# 2wSKr+nDO+Db8qNcTbJZRAiSazr7KyUJGo1c+MScGfG5QHV+bps8BX5Oyv9Ct36Y
+# 4Il6ajTqV2ifikkVtB3RNBUgwu/mSiSUice/Jp/q8BMk/gN8+0rNIE+QqU63JoVM
+# CMPY2752LmESsRVVoypJVt8/N3qQ1c6FibbcRabo3azZkcIdWGVSAdoLgAIxEKBe
+# Nh9AQO1gQrnh1TA8ldXuJzPSuALOz1Ujb0PCyNVkWk7hkhVHfcvBfI8NtgWQupia
+# AeNHe0pWSGH2opXZYKYG4Lbukg7HpNi/KqJhue2Keak6qH9A8CeEOB7Eob0Zf+fU
+# +CCQaL0cJqlmnx9HCDxF+3BLbUufrV64EbTI40zqegPZdA+sXCmbcZy6okx/Sjws
+# usWRItFA3DE8MORZeFb6BmzBtqKJ7l939bbKBy2jvxcJI98Va95Q5JnlKor3m0E7
+# xpMeYRriWklUPsetMSf2NvUQa/E5vVyefQIwggaCMIIEaqADAgECAhA2wrC9fBs6
+# 56Oz3TbLyXVoMA0GCSqGSIb3DQEBDAUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UE
+# CBMKTmV3IEplcnNleTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRo
+# ZSBVU0VSVFJVU1QgTmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0
+# aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0yMTAzMjIwMDAwMDBaFw0zODAxMTgyMzU5
+# NTlaMFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAs
+# BgNVBAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwggIi
+# MA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCIndi5RWedHd3ouSaBmlRUwHxJ
+# BZvMWhUP2ZQQRLRBQIF3FJmp1OR2LMgIU14g0JIlL6VXWKmdbmKGRDILRxEtZdQn
+# Oh2qmcxGzjqemIk8et8sE6J+N+Gl1cnZocew8eCAawKLu4TRrCoqCAT8uRjDeypo
+# GJrruH/drCio28aqIVEn45NZiZQI7YYBex48eL78lQ0BrHeSmqy1uXe9xN04aG0p
+# KG9ki+PC6VEfzutu6Q3IcZZfm00r9YAEp/4aeiLhyaKxLuhKKaAdQjRaf/h6U13j
+# QEV1JnUTCm511n5avv4N+jSVwd+Wb8UMOs4netapq5Q/yGyiQOgjsP/JRUj0MAT9
+# YrcmXcLgsrAimfWY3MzKm1HCxcquinTqbs1Q0d2VMMQyi9cAgMYC9jKc+3mW62/y
+# Vl4jnDcw6ULJsBkOkrcPLUwqj7poS0T2+2JMzPP+jZ1h90/QpZnBkhdtixMiWDVg
+# h60KmLmzXiqJc6lGwqoUqpq/1HVHm+Pc2B6+wCy/GwCcjw5rmzajLbmqGygEgaj/
+# OLoanEWP6Y52Hflef3XLvYnhEY4kSirMQhtberRvaI+5YsD3XVxHGBjlIli5u+Nr
+# LedIxsE88WzKXqZjj9Zi5ybJL2WjeXuOTbswB7XjkZbErg7ebeAQUQiS/uRGZ58N
+# Hs57ZPUfECcgJC+v2wIDAQABo4IBFjCCARIwHwYDVR0jBBgwFoAUU3m/WqorSs9U
+# gOHYm8Cd8rIDZsswHQYDVR0OBBYEFPZ3at0//QET/xahbIICL9AKPRQlMA4GA1Ud
+# DwEB/wQEAwIBhjAPBgNVHRMBAf8EBTADAQH/MBMGA1UdJQQMMAoGCCsGAQUFBwMI
+# MBEGA1UdIAQKMAgwBgYEVR0gADBQBgNVHR8ESTBHMEWgQ6BBhj9odHRwOi8vY3Js
+# LnVzZXJ0cnVzdC5jb20vVVNFUlRydXN0UlNBQ2VydGlmaWNhdGlvbkF1dGhvcml0
+# eS5jcmwwNQYIKwYBBQUHAQEEKTAnMCUGCCsGAQUFBzABhhlodHRwOi8vb2NzcC51
+# c2VydHJ1c3QuY29tMA0GCSqGSIb3DQEBDAUAA4ICAQAOvmVB7WhEuOWhxdQRh+S3
+# OyWM637ayBeR7djxQ8SihTnLf2sABFoB0DFR6JfWS0snf6WDG2gtCGflwVvcYXZJ
+# JlFfym1Doi+4PfDP8s0cqlDmdfyGOwMtGGzJ4iImyaz3IBae91g50QyrVbrUoT0m
+# UGQHbRcF57olpfHhQEStz5i6hJvVLFV/ueQ21SM99zG4W2tB1ExGL98idX8ChsTw
+# bD/zIExAopoe3l6JrzJtPxj8V9rocAnLP2C8Q5wXVVZcbw4x4ztXLsGzqZIiRh5i
+# 111TW7HV1AtsQa6vXy633vCAbAOIaKcLAo/IU7sClyZUk62XD0VUnHD+YvVNvIGe
+# zjM6CRpcWed/ODiptK+evDKPU2K6synimYBaNH49v9Ih24+eYXNtI38byt5kIvh+
+# 8aW88WThRpv8lUJKaPn37+YHYafob9Rg7LyTrSYpyZoBmwRWSE4W6iPjB7wJjJpH
+# 29308ZkpKKdpkiS9WNsf/eeUtvRrtIEiSJHN899L1P4l6zKVsdrUu1FX1T/ubSrs
+# xrYJD+3f3aKg6yxdbugot06YwGXXiy5UUGZvOu3lXlxA+fC13dQ5OlL2gIb5lmF6
+# Ii8+CQOYDwXM+yd9dbmocQsHjcRPsccUd5E9FiswEqORvz8g3s+jR3SFCgXhN4wz
+# 7NgAnOgpCdUo4uDyllU9PzGCBJIwggSOAgEBMGowVTELMAkGA1UEBhMCR0IxGDAW
+# BgNVBAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMg
+# VGltZSBTdGFtcGluZyBDQSBSMzYCEQCkKTtuHt3XpzQIh616TrckMA0GCWCGSAFl
+# AwQCAgUAoIIB+TAaBgkqhkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcN
+# AQkFMQ8XDTI1MDUxNTIyNTc1MlowPwYJKoZIhvcNAQkEMTIEMHhDwzHODd3QFrSV
+# SAwdSJW6cYT4EcZwl+NUS5yOknAhWlpj+uavRKfJHwa9HTwS0TCCAXoGCyqGSIb3
+# DQEJEAIMMYIBaTCCAWUwggFhMBYEFDjJFIEQRLTcZj6T1HRLgUGGqbWxMIGHBBTG
+# rlTkeIbxfD1VEkiMacNKevnC3TBvMFukWTBXMQswCQYDVQQGEwJHQjEYMBYGA1UE
+# ChMPU2VjdGlnbyBMaW1pdGVkMS4wLAYDVQQDEyVTZWN0aWdvIFB1YmxpYyBUaW1l
+# IFN0YW1waW5nIFJvb3QgUjQ2AhB6I67aU2mWD5HIPlz0x+M/MIG8BBSFPWMtk4KC
+# YXzQkDXEkd6SwULaxzCBozCBjqSBizCBiDELMAkGA1UEBhMCVVMxEzARBgNVBAgT
+# Ck5ldyBKZXJzZXkxFDASBgNVBAcTC0plcnNleSBDaXR5MR4wHAYDVQQKExVUaGUg
+# VVNFUlRSVVNUIE5ldHdvcmsxLjAsBgNVBAMTJVVTRVJUcnVzdCBSU0EgQ2VydGlm
+# aWNhdGlvbiBBdXRob3JpdHkCEDbCsL18Gzrno7PdNsvJdWgwDQYJKoZIhvcNAQEB
+# BQAEggIAwvHAebTPGRMw1abvpbn0bofjWvlfojXhQIeau8JcHUK3yvvJ7wx7n09V
+# 9ryXLrrUo9XToArceke+PrbmygYbB5jY+Y4VSglbU1c15ZfLQr6hCr4B746pKtFm
+# 5GnfeVFYPOEIh5rMrsaD7hPdZORZss6rUEBlGulZkh/0J7deYDHXHyURaVE3lz2o
+# Ch9HoXrpGCD16Tn640P+uIvURoTrK6j2+0VLUg995ciQR8XVJYa7LOdnEwvHge9i
+# RhsIFKn55VEpXOYApKFLYjYiBq0qTF9OR62PCNl/4zinBVLFdFdXqaDvzatThZfD
+# U/86zW1cljJst1dl4iRbCdto1obWZToOG0Ytw9rzQAtLJ+092wIS45nEYijJkXO3
+# YOCo69qhQ6xNI0fwXHw2y9Cid2OVWw4BHhJxScjr06rs325vQfNeyt5409PoNECm
+# yhHIAW+ZgNY+QNCPaumM1R+bcmQeua8dZOiJO7Y8n2wTzwXa+3CUQDolp3GoPotR
+# Hmc2n7fpUJIvFrDOAZ87XnMQ1cYt5dWA7idlGuB4QAm6uDMXYo/Vm2aZZoqtcRaX
+# BV1Y2C1NZ52l4Eo3VYE4IAwxl4UKu7hJYHgBC5PG2+Jeegc0ncFnbKdSXYKI2vqS
+# vq4ivFuOmxnhqB8DCOEaQ12zTyncLvIP079N8RmVG4a3kfVH35A=
 # SIG # End signature block

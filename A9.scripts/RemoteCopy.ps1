@@ -37,15 +37,15 @@ Function New-A9RCopyGroup
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$RcgName,
-	[Parameter(ValueFromPipeline=$true)]		[String]	$Domain,
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetName,
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+	[Parameter(Mandatory)]	[String]	$RcgName,
+	[Parameter()]		[String]	$Domain,
+	[Parameter(Mandatory)]	[String]	$TargetName,
+	[Parameter(Mandatory)]
 	[ValidateSet('SYNC','PERIODIC','ASYNC')]				[String]	$Mode,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$UserCPG,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$SnapCPG,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$LocalUserCPG,
-	[Parameter(ValueFromPipeline=$true)]					[String]	$LocalSnapCPG
+	[Parameter()]					[String]	$UserCPG,
+	[Parameter()]					[String]	$SnapCPG,
+	[Parameter()]					[String]	$LocalUserCPG,
+	[Parameter()]					[String]	$LocalSnapCPG
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -111,11 +111,11 @@ Function Start-A9RCopyGroup
 #>
 [CmdletBinding()]
 Param(
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,	  
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$SkipInitialSync,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$TargetName,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$VolumeName,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$SnapshotName
+		[Parameter(Mandatory)]	[String]	$GroupName,	  
+		[Parameter()]					[switch]	$SkipInitialSync,
+		[Parameter()]					[String]	$TargetName,
+		[Parameter()]					[String]	$VolumeName,
+		[Parameter()]					[String]	$SnapshotName
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -173,9 +173,9 @@ Function Stop-A9RCopyGroup
 #>
 [CmdletBinding()]
 Param(
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,	  
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$NoSnapshot,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$TargetName
+		[Parameter(Mandatory)]	[String]	$GroupName,	  
+		[Parameter()]					[switch]	$NoSnapshot,
+		[Parameter()]					[String]	$TargetName
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -233,10 +233,10 @@ Function Sync-A9RCopyGroup
 	Defaults to false.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,	  
-		[Parameter(ValueFromPipeline=$true)]		[switch]	$NoResyncSnapshot,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$TargetName,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$FullSync
+Param(	[Parameter(Mandatory)]	[String]	$GroupName,	  
+		[Parameter()]		[switch]	$NoResyncSnapshot,
+		[Parameter()]					[String]	$TargetName,
+		[Parameter()]					[switch]	$FullSync
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -283,8 +283,8 @@ Function Remove-A9RCopyGroup
 	PS:> Remove-A9RCopyGroup -GroupName xxx -KeepSnap $false
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,		
-		[Parameter(ValueFromPipeline=$true)]		[boolean]	$KeepSnap	
+Param(	[Parameter(Mandatory)]	[String]	$GroupName,		
+		[Parameter()]		[boolean]	$KeepSnap	
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -365,23 +365,23 @@ Function Update-A9RCopyGroup
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$LocalUserCPG,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$LocalSnapCPG,	  
-	[Parameter(ValueFromPipeline=$true)]	[String]	$TargetName,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$RemoteUserCPG,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$RemoteSnapCPG,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$SyncPeriod,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$RmSyncPeriod,
-	[Parameter(ValueFromPipeline=$true)]
+	[Parameter(Mandatory)]	[String]	$GroupName,
+	[Parameter()]	[String]	$LocalUserCPG,
+	[Parameter()]	[String]	$LocalSnapCPG,	  
+	[Parameter()]	[String]	$TargetName,
+	[Parameter()]	[String]	$RemoteUserCPG,
+	[Parameter()]	[String]	$RemoteSnapCPG,
+	[Parameter()]	[int]		$SyncPeriod,
+	[Parameter()]	[int]		$RmSyncPeriod,
+	[Parameter()]
 	[ValidateSet('SYNC','ASYNC','PERIODIC')][String]	$Mode,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$SnapFrequency,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$RmSnapFrequency,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$AutoRecover,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$OverPeriodAlert,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$AutoFailover,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$PathManagement,
-	[Parameter(ValueFromPipeline=$true)]	[int]		$MultiTargetPeerPersistence
+	[Parameter()]	[int]		$SnapFrequency,
+	[Parameter()]	[int]		$RmSnapFrequency,
+	[Parameter()]	[int]		$AutoRecover,
+	[Parameter()]	[int]		$OverPeriodAlert,
+	[Parameter()]	[int]		$AutoFailover,
+	[Parameter()]	[int]		$PathManagement,
+	[Parameter()]	[int]		$MultiTargetPeerPersistence
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -487,18 +487,18 @@ Function Update-A9RCopyGroupTarget
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$GroupName,
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetName,
-	[Parameter(ValueFromPipeline=$true)]								[int]		$SnapFrequency,
-	[Parameter(ValueFromPipeline=$true)]								[Boolean]	$RmSnapFrequency,
-	[Parameter(ValueFromPipeline=$true)]								[int]		$SyncPeriod,
-	[Parameter(ValueFromPipeline=$true)]								[Boolean]	$RmSyncPeriod,
-	[Parameter(ValueFromPipeline=$true)][ValidateSet('SYNC','PERIODIC')][String]	$Mode,
-	[Parameter(ValueFromPipeline=$true)]								[int]		$AutoRecover,
-	[Parameter(ValueFromPipeline=$true)]								[int]		$OverPeriodAlert,
-	[Parameter(ValueFromPipeline=$true)]								[int]		$AutoFailover,
-	[Parameter(ValueFromPipeline=$true)]							[int]		$PathManagement,
-	[Parameter(ValueFromPipeline=$true)]								[int]		$MultiTargetPeerPersistence
+	[Parameter(Mandatory)]				[String]	$GroupName,
+	[Parameter(Mandatory)]	[String]	$TargetName,
+	[Parameter()]								[int]		$SnapFrequency,
+	[Parameter()]								[Boolean]	$RmSnapFrequency,
+	[Parameter()]								[int]		$SyncPeriod,
+	[Parameter()]								[Boolean]	$RmSyncPeriod,
+	[Parameter()][ValidateSet('SYNC','PERIODIC')][String]	$Mode,
+	[Parameter()]								[int]		$AutoRecover,
+	[Parameter()]								[int]		$OverPeriodAlert,
+	[Parameter()]								[int]		$AutoFailover,
+	[Parameter()]							[int]		$PathManagement,
+	[Parameter()]								[int]		$MultiTargetPeerPersistence
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -569,15 +569,15 @@ Function Restore-A9RCopyGroup
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-	[Parameter(ValueFromPipeline=$true)]		[String]	$TargetName,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$SkipStart,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$SkipSync,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$DiscardNewData,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$SkipPromote,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$NoSnapshot,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$StopGroups,
-	[Parameter(ValueFromPipeline=$true)]					[Switch]	$LocalGroupsDirection
+	[Parameter(Mandatory)]	[String]	$GroupName,
+	[Parameter()]		[String]	$TargetName,
+	[Parameter()]					[Switch]	$SkipStart,
+	[Parameter()]					[Switch]	$SkipSync,
+	[Parameter()]					[Switch]	$DiscardNewData,
+	[Parameter()]					[Switch]	$SkipPromote,
+	[Parameter()]					[Switch]	$NoSnapshot,
+	[Parameter()]					[Switch]	$StopGroups,
+	[Parameter()]					[Switch]	$LocalGroupsDirection
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -636,14 +636,14 @@ Function Add-A9VvToRCopyGroup
 	Specifies the name of the secondary volume on the target system.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$GroupName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeName,
-		[Parameter(ValueFromPipeline=$true)]								[String]	$SnapshotName,
-		[Parameter(ValueFromPipeline=$true)]								[boolean]	$VolumeAutoCreation,
-		[Parameter(ValueFromPipeline=$true)]								[boolean]	$SkipInitialSync,
-		[Parameter(ValueFromPipeline=$true)]								[boolean]	$DifferentSecondaryWWN,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$TargetName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]				[String]	$SecVolumeName
+Param(	[Parameter(Mandatory)]				[String]	$GroupName,
+		[Parameter(Mandatory)]	[String]	$VolumeName,
+		[Parameter()]								[String]	$SnapshotName,
+		[Parameter()]								[boolean]	$VolumeAutoCreation,
+		[Parameter()]								[boolean]	$SkipInitialSync,
+		[Parameter()]								[boolean]	$DifferentSecondaryWWN,
+		[Parameter(Mandatory)]				[String]	$TargetName,
+		[Parameter(Mandatory)]				[String]	$SecVolumeName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -700,10 +700,10 @@ Function Remove-A9VvFromRCopyGroup
 	Enables (true) or disables (false) deletion of the remote volume on the secondary array from the system. Defaults to false. Do not use with keepSnap.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$VolumeName,
-		[Parameter(ValueFromPipeline=$true)]					[boolean]	$KeepSnap,
-		[Parameter(ValueFromPipeline=$true)]					[boolean]	$RemoveSecondaryVolume
+Param(	[Parameter(Mandatory)]	[String]	$GroupName,
+		[Parameter(Mandatory)]	[String]	$VolumeName,
+		[Parameter()]					[boolean]	$KeepSnap,
+		[Parameter()]					[boolean]	$RemoveSecondaryVolume
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -756,13 +756,13 @@ Function New-A9RCopyTarget
 	Enable (true) or disable (false) the creation of the target in disabled mode.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]							[String]	$TargetName,
+Param(	[Parameter(Mandatory)]							[String]	$TargetName,
 		[Parameter(Mandatory=$true, ParameterSetName = "IP", ValueFromPipeline=$true)]	[Switch]	$IP,
 		[Parameter(Mandatory=$true, ParameterSetName = "FC", ValueFromPipeline=$true)]	[Switch]	$FC,
 		[Parameter(ParameterSetName = "FC", ValueFromPipeline=$true)]					[String]	$NodeWWN,
-		[Parameter(ValueFromPipeline=$true)]											[String]	$PortPos,
-		[Parameter(ValueFromPipeline=$true)]											[String]	$Link, 
-		[Parameter(ValueFromPipeline=$true)]											[Switch]	$Disabled
+		[Parameter()]											[String]	$PortPos,
+		[Parameter()]											[String]	$Link, 
+		[Parameter()]											[Switch]	$Disabled
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -820,8 +820,8 @@ Function Update-A9RCopyTarget
 	Use false to allow recovery from an unusual error condition only, and only after consulting your Hewlett Packard Enterprise representative.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetName,
-		[Parameter(ValueFromPipeline=$true)]					[Switch]	$MirrorConfig
+Param(	[Parameter(Mandatory)]	[String]	$TargetName,
+		[Parameter()]					[Switch]	$MirrorConfig
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -877,12 +877,12 @@ Function Add-A9TargetToRCopyGroup
 	Name of the volume on the target.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetName,
-		[Parameter(ValueFromPipeline=$true)]
+Param(	[Parameter(Mandatory)]	[String]	$GroupName,
+		[Parameter(Mandatory)]	[String]	$TargetName,
+		[Parameter()]
 		[ValidateSet('SYNC','PERIODIC','ASYNC')]				[String]	$Mode,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$LocalVolumeName,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$RemoteVolumeName
+		[Parameter()]					[String]	$LocalVolumeName,
+		[Parameter()]					[String]	$RemoteVolumeName
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -929,8 +929,8 @@ Function Remove-A9TargetFromRCopyGroup
 	Target Name to be removed.  
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$TargetName
+Param(	[Parameter(Mandatory)]	[String]	$GroupName,
+		[Parameter(Mandatory)]	[String]	$TargetName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -984,13 +984,13 @@ Function New-A9SnapRcGroupVv
 #>
 [CmdletBinding()]
 Param(
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-		[Parameter(ValueFromPipeline=$true)]		[String]	$VolumeName,
-		[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$NewVvNmae,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$Comment,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$ExpirationHous,
-		[Parameter(ValueFromPipeline=$true)]					[int]		$RetentionHours,
-		[Parameter(ValueFromPipeline=$true)]					[Switch]	$SkipBlock
+		[Parameter(Mandatory)]	[String]	$GroupName,
+		[Parameter()]		[String]	$VolumeName,
+		[Parameter(Mandatory)]	[String]	$NewVvNmae,
+		[Parameter()]					[String]	$Comment,
+		[Parameter()]					[int]		$ExpirationHous,
+		[Parameter()]					[int]		$RetentionHours,
+		[Parameter()]					[Switch]	$SkipBlock
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1069,7 +1069,7 @@ Function Get-A9RCopyTarget
     Remote Copy Target Name
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$TargetName
+Param(	[Parameter()]	[String]	$TargetName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1119,7 +1119,7 @@ Function Get-A9RCopyGroup
     Remote Copy Group Name
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$GroupName
+Param(	[Parameter()]	[String]	$GroupName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1183,10 +1183,10 @@ Function Get-A9RCopyGroupTarget
     Target Name
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+Param(	[Parameter(Mandatory)]
 		[String]	$GroupName,
 		
-		[Parameter(ValueFromPipeline=$true)]
+		[Parameter()]
 		[String]	$TargetName
 	)
 Begin 
@@ -1229,8 +1229,8 @@ Function Get-A9RCopyGroupVv
     Remote Copy Volume Name
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true, ValueFromPipeline=$true)]	[String]	$GroupName,
-		[Parameter(ValueFromPipeline=$true)]					[String]	$VolumeName
+Param(	[Parameter(Mandatory)]	[String]	$GroupName,
+		[Parameter()]					[String]	$VolumeName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1272,7 +1272,7 @@ Function Get-A9RCopyLink
     Remote Copy Link Name
 #>
 [CmdletBinding()]
-Param(	[Parameter(ValueFromPipeline=$true)]	[String]	$LinkName
+Param(	[Parameter()]	[String]	$LinkName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1296,11 +1296,11 @@ Process
 }
 
 # SIG # Begin signature block
-# MIIt2AYJKoZIhvcNAQcCoIItyTCCLcUCAQExDzANBglghkgBZQMEAgMFADCBmwYK
+# MIIsVAYJKoZIhvcNAQcCoIIsRTCCLEECAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEDEXk+yLlv5
-# g7beGJcaWilRrAvCW4zKqD+BL4UympAE5oF8OGV3/c0kF7UlJ90RROLgbzCSBIb/
-# yqSB57am0IJJoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABED0s6SLohg5
+# 4gVZfSFtjl0Ab6lo/dYz/ACsmTCTbTFx+DZkLRsALddqX9W+gCIgX5WnjhRDjdZl
+# Fcy1YhB1SaFHoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -1393,152 +1393,144 @@ Process
 # 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
 # tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
 # NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG5UwghuRAgEBMGkwVDELMAkGA1UEBhMCR0Ix
+# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCGhEwghoNAgEBMGkwVDELMAkGA1UEBhMCR0Ix
 # GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQMvfoS05+IJY920midCZl+xkqC5RWDLs+22TSzyy3iw4pjPYt76o72sl
-# gLsuH0/LsF69qV5DcL3zWNak62VX3X4wDQYJKoZIhvcNAQEBBQAEggGAiKhYWoxw
-# orJuaBjZ9Aq5ofm2NCA1ycjwTXxhIknuMiZs1qgHgnFljoCp/M5NLxVHvYTahJXO
-# 8netHRVMEdbblqRErNgwQQatDa0ROqWysiijCUnA9BgYW8oq0MO384RqprBKSXmq
-# z92OBZOK7TCvAF45uXso3hhhK0TxN4cblEpjmeKsUJq95rdiR4G97e55ybkKk+VG
-# 1M4cEOEZxwYXOc0smvQF2d0BIUCE8c4a/qYKxeEBI0ne6hLjXCihCqLEmOrpUOQS
-# Us6Xndr8z1KKR/Qap8nfXWh9TbYb9AyR/MxjKeTsOP/DOdigLfWydFoj2LhOX2i1
-# KFDZCkitzHMfW1CY+Suo4ViLvI+58uhR0kmNojo4oZC/KhRQIo7+WgAJT0g//KKl
-# JmYk0SyhKiIVBXWPtNPb0qmDmpSetBaTe3B4HLJbsvVpax8Bj7ntb7iGupuzwaMN
-# FPF+LFfn/vStuYozR/xjc+XhbKLk2JpLlIxnWz9scUGbLwaKrr+HkXDtoYIY3jCC
-# GNoGCisGAQQBgjcDAwExghjKMIIYxgYJKoZIhvcNAQcCoIIYtzCCGLMCAQMxDzAN
-# BglghkgBZQMEAgIFADCCAQMGCyqGSIb3DQEJEAEEoIHzBIHwMIHtAgEBBgorBgEE
-# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMIw5/wD7EpnoiI4TZNADxJFHCJwoYP8j
-# mnPRC+WIngpGJQezcvYaK08E5zkFOifvgwIUQ+QsolOH8OXlgR5CyfWypZylSksY
-# DzIwMjQwNzMxMjAyMDU4WqBypHAwbjELMAkGA1UEBhMCR0IxEzARBgNVBAgTCk1h
-# bmNoZXN0ZXIxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEwMC4GA1UEAxMnU2Vj
-# dGlnbyBQdWJsaWMgVGltZSBTdGFtcGluZyBTaWduZXIgUjM1oIIS/zCCBl0wggTF
-# oAMCAQICEDpSaiyEzlXmHWX8zBLY6YkwDQYJKoZIhvcNAQEMBQAwVTELMAkGA1UE
-# BhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGln
-# byBQdWJsaWMgVGltZSBTdGFtcGluZyBDQSBSMzYwHhcNMjQwMTE1MDAwMDAwWhcN
-# MzUwNDE0MjM1OTU5WjBuMQswCQYDVQQGEwJHQjETMBEGA1UECBMKTWFuY2hlc3Rl
-# cjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTAwLgYDVQQDEydTZWN0aWdvIFB1
-# YmxpYyBUaW1lIFN0YW1waW5nIFNpZ25lciBSMzUwggIiMA0GCSqGSIb3DQEBAQUA
-# A4ICDwAwggIKAoICAQCN0Wf0wUibvf04STpNYYGbw9jcRaVhBDaNBp7jmJaA9dQZ
-# W5ighrXGNMYjK7Dey5RIHMqLIbT9z9if753mYbojJrKWO4ZP0N5dBT2TwZZaPb8E
-# +hqaDZ8Vy2c+x1NiEwbEzTrPX4W3QFq/zJvDDbWKL99qLL42GJQzX3n5wWo60Kkl
-# fFn+Wb22mOZWYSqkCVGl8aYuE12SqIS4MVO4PUaxXeO+4+48YpQlNqbc/ndTgszR
-# QLF4MjxDPjRDD1M9qvpLTZcTGVzxfViyIToRNxPP6DUiZDU6oXARrGwyP9aglPXw
-# YbkqI2dLuf9fiIzBugCDciOly8TPDgBkJmjAfILNiGcVEzg+40xUdhxNcaC+6r0j
-# uPiR7bzXHh7v/3RnlZuT3ZGstxLfmE7fRMAFwbHdDz5gtHLqjSTXDiNF58IxPtvm
-# ZPG2rlc+Yq+2B8+5pY+QZn+1vEifI0MDtiA6BxxQuOnj4PnqDaK7NEKwtD1pzoA3
-# jJFuoJiwbatwhDkg1PIjYnMDbDW+wAc9FtRN6pUsO405jaBgigoFZCw9hWjLNqgF
-# VTo7lMb5rVjJ9aSBVVL2dcqzyFW2LdWk5Xdp65oeeOALod7YIIMv1pbqC15R7QCY
-# LxcK1bCl4/HpBbdE5mjy9JR70BHuYx27n4XNOZbwrXcG3wZf9gEUk7stbPAoBQID
-# AQABo4IBjjCCAYowHwYDVR0jBBgwFoAUX1jtTDF6omFCjVKAurNhlxmiMpswHQYD
-# VR0OBBYEFGjvpDJJabZSOB3qQzks9BRqngyFMA4GA1UdDwEB/wQEAwIGwDAMBgNV
-# HRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMEoGA1UdIARDMEEwNQYM
-# KwYBBAGyMQECAQMIMCUwIwYIKwYBBQUHAgEWF2h0dHBzOi8vc2VjdGlnby5jb20v
-# Q1BTMAgGBmeBDAEEAjBKBgNVHR8EQzBBMD+gPaA7hjlodHRwOi8vY3JsLnNlY3Rp
-# Z28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcmwwegYIKwYB
-# BQUHAQEEbjBsMEUGCCsGAQUFBzAChjlodHRwOi8vY3J0LnNlY3RpZ28uY29tL1Nl
-# Y3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcnQwIwYIKwYBBQUHMAGGF2h0
-# dHA6Ly9vY3NwLnNlY3RpZ28uY29tMA0GCSqGSIb3DQEBDAUAA4IBgQCw3C7J+k82
-# TIov9slP1e8YTx+fDsa//hJ62Y6SMr2E89rv82y/n8we5W6z5pfBEWozlW7nWp+s
-# dPCdUTFw/YQcqvshH6b9Rvs9qZp5Z+V7nHwPTH8yzKwgKzTTG1I1XEXLAK9fHnmX
-# paDeVeI8K6Lw3iznWZdLQe3zl+Rejdq5l2jU7iUfMkthfhFmi+VVYPkR/BXpV7Ub
-# 1QyyWebqkjSHJHRmv3lBYbQyk08/S7TlIeOr9iQ+UN57fJg4QI0yqdn6PyiehS1n
-# SgLwKRs46T8A6hXiSn/pCXaASnds0LsM5OVoKYfbgOOlWCvKfwUySWoSgrhncihS
-# BXxH2pAuDV2vr8GOCEaePZc0Dy6O1rYnKjGmqm/IRNkJghSMizr1iIOPN+23futB
-# XAhmx8Ji/4NTmyH9K0UvXHiuA2Pa3wZxxR9r9XeIUVb2V8glZay+2ULlc445CzCv
-# VSZV01ZB6bgvCuUuBx079gCcepjnZDCcEuIC5Se4F6yFaZ8RvmiJ4hgwggYUMIID
-# /KADAgECAhB6I67aU2mWD5HIPlz0x+M/MA0GCSqGSIb3DQEBDAUAMFcxCzAJBgNV
-# BAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNVBAMTJVNlY3Rp
-# Z28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwHhcNMjEwMzIyMDAwMDAw
-# WhcNMzYwMzIxMjM1OTU5WjBVMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGln
-# byBMaW1pdGVkMSwwKgYDVQQDEyNTZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5n
-# IENBIFIzNjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAM2Y2ENBq26C
-# K+z2M34mNOSJjNPvIhKAVD7vJq+MDoGD46IiM+b83+3ecLvBhStSVjeYXIjfa3aj
-# oW3cS3ElcJzkyZlBnwDEJuHlzpbN4kMH2qRBVrjrGJgSlzzUqcGQBaCxpectRGhh
-# nOSwcjPMI3G0hedv2eNmGiUbD12OeORN0ADzdpsQ4dDi6M4YhoGE9cbY11XxM2AV
-# Zn0GiOUC9+XE0wI7CQKfOUfigLDn7i/WeyxZ43XLj5GVo7LDBExSLnh+va8WxTlA
-# +uBvq1KO8RSHUQLgzb1gbL9Ihgzxmkdp2ZWNuLc+XyEmJNbD2OIIq/fWlwBp6KNL
-# 19zpHsODLIsgZ+WZ1AzCs1HEK6VWrxmnKyJJg2Lv23DlEdZlQSGdF+z+Gyn9/CRe
-# zKe7WNyxRf4e4bwUtrYE2F5Q+05yDD68clwnweckKtxRaF0VzN/w76kOLIaFVhf5
-# sMM/caEZLtOYqYadtn034ykSFaZuIBU9uCSrKRKTPJhWvXk4CllgrwIDAQABo4IB
-# XDCCAVgwHwYDVR0jBBgwFoAU9ndq3T/9ARP/FqFsggIv0Ao9FCUwHQYDVR0OBBYE
-# FF9Y7UwxeqJhQo1SgLqzYZcZojKbMA4GA1UdDwEB/wQEAwIBhjASBgNVHRMBAf8E
-# CDAGAQH/AgEAMBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQKMAgwBgYEVR0g
-# ADBMBgNVHR8ERTBDMEGgP6A9hjtodHRwOi8vY3JsLnNlY3RpZ28uY29tL1NlY3Rp
-# Z29QdWJsaWNUaW1lU3RhbXBpbmdSb290UjQ2LmNybDB8BggrBgEFBQcBAQRwMG4w
-# RwYIKwYBBQUHMAKGO2h0dHA6Ly9jcnQuc2VjdGlnby5jb20vU2VjdGlnb1B1Ymxp
-# Y1RpbWVTdGFtcGluZ1Jvb3RSNDYucDdjMCMGCCsGAQUFBzABhhdodHRwOi8vb2Nz
-# cC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOCAgEAEtd7IK0ONVgMnoEdJVj9
-# TC1ndK/HYiYh9lVUacahRoZ2W2hfiEOyQExnHk1jkvpIJzAMxmEc6ZvIyHI5UkPC
-# bXKspioYMdbOnBWQUn733qMooBfIghpR/klUqNxx6/fDXqY0hSU1OSkkSivt51Ul
-# mJElUICZYBodzD3M/SFjeCP59anwxs6hwj1mfvzG+b1coYGnqsSz2wSKr+nDO+Db
-# 8qNcTbJZRAiSazr7KyUJGo1c+MScGfG5QHV+bps8BX5Oyv9Ct36Y4Il6ajTqV2if
-# ikkVtB3RNBUgwu/mSiSUice/Jp/q8BMk/gN8+0rNIE+QqU63JoVMCMPY2752LmES
-# sRVVoypJVt8/N3qQ1c6FibbcRabo3azZkcIdWGVSAdoLgAIxEKBeNh9AQO1gQrnh
-# 1TA8ldXuJzPSuALOz1Ujb0PCyNVkWk7hkhVHfcvBfI8NtgWQupiaAeNHe0pWSGH2
-# opXZYKYG4Lbukg7HpNi/KqJhue2Keak6qH9A8CeEOB7Eob0Zf+fU+CCQaL0cJqlm
-# nx9HCDxF+3BLbUufrV64EbTI40zqegPZdA+sXCmbcZy6okx/SjwsusWRItFA3DE8
-# MORZeFb6BmzBtqKJ7l939bbKBy2jvxcJI98Va95Q5JnlKor3m0E7xpMeYRriWklU
-# PsetMSf2NvUQa/E5vVyefQIwggaCMIIEaqADAgECAhA2wrC9fBs656Oz3TbLyXVo
-# MA0GCSqGSIb3DQEBDAUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKTmV3IEpl
-# cnNleTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJV
-# U1QgTmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9u
-# IEF1dGhvcml0eTAeFw0yMTAzMjIwMDAwMDBaFw0zODAxMTgyMzU5NTlaMFcxCzAJ
-# BgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNVBAMTJVNl
-# Y3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwggIiMA0GCSqGSIb3
-# DQEBAQUAA4ICDwAwggIKAoICAQCIndi5RWedHd3ouSaBmlRUwHxJBZvMWhUP2ZQQ
-# RLRBQIF3FJmp1OR2LMgIU14g0JIlL6VXWKmdbmKGRDILRxEtZdQnOh2qmcxGzjqe
-# mIk8et8sE6J+N+Gl1cnZocew8eCAawKLu4TRrCoqCAT8uRjDeypoGJrruH/drCio
-# 28aqIVEn45NZiZQI7YYBex48eL78lQ0BrHeSmqy1uXe9xN04aG0pKG9ki+PC6VEf
-# zutu6Q3IcZZfm00r9YAEp/4aeiLhyaKxLuhKKaAdQjRaf/h6U13jQEV1JnUTCm51
-# 1n5avv4N+jSVwd+Wb8UMOs4netapq5Q/yGyiQOgjsP/JRUj0MAT9YrcmXcLgsrAi
-# mfWY3MzKm1HCxcquinTqbs1Q0d2VMMQyi9cAgMYC9jKc+3mW62/yVl4jnDcw6ULJ
-# sBkOkrcPLUwqj7poS0T2+2JMzPP+jZ1h90/QpZnBkhdtixMiWDVgh60KmLmzXiqJ
-# c6lGwqoUqpq/1HVHm+Pc2B6+wCy/GwCcjw5rmzajLbmqGygEgaj/OLoanEWP6Y52
-# Hflef3XLvYnhEY4kSirMQhtberRvaI+5YsD3XVxHGBjlIli5u+NrLedIxsE88WzK
-# XqZjj9Zi5ybJL2WjeXuOTbswB7XjkZbErg7ebeAQUQiS/uRGZ58NHs57ZPUfECcg
-# JC+v2wIDAQABo4IBFjCCARIwHwYDVR0jBBgwFoAUU3m/WqorSs9UgOHYm8Cd8rID
-# ZsswHQYDVR0OBBYEFPZ3at0//QET/xahbIICL9AKPRQlMA4GA1UdDwEB/wQEAwIB
-# hjAPBgNVHRMBAf8EBTADAQH/MBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQK
-# MAgwBgYEVR0gADBQBgNVHR8ESTBHMEWgQ6BBhj9odHRwOi8vY3JsLnVzZXJ0cnVz
-# dC5jb20vVVNFUlRydXN0UlNBQ2VydGlmaWNhdGlvbkF1dGhvcml0eS5jcmwwNQYI
-# KwYBBQUHAQEEKTAnMCUGCCsGAQUFBzABhhlodHRwOi8vb2NzcC51c2VydHJ1c3Qu
-# Y29tMA0GCSqGSIb3DQEBDAUAA4ICAQAOvmVB7WhEuOWhxdQRh+S3OyWM637ayBeR
-# 7djxQ8SihTnLf2sABFoB0DFR6JfWS0snf6WDG2gtCGflwVvcYXZJJlFfym1Doi+4
-# PfDP8s0cqlDmdfyGOwMtGGzJ4iImyaz3IBae91g50QyrVbrUoT0mUGQHbRcF57ol
-# pfHhQEStz5i6hJvVLFV/ueQ21SM99zG4W2tB1ExGL98idX8ChsTwbD/zIExAopoe
-# 3l6JrzJtPxj8V9rocAnLP2C8Q5wXVVZcbw4x4ztXLsGzqZIiRh5i111TW7HV1Ats
-# Qa6vXy633vCAbAOIaKcLAo/IU7sClyZUk62XD0VUnHD+YvVNvIGezjM6CRpcWed/
-# ODiptK+evDKPU2K6synimYBaNH49v9Ih24+eYXNtI38byt5kIvh+8aW88WThRpv8
-# lUJKaPn37+YHYafob9Rg7LyTrSYpyZoBmwRWSE4W6iPjB7wJjJpH29308ZkpKKdp
-# kiS9WNsf/eeUtvRrtIEiSJHN899L1P4l6zKVsdrUu1FX1T/ubSrsxrYJD+3f3aKg
-# 6yxdbugot06YwGXXiy5UUGZvOu3lXlxA+fC13dQ5OlL2gIb5lmF6Ii8+CQOYDwXM
-# +yd9dbmocQsHjcRPsccUd5E9FiswEqORvz8g3s+jR3SFCgXhN4wz7NgAnOgpCdUo
-# 4uDyllU9PzGCBJEwggSNAgEBMGkwVTELMAkGA1UEBhMCR0IxGDAWBgNVBAoTD1Nl
-# Y3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMgVGltZSBTdGFt
-# cGluZyBDQSBSMzYCEDpSaiyEzlXmHWX8zBLY6YkwDQYJYIZIAWUDBAICBQCgggH5
-# MBoGCSqGSIb3DQEJAzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjQw
-# NzMxMjAyMDU4WjA/BgkqhkiG9w0BCQQxMgQwr6XtSAoj/ikosfFwv3vmYktkzeKQ
-# ++gSICOEYvrbCn/1LTsXdiuKdZXjRYv6DkAHMIIBegYLKoZIhvcNAQkQAgwxggFp
-# MIIBZTCCAWEwFgQU+GCYGab7iCz36FKX8qEZUhoWd18wgYcEFMauVOR4hvF8PVUS
-# SIxpw0p6+cLdMG8wW6RZMFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdv
-# IExpbWl0ZWQxLjAsBgNVBAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcg
-# Um9vdCBSNDYCEHojrtpTaZYPkcg+XPTH4z8wgbwEFIU9Yy2TgoJhfNCQNcSR3pLB
-# QtrHMIGjMIGOpIGLMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKTmV3IEplcnNl
-# eTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJVU1Qg
-# TmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9uIEF1
-# dGhvcml0eQIQNsKwvXwbOuejs902y8l1aDANBgkqhkiG9w0BAQEFAASCAgAmxsUC
-# lrvPVADAo/F3I4jx5ZbHabnkM2SESyFKLQlP0sJn0pbKYEUYBTFaszKeAkqVGQcU
-# gU2fIarRQj/2I9mHtxnIussXDy9/R8aMaqhgDkQpjUTNcpKCP7P4QudLUgOgCDPN
-# NFbyCXEOvaPVnMWi1g1xio5Pn4QGYgtfdKA9yr66pIDi8Gv2pnuqfHZo9ojj/ASv
-# FQKzr7LnM/FMu3WslAgSbi1/G0bK0LtgYZBVGWSuvDEjhhM934gBYLomClzsPvJr
-# daI8i/7gzcgFnHqw8DBQVYiFo85wIubj0fB6bNECq4LEQ8+x918q2qIR1TL4P48o
-# 7Kfza9QO4Z4/01L4hwPdCmtE6WZig0ckquYrRAdbj3mtOOCAMgSXhrw5MclJtZA5
-# XWsufpUd7wpczOs01eAyBNTTBtYy3O5ktzPKBUEOzNVkG2FDjQo8KFgIpMHTS04J
-# prenaRraA4cB13ijdZCikLeipUzEY3wwjJXiyAPhVOGrFTKsUO0du89/2Hp3L/JR
-# Zj//z9ZqwQDioITchjL6otExIOOuEBItbeWyE4Ts9Y6XA2TcQpeDRp1fvoInoWT/
-# 3fGpgGy539dkW9drRRpKgyr4qIkkBfufPGl/JYBin+7FM2YK97cMCxAkjSaTUwqE
-# 3yjixKByAw1BF2ja8tjWZtGxosRc43hUp1KnBQ==
+# AQkEMUIEQB/Cv491PQb+HdNKZMHegB2701KWhzSVWSTI9x5u6gjlk1ChgvRncwNU
+# +1xFogG1vjtPIbXkkJzvMxMaRAMg/D0wDQYJKoZIhvcNAQEBBQAEggGAIAjedFih
+# Saogz9wuiHaW4fxj5EVWzqMtKHgfBJ5exnHTHp16Kv06K2dKygWozGfoDRvL1ziB
+# 9YG2PZBn6GqAfxP6HuA/qduHB1GVRGaMMma0x4OB2hUftegKXF7xx/f4b0168+84
+# j4z32pJKrg+i1wYaA5d0XJ22iudWvB7uByvDhGlFbahRTCAjzSlNlIJBGjm6QwzQ
+# N2CIfF8C/oo+sgLt/wYDb+iMif5Nhsb2QwhqGIrcVhSv8bH+xZNYRff2MBo+53oi
+# PTPACTwixRp3zYxcLv9kc3xjHrqPQSaBe/ktfyji7TXs/xRzhjYRulsf7I9phEZN
+# HEC+7Niy1njGI6lVC6vCz8EyyqF2fhwnzDnaQ3IvCjfPyqlE+xqazvJiHpUbYV2M
+# IxW3+mPyT8t4p+gb5lDRZoI/JdReG9TMQQDO9t6gSnm3DTaWNyPJrnyxACH95fLw
+# b39wRhmdEgAQlrttnX0VYElEgCTjTAguAr+HbHv5BGBk4tPmOrONwJFRoYIXWjCC
+# F1YGCisGAQQBgjcDAwExghdGMIIXQgYJKoZIhvcNAQcCoIIXMzCCFy8CAQMxDzAN
+# BglghkgBZQMEAgIFADCBhwYLKoZIhvcNAQkQAQSgeAR2MHQCAQEGCWCGSAGG/WwH
+# ATBBMA0GCWCGSAFlAwQCAgUABDC3aVSCMch8Yji1dqy9e/qdtw68XguMV0tQ9owH
+# d25m7kcDFDoSskeZNCUhcZILr04CEHg5wZIC4BFH8+R08kBfsMQYDzIwMjUwNTE1
+# MjI1NTI3WqCCEwMwgga8MIIEpKADAgECAhALrma8Wrp/lYfG+ekE4zMEMA0GCSqG
+# SIb3DQEBCwUAMGMxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5j
+# LjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBU
+# aW1lU3RhbXBpbmcgQ0EwHhcNMjQwOTI2MDAwMDAwWhcNMzUxMTI1MjM1OTU5WjBC
+# MQswCQYDVQQGEwJVUzERMA8GA1UEChMIRGlnaUNlcnQxIDAeBgNVBAMTF0RpZ2lD
+# ZXJ0IFRpbWVzdGFtcCAyMDI0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKC
+# AgEAvmpzn/aVIauWMLpbbeZZo7Xo/ZEfGMSIO2qZ46XB/QowIEMSvgjEdEZ3v4vr
+# rTHleW1JWGErrjOL0J4L0HqVR1czSzvUQ5xF7z4IQmn7dHY7yijvoQ7ujm0u6yXF
+# 2v1CrzZopykD07/9fpAT4BxpT9vJoJqAsP8YuhRvflJ9YeHjes4fduksTHulntq9
+# WelRWY++TFPxzZrbILRYynyEy7rS1lHQKFpXvo2GePfsMRhNf1F41nyEg5h7iOXv
+# +vjX0K8RhUisfqw3TTLHj1uhS66YX2LZPxS4oaf33rp9HlfqSBePejlYeEdU740G
+# KQM7SaVSH3TbBL8R6HwX9QVpGnXPlKdE4fBIn5BBFnV+KwPxRNUNK6lYk2y1WSKo
+# ur4hJN0SMkoaNV8hyyADiX1xuTxKaXN12HgR+8WulU2d6zhzXomJ2PleI9V2yfmf
+# XSPGYanGgxzqI+ShoOGLomMd3mJt92nm7Mheng/TBeSA2z4I78JpwGpTRHiT7yHq
+# BiV2ngUIyCtd0pZ8zg3S7bk4QC4RrcnKJ3FbjyPAGogmoiZ33c1HG93Vp6lJ415E
+# RcC7bFQMRbxqrMVANiav1k425zYyFMyLNyE1QulQSgDpW9rtvVcIH7WvG9sqYup9
+# j8z9J1XqbBZPJ5XLln8mS8wWmdDLnBHXgYly/p1DhoQo5fkCAwEAAaOCAYswggGH
+# MA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsG
+# AQUFBwMIMCAGA1UdIAQZMBcwCAYGZ4EMAQQCMAsGCWCGSAGG/WwHATAfBgNVHSME
+# GDAWgBS6FtltTYUvcyl2mi91jGogj57IbzAdBgNVHQ4EFgQUn1csA3cOKBWQZqVj
+# Xu5Pkh92oFswWgYDVR0fBFMwUTBPoE2gS4ZJaHR0cDovL2NybDMuZGlnaWNlcnQu
+# Y29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFtcGluZ0NB
+# LmNybDCBkAYIKwYBBQUHAQEEgYMwgYAwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3Nw
+# LmRpZ2ljZXJ0LmNvbTBYBggrBgEFBQcwAoZMaHR0cDovL2NhY2VydHMuZGlnaWNl
+# cnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFtcGlu
+# Z0NBLmNydDANBgkqhkiG9w0BAQsFAAOCAgEAPa0eH3aZW+M4hBJH2UOR9hHbm04I
+# HdEoT8/T3HuBSyZeq3jSi5GXeWP7xCKhVireKCnCs+8GZl2uVYFvQe+pPTScVJeC
+# ZSsMo1JCoZN2mMew/L4tpqVNbSpWO9QGFwfMEy60HofN6V51sMLMXNTLfhVqs+e8
+# haupWiArSozyAmGH/6oMQAh078qRh6wvJNU6gnh5OruCP1QUAvVSu4kqVOcJVozZ
+# R5RRb/zPd++PGE3qF1P3xWvYViUJLsxtvge/mzA75oBfFZSbdakHJe2BVDGIGVNV
+# jOp8sNt70+kEoMF+T6tptMUNlehSR7vM+C13v9+9ZOUKzfRUAYSyyEmYtsnpltD/
+# GWX8eM70ls1V6QG/ZOB6b6Yum1HvIiulqJ1Elesj5TMHq8CWT/xrW7twipXTJ5/i
+# 5pkU5E16RSBAdOp12aw8IQhhA/vEbFkEiF2abhuFixUDobZaA0VhqAsMHOmaT3XT
+# hZDNi5U2zHKhUs5uHHdG6BoQau75KiNbh0c+hatSF+02kULkftARjsyEpHKsF7u5
+# zKRbt5oK5YGwFvgc4pEVUNytmB3BpIiowOIIuDgP5M9WArHYSAR16gc0dP2XdkME
+# P5eBsX7bf/MGN4K3HP50v/01ZHo/Z5lGLvNwQ7XHBx1yomzLP8lx4Q1zZKDyHcp4
+# VQJLu2kWTsKsOqQwggauMIIElqADAgECAhAHNje3JFR82Ees/ShmKl5bMA0GCSqG
+# SIb3DQEBCwUAMGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMx
+# GTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IFRy
+# dXN0ZWQgUm9vdCBHNDAeFw0yMjAzMjMwMDAwMDBaFw0zNzAzMjIyMzU5NTlaMGMx
+# CzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMy
+# RGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcg
+# Q0EwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDGhjUGSbPBPXJJUVXH
+# JQPE8pE3qZdRodbSg9GeTKJtoLDMg/la9hGhRBVCX6SI82j6ffOciQt/nR+eDzMf
+# UBMLJnOWbfhXqAJ9/UO0hNoR8XOxs+4rgISKIhjf69o9xBd/qxkrPkLcZ47qUT3w
+# 1lbU5ygt69OxtXXnHwZljZQp09nsad/ZkIdGAHvbREGJ3HxqV3rwN3mfXazL6IRk
+# tFLydkf3YYMZ3V+0VAshaG43IbtArF+y3kp9zvU5EmfvDqVjbOSmxR3NNg1c1eYb
+# qMFkdECnwHLFuk4fsbVYTXn+149zk6wsOeKlSNbwsDETqVcplicu9Yemj052FVUm
+# cJgmf6AaRyBD40NjgHt1biclkJg6OBGz9vae5jtb7IHeIhTZgirHkr+g3uM+onP6
+# 5x9abJTyUpURK1h0QCirc0PO30qhHGs4xSnzyqqWc0Jon7ZGs506o9UD4L/wojzK
+# QtwYSH8UNM/STKvvmz3+DrhkKvp1KCRB7UK/BZxmSVJQ9FHzNklNiyDSLFc1eSuo
+# 80VgvCONWPfcYd6T/jnA+bIwpUzX6ZhKWD7TA4j+s4/TXkt2ElGTyYwMO1uKIqjB
+# Jgj5FBASA31fI7tk42PgpuE+9sJ0sj8eCXbsq11GdeJgo1gJASgADoRU7s7pXche
+# MBK9Rp6103a50g5rmQzSM7TNsQIDAQABo4IBXTCCAVkwEgYDVR0TAQH/BAgwBgEB
+# /wIBADAdBgNVHQ4EFgQUuhbZbU2FL3MpdpovdYxqII+eyG8wHwYDVR0jBBgwFoAU
+# 7NfjgtJxXWRM3y5nP+e6mK4cD08wDgYDVR0PAQH/BAQDAgGGMBMGA1UdJQQMMAoG
+# CCsGAQUFBwMIMHcGCCsGAQUFBwEBBGswaTAkBggrBgEFBQcwAYYYaHR0cDovL29j
+# c3AuZGlnaWNlcnQuY29tMEEGCCsGAQUFBzAChjVodHRwOi8vY2FjZXJ0cy5kaWdp
+# Y2VydC5jb20vRGlnaUNlcnRUcnVzdGVkUm9vdEc0LmNydDBDBgNVHR8EPDA6MDig
+# NqA0hjJodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVkUm9v
+# dEc0LmNybDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEwDQYJKoZI
+# hvcNAQELBQADggIBAH1ZjsCTtm+YqUQiAX5m1tghQuGwGC4QTRPPMFPOvxj7x1Bd
+# 4ksp+3CKDaopafxpwc8dB+k+YMjYC+VcW9dth/qEICU0MWfNthKWb8RQTGIdDAiC
+# qBa9qVbPFXONASIlzpVpP0d3+3J0FNf/q0+KLHqrhc1DX+1gtqpPkWaeLJ7giqzl
+# /Yy8ZCaHbJK9nXzQcAp876i8dU+6WvepELJd6f8oVInw1YpxdmXazPByoyP6wCeC
+# RK6ZJxurJB4mwbfeKuv2nrF5mYGjVoarCkXJ38SNoOeY+/umnXKvxMfBwWpx2cYT
+# gAnEtp/Nh4cku0+jSbl3ZpHxcpzpSwJSpzd+k1OsOx0ISQ+UzTl63f8lY5knLD0/
+# a6fxZsNBzU+2QJshIUDQtxMkzdwdeDrknq3lNHGS1yZr5Dhzq6YBT70/O3itTK37
+# xJV77QpfMzmHQXh6OOmc4d0j/R0o08f56PGYX/sr2H7yRp11LB4nLCbbbxV7HhmL
+# NriT1ObyF5lZynDwN7+YAN8gFk8n+2BnFqFmut1VwDophrCYoCvtlUG3OtUVmDG0
+# YgkPCr2B2RP+v6TR81fZvAT6gt4y3wSJ8ADNXcL50CN/AAvkdgIm2fBldkKmKYcJ
+# RyvmfxqkhQ/8mJb2VVQrH4D6wPIOK+XW+6kvRBVK5xMOHds3OBqhK/bt1nz8MIIF
+# jTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0BAQwFADBlMQsw
+# CQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cu
+# ZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVkIElEIFJvb3Qg
+# Q0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQswCQYDVQQGEwJV
+# UzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQu
+# Y29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVkIFJvb3QgRzQwggIiMA0GCSqG
+# SIb3DQEBAQUAA4ICDwAwggIKAoICAQC/5pBzaN675F1KPDAiMGkz7MKnJS7JIT3y
+# ithZwuEppz1Yq3aaza57G4QNxDAf8xukOBbrVsaXbR2rsnnyyhHS5F/WBTxSD1If
+# xp4VpX6+n6lXFllVcq9ok3DCsrp1mWpzMpTREEQQLt+C8weE5nQ7bXHiLQwb7iDV
+# ySAdYyktzuxeTsiT+CFhmzTrBcZe7FsavOvJz82sNEBfsXpm7nfISKhmV1efVFiO
+# DCu3T6cw2Vbuyntd463JT17lNecxy9qTXtyOj4DatpGYQJB5w3jHtrHEtWoYOAMQ
+# jdjUN6QuBX2I9YI+EJFwq1WCQTLX2wRzKm6RAXwhTNS8rhsDdV14Ztk6MUSaM0C/
+# CNdaSaTC5qmgZ92kJ7yhTzm1EVgX9yRcRo9k98FpiHaYdj1ZXUJ2h4mXaXpI8OCi
+# EhtmmnTK3kse5w5jrubU75KSOp493ADkRSWJtppEGSt+wJS00mFt6zPZxd9LBADM
+# fRyVw4/3IbKyEbe7f/LVjHAsQWCqsWMYRJUadmJ+9oCw++hkpjPRiQfhvbfmQ6QY
+# uKZ3AeEPlAwhHbJUKSWJbOUOUlFHdL4mrLZBdd56rF+NP8m800ERElvlEFDrMcXK
+# chYiCd98THU/Y+whX8QgUWtvsauGi0/C1kVfnSD8oR7FwI+isX4KJpn15GkvmB0t
+# 9dmpsh3lGwIDAQABo4IBOjCCATYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQU
+# 7NfjgtJxXWRM3y5nP+e6mK4cD08wHwYDVR0jBBgwFoAUReuir/SSy4IxLVGLp6ch
+# nfNtyA8wDgYDVR0PAQH/BAQDAgGGMHkGCCsGAQUFBwEBBG0wazAkBggrBgEFBQcw
+# AYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tMEMGCCsGAQUFBzAChjdodHRwOi8v
+# Y2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3J0
+# MEUGA1UdHwQ+MDwwOqA4oDaGNGh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdp
+# Q2VydEFzc3VyZWRJRFJvb3RDQS5jcmwwEQYDVR0gBAowCDAGBgRVHSAAMA0GCSqG
+# SIb3DQEBDAUAA4IBAQBwoL9DXFXnOF+go3QbPbYW1/e/Vwe9mqyhhyzshV6pGrsi
+# +IcaaVQi7aSId229GhT0E0p6Ly23OO/0/4C5+KH38nLeJLxSA8hO0Cre+i1Wz/n0
+# 96wwepqLsl7Uz9FDRJtDIeuWcqFItJnLnU+nBgMTdydE1Od/6Fmo8L8vC6bp8jQ8
+# 7PcDx4eo0kxAGTVGamlUsLihVo7spNU96LHc/RzY9HdaXFSMb++hUD38dglohJ9v
+# ytsgjTVgHAIDyyCwrFigDkBjxZgiwbJZ9VVrzyerbHbObyMt9H5xaiNrIv8SuFQt
+# J37YOtnwtoeW/VvRXKwYw02fc7cBqZ9Xql4o4rmUMYIDhjCCA4ICAQEwdzBjMQsw
+# CQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRp
+# Z2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENB
+# AhALrma8Wrp/lYfG+ekE4zMEMA0GCWCGSAFlAwQCAgUAoIHhMBoGCSqGSIb3DQEJ
+# AzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjUwNTE1MjI1NTI3WjAr
+# BgsqhkiG9w0BCRACDDEcMBowGDAWBBTb04XuYtvSPnvk9nFIUIck1YZbRTA3Bgsq
+# hkiG9w0BCRACLzEoMCYwJDAiBCB2dp+o8mMvH0MLOiMwrtZWdf7Xc9sF1mW5BZOY
+# Q4+a2zA/BgkqhkiG9w0BCQQxMgQw9W5AtbU35+KVsuO2tIBSKPU/m/0QZofDK1Wn
+# a7fFfgcbL1jjlre3VuH9IpzDV/7XMA0GCSqGSIb3DQEBAQUABIICAGdpCwKJKseo
+# fYb6A8Zk/ZVkDsciEX399tIzOhCbkCCA76bmanBVzOQxShFSzPy3US/m3NNIYD4G
+# ungeM5rK0VGib/wSxMx050a84mR1zgF1Msw4iDm+QPSgUUcFtpIyXfbUUWgdHuzb
+# w691YN5tsuAQEPGJTCk0y9CNJ7epWczPVjybyuf9BbRA4BHyHS3wUgANFFn6Vqbu
+# GY3CflOnKzNpSws9c4Xt1POxv3mnv0eReoXgVSGVn36SFueIbvaoywUgQMuCcUtN
+# kvADxhXW8F2DVxl/Yc7OPyFXRvGD+eEuwZB/6o9Lb4JfgG6Z1oOmz0L1MFgoiwp4
+# tg5LT5Nim3KWRgklaBeoeZtz7EcTQ8M+2R2U20ZnZ52cukRafMFzu1YwuTicql5Q
+# lvx7okaxm4ugLgK4LtNHBY2dFQJThUZups5JDnzTUDYZIw+9CO0wao6z14Pq5qrP
+# NY2yDTpUkBBzJnKYzCh5xukSr0zvR9KtHDhLhLrWbZ11egf9oSjWf6sUgm9+WBj+
+# CpIkDNleEIF+FR8+ayhU0268/V6xhvH5HwBuHzp8istXf0zB3Mc8t7G4WCI7InSO
+# 5Q3j48NkYokwdfeqa0fGiGNULLBj3Kpn3EIxMupzXoJaTZUoWTFJ5y2+VqK+92K8
+# O2AAAHKwAfRlwSFDt+rA+3ARqz5FiCmw
 # SIG # End signature block

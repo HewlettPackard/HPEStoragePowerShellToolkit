@@ -9,18 +9,6 @@ Function New-A9GroupSnapVolume_CLI
     creates consistent group snapshots
 .DESCRIPTION
 	creates consistent group snapshots
-.EXAMPLE
-	PS:> New-A9GroupSnapVolume_CLI
-.EXAMPLE
-	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F
-.EXAMPLE
-	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -exp 2d
-.EXAMPLE
-	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -retain 2d
-.EXAMPLE
-	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -Comment Hello
-.EXAMPLE
-	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -OR
 .PARAMETER vvNames 
     Specify the Existing virtual volume with comma(,) seperation ex: vv1,vv2,vv3.
 .PARAMETER OR
@@ -37,11 +25,23 @@ Function New-A9GroupSnapVolume_CLI
 	By default, all snapshots are created read-write. The -ro option instead specifies that all snapshots created will be read-only.
 	The -match option specifies that snapshots are created matching each parent's read-only or read-write setting. The -ro and -match
 	options cannot be combined. Either of these options can be overridden for an individual snapshot VV in the colon separated specifiers.
+.EXAMPLE
+	PS:> New-A9GroupSnapVolume_CLI
+.EXAMPLE
+	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F
+.EXAMPLE
+	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -exp 2d
+.EXAMPLE
+	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -retain 2d
+.EXAMPLE
+	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -Comment Hello
+.EXAMPLE
+	PS:> New-A9GroupSnapVolume_CLI -vvNames WSDS_compr02F -OR
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$vvNames,
+param(	[Parameter(Mandatory)]	[String]	$vvNames,
 		[Parameter()]	[switch]	$OR, 
 		[Parameter()]	[String]	$exp,
 		[Parameter()]	[String]	$retain,
@@ -67,6 +67,7 @@ Process
 				}
 		}
 	$CreateGSVCmd += " $vvName1 "	
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$result1 = Invoke-A9CLICommand -cmds  $CreateGSVCmd
 	write-verbose " Creating Snapshot Name with the command --> $CreateGSVCmd"
 	if($result1 -match "CopyOfVV")
@@ -85,14 +86,6 @@ Function New-A9GroupVvCopy_CLI
     Creates consistent group physical copies of a list of virtualvolumes.
 .DESCRIPTION
 	Creates consistent group physical copies of a list of virtualvolumes.
-.EXAMPLE
-    PS:> New-A9GroupVvCopy_CLI -P -parent_VV ZZZ -destination_VV ZZZ 
-.EXAMPLE
-    PS:> New-A9GroupVvCopy_CLI -P -Online -parent_VV ZZZ -destination_cpg ZZZ -VV_name ZZZ -wwn 123456
-.EXAMPLE
-    PS:> New-A9GroupVvCopy_CLI -R -destination_VV ZZZ
-.EXAMPLE
-    PS:> New-A9GroupVvCopy_CLI -Halt -destination_VV ZZZ
 .PARAMETER parent_VV 
     Indicates the parent virtual volume.
 .PARAMETER destination_VV
@@ -135,6 +128,14 @@ Function New-A9GroupVvCopy_CLI
 	This option can only be used with a CPG that has SSD (Solid State Drive) device type. Cannot be used with the -tpvv option.
 .PARAMETER Compressed
 	Indicates that the VV the online copy creates should be a compressed virtual volume.    
+.EXAMPLE
+    PS:> New-A9GroupVvCopy_CLI -P -parent_VV ZZZ -destination_VV ZZZ 
+.EXAMPLE
+    PS:> New-A9GroupVvCopy_CLI -P -Online -parent_VV ZZZ -destination_cpg ZZZ -VV_name ZZZ -wwn 123456
+.EXAMPLE
+    PS:> New-A9GroupVvCopy_CLI -R -destination_VV ZZZ
+.EXAMPLE
+    PS:> New-A9GroupVvCopy_CLI -Halt -destination_VV ZZZ
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -188,6 +189,7 @@ Process
 	if($wwn)		{	$groupvvcopycmd += ":"
 						$groupvvcopycmd += "$wwn"
 					}	
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result1 = Invoke-A9CLICommand -cmds  $groupvvcopycmd
 	write-verbose " Creating consistent group fo Virtual copies with the command --> $groupvvcopycmd"
 	if ($Result1 -match "TaskID")	{	$outmessage += "Success : `n $Result1"	}
@@ -203,26 +205,10 @@ Function New-A9SnapVolume_CLI
     creates a point-in-time (snapshot) copy of a virtual volume.
 .DESCRIPTION
 	creates a point-in-time (snapshot) copy of a virtual volume.
-.EXAMPLE
-	PS:> New-A9SnapVolume_CLI -svName svr0_vv0 -vvName vv0 
-	
-	Ceates a read-only snapshot volume "svro_vv0" from volume "vv0" 
-.EXAMPLE
-	PS:> New-A9SnapVolume_CLI -svName svr0_vv0 -vvName vv0 -ro -exp 25H
-
-	Ceates a read-only snapshot volume "svro_vv0" from volume "vv0" and that will expire after 25 hours
-.EXAMPLE
-	PS:> New-A9SnapVolume_CLI -svName svrw_vv0 -vvName svro_vv0
-	
-	creates snapshot volume "svrw_vv0" from the snapshot "svro_vv0"
-.EXAMPLE
-	PS:> New-A9SnapVolume_CLI -ro svName svro-@vvname@ -vvSetName set:vvcopies 
-	
-	creates a snapshot volume for each member of the VV set "vvcopies". Each snapshot will be named svro-<name of parent virtual volume>:
 .PARAMETER svName 
     Specify  the name of the Snap shot	
 .PARAMETER vvName 
-    Specifies the parent volume name or volume set name. 
+    Specifies the parent volume name. Either a Volume Set (vvSetName) or a volume name (vvName) must be specified. 
 .PARAMETER vvSetName 
     Specifies the virtual volume set names as set: vvset name example: "set:vvcopies" 
 .PARAMETER Comment 
@@ -239,19 +225,35 @@ Function New-A9SnapVolume_CLI
 	Time can be optionally specified in days or hours providing either d or D for day and h or H for hours following the entered time value.
 .PARAMETER ro
 	Specifies that the copied volume is read-only. If not specified, the volume is read/write.	
+.EXAMPLE
+	PS:> New-A9SnapVolume_CLI -svName svr0_vv0 -vvName vv0 
+	
+	Ceates a read-only snapshot volume "svro_vv0" from volume "vv0" 
+.EXAMPLE
+	PS:> New-A9SnapVolume_CLI -svName svr0_vv0 -vvName vv0 -ro -exp 25H
+
+	Ceates a read-only snapshot volume "svro_vv0" from volume "vv0" and that will expire after 25 hours
+.EXAMPLE
+	PS:> New-A9SnapVolume_CLI -svName svrw_vv0 -vvName svro_vv0
+	
+	creates snapshot volume "svrw_vv0" from the snapshot "svro_vv0"
+.EXAMPLE
+	PS:> New-A9SnapVolume_CLI -ro svName svro-@vvname@ -vvSetName set:vvcopies 
+	
+	creates a snapshot volume for each member of the VV set "vvcopies". Each snapshot will be named svro-<name of parent virtual volume>:
 .NOTES
 	This command requires a SSH type connection.
 #>
-[CmdletBinding()]
-param(	[Parameter(ParameterSetName="set",Mandatory=$true)]	[String]	$svName,			
-		[Parameter(ParameterSetName="vv", Mandatory=$true)]	[String]	$vvName,
-		[Parameter()]	[String]	$VV_ID,
-		[Parameter()]	[String]	$exp,
-		[Parameter()]	[String]	$retain,
-		[Parameter()]	[switch]	$ro, 
-		[Parameter()]	[switch]	$Rcopy,
-		[Parameter()]	[String]	$vvSetName,	
-		[Parameter()]	[String]	$Comment
+[CmdletBinding(DefaultParameterSetName='vv')]
+param(	[Parameter(Mandatory)]							[String]	$svName,			
+		[Parameter(ParameterSetName="vv", Mandatory)]	[String]	$vvName,
+		[Parameter(ParameterSetName="vvId",Mandatory)]	[String]	$VV_ID,
+		[Parameter()]									[String]	$exp,
+		[Parameter()]									[String]	$retain,
+		[Parameter()]									[switch]	$ro, 
+		[Parameter()]									[switch]	$Rcopy,
+		[Parameter(ParameterSetName="set",Mandatory)]	[String]	$vvSetName,	
+		[Parameter()]									[String]	$Comment
 )	
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -270,6 +272,7 @@ Process
 			if($retain)	{	$CreateSVCmd += " -f -retain $retain  "	}
 			if($Comment){	$CreateSVCmd += " -comment $Comment  "	}
 			$CreateSVCmd +=" $svName $vvName "
+			write-verbose "Executing the following SSH command `n`t $CreateSVcmd"
 			$result1 = Invoke-A9CLICommand -cmds  $CreateSVCmd
 			write-verbose " Creating Snapshot Name $svName with the command --> $CreateSVCmd"
 			if([string]::IsNullOrEmpty($result1))
@@ -312,22 +315,6 @@ Function New-A9VvCopy_CLI
     Creates a full physical copy of a Virtual Volume (VV) or a read/write virtual copy on another VV.
 .DESCRIPTION
 	Creates a full physical copy of a Virtual Volume (VV) or a read/write virtual copy on another VV.
-.EXAMPLE
-    PS:> New-A9VvCopy_CLI -parentName VV1 -vvCopyName VV2
-.EXAMPLE		
-	PS:> New-A9VvCopy_CLI -parentName VV1 -vvCopyName VV2 -online -CPGName ZZZ
-.EXAMPLE
-	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3 -online -CPGName asCpg -Tpvv
-.EXAMPLE
-	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -Tdvv
-.EXAMPLE
-	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -Dedup
-.EXAMPLE
-	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -Compr
-.EXAMPLE
-	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -AddToSet
-.EXAMPLE
-	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3 -Priority med
 .PARAMETER parentName 
     Specify name of the parent Virtual Volume
 .PARAMETER Online 
@@ -367,12 +354,28 @@ Function New-A9VvCopy_CLI
 	task.  If this option is not specified, the createvvcopy operation is started with default priority of medium. High priority indicates that
 	the operation will complete faster. Low priority indicates that the operation will run slower than the default priority task. This option
 	cannot be used with -halt option.
+.EXAMPLE
+    PS:> New-A9VvCopy_CLI -parentName VV1 -vvCopyName VV2
+.EXAMPLE		
+	PS:> New-A9VvCopy_CLI -parentName VV1 -vvCopyName VV2 -online -CPGName ZZZ
+.EXAMPLE
+	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3 -online -CPGName asCpg -Tpvv
+.EXAMPLE
+	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -Tdvv
+.EXAMPLE
+	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -Dedup
+.EXAMPLE
+	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -Compr
+.EXAMPLE
+	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3  -AddToSet
+.EXAMPLE
+	PS:> New-A9VvCopy_CLI -parentName as1 -vvCopyName as3 -Priority med
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$parentName,		
-		[Parameter(Mandatory=$true)]	[String]	$vvCopyName,
+param(	[Parameter(Mandatory)]	[String]	$parentName,		
+		[Parameter(Mandatory)]	[String]	$vvCopyName,
 		[Parameter()]	[switch]    $online,
 		[Parameter()]	[String]    $CPGName,		
 		[Parameter()]	[String]    $snapcpg,
@@ -468,26 +471,6 @@ Function Push-A9GroupSnapVolume
     Copies the differences of snapshots back to their base volumes.
 .DESCRIPTION
 	Copies the differences of snapshots back to their base volumes.
-.EXAMPLE
-    PS:> Push-A9GroupSnapVolume
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr02F
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames "WSDS_compr02F"
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames "tesWSDS_compr01t_lun"
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -RCP
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -Halt
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -PRI high
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -Online
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -TargetVV at
-.EXAMPLE
-	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -TargetVV y
 .PARAMETER VVNames 
     Specify virtual copy name of the Snap shot
 .PARAMETER TargetVV 
@@ -508,6 +491,26 @@ Function Push-A9GroupSnapVolume
 	to initiate the promote command, but can be brought online and used during the background tasks. Each specified virtual copy and its base
 	volume must be the same size. The base volume is the only possible target of online promote, and is the default. To halt a promote started
 	with the online option, use the canceltask command. The -halt, -target, and -pri options cannot be combined with the -online option.	
+.EXAMPLE
+    PS:> Push-A9GroupSnapVolume
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr02F
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames "WSDS_compr02F"
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames "tesWSDS_compr01t_lun"
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -RCP
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -Halt
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -PRI high
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -Online
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -TargetVV at
+.EXAMPLE
+	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -TargetVV y
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -556,14 +559,6 @@ Function Push-A9SnapVolume
     This command copies the differences of a snapshot back to its base volume, allowing you to revert the base volume to an earlier point in time.
 .DESCRIPTION
 	This command copies the differences of a snapshot back to its base volume, allowing you to revert the base volume to an earlier point in time.
-.EXAMPLE
-	PS:> Push-A9SnapVolume -name vv1 
-	
-	copies the differences of a snapshot back to its base volume "vv1"
-.EXAMPLE
-	PS:> Push-A9SnapVolume -target vv23 -name vv1 
-	
-	copies the differences of a snapshot back to target volume "vv23" of volume "vv1"
 .PARAMETER name 
     Specifies the name of the virtual copy volume or set of virtual copy volumes to be promoted 
 .PARAMETER target 
@@ -583,6 +578,14 @@ Function Push-A9SnapVolume
 	initiate the promote command, but can bring it online and use it during the background task. The specified virtual copy and its base volume must
 	be the same size. The base volume is the only possible target of online promote, and is the default. To halt a promote started with the online
 	option, use the canceltask command. The -halt, -target, and -pri options cannot be combined with the -online option.
+.EXAMPLE
+	PS:> Push-A9SnapVolume -name vv1 
+	
+	copies the differences of a snapshot back to its base volume "vv1"
+.EXAMPLE
+	PS:> Push-A9SnapVolume -target vv23 -name vv1 
+	
+	copies the differences of a snapshot back to target volume "vv23" of volume "vv1"
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -634,14 +637,12 @@ Function Push-A9VvCopy
     Promotes a physical copy back to a regular base volume
 .DESCRIPTION
 	Promotes a physical copy back to a regular base volume
+.PARAMETER physicalCopyName 
+    Specifies the name of the physical copy to be promoted.
 .EXAMPLE
     PS:> Push-A9VvCopy –physicalCopyName volume1
 	
 	Promotes virtual volume "volume1" to a base volume
-.PARAMETER physicalCopyName 
-    Specifies the name of the physical copy to be promoted.
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -678,36 +679,33 @@ Function Set-A9VvSnapshot
     Updates a snapshot Virtual Volume (VV) with a new snapshot.
 .DESCRIPTION
 	Updates a snapshot Virtual Volume (VV) with a new snapshot.
-.EXAMPLE
-    PS:> Set-A9VvSnapshot -Name volume1 -Force
-	snapshot update of snapshot VV "volume1"
-.EXAMPLE
-    PS:> Set-A9VvSnapshot -Name volume1,volume2 -Force
-	snapshot update of snapshot VV's "volume1" and "volume2"
-.EXAMPLE
-    PS:> Set-A9VvSnapshot -Name set:vvset1 -Force
-	snapshot update of snapshot VVSet "vvset1"
-.EXAMPLE
-    PS:> Set-A9VvSnapshot -Name set:vvset1,set:vvset2 -Force
-	snapshot update of snapshot VVSet's "vvset1" and "vvset2"
-.EXAMPLE	
-	PS:> Set-A9VvSnapshot -Name as2 -RO
-.EXAMPLE	
-	PS:> Set-A9VvSnapshot -Name as2 -Force -RemoveAndRecreate 
 .PARAMETER Name 
     Specifies the name(s) of the snapshot virtual volume(s) or virtual volume set(s) to be updated.
 .PARAMETER RO 
     Specifies that if the specified VV (<VV_name>) is a read/write snapshot the snapshot’s read-only
 	parent volume is also updated with a new snapshot if the parent volume is not a member of a
 	virtual volume set
-.PARAMETER Force
-	Specifies that the command is forced.
+.EXAMPLE
+    PS:> Set-A9VvSnapshot -Name volume1 
+	snapshot update of snapshot VV "volume1"
+.EXAMPLE
+    PS:> Set-A9VvSnapshot -Name volume1,volume2 -
+	snapshot update of snapshot VV's "volume1" and "volume2"
+.EXAMPLE
+    PS:> Set-A9VvSnapshot -Name set:vvset1 
+	snapshot update of snapshot VVSet "vvset1"
+.EXAMPLE
+    PS:> Set-A9VvSnapshot -Name set:vvset1,set:vvset2 
+	snapshot update of snapshot VVSet's "vvset1" and "vvset2"
+.EXAMPLE	
+	PS:> Set-A9VvSnapshot -Name as2 -RO
+.EXAMPLE	
+	PS:> Set-A9VvSnapshot -Name as2 -RemoveAndRecreate 
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$Name,		
-		[Parameter()]	[switch]	$Force,		
+param(	[Parameter(Mandatory)]	[String]	$Name,		
 		[Parameter()]	[switch]	$RemoveAndRecreate,
 		[Parameter()]	[switch]	$RO	        
 	)		
@@ -745,11 +743,11 @@ Process
 }
 
 # SIG # Begin signature block
-# MIIsWgYJKoZIhvcNAQcCoIIsSzCCLEcCAQExDzANBglghkgBZQMEAgMFADCBmwYK
+# MIIsVAYJKoZIhvcNAQcCoIIsRTCCLEECAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEC64g5rTRRJ
-# ar/bTMcvEyaZih+lTouJ0A2NLOHDtyMDnPTbQ96gqX0sH/7LPEeLPURXh9bEoIHx
-# G7CXGZMeKazioIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABECUPrO8+TTF
+# bzpjdVpzwKla+xlGQOijHkYgL0nPnxI2fIFqDNkR9CS/acSgi2/9wocn5TU5tMjv
+# NvmWXjzQ5iA3oIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -842,144 +840,144 @@ Process
 # 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
 # tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
 # NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCGhcwghoTAgEBMGkwVDELMAkGA1UEBhMCR0Ix
+# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCGhEwghoNAgEBMGkwVDELMAkGA1UEBhMCR0Ix
 # GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQKUYT5O0WaYa5OQ2YCbIlczyK4zZPVqFgCBKF5ZmlUUSMZ7lVnby/FqR
-# cpZ+3xyGB4gcyUaAyZYRpiJALoIsyU4wDQYJKoZIhvcNAQEBBQAEggGAOVMxZc4M
-# rH9tgwMOaQspRxfX5sPrAo5O1No1is1/yIJ9TkLIDTiIFYVovevAKBQAldmyNkdL
-# uWEDCn/F8L7YHEdK/ucxEFYsgTIL0nk+u1QnwhnvPFw5w32VkByutHs2BJzPD5d7
-# jBSxVn0PojkdYVBKfuzhvGS0v7+ooqIsfeFeIC0OgaL8KiZpLZ2TmOcbBWt2eFk7
-# LSLlUBIVE0GnJVwiRx/dfw+e6ov9lWZfWAUtS3Qq6AGTQFy0SFRGl5RRv71ALqp7
-# VCZ5lwclNsfimz2xnMeZnEUv/L16vuVV/Tcw0mDf8ASFpgeN0b22knOl0ApoR5mw
-# 1HGpp3A7RFbz+EhK6Z5we8irPzqydMijy9wqwTAoN4NYkVW+5aIGHsdF2qagz1p+
-# BRZzhsv7+cDekrFh1EGe6bGvIJsZhZiCUpFnlEc3z7jANccvsciuS0H/7IMbFx02
-# bf5AXDnC7Xv7dsfSExI26kfe+Hs3cJLrtacfyqYcETLn+xdCGMzsJlwHoYIXYDCC
-# F1wGCisGAQQBgjcDAwExghdMMIIXSAYJKoZIhvcNAQcCoIIXOTCCFzUCAQMxDzAN
+# AQkEMUIEQP+vIbyTUrOCrCvDaW1rSo0G3dO9cLSaauO+AIQ0A4oP5kZnvsvID7Cb
+# HIIGSQ7GreuYbqJx6HWgdgyRNGytlw8wDQYJKoZIhvcNAQEBBQAEggGACXJjPqga
+# vrmHYPza5e18E/+zyhk58esxR/WilNo1HFNZgSyktk69maGSRnQDvzmJW5Lub9Ew
+# OIERlxP55lREKX8dYwWXFD7/qQzhbyHSbxILlh7pj2dhbpoEMwceVbHamR1Gqpar
+# Cur5or+Ni4q17JG9oy70PV4JbVBkFHWdTF/+1BlcLrObypUwYCJa9bCLGRPDiNAm
+# dsok3WifsUXqqe4nYyg3sk/rv5Qk1eaZRigmhZ4U5wIkQ0BX8lwwUpRwRwMTCZ61
+# nAcBx7S2rqDK6Oc8206vwpF/PWj+ULOyS2BtDol1ntw8HVjsmEWR7LDGeArq9OLE
+# ZKYLcsxjLqgyV/7NbYbOwpN758nvJWXWC7G0W1glVNMHvZhV0MWPmnU2lrmcUcYo
+# jA+PRnhVgsYo6vwFpiacRcT33eiwMv/bL2rHEEEgeIkc0ixKVMJgPV8QLYL4InPf
+# pu8ua/tL0ZQqEoK47rijXbksXJGqEnvzmWNcVU9xcoh0PQO/Kha0aapaoYIXWjCC
+# F1YGCisGAQQBgjcDAwExghdGMIIXQgYJKoZIhvcNAQcCoIIXMzCCFy8CAQMxDzAN
 # BglghkgBZQMEAgIFADCBhwYLKoZIhvcNAQkQAQSgeAR2MHQCAQEGCWCGSAGG/WwH
-# ATBBMA0GCWCGSAFlAwQCAgUABDDxAAinS376F+BF9FpjKL7eReHxseO+9S1+sodV
-# 8KSwZvFX6wIs0yzpmhJ5jI4jTzkCEHeL50tRWUeouW0XrLCi7XwYDzIwMjQwNzMx
-# MTkyNTUxWqCCEwkwggbCMIIEqqADAgECAhAFRK/zlJ0IOaa/2z9f5WEWMA0GCSqG
+# ATBBMA0GCWCGSAFlAwQCAgUABDAG4OsD45JYBoCKyr6QOTzW1o50jhkmNUv7gxW7
+# W0OFl18BHyy5U5XnCqGKl65tV2QCEB/8KlzZbeFOrsSglLJgY+QYDzIwMjUwNTI4
+# MjEzODU4WqCCEwMwgga8MIIEpKADAgECAhALrma8Wrp/lYfG+ekE4zMEMA0GCSqG
 # SIb3DQEBCwUAMGMxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5j
 # LjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBU
-# aW1lU3RhbXBpbmcgQ0EwHhcNMjMwNzE0MDAwMDAwWhcNMzQxMDEzMjM1OTU5WjBI
-# MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xIDAeBgNVBAMT
-# F0RpZ2lDZXJ0IFRpbWVzdGFtcCAyMDIzMIICIjANBgkqhkiG9w0BAQEFAAOCAg8A
-# MIICCgKCAgEAo1NFhx2DjlusPlSzI+DPn9fl0uddoQ4J3C9Io5d6OyqcZ9xiFVjB
-# qZMRp82qsmrdECmKHmJjadNYnDVxvzqX65RQjxwg6seaOy+WZuNp52n+W8PWKyAc
-# wZeUtKVQgfLPywemMGjKg0La/H8JJJSkghraarrYO8pd3hkYhftF6g1hbJ3+cV7E
-# Bpo88MUueQ8bZlLjyNY+X9pD04T10Mf2SC1eRXWWdf7dEKEbg8G45lKVtUfXeCk5
-# a+B4WZfjRCtK1ZXO7wgX6oJkTf8j48qG7rSkIWRw69XloNpjsy7pBe6q9iT1Hbyb
-# HLK3X9/w7nZ9MZllR1WdSiQvrCuXvp/k/XtzPjLuUjT71Lvr1KAsNJvj3m5kGQc3
-# AZEPHLVRzapMZoOIaGK7vEEbeBlt5NkP4FhB+9ixLOFRr7StFQYU6mIIE9NpHnxk
-# TZ0P387RXoyqq1AVybPKvNfEO2hEo6U7Qv1zfe7dCv95NBB+plwKWEwAPoVpdceD
-# ZNZ1zY8SdlalJPrXxGshuugfNJgvOuprAbD3+yqG7HtSOKmYCaFxsmxxrz64b5bV
-# 4RAT/mFHCoz+8LbH1cfebCTwv0KCyqBxPZySkwS0aXAnDU+3tTbRyV8IpHCj7Arx
-# ES5k4MsiK8rxKBMhSVF+BmbTO77665E42FEHypS34lCh8zrTioPLQHsCAwEAAaOC
-# AYswggGHMA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQM
-# MAoGCCsGAQUFBwMIMCAGA1UdIAQZMBcwCAYGZ4EMAQQCMAsGCWCGSAGG/WwHATAf
-# BgNVHSMEGDAWgBS6FtltTYUvcyl2mi91jGogj57IbzAdBgNVHQ4EFgQUpbbvE+fv
-# zdBkodVWqWUxo97V40kwWgYDVR0fBFMwUTBPoE2gS4ZJaHR0cDovL2NybDMuZGln
-# aWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFt
-# cGluZ0NBLmNybDCBkAYIKwYBBQUHAQEEgYMwgYAwJAYIKwYBBQUHMAGGGGh0dHA6
-# Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBYBggrBgEFBQcwAoZMaHR0cDovL2NhY2VydHMu
-# ZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVT
-# dGFtcGluZ0NBLmNydDANBgkqhkiG9w0BAQsFAAOCAgEAgRrW3qCptZgXvHCNT4o8
-# aJzYJf/LLOTN6l0ikuyMIgKpuM+AqNnn48XtJoKKcS8Y3U623mzX4WCcK+3tPUiO
-# uGu6fF29wmE3aEl3o+uQqhLXJ4Xzjh6S2sJAOJ9dyKAuJXglnSoFeoQpmLZXeY/b
-# JlYrsPOnvTcM2Jh2T1a5UsK2nTipgedtQVyMadG5K8TGe8+c+njikxp2oml101Dk
-# RBK+IA2eqUTQ+OVJdwhaIcW0z5iVGlS6ubzBaRm6zxbygzc0brBBJt3eWpdPM43U
-# jXd9dUWhpVgmagNF3tlQtVCMr1a9TMXhRsUo063nQwBw3syYnhmJA+rUkTfvTVLz
-# yWAhxFZH7doRS4wyw4jmWOK22z75X7BC1o/jF5HRqsBV44a/rCcsQdCaM0qoNtS5
-# cpZ+l3k4SF/Kwtw9Mt911jZnWon49qfH5U81PAC9vpwqbHkB3NpE5jreODsHXjlY
-# 9HxzMVWggBHLFAx+rrz+pOt5Zapo1iLKO+uagjVXKBbLafIymrLS2Dq4sUaGa7oX
-# /cR3bBVsrquvczroSUa31X/MtjjA2Owc9bahuEMs305MfR5ocMB3CtQC4Fxguyj/
-# OOVSWtasFyIjTvTs0xf7UGv/B3cfcZdEQcm4RtNsMnxYL2dHZeUbc7aZ+WssBkbv
-# QR7w8F/g29mtkIBEr4AQQYowggauMIIElqADAgECAhAHNje3JFR82Ees/ShmKl5b
-# MA0GCSqGSIb3DQEBCwUAMGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2Vy
-# dCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lD
-# ZXJ0IFRydXN0ZWQgUm9vdCBHNDAeFw0yMjAzMjMwMDAwMDBaFw0zNzAzMjIyMzU5
-# NTlaMGMxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkG
-# A1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBUaW1lU3Rh
-# bXBpbmcgQ0EwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDGhjUGSbPB
-# PXJJUVXHJQPE8pE3qZdRodbSg9GeTKJtoLDMg/la9hGhRBVCX6SI82j6ffOciQt/
-# nR+eDzMfUBMLJnOWbfhXqAJ9/UO0hNoR8XOxs+4rgISKIhjf69o9xBd/qxkrPkLc
-# Z47qUT3w1lbU5ygt69OxtXXnHwZljZQp09nsad/ZkIdGAHvbREGJ3HxqV3rwN3mf
-# XazL6IRktFLydkf3YYMZ3V+0VAshaG43IbtArF+y3kp9zvU5EmfvDqVjbOSmxR3N
-# Ng1c1eYbqMFkdECnwHLFuk4fsbVYTXn+149zk6wsOeKlSNbwsDETqVcplicu9Yem
-# j052FVUmcJgmf6AaRyBD40NjgHt1biclkJg6OBGz9vae5jtb7IHeIhTZgirHkr+g
-# 3uM+onP65x9abJTyUpURK1h0QCirc0PO30qhHGs4xSnzyqqWc0Jon7ZGs506o9UD
-# 4L/wojzKQtwYSH8UNM/STKvvmz3+DrhkKvp1KCRB7UK/BZxmSVJQ9FHzNklNiyDS
-# LFc1eSuo80VgvCONWPfcYd6T/jnA+bIwpUzX6ZhKWD7TA4j+s4/TXkt2ElGTyYwM
-# O1uKIqjBJgj5FBASA31fI7tk42PgpuE+9sJ0sj8eCXbsq11GdeJgo1gJASgADoRU
-# 7s7pXcheMBK9Rp6103a50g5rmQzSM7TNsQIDAQABo4IBXTCCAVkwEgYDVR0TAQH/
-# BAgwBgEB/wIBADAdBgNVHQ4EFgQUuhbZbU2FL3MpdpovdYxqII+eyG8wHwYDVR0j
-# BBgwFoAU7NfjgtJxXWRM3y5nP+e6mK4cD08wDgYDVR0PAQH/BAQDAgGGMBMGA1Ud
-# JQQMMAoGCCsGAQUFBwMIMHcGCCsGAQUFBwEBBGswaTAkBggrBgEFBQcwAYYYaHR0
-# cDovL29jc3AuZGlnaWNlcnQuY29tMEEGCCsGAQUFBzAChjVodHRwOi8vY2FjZXJ0
-# cy5kaWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVkUm9vdEc0LmNydDBDBgNVHR8E
-# PDA6MDigNqA0hjJodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGlnaUNlcnRUcnVz
-# dGVkUm9vdEc0LmNybDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEw
-# DQYJKoZIhvcNAQELBQADggIBAH1ZjsCTtm+YqUQiAX5m1tghQuGwGC4QTRPPMFPO
-# vxj7x1Bd4ksp+3CKDaopafxpwc8dB+k+YMjYC+VcW9dth/qEICU0MWfNthKWb8RQ
-# TGIdDAiCqBa9qVbPFXONASIlzpVpP0d3+3J0FNf/q0+KLHqrhc1DX+1gtqpPkWae
-# LJ7giqzl/Yy8ZCaHbJK9nXzQcAp876i8dU+6WvepELJd6f8oVInw1YpxdmXazPBy
-# oyP6wCeCRK6ZJxurJB4mwbfeKuv2nrF5mYGjVoarCkXJ38SNoOeY+/umnXKvxMfB
-# wWpx2cYTgAnEtp/Nh4cku0+jSbl3ZpHxcpzpSwJSpzd+k1OsOx0ISQ+UzTl63f8l
-# Y5knLD0/a6fxZsNBzU+2QJshIUDQtxMkzdwdeDrknq3lNHGS1yZr5Dhzq6YBT70/
-# O3itTK37xJV77QpfMzmHQXh6OOmc4d0j/R0o08f56PGYX/sr2H7yRp11LB4nLCbb
-# bxV7HhmLNriT1ObyF5lZynDwN7+YAN8gFk8n+2BnFqFmut1VwDophrCYoCvtlUG3
-# OtUVmDG0YgkPCr2B2RP+v6TR81fZvAT6gt4y3wSJ8ADNXcL50CN/AAvkdgIm2fBl
-# dkKmKYcJRyvmfxqkhQ/8mJb2VVQrH4D6wPIOK+XW+6kvRBVK5xMOHds3OBqhK/bt
-# 1nz8MIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0BAQwF
-# ADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQL
-# ExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVkIElE
-# IFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQswCQYD
-# VQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGln
-# aWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVkIFJvb3QgRzQwggIi
-# MA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQC/5pBzaN675F1KPDAiMGkz7MKn
-# JS7JIT3yithZwuEppz1Yq3aaza57G4QNxDAf8xukOBbrVsaXbR2rsnnyyhHS5F/W
-# BTxSD1Ifxp4VpX6+n6lXFllVcq9ok3DCsrp1mWpzMpTREEQQLt+C8weE5nQ7bXHi
-# LQwb7iDVySAdYyktzuxeTsiT+CFhmzTrBcZe7FsavOvJz82sNEBfsXpm7nfISKhm
-# V1efVFiODCu3T6cw2Vbuyntd463JT17lNecxy9qTXtyOj4DatpGYQJB5w3jHtrHE
-# tWoYOAMQjdjUN6QuBX2I9YI+EJFwq1WCQTLX2wRzKm6RAXwhTNS8rhsDdV14Ztk6
-# MUSaM0C/CNdaSaTC5qmgZ92kJ7yhTzm1EVgX9yRcRo9k98FpiHaYdj1ZXUJ2h4mX
-# aXpI8OCiEhtmmnTK3kse5w5jrubU75KSOp493ADkRSWJtppEGSt+wJS00mFt6zPZ
-# xd9LBADMfRyVw4/3IbKyEbe7f/LVjHAsQWCqsWMYRJUadmJ+9oCw++hkpjPRiQfh
-# vbfmQ6QYuKZ3AeEPlAwhHbJUKSWJbOUOUlFHdL4mrLZBdd56rF+NP8m800ERElvl
-# EFDrMcXKchYiCd98THU/Y+whX8QgUWtvsauGi0/C1kVfnSD8oR7FwI+isX4KJpn1
-# 5GkvmB0t9dmpsh3lGwIDAQABo4IBOjCCATYwDwYDVR0TAQH/BAUwAwEB/zAdBgNV
-# HQ4EFgQU7NfjgtJxXWRM3y5nP+e6mK4cD08wHwYDVR0jBBgwFoAUReuir/SSy4Ix
-# LVGLp6chnfNtyA8wDgYDVR0PAQH/BAQDAgGGMHkGCCsGAQUFBwEBBG0wazAkBggr
-# BgEFBQcwAYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tMEMGCCsGAQUFBzAChjdo
-# dHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkSURSb290
-# Q0EuY3J0MEUGA1UdHwQ+MDwwOqA4oDaGNGh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNv
-# bS9EaWdpQ2VydEFzc3VyZWRJRFJvb3RDQS5jcmwwEQYDVR0gBAowCDAGBgRVHSAA
-# MA0GCSqGSIb3DQEBDAUAA4IBAQBwoL9DXFXnOF+go3QbPbYW1/e/Vwe9mqyhhyzs
-# hV6pGrsi+IcaaVQi7aSId229GhT0E0p6Ly23OO/0/4C5+KH38nLeJLxSA8hO0Cre
-# +i1Wz/n096wwepqLsl7Uz9FDRJtDIeuWcqFItJnLnU+nBgMTdydE1Od/6Fmo8L8v
-# C6bp8jQ87PcDx4eo0kxAGTVGamlUsLihVo7spNU96LHc/RzY9HdaXFSMb++hUD38
-# dglohJ9vytsgjTVgHAIDyyCwrFigDkBjxZgiwbJZ9VVrzyerbHbObyMt9H5xaiNr
-# Iv8SuFQtJ37YOtnwtoeW/VvRXKwYw02fc7cBqZ9Xql4o4rmUMYIDhjCCA4ICAQEw
-# dzBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNV
-# BAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1w
-# aW5nIENBAhAFRK/zlJ0IOaa/2z9f5WEWMA0GCWCGSAFlAwQCAgUAoIHhMBoGCSqG
-# SIb3DQEJAzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjQwNzMxMTky
-# NTUxWjArBgsqhkiG9w0BCRACDDEcMBowGDAWBBRm8CsywsLJD4JdzqqKycZPGZzP
-# QDA3BgsqhkiG9w0BCRACLzEoMCYwJDAiBCDS9uRt7XQizNHUQFdoQTZvgoraVZqu
-# MxavTRqa1Ax4KDA/BgkqhkiG9w0BCQQxMgQw7S+2JKgJa+IBENs/zM8CfTwyOTI5
-# d5Mbz6b4cfKKFgaVzqDelhOU8vde9p9cgItoMA0GCSqGSIb3DQEBAQUABIICAAQ0
-# 1XrRqUKxdpKDUq2MQgAQTLCmb7ZsK66MmUrDSOb3Qil26WidrZAVjKOiff3OnUYO
-# Dhnv8Rj2FIz4gzhYX77oxtBgzuYNLzu6OcbVMpYzjbM0/MVl5j4l27ov4UphIqIL
-# /vP/iNfxspevLt2wOIKVzob0F63pMSJkFiaBw5BAnXXGqyYxCA1HINdE9SWvMYKa
-# nTw0xdtg2TuG/J0E2LW8T5gee8/iMmKRrSqyC9FwJtDrH4NnxrYotr4K+aLpP0GQ
-# oOr33PT7+fenzJgniiabmhlDMkHX39/k8AYm1INy5rQq5N+iyizgMiTgLv5HM2d8
-# JR/c/IudoUle2AhGxLcqV8Y+371gHt0ubHUKliTnovMS6RZD5lk3rf5W9SOzqHkO
-# h3dUlrqqvcLVGdXM6B3gRo471pG74+R5G29xy9F0CUJuch5dFpxPztRlTaaEDP3P
-# IO0h5nsKIl8gBeWH8ImDrukEBGBvlZDrpH9LkzkkeYsWqsYl2CYhwkhc8U04yUsC
-# WwNpv56XsumNCxjAXmADjK4Q0pfk/AHWFTCf8MZJ4PQVS0bL31oI4s0pZZy/0wiI
-# M7HQ5WE+/7X3jkZ6JP7+i8T/JkbgKZAih/CaU9iqAwwnLqgyAxhE4OFP4zv3wmyj
-# nu93DqOu2kWaRA7aChSBjm4LzoyTPmp9ktRQyKpq
+# aW1lU3RhbXBpbmcgQ0EwHhcNMjQwOTI2MDAwMDAwWhcNMzUxMTI1MjM1OTU5WjBC
+# MQswCQYDVQQGEwJVUzERMA8GA1UEChMIRGlnaUNlcnQxIDAeBgNVBAMTF0RpZ2lD
+# ZXJ0IFRpbWVzdGFtcCAyMDI0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKC
+# AgEAvmpzn/aVIauWMLpbbeZZo7Xo/ZEfGMSIO2qZ46XB/QowIEMSvgjEdEZ3v4vr
+# rTHleW1JWGErrjOL0J4L0HqVR1czSzvUQ5xF7z4IQmn7dHY7yijvoQ7ujm0u6yXF
+# 2v1CrzZopykD07/9fpAT4BxpT9vJoJqAsP8YuhRvflJ9YeHjes4fduksTHulntq9
+# WelRWY++TFPxzZrbILRYynyEy7rS1lHQKFpXvo2GePfsMRhNf1F41nyEg5h7iOXv
+# +vjX0K8RhUisfqw3TTLHj1uhS66YX2LZPxS4oaf33rp9HlfqSBePejlYeEdU740G
+# KQM7SaVSH3TbBL8R6HwX9QVpGnXPlKdE4fBIn5BBFnV+KwPxRNUNK6lYk2y1WSKo
+# ur4hJN0SMkoaNV8hyyADiX1xuTxKaXN12HgR+8WulU2d6zhzXomJ2PleI9V2yfmf
+# XSPGYanGgxzqI+ShoOGLomMd3mJt92nm7Mheng/TBeSA2z4I78JpwGpTRHiT7yHq
+# BiV2ngUIyCtd0pZ8zg3S7bk4QC4RrcnKJ3FbjyPAGogmoiZ33c1HG93Vp6lJ415E
+# RcC7bFQMRbxqrMVANiav1k425zYyFMyLNyE1QulQSgDpW9rtvVcIH7WvG9sqYup9
+# j8z9J1XqbBZPJ5XLln8mS8wWmdDLnBHXgYly/p1DhoQo5fkCAwEAAaOCAYswggGH
+# MA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsG
+# AQUFBwMIMCAGA1UdIAQZMBcwCAYGZ4EMAQQCMAsGCWCGSAGG/WwHATAfBgNVHSME
+# GDAWgBS6FtltTYUvcyl2mi91jGogj57IbzAdBgNVHQ4EFgQUn1csA3cOKBWQZqVj
+# Xu5Pkh92oFswWgYDVR0fBFMwUTBPoE2gS4ZJaHR0cDovL2NybDMuZGlnaWNlcnQu
+# Y29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFtcGluZ0NB
+# LmNybDCBkAYIKwYBBQUHAQEEgYMwgYAwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3Nw
+# LmRpZ2ljZXJ0LmNvbTBYBggrBgEFBQcwAoZMaHR0cDovL2NhY2VydHMuZGlnaWNl
+# cnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFtcGlu
+# Z0NBLmNydDANBgkqhkiG9w0BAQsFAAOCAgEAPa0eH3aZW+M4hBJH2UOR9hHbm04I
+# HdEoT8/T3HuBSyZeq3jSi5GXeWP7xCKhVireKCnCs+8GZl2uVYFvQe+pPTScVJeC
+# ZSsMo1JCoZN2mMew/L4tpqVNbSpWO9QGFwfMEy60HofN6V51sMLMXNTLfhVqs+e8
+# haupWiArSozyAmGH/6oMQAh078qRh6wvJNU6gnh5OruCP1QUAvVSu4kqVOcJVozZ
+# R5RRb/zPd++PGE3qF1P3xWvYViUJLsxtvge/mzA75oBfFZSbdakHJe2BVDGIGVNV
+# jOp8sNt70+kEoMF+T6tptMUNlehSR7vM+C13v9+9ZOUKzfRUAYSyyEmYtsnpltD/
+# GWX8eM70ls1V6QG/ZOB6b6Yum1HvIiulqJ1Elesj5TMHq8CWT/xrW7twipXTJ5/i
+# 5pkU5E16RSBAdOp12aw8IQhhA/vEbFkEiF2abhuFixUDobZaA0VhqAsMHOmaT3XT
+# hZDNi5U2zHKhUs5uHHdG6BoQau75KiNbh0c+hatSF+02kULkftARjsyEpHKsF7u5
+# zKRbt5oK5YGwFvgc4pEVUNytmB3BpIiowOIIuDgP5M9WArHYSAR16gc0dP2XdkME
+# P5eBsX7bf/MGN4K3HP50v/01ZHo/Z5lGLvNwQ7XHBx1yomzLP8lx4Q1zZKDyHcp4
+# VQJLu2kWTsKsOqQwggauMIIElqADAgECAhAHNje3JFR82Ees/ShmKl5bMA0GCSqG
+# SIb3DQEBCwUAMGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMx
+# GTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IFRy
+# dXN0ZWQgUm9vdCBHNDAeFw0yMjAzMjMwMDAwMDBaFw0zNzAzMjIyMzU5NTlaMGMx
+# CzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMy
+# RGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcg
+# Q0EwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDGhjUGSbPBPXJJUVXH
+# JQPE8pE3qZdRodbSg9GeTKJtoLDMg/la9hGhRBVCX6SI82j6ffOciQt/nR+eDzMf
+# UBMLJnOWbfhXqAJ9/UO0hNoR8XOxs+4rgISKIhjf69o9xBd/qxkrPkLcZ47qUT3w
+# 1lbU5ygt69OxtXXnHwZljZQp09nsad/ZkIdGAHvbREGJ3HxqV3rwN3mfXazL6IRk
+# tFLydkf3YYMZ3V+0VAshaG43IbtArF+y3kp9zvU5EmfvDqVjbOSmxR3NNg1c1eYb
+# qMFkdECnwHLFuk4fsbVYTXn+149zk6wsOeKlSNbwsDETqVcplicu9Yemj052FVUm
+# cJgmf6AaRyBD40NjgHt1biclkJg6OBGz9vae5jtb7IHeIhTZgirHkr+g3uM+onP6
+# 5x9abJTyUpURK1h0QCirc0PO30qhHGs4xSnzyqqWc0Jon7ZGs506o9UD4L/wojzK
+# QtwYSH8UNM/STKvvmz3+DrhkKvp1KCRB7UK/BZxmSVJQ9FHzNklNiyDSLFc1eSuo
+# 80VgvCONWPfcYd6T/jnA+bIwpUzX6ZhKWD7TA4j+s4/TXkt2ElGTyYwMO1uKIqjB
+# Jgj5FBASA31fI7tk42PgpuE+9sJ0sj8eCXbsq11GdeJgo1gJASgADoRU7s7pXche
+# MBK9Rp6103a50g5rmQzSM7TNsQIDAQABo4IBXTCCAVkwEgYDVR0TAQH/BAgwBgEB
+# /wIBADAdBgNVHQ4EFgQUuhbZbU2FL3MpdpovdYxqII+eyG8wHwYDVR0jBBgwFoAU
+# 7NfjgtJxXWRM3y5nP+e6mK4cD08wDgYDVR0PAQH/BAQDAgGGMBMGA1UdJQQMMAoG
+# CCsGAQUFBwMIMHcGCCsGAQUFBwEBBGswaTAkBggrBgEFBQcwAYYYaHR0cDovL29j
+# c3AuZGlnaWNlcnQuY29tMEEGCCsGAQUFBzAChjVodHRwOi8vY2FjZXJ0cy5kaWdp
+# Y2VydC5jb20vRGlnaUNlcnRUcnVzdGVkUm9vdEc0LmNydDBDBgNVHR8EPDA6MDig
+# NqA0hjJodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVkUm9v
+# dEc0LmNybDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEwDQYJKoZI
+# hvcNAQELBQADggIBAH1ZjsCTtm+YqUQiAX5m1tghQuGwGC4QTRPPMFPOvxj7x1Bd
+# 4ksp+3CKDaopafxpwc8dB+k+YMjYC+VcW9dth/qEICU0MWfNthKWb8RQTGIdDAiC
+# qBa9qVbPFXONASIlzpVpP0d3+3J0FNf/q0+KLHqrhc1DX+1gtqpPkWaeLJ7giqzl
+# /Yy8ZCaHbJK9nXzQcAp876i8dU+6WvepELJd6f8oVInw1YpxdmXazPByoyP6wCeC
+# RK6ZJxurJB4mwbfeKuv2nrF5mYGjVoarCkXJ38SNoOeY+/umnXKvxMfBwWpx2cYT
+# gAnEtp/Nh4cku0+jSbl3ZpHxcpzpSwJSpzd+k1OsOx0ISQ+UzTl63f8lY5knLD0/
+# a6fxZsNBzU+2QJshIUDQtxMkzdwdeDrknq3lNHGS1yZr5Dhzq6YBT70/O3itTK37
+# xJV77QpfMzmHQXh6OOmc4d0j/R0o08f56PGYX/sr2H7yRp11LB4nLCbbbxV7HhmL
+# NriT1ObyF5lZynDwN7+YAN8gFk8n+2BnFqFmut1VwDophrCYoCvtlUG3OtUVmDG0
+# YgkPCr2B2RP+v6TR81fZvAT6gt4y3wSJ8ADNXcL50CN/AAvkdgIm2fBldkKmKYcJ
+# RyvmfxqkhQ/8mJb2VVQrH4D6wPIOK+XW+6kvRBVK5xMOHds3OBqhK/bt1nz8MIIF
+# jTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0BAQwFADBlMQsw
+# CQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cu
+# ZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVkIElEIFJvb3Qg
+# Q0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQswCQYDVQQGEwJV
+# UzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQu
+# Y29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVkIFJvb3QgRzQwggIiMA0GCSqG
+# SIb3DQEBAQUAA4ICDwAwggIKAoICAQC/5pBzaN675F1KPDAiMGkz7MKnJS7JIT3y
+# ithZwuEppz1Yq3aaza57G4QNxDAf8xukOBbrVsaXbR2rsnnyyhHS5F/WBTxSD1If
+# xp4VpX6+n6lXFllVcq9ok3DCsrp1mWpzMpTREEQQLt+C8weE5nQ7bXHiLQwb7iDV
+# ySAdYyktzuxeTsiT+CFhmzTrBcZe7FsavOvJz82sNEBfsXpm7nfISKhmV1efVFiO
+# DCu3T6cw2Vbuyntd463JT17lNecxy9qTXtyOj4DatpGYQJB5w3jHtrHEtWoYOAMQ
+# jdjUN6QuBX2I9YI+EJFwq1WCQTLX2wRzKm6RAXwhTNS8rhsDdV14Ztk6MUSaM0C/
+# CNdaSaTC5qmgZ92kJ7yhTzm1EVgX9yRcRo9k98FpiHaYdj1ZXUJ2h4mXaXpI8OCi
+# EhtmmnTK3kse5w5jrubU75KSOp493ADkRSWJtppEGSt+wJS00mFt6zPZxd9LBADM
+# fRyVw4/3IbKyEbe7f/LVjHAsQWCqsWMYRJUadmJ+9oCw++hkpjPRiQfhvbfmQ6QY
+# uKZ3AeEPlAwhHbJUKSWJbOUOUlFHdL4mrLZBdd56rF+NP8m800ERElvlEFDrMcXK
+# chYiCd98THU/Y+whX8QgUWtvsauGi0/C1kVfnSD8oR7FwI+isX4KJpn15GkvmB0t
+# 9dmpsh3lGwIDAQABo4IBOjCCATYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQU
+# 7NfjgtJxXWRM3y5nP+e6mK4cD08wHwYDVR0jBBgwFoAUReuir/SSy4IxLVGLp6ch
+# nfNtyA8wDgYDVR0PAQH/BAQDAgGGMHkGCCsGAQUFBwEBBG0wazAkBggrBgEFBQcw
+# AYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tMEMGCCsGAQUFBzAChjdodHRwOi8v
+# Y2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3J0
+# MEUGA1UdHwQ+MDwwOqA4oDaGNGh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdp
+# Q2VydEFzc3VyZWRJRFJvb3RDQS5jcmwwEQYDVR0gBAowCDAGBgRVHSAAMA0GCSqG
+# SIb3DQEBDAUAA4IBAQBwoL9DXFXnOF+go3QbPbYW1/e/Vwe9mqyhhyzshV6pGrsi
+# +IcaaVQi7aSId229GhT0E0p6Ly23OO/0/4C5+KH38nLeJLxSA8hO0Cre+i1Wz/n0
+# 96wwepqLsl7Uz9FDRJtDIeuWcqFItJnLnU+nBgMTdydE1Od/6Fmo8L8vC6bp8jQ8
+# 7PcDx4eo0kxAGTVGamlUsLihVo7spNU96LHc/RzY9HdaXFSMb++hUD38dglohJ9v
+# ytsgjTVgHAIDyyCwrFigDkBjxZgiwbJZ9VVrzyerbHbObyMt9H5xaiNrIv8SuFQt
+# J37YOtnwtoeW/VvRXKwYw02fc7cBqZ9Xql4o4rmUMYIDhjCCA4ICAQEwdzBjMQsw
+# CQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRp
+# Z2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENB
+# AhALrma8Wrp/lYfG+ekE4zMEMA0GCWCGSAFlAwQCAgUAoIHhMBoGCSqGSIb3DQEJ
+# AzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjUwNTI4MjEzODU4WjAr
+# BgsqhkiG9w0BCRACDDEcMBowGDAWBBTb04XuYtvSPnvk9nFIUIck1YZbRTA3Bgsq
+# hkiG9w0BCRACLzEoMCYwJDAiBCB2dp+o8mMvH0MLOiMwrtZWdf7Xc9sF1mW5BZOY
+# Q4+a2zA/BgkqhkiG9w0BCQQxMgQwHD1cPEVrGRqIdeu6XOxJe5/X4KnBfD/O+l1l
+# vaQxXRDxorr35LzmqFX8laTyNhbNMA0GCSqGSIb3DQEBAQUABIICAFtNJK49Fd+l
+# Q6A3Thr3qe6PjNU/FZT4bXa2r5Npyg27AUYVJzG4sjshLaQhapb+CIehs43r63es
+# lNw2iN7xJ7SjAuyX0pvV9embf4GD/25wXiBncXLy9Urbk6FeFIy4qoKAqIuSGSER
+# 1uDj/K1ypzAnimRwLVN2vqOH0y6ruioLgIW+R0qopXCucXT7ArasXSRjUSRadCv2
+# QuyVeMOtjMGLxPNvWpsdw7HqKQ1QkM9ZVP2oXcLS9VfsBqephxmpSTAeOFVRAHvy
+# gwQLkMIIVOd2fx6kjmlRC2p3E46vi4bkg/XsOGMh/bwzgqWB2lBaiqDinaJlOWZ6
+# pE7Bssn0wFKFIwKtETlWQOG80p5S12yBdIy0PRMg/g/sup15Rmt0OzK/+vC7zwJn
+# FM/Ay6IKo2a4k0utGgQF2GydHnrY+9UkQb+Fqb4Lj6SasgL3cgqfglMG4PAdF2/S
+# h7iGystGahyqUB+StSjw6qSYgc13zKOGOeyMZH8gHlkRh7uP8i0MCIBEXWC4GyTY
+# ouC5fx+uC9NmpPHY91m336foQ78PjlP+aw2ozVTz654HYb6FbPy+qXO01DnvjcI1
+# cmm6IwH7nYKknreXoP4jDYRcbM9zrXD+aOyjFMG62fPURJuAsYWCtfNaqNWS4wQK
+# 89ooa1qqPwpUBsTrlePZMnL2nwRm3nta
 # SIG # End signature block

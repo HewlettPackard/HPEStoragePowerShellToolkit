@@ -1,93 +1,6 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
-Function Get-A9Cert
-{
-<#
-.SYNOPSIS
-	Show information about SSL certificates of the Storage System.
-.DESCRIPTION
-	The command has two forms. The first is a table with a high level overview of the certificates used by the SSL Services. This table is
-	customizable with the -showcols option. The second form provides detailed certificate information in either human readable format or in PEM (Privacy
-	Enhanced Mail) format. It can also save the certificates in a specified file.
-.EXAMPLE
-	PS:> Get-A9Cert -Service unified-server -Pem
-.EXAMPLE
-	PS:> Get-A9Cert -Service unified-server -Text
-.PARAMETER Listcols
-	Displays the valid table columns.
-.PARAMETER Showcols
-	Changes the columns displayed in the table.
-.PARAMETER Service
-	Displays only the certificates used by the service(s). Multiple services must be delimited by a comma.  Valid service names are cim, cli, ekm-client, ekm-server, ldap,
-	syslog-gen-client, syslog-gen-server, syslog-sec-client, syslog-sec-server, wsapi, vasa, and unified-server.
-.PARAMETER Type
-	Displays only certificates of the specified type, e.g., only root CA. Multiple types must be delimited by a comma.  Valid types are csr, cert, intca, and rootca.
-.PARAMETER Pem
-	Displays the certificates in PEM format. When a filename is specified the certificates are exported to the file.
-.PARAMETER Text
-	Displays the certificates in human readable format. When a filename is specified the certificates are exported to the file.
-.PARAMETER File
-	Specifies the export file of the -pem or -text option.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Listcols,
-		[Parameter()]	[String]	$Showcols,
-		[Parameter()]	[String]	$Service,
-		[Parameter()]	[String]	$Type,
-		[Parameter()]	[switch]	$Pem,
-		[Parameter()]	[switch]	$Text,
-		[Parameter()]	[String]	$File
-)
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$Cmd = " showcert "
-	if($Listcols)	{	$Cmd += " -listcols " }
-	if($Showcols)	{	$Cmd += " -showcols $Showcols " }
-	if($Service)	{	$Cmd += " -service $Service " }
-	if($Type)		{	$Cmd += " -type $Type " }
-	if($Pem)		{	$Cmd += " -pem " }
-	if($Text)		{	$Cmd += " -text " }
-	if($File)		{	$Cmd += " -file $File " }
-	if($Listcols -Or $Pem -Or $Text)
-		{	$Result = Invoke-A9CLICommand -cmds  $Cmd
-			Return $Result
-		}
-	else
-		{	$Result = Invoke-A9CLICommand -cmds  $Cmd
-			Write-Verbose "Executing Function : Get-Cert Command -->" 
-			if($Result.count -gt 1)
-				{	$tempFile = [IO.Path]::GetTempFileName()
-					$LastItem = $Result.Count 
-					foreach ($s in  $Result[0..$LastItem] )
-						{	$s= [regex]::Replace($s,"^ ","")			
-							$s= [regex]::Replace($s," +",",")	
-							$s= [regex]::Replace($s,"-","")
-							$s= $s.Trim()			
-							$temp1 = $s -replace 'Enddate','Month,Date,Time,Year,Zone'
-							$s = $temp1
-							$sTemp1=$s				
-							$sTemp = $sTemp1.Split(',')	
-							if ([string]::IsNullOrEmpty($sTemp[3]))	{	$sTemp[3] = "--,--,--,--,---"	}				
-							$newTemp= [regex]::Replace($sTemp,"^ ","")			
-							$newTemp= [regex]::Replace($sTemp," ",",")				
-							$newTemp= $newTemp.Trim()
-							$s=$newTemp
-							Add-Content -Path $tempfile -Value $s				
-						}
-					Import-Csv $tempFile 
-					Remove-Item  $tempFile 	
-				}
-			else{	return  $Result}
-			if($Result.count -gt 1)	{	return  " Success : Executing Get-Cert"	}
-			else					{		return  $Result	} 
-		}
-}
-}
 
 Function Get-A9Encryption
 {
@@ -96,499 +9,47 @@ Function Get-A9Encryption
 	Show Data Encryption information.
 .DESCRIPTION
 	The Get-Encryption command shows Data Encryption information.
-.PARAMETER D
+.PARAMETER Detailed
 	Provides details on the encryption status.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[switch]	$D
+param(	[Parameter()]	[switch]	$Detailed,
+		[Parameter()]	[switch]	$ShowRaw
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$Cmd = " showencryption "
-	if($D)	{	$Cmd += " -d " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1)
-		{	$LastItem = 0
-			$Fcnt = 0
-			if($D)	{	$Fcnt = 4
-						$LastItem = $Result.Count -2
-					}
-			else		{	$LastItem = $Result.Count -0	}		
-			$tempFile = [IO.Path]::GetTempFileName	
-			foreach ($s in  $Result[$Fcnt..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s," +",",")	
-					$s= [regex]::Replace($s,"-","")
-					$s= $s.Trim() 
-					$temp1 = $s -replace 'AdmissionTime','Date,Time,Zone'
-					$s = $temp1		
-					Add-Content -Path $tempfile -Value $s				
-				}
-			Import-Csv $tempFile 
-			Remove-Item  $tempFile 	
-		}
-	if($Result.count -gt 1) {	return  " Success : Executing Get-Encryption" 	}
-	else					{	return  $Result	} 
-}
-}
-
-Function Get-A9SystemReporter
-{
-<#
-.SYNOPSIS
-    Displays the amount of space consumed by the various System Reporter databases on the System Reporter volume.
-.DESCRIPTION
-    Displays the amount of space consumed by the various System Reporter databases on the System Reporter volume.
-.EXAMPLE
-    Get-A9SR_CLI 
-	shows how to display the System Reporter status:
-.EXAMPLE
-    Get-A9SR_CLI -Btsecs 10
-.PARAMETER ldrg
-	Displays which LD region statistic samples are available.  This is used with the -btsecs and -etsecs options.
-.PARAMETER Btsecs
-	Select the begin time in seconds for the report. The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):
-		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
-		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
-		- For daily, the default begin time is 90 days ago (-btsecs -90d).
-	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
-	If -btsecs 0 is specified then the report begins at the earliest sample.
-.PARAMETER Etsecs
-	Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the	current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$ldrg,
-		[Parameter()]	[String]	$Btsecs,
-		[Parameter()]	[String]	$Etsecs
-	)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$srinfocmd = "showsr "
-	if($ldrg)	{	$srinfocmd += "-ldrg "	}
-	if($Btsecs)	{	$srinfocmd += "-btsecs $Btsecs "	}
-	if($Etsecs)	{	$srinfocmd += "-etsecs $Etsecs "	}
-	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	return  $Result	
-}
-}
-
-Function Import-A9Cert
-{
-<#
-.SYNOPSIS
-	imports a signed certificate and supporting certificate authorities (CAs) for the Storage System SSL services.
-.DESCRIPTION
-	The Import Cert command allows a user to import certificates for a given service. The user can import a CA bundle containing the intermediate and/or
-	root CAs prior to importing the service certificate. The CA bundle can also be imported alongside the service certificate.
-.EXAMPLE
-	PS:> Import-Cert -SSL_service wsapi -Service_cert  wsapi-service.pem
-.PARAMETER SSL_service
-	Valid service names are cim, cli, ekm-client, ekm-server, ldap, syslog-gen-client, syslog-gen-server, syslog-sec-client, syslog-sec-server, wsapi, vasa, and unified-server.
-.PARAMETER CA_bundle
-	Allows the import of a CA bundle without importing a service certificate. Note the filename "stdin" can be used to paste the CA bundle into the CLI.
-.PARAMETER Ca
-	Allows the import of a CA bundle without importing a service certificate. Note the filename "stdin" can be used to paste the  CA bundle into the CLI.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(
-	[Parameter(Mandatory=$true)]	[String]	$SSL_service,	
-	[Parameter()]					[String]	$Service_cert, 
-	[Parameter()]					[String]	$CA_bundle,
-	[Parameter()]					[String]	$Ca
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$Cmd = " importcert "
-	if($SSL_service)	{	$Cmd += " $SSL_service -f " }
-	if($Service_cert) 	{	$Cmd += " $Service_cert " 	}
-	if($CA_bundle) 		{	$Cmd += " $CA_bundle " 		}
-	if($Ca) 			{	$Cmd += " -ca $Ca " 		}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function New-A9Cert
-{
-<#
-.SYNOPSIS
-	Create self-signed SSL certificate or a certificate signing request (CSR) for the Storage System SSL services.
-.DESCRIPTION
-	The New Cert command creates a self-signed certificate or a certificate signing request for a specified service.
-.EXAMPLE
-	PS:> New-A9Cert -SSL_service unified-server -Selfsigned -Keysize 2048 -Days 365
-.EXAMPLE
-	PS:> New-A9Cert -SSL_service wsapi -Selfsigned -Keysize 2048 -Days 365
-.PARAMETER SSL_service
-	Valid service names are cim, cli, ekm-client, ekm-server, ldap, syslog-gen-client, syslog-gen-server, syslog-sec-client, syslog-sec-server, wsapi, vasa, and unified-server.
-.PARAMETER Csr
-	Creates a certificate signing request for the service. No certificates are modified and no services are restarted.
-.PARAMETER Selfsigned
-	Creates a self-signed certificate for the service. The previous certificate is removed and the service restarted. The intermediate and/or root certificate authorities for a service are not removed.
-.PARAMETER Keysize
-	Specifies the encryption key size in bits of the self-signed certificate. Valid values are 1024 and 2048. The default value is 2048.
-.PARAMETER Days
-	Specifies the valid days of the self-signed certificate. Valid values are between 1 and 3650 days (10 years). The default value is 1095 days (3 years).
-.PARAMETER C
-	Specifies the value of country (C) attribute of the subject of the certificate.
-.PARAMETER ST
-	Specifies the value of state (ST) attribute of the subject of the certificate.
-.PARAMETER L
-	Specifies the value of locality (L) attribute of the subject of the certificate.
-.PARAMETER O
-	Specifies the value of organization (O) attribute of the subject of the certificate.
-.PARAMETER OU
-	Specifies the value of organizational unit (OU) attribute of the subject of the certificate.
-.PARAMETER CN
-	Specifies the value of common name (CN) attribute of the subject of the certificate. Over ssh, -CN must be specified.
-.PARAMETER SAN
-	Subject alternative name is a X509 extension that allows other pieces of information to be associated with the certificate. Multiple SANs may delimited with a comma.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]						[String]	$SSL_service,
-		[Parameter(ParameterSetName='CSR',Mandatory=$true)]	[switch]	$Csr,
-		[Parameter(ParameterSetName='CSR',Mandatory=$true)]	[switch]	$Selfsigned,
-		[Parameter()]	[String]	$Keysize,
-		[Parameter()]	[String]	$Days,
-		[Parameter()]	[String]	$C,
-		[Parameter()]	[String]	$ST,
-		[Parameter()]	[String]	$L,
-		[Parameter()]	[String]	$O,
-		[Parameter()]	[String]	$OU,
-		[Parameter()]	[String]	$CN,
-		[Parameter()]	[String]	$SAN
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$Cmd = " createcert "
-	if($SSL_service)	{	$Cmd += " $SSL_service "}	
-	if($Csr) 			{	$Cmd += " -csr -f" 		}	 
-	if($Selfsigned)		{	$Cmd += " -selfsigned -f" }
-	if($Keysize) 		{	$Cmd += " -keysize $Keysize " } 
-	if($Days)			{	$Cmd += " -days $Days " }
-	if($C)				{	$Cmd += " -C $C " 		}
-	if($ST)				{	$Cmd += " -ST $ST "		}
-	if($L)				{	$Cmd += " -L $L " 		}
-	if($O) 				{	$Cmd += " -O $O " 		}
-	if($OU)				{	$Cmd += " -OU $OU " 	}
-	if($CN)				{	$Cmd += " -CN $CN " 	}
-	if($SAN)			{	$Cmd += " -SAN $SAN " 	}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function New-A9RCopyGroup_CLI
-{
-<#
-.SYNOPSIS
-	The New RCopyGroup command creates a remote-copy volume group.
-.DESCRIPTION
-    The New RCopyGroup command creates a remote-copy volume group.   
-.EXAMPLE	
-	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST -TargetName CHIMERA03 -Mode sync
-.EXAMPLE
-	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST1 -TargetName CHIMERA03 -Mode async
-.EXAMPLE
-	PS:> New-A9RCopyGroup_CLI -GroupName AS_TEST2 -TargetName CHIMERA03 -Mode periodic
-.EXAMPLE
-	PS:> New-A9RCopyGroup_CLI -domain DEMO -GroupName AS_TEST3 -TargetName CHIMERA03 -Mode periodic     
-.PARAMETER domain
-	Creates the remote-copy group in the specified domain.
-.PARAMETER Usr_Cpg_Name
-	Specify the local user CPG and target user CPG that will be used for volumes that are auto-created.
-.PARAMETER Target_TargetCPG
-	Specify the local user CPG and target user CPG that will be used for volumes that are auto-created.
-.PARAMETER Snp_Cpg_Name
-	Specify the local snap CPG and target snap CPG that will be used for volumes that are auto-created.
-.PARAMETER Target_TargetSNP
-	Specify the local snap CPG and target snap CPG that will be used for volumes that are auto-created.
-.PARAMETER GroupName
-	Specifies the name of the volume group, using up to 22 characters if the mirror_config policy is set, or up to 31 characters otherwise. This name is assigned with this command.	
-.PARAMETER TargetName	
-	Specifies the target name associated with this group.
-.PARAMETER Mode 	
-	sync—synchronous replication
-	async—asynchronous streaming replication
-	periodic—periodic asynchronous replication
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$GroupName,
-		[Parameter(Mandatory=$true)]	[String]	$TargetName,	
-		[Parameter()][ValidateSet("sync","async","periodic")]
-						[String]	$Mode,
-		[Parameter()]	[String]	$domain,
-		[Parameter()]	[String]	$Usr_Cpg_Name,
-		[Parameter()]	[String]	$Target_TargetCPG,
-		[Parameter()]	[String]	$Snp_Cpg_Name,		
-		[Parameter()]	[String]	$Target_TargetSNP
-	)	
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$cmd= "creatercopygroup"	
-	if ($domain)	{	$cmd+=" -domain $domain"	}
-	if ($Usr_Cpg_Name)	
-		{	$cmd+=" -usr_cpg $Usr_Cpg_Name "
-			if($Target_TargetCPG)
-				{	$cmd+= " $TargetName"
-					$cmd+= ":$Target_TargetCPG "			
-				}
-			else{	return "Target_TargetCPG is required with Usr CPG option"	}
-		}
-	if ($Snp_Cpg_Name)	
-		{	$cmd+=" -snp_cpg $Snp_Cpg_Name "
-			if($Target_TargetSNP)
-				{	$cmd+= " $TargetName"
-					$cmd+= ":$Target_TargetSNP "			
-				}
-			else
-				{	return "Target_TargetSNP is required with Usr CPG option"
-				}
-		}
-	if ($GroupName)	{	$cmd+=" $GroupName"	}
-	if ($TargetName){	$cmd+=" $TargetName"}
-	if ($Mode)		{	$cmd+=":$Mode "	}
-	$Result = Invoke-A9CLICommand -cmds  $cmd	
-	write-verbose "  The command creates a remote-copy volume group..   " 	
-	if([string]::IsNullOrEmpty($Result))
-		{	return  "Success : Executing  New-RCopyGroup Command $Result"
-		}
-	else
-		{	return  "FAILURE : While Executing  New-RCopyGroup 	$Result "
-		} 	
-}
-}
-
-Function New-A9RCopyGroupCPG_CLI
-{
-<#
-.SYNOPSIS
-	The New-RCopyGroupCPG command creates a remote-copy volume group.
-.DESCRIPTION
-    The New-RCopyGroupCPG command creates a remote-copy volume group.   
-.EXAMPLE
-	New-A9RCopyGroupCPG_CLI -GroupName ABC -TargetName XYZ -Mode Sync	
-.EXAMPLE  
-	New-A9RCopyGroupCPG_CLI -UsrCpg -LocalUserCPG BB -UsrTargetName XYZ -TargetUserCPG CC -GroupName ABC -TargetName XYZ -Mode Sync
-.PARAMETER UsrCpg
-.PARAMETER SnpCpg
-.PARAMETER UsrTargetName
-.PARAMETER SnpTargetName
-.PARAMETER LocalUserCPG
-	Specifies the local user CPG and target user CPG that will be used for volumes that are auto-created.
-.PARAMETER TargetUserCPG
-	-TargetUserCPG target:Targetcpg The local CPG will only be used after fail-over and recovery.
-.PARAMETER LocalSnapCPG
-	Specifies the local snap CPG and target snap CPG that will be used for volumes that are auto-created. 
-.PARAMETER TargetSnapCPG
-	-LocalSnapCPG  target:Targetcpg
-	.PARAMETER domain
-	Creates the remote-copy group in the specified domain.
-.PARAMETER GroupName
-	Specifies the name of the volume group, using up to 22 characters if the mirror_config policy is set, or up to 31 characters otherwise. This name is assigned with this command.	
-.PARAMETER TargetName
-	Specifies the target name associated with this group.
-.PARAMETER Mode 	
-	sync—synchronous replication
-	async—asynchronous streaming replication
-	periodic—periodic asynchronous replication
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$GroupName,
-		[Parameter(Mandatory=$true)]	[String]	$TargetName,
-		[Parameter(Mandatory=$true)][ValidateSet("sync","async","periodic")]
-										[String]	$Mode,
-		[Parameter()]	[String]	$domain,
-		[Parameter()]	[Switch]	$UsrCpg,
-		[Parameter()]	[String]	$LocalUserCPG,
-		[Parameter()]	[String]	$TargetUserCPG,
-		[Parameter()]	[String]	$UsrTargetName,
-		[Parameter()]	[Switch]	$SnpCpg,
-		[Parameter()]	[String]	$LocalSnapCPG,
-		[Parameter()]	[String]	$TargetSnapCPG,
-		[Parameter()]	[String]	$SnpTargetName
-	)		
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$cmd= "creatercopygroup"
-	if ($domain)	{	$cmd+=" -domain $domain"	}	
-	if($UsrCpg)
-		{	$cmd+=" -usr_cpg"
-			if ($LocalUserCPG)	{	$cmd+=" $LocalUserCPG"	}
-			if ($UsrTargetName)	{	$cmd+=" $UsrTargetName"	}
-			if ($TargetUserCPG)	{	$cmd+=":$TargetUserCPG "}
-		}
-	if($SnpCpg)
-		{	$cmd+=" -snp_cpg"
-			if ($LocalSnapCPG)	{	$cmd+=" $LocalSnapCPG"	}
-			if ($SnpTargetName)	{	$cmd+=" $SnpTargetName"	}
-			if ($TargetSnapCPG)	{	$cmd+=":$TargetSnapCPG "}
-		}
-	$cmd+=" $GroupName"	
-	$cmd+=" $TargetName"
-	$cmd+=":$Mode "
-	$Result = Invoke-A9CLICommand -cmds  $cmd	
-	write-verbose "  The command creates a remote-copy volume group..   " 	
-	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing  New-RCopyGroupCPG Command $Result"	}
-	else									{	return  "FAILURE : While Executing  New-RCopyGroupCPG 	$Result "	} 	
-}
-}
-
-Function New-A9RCopyTarge_CLI
-{
-<#
-.SYNOPSIS
-	The New RCopyTarget command creates a remote-copy target definition.
-.DESCRIPTION
-    The New RCopyTarget command creates a remote-copy target definition.
-.EXAMPLE  
-	PS:> New-A9RCopyTarget_CLI -TargetName demo1 -RCIP -NSP_IP 1:2:3:10.1.1.1
-
-	This Example creates a remote-copy target, with option N_S_P_IP Node ,Slot ,Port and IP address. as 1:2:3:10.1.1.1 for Target Name demo1
-.EXAMPLE
-	PS:> New-A9RCopyTarget_CLI -TargetName demo1 -RCIP -NSP_IP "1:2:3:10.1.1.1,1:2:3:10.20.30.40"
-
-	This Example creates a remote-copy with multiple targets
-.EXAMPLE 
-	PS:> New-A9RCopyTarget_CLI -TargetName demo1 -RCFC -Node_WWN 1122112211221122 -NSP_WWN 1:2:3:1122112211221122
-
-	This Example creates a remote-copy target, with option NSP_WWN Node ,Slot ,Port and WWN as 1:2:3:1122112211221122 for Target Name demo1
-.EXAMPLE 
-	PS:> New-A9RCopyTarget_CLI -TargetName demo1 -RCFC -Node_WWN 1122112211221122 -NSP_WWN "1:2:3:1122112211221122,1:2:3:2244224422442244"
-
-	This Example creates a remote-copy of FC with multiple targets
-.PARAMETER TargetName
-	The name of the target definition to be created, specified by using up to 23 characters.
-.PARAMETER RCIP
-	remote copy over IP (RCIP).
-.PARAMETER RCFC
-	remote copy over Fibre Channel (RCFC).
-.PARAMETER Node_WWN
-	The node's World Wide Name (WWN) on the target system (Fibre Channel target only).
-.PARAMETER NSP_IP
-	Node number:Slot number:Port Number:IP Address of the Target to be created.
-.PARAMETER NSP_WWN
-	Node number:Slot number:Port Number:World Wide Name (WWN) address on the target system.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(ParameterSetName='IP', Mandatory=$true)]	[switch]	$RCIP,
-		[Parameter(ParameterSetName='FC', Mandatory=$true)]	[switch]	$RCFC,
-		[Parameter()]	[switch]	$Disabled,
-		[Parameter()]	[String]	$TargetName,
-		[Parameter(ParameterSetName='FC', Mandatory=$true)]	[String]	$Node_WWN,
-		[Parameter(ParameterSetName='IP', Mandatory=$true)]	[String]	$NSP_IP,
-		[Parameter(ParameterSetName='FC', Mandatory=$true)]	[String]	$NSP_WWN
-)	
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$cmd= "creatercopytarget"
-	if ($Disabled)		{		$cmd+=" -disabled "	}
-	$cmd+=" $TargetName "
-	if ($RCIP)		{	$s = $NSP_IP
-						$s= [regex]::Replace($s,","," ")	
-						$cmd+=" IP $s"	
-					}
-	if ($RCFC)		{	$s = $NSP_WWN
-						$s= [regex]::Replace($s,","," ")	
-						$cmd+=" FC $Node_WWN $s"
-					}		
-	$Result = Invoke-A9CLICommand -cmds  $cmd	
-	if([string]::IsNullOrEmpty($Result))	{	return  "Success : Executing New-RCopyTarget Command "	}
-	else									{	return  "FAILURE : While Executing New-RCopyTarget $Result "	} 	
-}
-}
-
-Function Remove-A9Cert
-{
-<#
-.SYNOPSIS
-	Removes SSL certificates from the Storage System.
-.DESCRIPTION
-	The Remove Cert command is used to remove certificates that are no longer trusted. In most cases it is better to overwrite the offending certificate
-	with importcert. The user specifies which service to have its certificates removed. The removal can be limited to a specific type.
-.EXAMPLE
-	PS:> Remove-A9Cert -SSL_Service_Name "xyz" -Type "xyz"
-.EXAMPLE
-	PS:> Remove-A9Cert -SSL_Service_Name "all" -Type "xyz"
-.PARAMETER SSL_Service_Name
-	Valid service names are cim, cli, ekm-client, ekm-server, ldap, syslog-gen-client, syslog-gen-server, syslog-sec-client,
-	syslog-sec-server, wsapi, vasa, and unified-server. The user may also specify all, which will remove certificates for all services.
-.PARAMETER F
-	Skips the prompt warning the user of which certificates will be removed and which services will be restarted.  
-.PARAMETER Type
-	Allows the user to limit the removal to a specific type. Note that types are cascading. For example, intca will cause the service certificate to
-	also be removed. Valid types are csr, cert, intca, and rootca.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$SSL_Service_Name,	
-		[Parameter()]	[switch]	$F,
-		[Parameter()][ValidateSet('csr', 'cert','intca','rootca')]	[String]	$Type
-)
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$Cmd = " removecert "
-	if($SSL_Service_Name)	{	$Cmd += " $SSL_Service_Name " }
-	if($F)					{	$Cmd += " -f "}
-	if($Type) 				{	$Cmd += " -type $Type " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-} 
+	{	$Cmd = " showencryption "
+		$LastItem = $Fcnt = 0
+		if($Detailed)	{	$Cmd += " -d "
+							$Fcnt = 4
+							$LastItem = $Result.Count -2 
+						}
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+	}
+End
+	{	if ($ShowRaw -or $Result.count -lt 2) { Return $Result }
+		$tempFile = [IO.Path]::GetTempFileName	
+		foreach ($s in  $Result[$Fcnt..$LastItem] )
+			{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+				$s = $s -replace 'AdmissionTime','Date,Time,Zone'
+				Add-Content -Path $tempfile -Value $s				
+			}
+		$returndata = Import-Csv $tempFile 
+		Remove-Item  $tempFile
+		write-host " Success : Executing Get-Encryption" -ForegroundColor green 
+		return $returndata	
+	}
 }
 
 Function Measure-A9Upgrade
 {
 <#
 .SYNOPSIS
-	Determine if a system can do an online upgrade. (HIDDEN)
+	Determine if a system can do an online upgrade.
 .PARAMETER Allow_singlepathhost
 	Overrides the default behavior of preventing an online upgrade if a host is at risk of losing connectivity to the array due to only having a
 	single access path to the StoreServ. Use of this option will result in a loss of connectivity for the host when the path to the array disconnects
@@ -632,24 +93,24 @@ param(	[Parameter()]	[switch]	$Allow_singlepathhost,
 		[Parameter()]	[switch]	$Revertnode
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$Cmd = " checkupgrade "
-	if($Allow_singlepathhost)	{	$Cmd += " -allow_singlepathhost " }
-	if($Debug)					{	$Cmd += " -debug " }
-	if($Extraverbose)			{	$Cmd += " -extraverbose " }
-	if($Getpostabortresults)	{	$Cmd += " -getpostabortresults " }
-	if($Getresults) 			{	$Cmd += " -getresults " }
-	if($Getworkarounds)			{	$Cmd += " -getworkarounds " }
-	if($Nopatch)				{	$Cmd += " -nopatch " }
-	if($Offline)				{	$Cmd += " -offline " }
-	if($Phase)					{	$Cmd += " -phase $Phase " }
-	if($Revertnode)				{	$Cmd += " -revertnode " }
-	if($Verbose)				{	$Cmd += " -verbose " }
-$Result = Invoke-A9CLICommand -cmds  $Cmd
-Return $Result
-}
+	{	$Cmd = " checkupgrade "
+		if($Allow_singlepathhost)	{	$Cmd += " -allow_singlepathhost " }
+		if($Debug)					{	$Cmd += " -debug " }
+		if($Extraverbose)			{	$Cmd += " -extraverbose " }
+		if($Getpostabortresults)	{	$Cmd += " -getpostabortresults " }
+		if($Getresults) 			{	$Cmd += " -getresults " }
+		if($Getworkarounds)			{	$Cmd += " -getworkarounds " }
+		if($Nopatch)				{	$Cmd += " -nopatch " }
+		if($Offline)				{	$Cmd += " -offline " }
+		if($Phase)					{	$Cmd += " -phase $Phase " }
+		if($Revertnode)				{	$Cmd += " -revertnode " }
+		if($Verbose)				{	$Cmd += " -verbose " }
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
 }
 
 Function Optimize-A9LogicalDisk
@@ -691,31 +152,31 @@ Function Optimize-A9LogicalDisk
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]	[switch]	$Waittask,	
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$DR,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Shared,
-		[Parameter(ValueFromPipeline=$true)]	[String]	$Regions,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Tunesys,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Tunenodech,
-		[Parameter(ValueFromPipeline=$true)]	[switch]	$Preserved,
-		[Parameter(Mandatory=$true)]			[String]	$LD_name
+param(	[Parameter()]	[switch]	$Waittask,	
+		[Parameter()]	[switch]	$DR,
+		[Parameter()]	[switch]	$Shared,
+		[Parameter()]	[String]	$Regions,
+		[Parameter()]	[switch]	$Tunesys,
+		[Parameter()]	[switch]	$Tunenodech,
+		[Parameter()]	[switch]	$Preserved,
+		[Parameter(Mandatory)]	[String]	$LD_name
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$Cmd = " tuneld -f "
-	if($Waittask)	{	$Cmd += " -waittask "}
-	if($DR)			{	$Cmd += " -dr " }
-	if($Shared) 	{	$Cmd += " -shared " }
-	if($Regions)	{	$Cmd += " -regions $Regions " }
-	if($Tunesys)	{	$Cmd += " -tunesys " }
-	if($Tunenodech) {	$Cmd += " -tunenodech " }
-	if($Preserved)	{	$Cmd += " -preserved " }
-	if($LD_name)	{	$Cmd += " $LD_name " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-Return $Result
-}
+	{	$Cmd = " tuneld -f "
+		if($Waittask)	{	$Cmd += " -waittask "}
+		if($DR)			{	$Cmd += " -dr " }
+		if($Shared) 	{	$Cmd += " -shared " }
+		if($Regions)	{	$Cmd += " -regions $Regions " }
+		if($Tunesys)	{	$Cmd += " -tunesys " }
+		if($Tunenodech) {	$Cmd += " -tunenodech " }
+		if($Preserved)	{	$Cmd += " -preserved " }
+		if($LD_name)	{	$Cmd += " $LD_name " }
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
 }
 
 Function Optimize-A9Node
@@ -734,8 +195,7 @@ Function Optimize-A9Node
 	and <percentage> is 10%, then the threshold will be 60%. <percentage> must be between 1 and 100. The default value is 10.
 .PARAMETER Maxchunk 
 	Controls how many chunklets are moved from each PD per move
-	operation. <number> must be between 1 and 8. The default value
-	is 8.
+	operation. <number> must be between 1 and 8. The default value is 8.
 .PARAMETER Fulldiskpct 
 	If a PD has more than <percentage> of its capacity utilized, chunklet movement is used to reduce its usage to <percentage> before LD tuning
 	is used to complete the rebalance. e.g. if a PD is 98% utilized and <percentage> is 90, chunklets will be redistributed to other PDs until the
@@ -750,91 +210,37 @@ Function Optimize-A9Node
 #>
 [CmdletBinding()]
 param(
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Node,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Chunkpct,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Maxchunk,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Fulldiskpct,
-	[Parameter(ValueFromPipeline=$true)]	[String]	$Devtype,
-	[Parameter(ValueFromPipeline=$true)]	[switch]	$DR
+	[Parameter()][ValidateRange(0,7)]					[String]	$Node,
+	[Parameter()][ValidateRange(0,100)]					[String]	$Chunkpct,
+	[Parameter()][ValidateRange(1,8)]					[String]	$Maxchunk,
+	[Parameter()][ValidateRange(0,100)]					[String]	$Fulldiskpct,
+	[Parameter()][ValidateSet('SSD','FC','NL','SCM')]	[String]	$Devtype,
+	[Parameter()]										[switch]	$DryRun
 )
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 Process	
-{	$Cmd = " tunenodech -f "
-	if($Node)		{	$Cmd += " -node $Node " }
-	if($Chunkpct) 	{	$Cmd += " -chunkpct $Chunkpct " }
-	if($Maxchunk)	{	$Cmd += " -maxchunk $Maxchunk " }
-	if($Fulldiskpct){	$Cmd += " -fulldiskpct $Fulldiskpct " }
-	if($Devtype)	{	$Cmd += " -devtype $Devtype " }
-	if($DR) 		{	$Cmd += " -dr " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Start-A9SystemTeporter
-{
-<#
-.SYNOPSIS
-    To start System reporter.
-.DESCRIPTION
-    To start System reporter.
-.EXAMPLE
-    PS:> Start-A9SystemTeporter
-
-	Starts System Reporter
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param()
-Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
-}
-Process	
-{	$srinfocmd = "startsr -f "
-	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	if(-not $Result)	{	return "Success: Started System Reporter $Result"	}
-	elseif($Result -match "Cannot startsr, already started")	{	Return "Command Execute Successfully :- Cannot startsr, already started"	}
-	else	{	return $Result	}		
-}
+	{	$Cmd = " tunenodech -f "
+		if($Node)		{	$Cmd += " -node $Node " }
+		if($Chunkpct) 	{	$Cmd += " -chunkpct $Chunkpct " }
+		if($Maxchunk)	{	$Cmd += " -maxchunk $Maxchunk " }
+		if($Fulldiskpct){	$Cmd += " -fulldiskpct $Fulldiskpct " }
+		if($Devtype)	{	$Cmd += " -devtype $Devtype " }
+		if($DryRun) 	{	$Cmd += " -dr " }
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
 }
 
-Function Stop-A9SSystemReporter
-{
-<#
-.SYNOPSIS
-    To stop System reporter.
-.DESCRIPTION
-    To stop System reporter.
-.EXAMPLE
-    PS:> Stop-A9SSystemReporter
 
-	Stop System Reporter
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param()
-Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
-}
-Process	
-{	$srinfocmd = "stopsr -f "
-	write-verbose "System reporter command => $srinfocmd"
-	$Result = Invoke-A9CLICommand -cmds  $srinfocmd
-	if(-not $Result)	{	return "Success: Stopped System Reporter $Result"	}
-	else				{	return $Result	}
-}
-}
+
 # SIG # Begin signature block
-# MIIt2QYJKoZIhvcNAQcCoIItyjCCLcYCAQExDzANBglghkgBZQMEAgMFADCBmwYK
+# MIIsVAYJKoZIhvcNAQcCoIIsRTCCLEECAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEAEtgYewGIt
-# fGVtirygyO+qVjNiDVN5C1bFtD6K7ZHDkbkv7lUz5jQG04U5cukguAO4u6ipTNw4
-# NwKauwDI7rU7oIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEAf5MxQ9vp6
+# kwGA6suSkPLwWUR8cmMCzbd4Mko42EH6/lMmNRlOzpx4KhLuV4HCPFB8OTHGrv8+
+# mC8DAnenlz1ToIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -927,152 +333,144 @@ Process
 # 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
 # tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
 # NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG5YwghuSAgEBMGkwVDELMAkGA1UEBhMCR0Ix
+# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCGhEwghoNAgEBMGkwVDELMAkGA1UEBhMCR0Ix
 # GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQBy8Mucc5GjCRXTIJW743fU0qJsvi1uqsfn9MS9jtXGUmIetSoQW0ODt
-# DQql6j9Nb4ero8XdaGvq/Jg7u7MOWIEwDQYJKoZIhvcNAQEBBQAEggGAI20m/SdC
-# Xm7lLy4kB5o969yYfskkdni638G9yXuOQYf1zteytpQIwdT8CBrXbpGaIdPZMuju
-# wp4q64f8/KpilZi+uZSJua/5D1CewfvaqicMX+Qsfl7noslkgTtPT+LPekTpix3p
-# ihCYo/+Glwg4UBpZlZtA2wbKp/0yQuBQ6Ip0KYxkEv/jVPBaL7qsLCpR6U973u8h
-# dKqUqJRNcT9Q5dPCzRRGZ175+tr0NVZELbYyzomF4xB1vT8JRO0kBjY4LhjumBdc
-# Yr4NLw5z3WDhrFsb4RPjfQeIKkT1Z1GWrNpploMsrpyTrBt2YBRgzj+6RxUUgcuc
-# CISUnDtTmVuGkfX3S9Hcb32cdE7w8uD5vwR28I/6jnPyuv0ur23A/yZa9tVmwE/b
-# 6BTx5WBFg2qcz8uVPKdxEB+sWfqYZQ/Qyu44IEwJB7sqjMyggRjK10cCHXTXwkGI
-# 1nHXr5NBGj6H0bGDf8jee6xAnkzun8D9E6i/q3NOrj+TUvVb9jVJiz+OoYIY3zCC
-# GNsGCisGAQQBgjcDAwExghjLMIIYxwYJKoZIhvcNAQcCoIIYuDCCGLQCAQMxDzAN
-# BglghkgBZQMEAgIFADCCAQQGCyqGSIb3DQEJEAEEoIH0BIHxMIHuAgEBBgorBgEE
-# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMOkiDVstmgcrgN+D9Il8dlUv+299UUt2
-# R8IJpgUl34jNtYplecR/IoZYXzgEI7AZFwIVAPBtDAuteX2l2lsHrlZ306UL+Mum
-# GA8yMDI0MDczMTE5MjcwOFqgcqRwMG4xCzAJBgNVBAYTAkdCMRMwEQYDVQQIEwpN
-# YW5jaGVzdGVyMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxMDAuBgNVBAMTJ1Nl
-# Y3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgU2lnbmVyIFIzNaCCEv8wggZdMIIE
-# xaADAgECAhA6UmoshM5V5h1l/MwS2OmJMA0GCSqGSIb3DQEBDAUAMFUxCzAJBgNV
-# BAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLDAqBgNVBAMTI1NlY3Rp
-# Z28gUHVibGljIFRpbWUgU3RhbXBpbmcgQ0EgUjM2MB4XDTI0MDExNTAwMDAwMFoX
-# DTM1MDQxNDIzNTk1OVowbjELMAkGA1UEBhMCR0IxEzARBgNVBAgTCk1hbmNoZXN0
-# ZXIxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEwMC4GA1UEAxMnU2VjdGlnbyBQ
-# dWJsaWMgVGltZSBTdGFtcGluZyBTaWduZXIgUjM1MIICIjANBgkqhkiG9w0BAQEF
-# AAOCAg8AMIICCgKCAgEAjdFn9MFIm739OEk6TWGBm8PY3EWlYQQ2jQae45iWgPXU
-# GVuYoIa1xjTGIyuw3suUSBzKiyG0/c/Yn++d5mG6IyayljuGT9DeXQU9k8GWWj2/
-# BPoamg2fFctnPsdTYhMGxM06z1+Ft0Bav8ybww21ii/faiy+NhiUM195+cFqOtCp
-# JXxZ/lm9tpjmVmEqpAlRpfGmLhNdkqiEuDFTuD1GsV3jvuPuPGKUJTam3P53U4LM
-# 0UCxeDI8Qz40Qw9TPar6S02XExlc8X1YsiE6ETcTz+g1ImQ1OqFwEaxsMj/WoJT1
-# 8GG5KiNnS7n/X4iMwboAg3IjpcvEzw4AZCZowHyCzYhnFRM4PuNMVHYcTXGgvuq9
-# I7j4ke281x4e7/90Z5Wbk92RrLcS35hO30TABcGx3Q8+YLRy6o0k1w4jRefCMT7b
-# 5mTxtq5XPmKvtgfPuaWPkGZ/tbxInyNDA7YgOgccULjp4+D56g2iuzRCsLQ9ac6A
-# N4yRbqCYsG2rcIQ5INTyI2JzA2w1vsAHPRbUTeqVLDuNOY2gYIoKBWQsPYVoyzao
-# BVU6O5TG+a1YyfWkgVVS9nXKs8hVti3VpOV3aeuaHnjgC6He2CCDL9aW6gteUe0A
-# mC8XCtWwpePx6QW3ROZo8vSUe9AR7mMdu5+FzTmW8K13Bt8GX/YBFJO7LWzwKAUC
-# AwEAAaOCAY4wggGKMB8GA1UdIwQYMBaAFF9Y7UwxeqJhQo1SgLqzYZcZojKbMB0G
-# A1UdDgQWBBRo76QySWm2Ujgd6kM5LPQUap4MhTAOBgNVHQ8BAf8EBAMCBsAwDAYD
-# VR0TAQH/BAIwADAWBgNVHSUBAf8EDDAKBggrBgEFBQcDCDBKBgNVHSAEQzBBMDUG
-# DCsGAQQBsjEBAgEDCDAlMCMGCCsGAQUFBwIBFhdodHRwczovL3NlY3RpZ28uY29t
-# L0NQUzAIBgZngQwBBAIwSgYDVR0fBEMwQTA/oD2gO4Y5aHR0cDovL2NybC5zZWN0
-# aWdvLmNvbS9TZWN0aWdvUHVibGljVGltZVN0YW1waW5nQ0FSMzYuY3JsMHoGCCsG
-# AQUFBwEBBG4wbDBFBggrBgEFBQcwAoY5aHR0cDovL2NydC5zZWN0aWdvLmNvbS9T
-# ZWN0aWdvUHVibGljVGltZVN0YW1waW5nQ0FSMzYuY3J0MCMGCCsGAQUFBzABhhdo
-# dHRwOi8vb2NzcC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOCAYEAsNwuyfpP
-# NkyKL/bJT9XvGE8fnw7Gv/4SetmOkjK9hPPa7/Nsv5/MHuVus+aXwRFqM5Vu51qf
-# rHTwnVExcP2EHKr7IR+m/Ub7PamaeWfle5x8D0x/MsysICs00xtSNVxFywCvXx55
-# l6Wg3lXiPCui8N4s51mXS0Ht85fkXo3auZdo1O4lHzJLYX4RZovlVWD5EfwV6Ve1
-# G9UMslnm6pI0hyR0Zr95QWG0MpNPP0u05SHjq/YkPlDee3yYOECNMqnZ+j8onoUt
-# Z0oC8CkbOOk/AOoV4kp/6Ql2gEp3bNC7DOTlaCmH24DjpVgryn8FMklqEoK4Z3Io
-# UgV8R9qQLg1dr6/BjghGnj2XNA8ujta2JyoxpqpvyETZCYIUjIs69YiDjzftt37r
-# QVwIZsfCYv+DU5sh/StFL1x4rgNj2t8GccUfa/V3iFFW9lfIJWWsvtlC5XOOOQsw
-# r1UmVdNWQem4LwrlLgcdO/YAnHqY52QwnBLiAuUnuBeshWmfEb5oieIYMIIGFDCC
-# A/ygAwIBAgIQeiOu2lNplg+RyD5c9MfjPzANBgkqhkiG9w0BAQwFADBXMQswCQYD
-# VQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMS4wLAYDVQQDEyVTZWN0
-# aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIFJvb3QgUjQ2MB4XDTIxMDMyMjAwMDAw
-# MFoXDTM2MDMyMTIzNTk1OVowVTELMAkGA1UEBhMCR0IxGDAWBgNVBAoTD1NlY3Rp
-# Z28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMgVGltZSBTdGFtcGlu
-# ZyBDQSBSMzYwggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQDNmNhDQatu
-# givs9jN+JjTkiYzT7yISgFQ+7yavjA6Bg+OiIjPm/N/t3nC7wYUrUlY3mFyI32t2
-# o6Ft3EtxJXCc5MmZQZ8AxCbh5c6WzeJDB9qkQVa46xiYEpc81KnBkAWgsaXnLURo
-# YZzksHIzzCNxtIXnb9njZholGw9djnjkTdAA83abEOHQ4ujOGIaBhPXG2NdV8TNg
-# FWZ9BojlAvflxNMCOwkCnzlH4oCw5+4v1nssWeN1y4+RlaOywwRMUi54fr2vFsU5
-# QPrgb6tSjvEUh1EC4M29YGy/SIYM8ZpHadmVjbi3Pl8hJiTWw9jiCKv31pcAaeij
-# S9fc6R7DgyyLIGflmdQMwrNRxCulVq8ZpysiSYNi79tw5RHWZUEhnRfs/hsp/fwk
-# Xsynu1jcsUX+HuG8FLa2BNheUPtOcgw+vHJcJ8HnJCrcUWhdFczf8O+pDiyGhVYX
-# +bDDP3GhGS7TmKmGnbZ9N+MpEhWmbiAVPbgkqykSkzyYVr15OApZYK8CAwEAAaOC
-# AVwwggFYMB8GA1UdIwQYMBaAFPZ3at0//QET/xahbIICL9AKPRQlMB0GA1UdDgQW
-# BBRfWO1MMXqiYUKNUoC6s2GXGaIymzAOBgNVHQ8BAf8EBAMCAYYwEgYDVR0TAQH/
-# BAgwBgEB/wIBADATBgNVHSUEDDAKBggrBgEFBQcDCDARBgNVHSAECjAIMAYGBFUd
-# IAAwTAYDVR0fBEUwQzBBoD+gPYY7aHR0cDovL2NybC5zZWN0aWdvLmNvbS9TZWN0
-# aWdvUHVibGljVGltZVN0YW1waW5nUm9vdFI0Ni5jcmwwfAYIKwYBBQUHAQEEcDBu
-# MEcGCCsGAQUFBzAChjtodHRwOi8vY3J0LnNlY3RpZ28uY29tL1NlY3RpZ29QdWJs
-# aWNUaW1lU3RhbXBpbmdSb290UjQ2LnA3YzAjBggrBgEFBQcwAYYXaHR0cDovL29j
-# c3Auc2VjdGlnby5jb20wDQYJKoZIhvcNAQEMBQADggIBABLXeyCtDjVYDJ6BHSVY
-# /UwtZ3Svx2ImIfZVVGnGoUaGdltoX4hDskBMZx5NY5L6SCcwDMZhHOmbyMhyOVJD
-# wm1yrKYqGDHWzpwVkFJ+996jKKAXyIIaUf5JVKjccev3w16mNIUlNTkpJEor7edV
-# JZiRJVCAmWAaHcw9zP0hY3gj+fWp8MbOocI9Zn78xvm9XKGBp6rEs9sEiq/pwzvg
-# 2/KjXE2yWUQIkms6+yslCRqNXPjEnBnxuUB1fm6bPAV+Tsr/Qrd+mOCJemo06ldo
-# n4pJFbQd0TQVIMLv5koklInHvyaf6vATJP4DfPtKzSBPkKlOtyaFTAjD2Nu+di5h
-# ErEVVaMqSVbfPzd6kNXOhYm23EWm6N2s2ZHCHVhlUgHaC4ACMRCgXjYfQEDtYEK5
-# 4dUwPJXV7icz0rgCzs9VI29DwsjVZFpO4ZIVR33LwXyPDbYFkLqYmgHjR3tKVkhh
-# 9qKV2WCmBuC27pIOx6TYvyqiYbntinmpOqh/QPAnhDgexKG9GX/n1PggkGi9HCap
-# Zp8fRwg8RftwS21Ln61euBG0yONM6noD2XQPrFwpm3GcuqJMf0o8LLrFkSLRQNwx
-# PDDkWXhW+gZswbaiie5fd/W2ygcto78XCSPfFWveUOSZ5SqK95tBO8aTHmEa4lpJ
-# VD7HrTEn9jb1EGvxOb1cnn0CMIIGgjCCBGqgAwIBAgIQNsKwvXwbOuejs902y8l1
-# aDANBgkqhkiG9w0BAQwFADCBiDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCk5ldyBK
-# ZXJzZXkxFDASBgNVBAcTC0plcnNleSBDaXR5MR4wHAYDVQQKExVUaGUgVVNFUlRS
-# VVNUIE5ldHdvcmsxLjAsBgNVBAMTJVVTRVJUcnVzdCBSU0EgQ2VydGlmaWNhdGlv
-# biBBdXRob3JpdHkwHhcNMjEwMzIyMDAwMDAwWhcNMzgwMTE4MjM1OTU5WjBXMQsw
-# CQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMS4wLAYDVQQDEyVT
-# ZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIFJvb3QgUjQ2MIICIjANBgkqhkiG
-# 9w0BAQEFAAOCAg8AMIICCgKCAgEAiJ3YuUVnnR3d6LkmgZpUVMB8SQWbzFoVD9mU
-# EES0QUCBdxSZqdTkdizICFNeINCSJS+lV1ipnW5ihkQyC0cRLWXUJzodqpnMRs46
-# npiJPHrfLBOifjfhpdXJ2aHHsPHggGsCi7uE0awqKggE/LkYw3sqaBia67h/3awo
-# qNvGqiFRJ+OTWYmUCO2GAXsePHi+/JUNAax3kpqstbl3vcTdOGhtKShvZIvjwulR
-# H87rbukNyHGWX5tNK/WABKf+Gnoi4cmisS7oSimgHUI0Wn/4elNd40BFdSZ1Ewpu
-# ddZ+Wr7+Dfo0lcHflm/FDDrOJ3rWqauUP8hsokDoI7D/yUVI9DAE/WK3Jl3C4LKw
-# Ipn1mNzMyptRwsXKrop06m7NUNHdlTDEMovXAIDGAvYynPt5lutv8lZeI5w3MOlC
-# ybAZDpK3Dy1MKo+6aEtE9vtiTMzz/o2dYfdP0KWZwZIXbYsTIlg1YIetCpi5s14q
-# iXOpRsKqFKqav9R1R5vj3NgevsAsvxsAnI8Oa5s2oy25qhsoBIGo/zi6GpxFj+mO
-# dh35Xn91y72J4RGOJEoqzEIbW3q0b2iPuWLA911cRxgY5SJYubvjay3nSMbBPPFs
-# yl6mY4/WYucmyS9lo3l7jk27MAe145GWxK4O3m3gEFEIkv7kRmefDR7Oe2T1HxAn
-# ICQvr9sCAwEAAaOCARYwggESMB8GA1UdIwQYMBaAFFN5v1qqK0rPVIDh2JvAnfKy
-# A2bLMB0GA1UdDgQWBBT2d2rdP/0BE/8WoWyCAi/QCj0UJTAOBgNVHQ8BAf8EBAMC
-# AYYwDwYDVR0TAQH/BAUwAwEB/zATBgNVHSUEDDAKBggrBgEFBQcDCDARBgNVHSAE
-# CjAIMAYGBFUdIAAwUAYDVR0fBEkwRzBFoEOgQYY/aHR0cDovL2NybC51c2VydHJ1
-# c3QuY29tL1VTRVJUcnVzdFJTQUNlcnRpZmljYXRpb25BdXRob3JpdHkuY3JsMDUG
-# CCsGAQUFBwEBBCkwJzAlBggrBgEFBQcwAYYZaHR0cDovL29jc3AudXNlcnRydXN0
-# LmNvbTANBgkqhkiG9w0BAQwFAAOCAgEADr5lQe1oRLjlocXUEYfktzsljOt+2sgX
-# ke3Y8UPEooU5y39rAARaAdAxUeiX1ktLJ3+lgxtoLQhn5cFb3GF2SSZRX8ptQ6Iv
-# uD3wz/LNHKpQ5nX8hjsDLRhsyeIiJsms9yAWnvdYOdEMq1W61KE9JlBkB20XBee6
-# JaXx4UBErc+YuoSb1SxVf7nkNtUjPfcxuFtrQdRMRi/fInV/AobE8Gw/8yBMQKKa
-# Ht5eia8ybT8Y/Ffa6HAJyz9gvEOcF1VWXG8OMeM7Vy7Bs6mSIkYeYtddU1ux1dQL
-# bEGur18ut97wgGwDiGinCwKPyFO7ApcmVJOtlw9FVJxw/mL1TbyBns4zOgkaXFnn
-# fzg4qbSvnrwyj1NiurMp4pmAWjR+Pb/SIduPnmFzbSN/G8reZCL4fvGlvPFk4Uab
-# /JVCSmj59+/mB2Gn6G/UYOy8k60mKcmaAZsEVkhOFuoj4we8CYyaR9vd9PGZKSin
-# aZIkvVjbH/3nlLb0a7SBIkiRzfPfS9T+JesylbHa1LtRV9U/7m0q7Ma2CQ/t392i
-# oOssXW7oKLdOmMBl14suVFBmbzrt5V5cQPnwtd3UOTpS9oCG+ZZheiIvPgkDmA8F
-# zPsnfXW5qHELB43ET7HHFHeRPRYrMBKjkb8/IN7Po0d0hQoF4TeMM+zYAJzoKQnV
-# KOLg8pZVPT8xggSRMIIEjQIBATBpMFUxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9T
-# ZWN0aWdvIExpbWl0ZWQxLDAqBgNVBAMTI1NlY3RpZ28gUHVibGljIFRpbWUgU3Rh
-# bXBpbmcgQ0EgUjM2AhA6UmoshM5V5h1l/MwS2OmJMA0GCWCGSAFlAwQCAgUAoIIB
-# +TAaBgkqhkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcNAQkFMQ8XDTI0
-# MDczMTE5MjcwOFowPwYJKoZIhvcNAQkEMTIEMHsDEqyAmig1/+yZ1OOeK7YXRniM
-# erPAElwNkPdf8ZYN4Lq38u0ZaK9yfLeppDwLKjCCAXoGCyqGSIb3DQEJEAIMMYIB
-# aTCCAWUwggFhMBYEFPhgmBmm+4gs9+hSl/KhGVIaFndfMIGHBBTGrlTkeIbxfD1V
-# EkiMacNKevnC3TBvMFukWTBXMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGln
-# byBMaW1pdGVkMS4wLAYDVQQDEyVTZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5n
-# IFJvb3QgUjQ2AhB6I67aU2mWD5HIPlz0x+M/MIG8BBSFPWMtk4KCYXzQkDXEkd6S
-# wULaxzCBozCBjqSBizCBiDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCk5ldyBKZXJz
-# ZXkxFDASBgNVBAcTC0plcnNleSBDaXR5MR4wHAYDVQQKExVUaGUgVVNFUlRSVVNU
-# IE5ldHdvcmsxLjAsBgNVBAMTJVVTRVJUcnVzdCBSU0EgQ2VydGlmaWNhdGlvbiBB
-# dXRob3JpdHkCEDbCsL18Gzrno7PdNsvJdWgwDQYJKoZIhvcNAQEBBQAEggIALgtw
-# nr8YX//UdjcSLvm4HVplgfk8f0Tm0yUyUzrmjBz6F8TCkt9sKCFtn02eAEdqr0t9
-# 3gd30SQBqNsk97wtDYFivGkmBWkYZaRfXm6jtaVPg9iRKVRTfNDOA13GQ7IKCbBi
-# pFKddHruDC1SRCzW7Kb6xg/mOe8f/lepUd/D/Ge83oY3ACKdKwXkggjEe5/zswCs
-# I1jAQbfEFXFlFW2rA+CPxuCx7/Cxn1U66c0KvgxY12cFwMERhH1dEbZyGlsnXFH2
-# WQMRVZwwZnlAyKedo5+kItkLJUnKYFwCHh0Cn/ymvQi+0HjG3btQTgfgSGVVAt0D
-# uC2vs3EH42N+VXFTR+g9aiU6UAuDwHC/5t989EfqV5wFyQy5GYSkgjSKkBAxYlr6
-# Nectb36AbV9tPpe1vsLYnsKFhoSnuQ1J/6nO1elfMB0FuMifCiFMYvqQh7Doud4A
-# aKJvpBmn9hONEeqnodgg9bc5W2KFPXQkQh2iNcuj1ee4XYFB57oeSf3ge9RoUy1U
-# +pluLUZcZ4PpngW/iqk2g9G4z1A/cpSlZIbMCJ0JxmMbMHWakpkRwPThw+WkOinB
-# hqrjZ4igxFnWYjVaU9jHkiFZmWgqRUgpR039aZ5AssmKnqWKEKFw5JCbi9G0RFD6
-# Y+e/JYarYbRu2a9rgmotP8kx+kIgxh/b9/UeLyE=
+# AQkEMUIEQOG7gKv60DZLlKTDVeNyZyZ9omQqSJmYlGehTdQ3wQxg+cL9vzjf+7r+
+# ZH/ibwy/fU3X6ZpxqZuUHJjKpXLCjWwwDQYJKoZIhvcNAQEBBQAEggGAVMoX/lIn
+# 4qNTwpLoxfHAIEsV0nYI1XRxY2MyjPLAuqTTLkvpGv57Jc8pgZgtjpHRjoa81442
+# uXf9WhXFmTFi0LTIWHgXj//7V2g1Bed8rV7Fz3cMh/WXevGKljGDw1VFtLQ6gpbL
+# DBKQvq0D7l2PLYNZpz14/AKkWEaVFsDsySrYkD1lmTm2L1kL0kehNRFhBXIIa3s3
+# LtIJ4D32uKWRBR22fC7g2dxcfRUhbLVdDRMk3z56sSL74oc+CFZ/uvxz/ZVMttZF
+# ysWI94U0pvbFb+/jOHPN2V2YHD3Go2Ek5m84e2dTQR2dpZDvjd3LDovZRtceWhFs
+# v94sNjEtRkxu1Ur/amH70vOx4VZsfPxnfI38F1xLrs/h7ygHRQ2z1ueGIFgoDGlc
+# 9mr/FrvepG0a3sspfjiPv5JqYwjUfZvWZ4JDB2Sb62lwreW+OK4zvzhqmXfMMlqU
+# jdH+I5aDpwsVu38lwtwX1DifijDW6gnDONM+QPkNQrZ19JRccVNhI2QGoYIXWjCC
+# F1YGCisGAQQBgjcDAwExghdGMIIXQgYJKoZIhvcNAQcCoIIXMzCCFy8CAQMxDzAN
+# BglghkgBZQMEAgIFADCBhwYLKoZIhvcNAQkQAQSgeAR2MHQCAQEGCWCGSAGG/WwH
+# ATBBMA0GCWCGSAFlAwQCAgUABDAnw0Cqs+rAO1XAMlALE6i7PZWkDBDN26OkGkkG
+# v4obqkUDuXDzoLyRBSHR3NdrrpICEFiSLQGD6NkB+vAzRdD8ndAYDzIwMjUwNTE1
+# MDIyMzQ3WqCCEwMwgga8MIIEpKADAgECAhALrma8Wrp/lYfG+ekE4zMEMA0GCSqG
+# SIb3DQEBCwUAMGMxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5j
+# LjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBU
+# aW1lU3RhbXBpbmcgQ0EwHhcNMjQwOTI2MDAwMDAwWhcNMzUxMTI1MjM1OTU5WjBC
+# MQswCQYDVQQGEwJVUzERMA8GA1UEChMIRGlnaUNlcnQxIDAeBgNVBAMTF0RpZ2lD
+# ZXJ0IFRpbWVzdGFtcCAyMDI0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKC
+# AgEAvmpzn/aVIauWMLpbbeZZo7Xo/ZEfGMSIO2qZ46XB/QowIEMSvgjEdEZ3v4vr
+# rTHleW1JWGErrjOL0J4L0HqVR1czSzvUQ5xF7z4IQmn7dHY7yijvoQ7ujm0u6yXF
+# 2v1CrzZopykD07/9fpAT4BxpT9vJoJqAsP8YuhRvflJ9YeHjes4fduksTHulntq9
+# WelRWY++TFPxzZrbILRYynyEy7rS1lHQKFpXvo2GePfsMRhNf1F41nyEg5h7iOXv
+# +vjX0K8RhUisfqw3TTLHj1uhS66YX2LZPxS4oaf33rp9HlfqSBePejlYeEdU740G
+# KQM7SaVSH3TbBL8R6HwX9QVpGnXPlKdE4fBIn5BBFnV+KwPxRNUNK6lYk2y1WSKo
+# ur4hJN0SMkoaNV8hyyADiX1xuTxKaXN12HgR+8WulU2d6zhzXomJ2PleI9V2yfmf
+# XSPGYanGgxzqI+ShoOGLomMd3mJt92nm7Mheng/TBeSA2z4I78JpwGpTRHiT7yHq
+# BiV2ngUIyCtd0pZ8zg3S7bk4QC4RrcnKJ3FbjyPAGogmoiZ33c1HG93Vp6lJ415E
+# RcC7bFQMRbxqrMVANiav1k425zYyFMyLNyE1QulQSgDpW9rtvVcIH7WvG9sqYup9
+# j8z9J1XqbBZPJ5XLln8mS8wWmdDLnBHXgYly/p1DhoQo5fkCAwEAAaOCAYswggGH
+# MA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsG
+# AQUFBwMIMCAGA1UdIAQZMBcwCAYGZ4EMAQQCMAsGCWCGSAGG/WwHATAfBgNVHSME
+# GDAWgBS6FtltTYUvcyl2mi91jGogj57IbzAdBgNVHQ4EFgQUn1csA3cOKBWQZqVj
+# Xu5Pkh92oFswWgYDVR0fBFMwUTBPoE2gS4ZJaHR0cDovL2NybDMuZGlnaWNlcnQu
+# Y29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFtcGluZ0NB
+# LmNybDCBkAYIKwYBBQUHAQEEgYMwgYAwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3Nw
+# LmRpZ2ljZXJ0LmNvbTBYBggrBgEFBQcwAoZMaHR0cDovL2NhY2VydHMuZGlnaWNl
+# cnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFtcGlu
+# Z0NBLmNydDANBgkqhkiG9w0BAQsFAAOCAgEAPa0eH3aZW+M4hBJH2UOR9hHbm04I
+# HdEoT8/T3HuBSyZeq3jSi5GXeWP7xCKhVireKCnCs+8GZl2uVYFvQe+pPTScVJeC
+# ZSsMo1JCoZN2mMew/L4tpqVNbSpWO9QGFwfMEy60HofN6V51sMLMXNTLfhVqs+e8
+# haupWiArSozyAmGH/6oMQAh078qRh6wvJNU6gnh5OruCP1QUAvVSu4kqVOcJVozZ
+# R5RRb/zPd++PGE3qF1P3xWvYViUJLsxtvge/mzA75oBfFZSbdakHJe2BVDGIGVNV
+# jOp8sNt70+kEoMF+T6tptMUNlehSR7vM+C13v9+9ZOUKzfRUAYSyyEmYtsnpltD/
+# GWX8eM70ls1V6QG/ZOB6b6Yum1HvIiulqJ1Elesj5TMHq8CWT/xrW7twipXTJ5/i
+# 5pkU5E16RSBAdOp12aw8IQhhA/vEbFkEiF2abhuFixUDobZaA0VhqAsMHOmaT3XT
+# hZDNi5U2zHKhUs5uHHdG6BoQau75KiNbh0c+hatSF+02kULkftARjsyEpHKsF7u5
+# zKRbt5oK5YGwFvgc4pEVUNytmB3BpIiowOIIuDgP5M9WArHYSAR16gc0dP2XdkME
+# P5eBsX7bf/MGN4K3HP50v/01ZHo/Z5lGLvNwQ7XHBx1yomzLP8lx4Q1zZKDyHcp4
+# VQJLu2kWTsKsOqQwggauMIIElqADAgECAhAHNje3JFR82Ees/ShmKl5bMA0GCSqG
+# SIb3DQEBCwUAMGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMx
+# GTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IFRy
+# dXN0ZWQgUm9vdCBHNDAeFw0yMjAzMjMwMDAwMDBaFw0zNzAzMjIyMzU5NTlaMGMx
+# CzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMy
+# RGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcg
+# Q0EwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDGhjUGSbPBPXJJUVXH
+# JQPE8pE3qZdRodbSg9GeTKJtoLDMg/la9hGhRBVCX6SI82j6ffOciQt/nR+eDzMf
+# UBMLJnOWbfhXqAJ9/UO0hNoR8XOxs+4rgISKIhjf69o9xBd/qxkrPkLcZ47qUT3w
+# 1lbU5ygt69OxtXXnHwZljZQp09nsad/ZkIdGAHvbREGJ3HxqV3rwN3mfXazL6IRk
+# tFLydkf3YYMZ3V+0VAshaG43IbtArF+y3kp9zvU5EmfvDqVjbOSmxR3NNg1c1eYb
+# qMFkdECnwHLFuk4fsbVYTXn+149zk6wsOeKlSNbwsDETqVcplicu9Yemj052FVUm
+# cJgmf6AaRyBD40NjgHt1biclkJg6OBGz9vae5jtb7IHeIhTZgirHkr+g3uM+onP6
+# 5x9abJTyUpURK1h0QCirc0PO30qhHGs4xSnzyqqWc0Jon7ZGs506o9UD4L/wojzK
+# QtwYSH8UNM/STKvvmz3+DrhkKvp1KCRB7UK/BZxmSVJQ9FHzNklNiyDSLFc1eSuo
+# 80VgvCONWPfcYd6T/jnA+bIwpUzX6ZhKWD7TA4j+s4/TXkt2ElGTyYwMO1uKIqjB
+# Jgj5FBASA31fI7tk42PgpuE+9sJ0sj8eCXbsq11GdeJgo1gJASgADoRU7s7pXche
+# MBK9Rp6103a50g5rmQzSM7TNsQIDAQABo4IBXTCCAVkwEgYDVR0TAQH/BAgwBgEB
+# /wIBADAdBgNVHQ4EFgQUuhbZbU2FL3MpdpovdYxqII+eyG8wHwYDVR0jBBgwFoAU
+# 7NfjgtJxXWRM3y5nP+e6mK4cD08wDgYDVR0PAQH/BAQDAgGGMBMGA1UdJQQMMAoG
+# CCsGAQUFBwMIMHcGCCsGAQUFBwEBBGswaTAkBggrBgEFBQcwAYYYaHR0cDovL29j
+# c3AuZGlnaWNlcnQuY29tMEEGCCsGAQUFBzAChjVodHRwOi8vY2FjZXJ0cy5kaWdp
+# Y2VydC5jb20vRGlnaUNlcnRUcnVzdGVkUm9vdEc0LmNydDBDBgNVHR8EPDA6MDig
+# NqA0hjJodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVkUm9v
+# dEc0LmNybDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEwDQYJKoZI
+# hvcNAQELBQADggIBAH1ZjsCTtm+YqUQiAX5m1tghQuGwGC4QTRPPMFPOvxj7x1Bd
+# 4ksp+3CKDaopafxpwc8dB+k+YMjYC+VcW9dth/qEICU0MWfNthKWb8RQTGIdDAiC
+# qBa9qVbPFXONASIlzpVpP0d3+3J0FNf/q0+KLHqrhc1DX+1gtqpPkWaeLJ7giqzl
+# /Yy8ZCaHbJK9nXzQcAp876i8dU+6WvepELJd6f8oVInw1YpxdmXazPByoyP6wCeC
+# RK6ZJxurJB4mwbfeKuv2nrF5mYGjVoarCkXJ38SNoOeY+/umnXKvxMfBwWpx2cYT
+# gAnEtp/Nh4cku0+jSbl3ZpHxcpzpSwJSpzd+k1OsOx0ISQ+UzTl63f8lY5knLD0/
+# a6fxZsNBzU+2QJshIUDQtxMkzdwdeDrknq3lNHGS1yZr5Dhzq6YBT70/O3itTK37
+# xJV77QpfMzmHQXh6OOmc4d0j/R0o08f56PGYX/sr2H7yRp11LB4nLCbbbxV7HhmL
+# NriT1ObyF5lZynDwN7+YAN8gFk8n+2BnFqFmut1VwDophrCYoCvtlUG3OtUVmDG0
+# YgkPCr2B2RP+v6TR81fZvAT6gt4y3wSJ8ADNXcL50CN/AAvkdgIm2fBldkKmKYcJ
+# RyvmfxqkhQ/8mJb2VVQrH4D6wPIOK+XW+6kvRBVK5xMOHds3OBqhK/bt1nz8MIIF
+# jTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0BAQwFADBlMQsw
+# CQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cu
+# ZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVkIElEIFJvb3Qg
+# Q0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQswCQYDVQQGEwJV
+# UzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQu
+# Y29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVkIFJvb3QgRzQwggIiMA0GCSqG
+# SIb3DQEBAQUAA4ICDwAwggIKAoICAQC/5pBzaN675F1KPDAiMGkz7MKnJS7JIT3y
+# ithZwuEppz1Yq3aaza57G4QNxDAf8xukOBbrVsaXbR2rsnnyyhHS5F/WBTxSD1If
+# xp4VpX6+n6lXFllVcq9ok3DCsrp1mWpzMpTREEQQLt+C8weE5nQ7bXHiLQwb7iDV
+# ySAdYyktzuxeTsiT+CFhmzTrBcZe7FsavOvJz82sNEBfsXpm7nfISKhmV1efVFiO
+# DCu3T6cw2Vbuyntd463JT17lNecxy9qTXtyOj4DatpGYQJB5w3jHtrHEtWoYOAMQ
+# jdjUN6QuBX2I9YI+EJFwq1WCQTLX2wRzKm6RAXwhTNS8rhsDdV14Ztk6MUSaM0C/
+# CNdaSaTC5qmgZ92kJ7yhTzm1EVgX9yRcRo9k98FpiHaYdj1ZXUJ2h4mXaXpI8OCi
+# EhtmmnTK3kse5w5jrubU75KSOp493ADkRSWJtppEGSt+wJS00mFt6zPZxd9LBADM
+# fRyVw4/3IbKyEbe7f/LVjHAsQWCqsWMYRJUadmJ+9oCw++hkpjPRiQfhvbfmQ6QY
+# uKZ3AeEPlAwhHbJUKSWJbOUOUlFHdL4mrLZBdd56rF+NP8m800ERElvlEFDrMcXK
+# chYiCd98THU/Y+whX8QgUWtvsauGi0/C1kVfnSD8oR7FwI+isX4KJpn15GkvmB0t
+# 9dmpsh3lGwIDAQABo4IBOjCCATYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQU
+# 7NfjgtJxXWRM3y5nP+e6mK4cD08wHwYDVR0jBBgwFoAUReuir/SSy4IxLVGLp6ch
+# nfNtyA8wDgYDVR0PAQH/BAQDAgGGMHkGCCsGAQUFBwEBBG0wazAkBggrBgEFBQcw
+# AYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tMEMGCCsGAQUFBzAChjdodHRwOi8v
+# Y2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3J0
+# MEUGA1UdHwQ+MDwwOqA4oDaGNGh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdp
+# Q2VydEFzc3VyZWRJRFJvb3RDQS5jcmwwEQYDVR0gBAowCDAGBgRVHSAAMA0GCSqG
+# SIb3DQEBDAUAA4IBAQBwoL9DXFXnOF+go3QbPbYW1/e/Vwe9mqyhhyzshV6pGrsi
+# +IcaaVQi7aSId229GhT0E0p6Ly23OO/0/4C5+KH38nLeJLxSA8hO0Cre+i1Wz/n0
+# 96wwepqLsl7Uz9FDRJtDIeuWcqFItJnLnU+nBgMTdydE1Od/6Fmo8L8vC6bp8jQ8
+# 7PcDx4eo0kxAGTVGamlUsLihVo7spNU96LHc/RzY9HdaXFSMb++hUD38dglohJ9v
+# ytsgjTVgHAIDyyCwrFigDkBjxZgiwbJZ9VVrzyerbHbObyMt9H5xaiNrIv8SuFQt
+# J37YOtnwtoeW/VvRXKwYw02fc7cBqZ9Xql4o4rmUMYIDhjCCA4ICAQEwdzBjMQsw
+# CQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRp
+# Z2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENB
+# AhALrma8Wrp/lYfG+ekE4zMEMA0GCWCGSAFlAwQCAgUAoIHhMBoGCSqGSIb3DQEJ
+# AzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjUwNTE1MDIyMzQ3WjAr
+# BgsqhkiG9w0BCRACDDEcMBowGDAWBBTb04XuYtvSPnvk9nFIUIck1YZbRTA3Bgsq
+# hkiG9w0BCRACLzEoMCYwJDAiBCB2dp+o8mMvH0MLOiMwrtZWdf7Xc9sF1mW5BZOY
+# Q4+a2zA/BgkqhkiG9w0BCQQxMgQw6Ratzdyd2UHrZKcZ1yfv3R8HcUlOgLoeSZFn
+# gv566q2VvrsIzRKqcXd/2QI8ozdrMA0GCSqGSIb3DQEBAQUABIICAJUbbpXbDCrM
+# mNoCqxYPMgoQitrpid+mRdjB+uuSMxIk5kbpSDfYwLt56GBYPamjhSl8DkKWW7cr
+# Q+TdMPBnGBWy/ODF/4xVKBjNNTKIdQfIjGZBmkGgCqSm4w/snULCADOh30Dx5AfY
+# aq09JwtRr0FUF2RmgsfA8Y7mCyXSTC/JvVkb6or0PP5+7jDMb+VY3gRKf+pYsjWU
+# K1mmb+ud8id7oYrU13xE1UojLXjL/eie/c+EJ5SGTZxLdOOpU+FB1fMXEqvH/6rl
+# AuoKj8AHiMJcut7oVr2V30KuRjcOUzOxOTCd9nIIst/XgaNnB3BENjrPzC9nJbyr
+# nZN1tmxicB25nxd08/VDlnA+VGe3jg3oTeq5dTwkEW1UspNyK2bqs0LgU2eTSEup
+# BBOXxmmzhXZ+jrrD9gHgTRuLFfhTHMk/ark0sBOEDBXTIH0i7tmpWcxHjm9osr1d
+# SC8aFxTg4hndpcbWLQnSDinCiHMF4jsi+Sap/tNOKyjLqKpD3fbX9OlCtuI4q4v6
+# aX+qoCH4XmOpElBhQAAht6ir7Gj69mc59McuPlaueGtsXJGhBNYx2DpIIv0o8WCY
+# 0E5RvD8Z0Nznh72BXmIuCEoRlBzWm5hJxUdoXfXIdpmW9ChhyegstVKX/cseHAq5
+# Ec1UysPqPJTc3a4DRzgLbafK9/jpIHLR
 # SIG # End signature block

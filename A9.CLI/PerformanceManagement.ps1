@@ -8,16 +8,6 @@ Function Compress-A9VV_CLI
 	The Compress-VV command is used to change the properties of a virtual volume that was created with the createvv command by associating it with a different CPG.
 .DESCRIPTION  
 	The Compress-VV command is used to change the properties of a virtual volume that was created with the createvv command by associating it with a different CPG.
-.EXAMPLE	
-	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ
-.EXAMPLE
-	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -VVName XYZ
-.EXAMPLE
-	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -Option XYZ -VVName XYZ
-.EXAMPLE
-	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -Option keepvv -KeepVVName XYZ -VVName XYZ
-.EXAMPLE
-	PS:> Compress-A9VV_CLI -SUBCommand snp_cpg -CPGName XYZ -VVName XYZ
 .PARAMETER SUBCommand
 	usr_cpg <cpg>
 		Moves the logical disks being used for user space to the specified CPG.
@@ -62,15 +52,23 @@ Function Compress-A9VV_CLI
 	Slice threshold. Volumes above this size will be tuned in slices. <threshold> must be in multiples of 128GiB. Minimum is 128GiB. Default is 16TiB. Maximum is 16TiB.
 .PARAMETER SliceSize
 	Slice size. Size of slice to use when volume size is greater than <threshold>. <size> must be in multiples of 128GiB. Minimum is 128GiB. Default is 2TiB. Maximum is 16TiB.
-.PARAMETER SANConnection 
-    Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection
+.EXAMPLE	
+	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ
+.EXAMPLE
+	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -VVName XYZ
+.EXAMPLE
+	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -Option XYZ -VVName XYZ
+.EXAMPLE
+	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -Option keepvv -KeepVVName XYZ -VVName XYZ
+.EXAMPLE
+	PS:> Compress-A9VV_CLI -SUBCommand snp_cpg -CPGName XYZ -VVName XYZ
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(		[Parameter(Mandatory=$true)][ValidateSet('usr_cpg','snp_cpg','restart','rollback')]
+param(		[Parameter(Mandatory)][ValidateSet('usr_cpg','snp_cpg','restart','rollback')]
 											[String]	$SUBCommand ,
-			[Parameter(Mandatory=$true)]	[String]	$VVName ,
+			[Parameter(Mandatory)]			[String]	$VVName ,
 			[Parameter()]					[String]	$CPGName ,	
 			[Parameter()]					[switch]	$WaitTask ,		
 			[Parameter()]					[switch]	$DryRun ,		
@@ -111,6 +109,7 @@ Process
 	if($Threshold)	{	$Cmd += " -slth $Threshold"	}
 	if($SliceSize)	{	$Cmd += " -slsz $SliceSize"	}
 	if($VVName)		{	$Cmd += " $VVName"	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	return  $Result
 
@@ -124,16 +123,6 @@ Function Get-A9HistogramChunklet
     The Get-HistChunklet command displays a histogram of service times in a timed loop for individual chunklets
 .DESCRIPTION
 	The Get-HistChunklet command displays a histogram of service times in a timed loop for individual chunklets
-.EXAMPLE
-    PS:> Get-A9HistogramChunklet -Iteration 1 
-
-	This example displays one iteration of a histogram of service
-.EXAMPLE
-    PS:> Get-A9HistogramChunklet –LDname dildil -Iteration 1 
-
-	identified by name, from which chunklet statistics are sampled.
-.EXAMPLE
-	PS:> Get-A9HistogramChunklet -Iteration 1 -Previous
 .PARAMETER Chunklet_num
 	Specifies that statistics are limited to only the specified chunklet, identified
 	by number.
@@ -161,6 +150,18 @@ Function Get-A9HistogramChunklet
 	Specifies that histograms for only non-idle devices are displayed. This option is shorthand for the option -filt t,0,0.
 .PARAMETER LDname 
     Specifies the Logical Disk (LD), identified by name, from which chunklet statistics are sampled.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+    PS:> Get-A9HistogramChunklet -Iteration 1 
+
+	This example displays one iteration of a histogram of service
+.EXAMPLE
+    PS:> Get-A9HistogramChunklet –LDname dildil -Iteration 1 
+
+	identified by name, from which chunklet statistics are sampled.
+.EXAMPLE
+	PS:> Get-A9HistogramChunklet -Iteration 1 -Previous
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -168,13 +169,14 @@ Function Get-A9HistogramChunklet
 param(	[Parameter()]	[String]	$LDname,
 		[Parameter()]	[String]	$Chunklet_num,
 		[Parameter()]	[String]	$Metric,
-		[Parameter(Mandatory=$true)]	[String]	$Iteration,
+		[Parameter(Mandatory)]	[String]	$Iteration,
 		[Parameter()]	[switch]	$Percentage,
 		[Parameter()]	[switch]	$Previous,
 		[Parameter()]	[switch]	$Beginning,
 		[Parameter()]	[switch]	$RW,
 		[Parameter()]	[String]	$Interval,
-		[Parameter()]	[switch]	$NI	
+		[Parameter()]	[switch]	$NI,
+		[Parameter()]	[switch]	$ShowRaw
 )		
 begin	
 {	Test-A9Connection -ClientType 'SshClient' 
@@ -191,10 +193,11 @@ Process
 	if($RW)			{	$histchCMD +=" -rw "	}
 	if($Interval)	{	$histchCMD +=" -d $Interval "	}
 	if($NI)			{	$histchCMD +=" -ni "	}	
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $histchCMD	
 	$range1 = $Result.count
 	if($range1 -le "5")	{	return "No data available Please try with valid input."	}
-	Write-Verbose " displays a histogram of service -->$histchCMD" 
+	if ($ShowRaw) { return $Result }
 	if ( $Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count		
@@ -232,24 +235,6 @@ Function Get-A9HistogramLogicalDisk
     The Get-HistLD command displays a histogram of service times for Logical Disks (LDs) in a timed loop.
 .DESCRIPTION
 	The Get-HistLD command displays a histogram of service times for Logical Disks (LDs) in a timed loop.
-.EXAMPLE
-    PS:> Get-A9HistogramLogicalDisk -Iteration 1
-
-	displays a histogram of service Iteration number of times
-.EXAMPLE
-	PS:> Get-A9HistogramLogicalDisk -LdName abcd -Iteration 1
-
-	displays a histogram of service linked with LD_NAME on  Iteration number of times
-.EXAMPLE
-	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -VV_Name ZXZX
-
-	Shows only logical disks that are mapped to virtual volumes with names matching any of the names or patterns specified.
-.EXAMPLE
-	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -Domain ZXZX
-
-	Shows only logical disks that are in domains with names matching any of the names or patterns specified.
-.EXAMPLE
-	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -Percentage Shows the access count in each bucket as a percentage.
 .PARAMETER Timecols
 	For the I/O time histogram, shows the columns from the first column <fcol> through last column <lcol>. The available columns range from 0 through 31.
 
@@ -292,12 +277,32 @@ Function Get-A9HistogramLogicalDisk
 	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). If no option is specified, the histogram shows data from the beginning of the command's execution.
 .PARAMETER Beginning
 	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). If no option is specified, the histogram shows data from the beginning of the command's execution.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+    PS:> Get-A9HistogramLogicalDisk -Iteration 1
+
+	displays a histogram of service Iteration number of times
+.EXAMPLE
+	PS:> Get-A9HistogramLogicalDisk -LdName abcd -Iteration 1
+
+	displays a histogram of service linked with LD_NAME on  Iteration number of times
+.EXAMPLE
+	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -VV_Name ZXZX
+
+	Shows only logical disks that are mapped to virtual volumes with names matching any of the names or patterns specified.
+.EXAMPLE
+	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -Domain ZXZX
+
+	Shows only logical disks that are in domains with names matching any of the names or patterns specified.
+.EXAMPLE
+	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -Percentage Shows the access count in each bucket as a percentage.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	
-		[Parameter()]	[String]	$Iteration,	
+		[Parameter(Mandatory)]	[String]	$Iteration,	
 		[Parameter()][ValidateSet('both','time','size')]
 						[String]	$Metric,
 		[Parameter()]	[String]	$VV_Name,
@@ -309,27 +314,17 @@ param(
 		[Parameter()]	[Switch]	$Beginning,
 		[Parameter()]	[Switch]	$NI,
 		[Parameter()]	[String]	$Secs,
-		[Parameter()]	[String]	$LdName
+		[Parameter()]	[String]	$LdName,
+		[Parameter()] 	[switch]	$ShowRaw
 )		
 Begin	
 {	Test-A9Connection -ClientType 'SshClient' 
 }
 Process	
-{	$histldCmd = "histld "
-	if ($Iteration)	{	$histldCmd += " -iter $Iteration "	}
-	else			{	return "Error :  -Iteration is mandatory. "	}
+{	$histldCmd = "histld -iter $Iteration "
 	if ($Metric)	{	$histldCmd+=" -metric $Metric "				}
-	if($VV_Name)	{	$cmd= "showvv "
-						$demo = Invoke-A9CLICommand -cmds  $Cmd
-						if($demo -match $VV_Name )	{	$histldCmd+=" -vv $VV_Name"	}
-						else						{ 	return  "FAILURE : No Virtual Volume : $VV_Name found, Please try with valid input."	}		
-					} 
-	if($Domain)
-	{	$cmd= "showdomain "
-		$demo = Invoke-A9CLICommand -cmds  $Cmd
-		if($demo -match $Domain )	{	$histldCmd+=" -domain $Domain"	}
-		else	{ 	return  "FAILURE : No Domain : $Domain found, Please try with valid input."	}
-	}	
+	if($VV_Name)	{	$histldCmd+=" -vv $VV_Name"	} 
+	if($Domain)		{	$histldCmd+=" -domain $Domain"	}
 	if($Timecols)	{	$histldCmd+=" -timecols $Timecols "	}
 	if($Sizecols)	{	$histldCmd+=" -sizecols $Sizecols"	}	
 	if ($Percentage){	$histldCmd += " -pct "	}
@@ -337,13 +332,10 @@ Process
 	if ($Beginning)	{	$histldCmd += " -begin "	}
 	if($Secs)		{	$histldCmd+=" -d $Secs"	}
 	if ($NI)		{	$histldCmd += " -ni "	}
-	if ($LdName)	{	$cmd= "showld "
-						$demo = Invoke-A9CLICommand -cmds  $Cmd
-						if($demo -match $LdName )	{	$histldCmd += "  $LdName"	}
-						else	{ 	return  "FAILURE : No LD_name $LdName found "	}
-					}	
+	if ($LdName)	{	$histldCmd += "  $LdName"	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $histldCmd
-	write-verbose "  The Get-HistLD command displays a histogram of service times for Logical Disks (LDs) in a timed loop.->$cmd"	
+	if ($ShowRaw) { $ShowRaw }
 	$range1 = $Result.count
 	#write-host "count = $range1"
 	if($range1 -lt "5")		{	return "No data available Please Try With Valid Data. `n"	}	
@@ -385,22 +377,6 @@ Function Get-A9HistogramPhysicalDisk
     The Get-HistPD command displays a histogram of service times for Physical Disks (PDs).
 .DESCRIPTION
     The Get-HistPD command displays a histogram of service times for Physical Disks (PDs).
-.EXAMPLE
-    PS:> Get-A9HistogramPhysicalDisk -iteration 1 -WWN abcd
-
-	Specifies the world wide name of the PD for which service times are displayed.
-.EXAMPLE
-	PS:> Get-A9HistogramPhysicalDisk -iteration 1
-
-	The Get-HistPD displays a histogram of service iteration number of times Histogram displays data from when the system was last started (–begin).
-.EXAMPLE	
-	PS:> Get-A9HistogramPhysicalDisk -iteration 1 -Devinfo
-
-	Indicates the device disk type and speed.
-.EXAMPLE	
-	PS:> Get-A9HistogramPhysicalDisk -iteration 1 -Metric both
-
-	(Default)Display both I/O time and I/O size histograms
 .PARAMETER WWN
 	Specifies the world wide name of the PD for which service times are displayed.
 .PARAMETER Nodes
@@ -442,6 +418,24 @@ Function Get-A9HistogramPhysicalDisk
 	<count>: Specifies the minimum number of access above the threshold service time. When filtering is done, the <count> is compared with the sum of all columns 
 			starting with the one which corresponds to the threshold service time. For example, -t,8,100 means to only display the rows where the 8ms column
 			and all columns to the right adds up to more than 100.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+    PS:> Get-A9HistogramPhysicalDisk -iteration 1 -WWN abcd
+
+	Specifies the world wide name of the PD for which service times are displayed.
+.EXAMPLE
+	PS:> Get-A9HistogramPhysicalDisk -iteration 1
+
+	The Get-HistPD displays a histogram of service iteration number of times Histogram displays data from when the system was last started (–begin).
+.EXAMPLE	
+	PS:> Get-A9HistogramPhysicalDisk -iteration 1 -Devinfo
+
+	Indicates the device disk type and speed.
+.EXAMPLE	
+	PS:> Get-A9HistogramPhysicalDisk -iteration 1 -Metric both
+
+	(Default)Display both I/O time and I/O size histograms
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -457,7 +451,8 @@ param(	[Parameter()]	[String]	$Iteration,
 		[Parameter()]	[Switch]	$Percentage,
 		[Parameter()]	[Switch]	$Previous,
 		[Parameter()]	[Switch]	$Beginning,	
-		[Parameter()]	[String]	$FSpec
+		[Parameter()]	[String]	$FSpec,
+		[Parameter()]	[switch]	$ShowRaw
 )		
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -481,8 +476,9 @@ Process
 	if ($Beginning)		{	$Cmd += " -begin "}
 	if ($Percentage)	{	$Cmd += " -pct "	}	
 	if ($FSpec)			{	$Cmd += " -filt $FSpec"	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd 
-	write-verbose " The Get-HistPD command displays a histogram of service times for Physical Disks (PDs). " 
+	if ($ShowRaw) {$ShowRaw }
 	$range1 = $Result.count
 	if($range1 -lt "5")	{	return "No data available"	}		
 	if ( $Result.Count -gt 1)
@@ -531,22 +527,6 @@ Function Get-A9HistogramPort
     The command displays a histogram of service times for ports within the system.
 .DESCRIPTION
 	The command displays a histogram of service times for ports within the system.
-.EXAMPLE
-    PS:> Get-A9HistogramPort -iteration 1
-
-	displays a histogram of service times with option it can be one of these [both|ctrl|data].
-.EXAMPLE
-	PS:> Get-A9HistogramPort -iteration 1 -Both
-
-	Specifies that both control and data transfers are displayed(-both)
-.EXAMPLE
-	PS:> Get-A9HistogramPort -iteration 1 -Nodes nodesxyz
-
-	Specifies that the display is limited to specified nodes and physical disks connected to those nodes.
-.EXAMPLE	
-	PS:> Get-A9HistogramPort –Metric both -iteration 1
-
-	displays a histogram of service times with -metric option. metric can be one of these –metric [both|time|size]
 .PARAMETER Both 
 	Specifies that both control and data transfers are displayed(-both), only control transfers are displayed (-ctl), or only data transfers are
 	displayed (-data). If this option is not specified, only data transfers are displayed.
@@ -594,11 +574,29 @@ Function Get-A9HistogramPort
 	histogram shows data from the beginning of the command's execution.
 .PARAMETER RW	
 	Specifies that the display includes separate read and write data. If not specified, the total is displayed.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+    PS:> Get-A9HistogramPort -iteration 1
+
+	displays a histogram of service times with option it can be one of these [both|ctrl|data].
+.EXAMPLE
+	PS:> Get-A9HistogramPort -iteration 1 -Both
+
+	Specifies that both control and data transfers are displayed(-both)
+.EXAMPLE
+	PS:> Get-A9HistogramPort -iteration 1 -Nodes nodesxyz
+
+	Specifies that the display is limited to specified nodes and physical disks connected to those nodes.
+.EXAMPLE	
+	PS:> Get-A9HistogramPort –Metric both -iteration 1
+
+	displays a histogram of service times with -metric option. metric can be one of these –metric [both|time|size]
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$Iteration,	
+param(	[Parameter(Mandatory)]	[String]	$Iteration,	
 		[Parameter()]	[Switch]	$Both,
 		[Parameter()]	[Switch]	$CTL,
 		[Parameter()]	[Switch]	$Data,
@@ -609,7 +607,7 @@ param(	[Parameter(Mandatory=$true)]	[String]	$Iteration,
 		[Parameter()]	[Switch]	$PEER,
 		[Parameter()]	[Switch]	$Disk,
 		[Parameter()]	[Switch]	$RCFC,
-		[Parameter()]	[String]	$Metric,		
+		[Parameter()][VAlidateSet('both','time','size')]	[String]	$Metric,		
 		[Parameter()]	[Switch]	$Percentage,
 		[Parameter()]	[Switch]	$Previous,
 		[Parameter()]	[Switch]	$Beginning,
@@ -631,19 +629,15 @@ Process
 	if ($Disk)	{	$Cmd +=" -disk "	}
 	if ($RCFC)	{	$Cmd +=" -rcfc "	}
 	if ($PEER)	{	$Cmd +=" -peer "	}
-	if ($Metric){	$Cmd += " -metric "
-					$a1="both","time","size"
-					$Metric = $Metric.toLower()
-					if($a1 -eq $Metric )	{	$Cmd += "$Metric "	}		
-					else					{	return "FAILURE:  -Metric $Metric  is Invalid. Only [ both | time | size ] can be used."	}
-				}	
+	if ($Metric){	$Cmd += " -metric $Metric"	}	
 	if ($Previous)	{	$Cmd += " -prev "	}
 	if ($Beginning)	{	$Cmd += " -begin "	}
 	if ($Percentage){	$Cmd += " -pct "	}
 	if ($RW)		{	$Cmd += " -rw "		}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd 	
+	if ($ShowRaw) { return $Result }
 	$range1 = $Result.count
-	#write-host "count = $range1"
 	if ($range1 -lt "5")	{	return "No data available"	}		
 	if ( $Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -683,28 +677,6 @@ Function Get-A9HistogramRemoteCopyVv
 	The command shows a histogram of total remote-copy service times and backup system remote-copy service times in a timed loop.
 .DESCRIPTION
 	Thecommand shows a histogram of total remote-copy service times and backup system 	remote-copy service times in a timed loop        
-.EXAMPLE
-	PS:> Get-A9HistogramRemoteCopyVv -iteration 1
-
-	The command shows a histogram of total remote-copy service iteration number of times
-.EXAMPLE
-    PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -Sync
-
-	The command shows a histogram of total remote-copy service iteration number of times with option sync
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -group groupvv_1 -iteration
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -Periodic
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -PortSum
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -target name_vv1 -iteration 1
-
-	The command shows a histogram of total remote-copy service with specified target name.
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -group groupvv_1 -iteration   
-
-	The command shows a histogram of total remote-copy service with specified Group name.
 .PARAMETER Async
 	Show only volumes which are being copied in asynchronous mode.
 .PARAMETER sync
@@ -741,6 +713,30 @@ Function Get-A9HistogramRemoteCopyVv
 .PARAMETER group
     Shows only volumes whose volume group matches the specified group name or pattern of names. Multiple group names or patterns may be specified using a comma-separated list..PARAMETER iteration
     Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-A9HistogramRemoteCopyVv -iteration 1
+
+	The command shows a histogram of total remote-copy service iteration number of times
+.EXAMPLE
+    PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -Sync
+
+	The command shows a histogram of total remote-copy service iteration number of times with option sync
+.EXAMPLE	
+	PS:> Get-A9HistogramRemoteCopyVv -group groupvv_1 -iteration
+.EXAMPLE	
+	PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -Periodic
+.EXAMPLE	
+	PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -PortSum
+.EXAMPLE	
+	PS:> Get-A9HistogramRemoteCopyVv -target name_vv1 -iteration 1
+
+	The command shows a histogram of total remote-copy service with specified target name.
+.EXAMPLE	
+	PS:> Get-A9HistogramRemoteCopyVv -group groupvv_1 -iteration   
+
+	The command shows a histogram of total remote-copy service with specified Group name.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -788,8 +784,9 @@ Process
 	if ($VV_Name)	{ 	$Cmd += " $VV_Name"			}
 	if ($iteration)	{ 	$Cmd += " -iter $iteration "}	
 	else			{	return "Error :  -Iteration is mandatory. "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	write-verbose " histograms sums for all synchronous remote - copy volumes" 
+	if ($ShowRaw) { return $ShowRaw }
 	if ( $Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count - 2
@@ -831,21 +828,7 @@ Function Get-A9HistogramVLun
 	The command displays Virtual Volume Logical Unit Number (VLUN) service time histograms.
 .DESCRIPTION
     The command displays Virtual Volume Logical Unit Number (VLUN) service time histograms.
-.EXAMPLE
-	PS:> Get-A9HistogramVLun -iteration 1
 
-	This example displays two iterations of a histogram of service times for all VLUNs.	
-.EXAMPLE	
-	PS:> Get-A9HistogramVLun -iteration 1 -nodes 1
-
-	This example displays two iterations of a histogram only exports from the specified nodes.	
-.EXAMPLE	
-	PS:> Get-A9HistogramVLun -iteration 1 -domain DomainName
-	Shows only VLUNs whose Virtual Volumes (VVs) are in domains with names that match one or more of the specified domain names or patterns.
-.EXAMPLE	
-	PS:> Get-A9HistogramVLun -iteration 1 -Percentage
-
-	Shows the access count in each bucket as a percentage.	 
 .PARAMETER domain
 	Shows only VLUNs whose Virtual Volumes (VVs) are in domains with names that match one or more of the specified domain names or patterns. Multiple domain names or patterns can be
 	repeated using a comma-separated list.
@@ -878,6 +861,23 @@ Function Get-A9HistogramVLun
 	Specifies that VLUNs with LUNs matching the specified LUN(s) or pattern(s) are displayed. Multiple LUNs or patterns can be repeated using a comma-separated list.
 .PARAMETER iteration
 	Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-A9HistogramVLun -iteration 1
+
+	This example displays two iterations of a histogram of service times for all VLUNs.	
+.EXAMPLE	
+	PS:> Get-A9HistogramVLun -iteration 1 -nodes 1
+
+	This example displays two iterations of a histogram only exports from the specified nodes.	
+.EXAMPLE	
+	PS:> Get-A9HistogramVLun -iteration 1 -domain DomainName
+	Shows only VLUNs whose Virtual Volumes (VVs) are in domains with names that match one or more of the specified domain names or patterns.
+.EXAMPLE	
+	PS:> Get-A9HistogramVLun -iteration 1 -Percentage
+
+	Shows the access count in each bucket as a percentage.	 
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -893,7 +893,8 @@ param(	[Parameter()]	[String]	$iteration,
 		[Parameter()]	[Switch]	$Percentage,
 		[Parameter()]	[Switch]	$Previous,
 		[Parameter()]	[Switch]	$Beginning,
-		[Parameter()]	[String]	$Metric			
+		[Parameter()][ValidateSet("both","time","size")]	[String]	$Metric,
+		[Parameter()]	[switch]	$ShowRaw		
 )		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -903,35 +904,20 @@ Process
 	if ($iteration)	{ 	$Cmd += " -iter $iteration"	}	
 	else			{	return "Error : -Iteration is mandatory. "	}
 	if ($domain)	{ 	$Cmd += " -domain $domain"	}	
-	if($hostE)		{	$objType = "host"
-						$objMsg  = "hosts"		
-						if ( -not (Test-A9CLIObject -objectType $objType -objectName $host -objectMsg $objMsg))	{	return "FAILURE : No host $host found"	}		
-						$Cmd += " -host $host "		
-					}
-	if ($vvname)	{	$GetvVolumeCmd="showvv"
-						$Res = Invoke-A9CLICommand -cmds  $GetvVolumeCmd
-						if ($Res -match $vvname)
-							{	$Cmd += " -v $vvname"
-							}
-						else{ 	write-verbose "vvname $vvname does not exist. Nothing to List" 
-								return "FAILURE : No vvname $vvname found"			
-							}
-					}	
+	if($hostE)		{	$Cmd += " -host $host "		}
+	if ($vvname)	{	$Cmd += " -v $vvname"		}
 	if ($lun)		{	$Cmd += " -l $lun"	}
 	if ($Nodes)		{	$Cmd += " -nodes $Nodes"	}
 	if ($Slots)		{	$Cmd += " -slots $Slots"	}
 	if ($Ports)		{	$Cmd += " -ports $Ports"	}	
-	if($Metric)		{	$Met = $Metric
-						$c = "both","time","size"
-						$Metric = $metric.toLower()
-						if($c -eq $Met)	{	$Cmd += " -metric $Metric "	}
-						else			{	return "FAILURE: -Metric $Metric is Invalid. Use only [ both | time | size ]."	}
-					}
+	if($Metric)		{	$Cmd += " -metric $Metric "	}
 	if ($Previous)	{	$Cmd += " -prev "	}
 	if ($Beginning)	{	$Cmd += " -begin "	}
 	if ($Percentage){	$Cmd += " -pct "	}		
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	write-verbose " histograms The Get-HistVLun command displays Virtual Volume Logical Unit Number (VLUN)  " 
+	if ($ShowRaw) { return $ShowRaw }
 	$range1 = $Result.Count
 	if($range1 -le "5" ){	return "No Data Available"	}	
 	if ( $Result.Count -gt 1)
@@ -979,24 +965,6 @@ Function Get-A9HistogramVv
 	The Get-A9HistogramVv command displays Virtual Volume (VV) service time histograms in a timed loop.
 .DESCRIPTION
 	The Get-A9HistogramVv command displays Virtual Volume (VV) service time histograms in a timed loop.
-.EXAMPLE
-    PS:> Get-A9HistogramVv -iteration 1
-
-	This Example displays Virtual Volume (VV) service time histograms service iteration number of times.
-.EXAMPLE
-	PS:> Get-A9HistogramVv -iteration 1 -domain domain.com
-	This Example Shows only the VVs that are in domains with names that match the specified domain name(s)
-.EXAMPLE	
-	PS:> Get-A9HistogramVv -iteration 1 –Metric both
-	This Example Selects which Metric to display.
-.EXAMPLE
-	PS:> Get-A9HistogramVv -iteration 1 -Timecols "1 2"
-.EXAMPLE
-	PS:> Get-A9HistogramVv -iteration 1 -Sizecols "1 2"
-.EXAMPLE	
-	PS:> Get-A9HistogramVv –Metric both -VVname demoVV1 -iteration 1
-
-	This Example Selects which Metric to display. associated with Virtual Volume name.
 .PARAMETER domain
 	Shows only the VVs that are in domains with names that match the specified domain name(s) .
 .PARAMETER Metric
@@ -1055,6 +1023,26 @@ Function Get-A9HistogramVv
 	Virtual Volume name
 .PARAMETER iteration
 	Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+    PS:> Get-A9HistogramVv -iteration 1
+
+	This Example displays Virtual Volume (VV) service time histograms service iteration number of times.
+.EXAMPLE
+	PS:> Get-A9HistogramVv -iteration 1 -domain domain.com
+	This Example Shows only the VVs that are in domains with names that match the specified domain name(s)
+.EXAMPLE	
+	PS:> Get-A9HistogramVv -iteration 1 –Metric both
+	This Example Selects which Metric to display.
+.EXAMPLE
+	PS:> Get-A9HistogramVv -iteration 1 -Timecols "1 2"
+.EXAMPLE
+	PS:> Get-A9HistogramVv -iteration 1 -Sizecols "1 2"
+.EXAMPLE	
+	PS:> Get-A9HistogramVv –Metric both -VVname demoVV1 -iteration 1
+
+	This Example Selects which Metric to display. associated with Virtual Volume name.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1069,7 +1057,8 @@ param(	[Parameter()]	[String]	$iteration,
 		[Parameter()]	[Switch]	$Previous,	
 		[Parameter()]	[Switch]	$RW,
 		[Parameter()]	[String]	$IntervalInSeconds,
-		[Parameter()]	[String]	$FSpace
+		[Parameter()]	[String]	$FSpace,
+		[Parameter()]	[switch]	$ShowRaw
 	)
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1098,8 +1087,10 @@ Process
 			if($Result1 -match $vv)	{	$cmd += " $vv "	}
 			else					{	Return "Error: -VVname $VVname is not available `n Try Using Get-VvList to list all the VV's Available  "	}
 		}		
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	write-verbose " Get-HistVv command displays Virtual Volume Logical Unit Number (VLUN)  " 
+	write-verbose " Get-HistVv command displays Virtual Volume Logical Unit Number (VLUN)  "
+	if ($ShowRaw) { return $Result } 
 	$range1 = $Result.count
 	if($range1 -le "5")	{	return "No data available"	}	
 	if ( $Result.Count -gt 1)
@@ -1139,18 +1130,6 @@ Function Get-A9StatisticsChunklet
 	The command displays chunklet statistics in a timed loop.
 .DESCRIPTION
 	The command displays chunklet statistics in a timed loop. 
-.EXAMPLE
-	PS:> Get-A9StatisticsChunklet -Iterration 1
-
-	This example displays chunklet statistics in a timed loop.
-.EXAMPLE
-	PS:>Get-A9StatisticsChunklet -RW -Iteration 1
-
-	This example Specifies that reads and writes are displayed separately.while displays chunklet statistics in a timed loop.  
-.EXAMPLE  
-	PS:> Get-A9StatisticsChunklet -LDname demo1 -CHnum 5 -Iterration 1 
-	
-	This example Specifies particular chunklet number & logical disk.
 .PARAMETER RW	
 	Specifies that reads and writes are displayed separately. If this option is not used, then the total of reads plus writes is displayed.
 .PARAMETER Idlep
@@ -1167,6 +1146,20 @@ Function Get-A9StatisticsChunklet
 	Specifies that statistics are restricted to a particular chunklet number.
 .PARAMETER Iteration 
 	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-A9StatisticsChunklet -Iterration 1
+
+	This example displays chunklet statistics in a timed loop.
+.EXAMPLE
+	PS:>Get-A9StatisticsChunklet -RW -Iteration 1
+
+	This example Specifies that reads and writes are displayed separately.while displays chunklet statistics in a timed loop.  
+.EXAMPLE  
+	PS:> Get-A9StatisticsChunklet -LDname demo1 -CHnum 5 -Iterration 1 
+	
+	This example Specifies particular chunklet number & logical disk.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1178,7 +1171,8 @@ param(	[Parameter(Mandatory=$true)]	[String]	$Iteration ,
 		[Parameter()]	[switch]	$NI,
 		[Parameter()]	[String]	$Delay,
 		[Parameter()]	[String]	$LDname ,
-		[Parameter()]	[String]	$CHnum 
+		[Parameter()]	[String]	$CHnum,
+		[Parameter()]	[switch]	$ShowRaw
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1198,8 +1192,10 @@ Process
 					else{	Return "FAILURE : -LDname $LDname is not available . "	}
 				}
 	if($CHnum)	{	$cmd+=" -ch $CHnum "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Get-StatChunklet command displays chunklet statistics in a timed loop. with the command  " 
+	if ($ShowRaw) { return $Reult }
 	$range1 = $Result.Count
 	if($range1 -le "5" )	{	return "No Data Available"	}
 	if( $Result.Count -gt 1)
@@ -1239,14 +1235,6 @@ Function Get-A9StatCacheMemoryPages
 	The command displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
 .DESCRIPTION
 	The command displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
-.EXAMPLE
-	PS:> Get-A9StatCacheMemoryPages -Iteration 1
-
-	This Example displays Cache Memory Page (CMP).
-.EXAMPLE
-	PS:> Get-A9StatCacheMemoryPages -VVname Demo1 -Iteration 1
-
-	This Example displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
 .PARAMETER VVname   
 	Specifies that statistics are displayed for virtual volumes matching the specified name or pattern.
 .PARAMETER Domian 
@@ -1257,6 +1245,14 @@ Function Get-A9StatCacheMemoryPages
 	Specifies that statistics for only non-idle VVs are displayed. This option is valid only if -v is also specified.
 .PARAMETER Iteration 
 	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
+.EXAMPLE
+	PS:> Get-A9StatCacheMemoryPages -Iteration 1
+
+	This Example displays Cache Memory Page (CMP).
+.EXAMPLE
+	PS:> Get-A9StatCacheMemoryPages -VVname Demo1 -Iteration 1
+
+	This Example displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1265,7 +1261,8 @@ param(	[Parameter()]	[switch]	$NI,
 		[Parameter()]	[String]	$VVname ,
 		[Parameter()]	[String]	$Domian ,
 		[Parameter()]	[String]	$Delay  ,
-		[Parameter()]	[String]	$Iteration 
+		[Parameter()]	[String]	$Iteration ,
+		[Parameter()]	[switch]	$ShowRaw
 )		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1278,8 +1275,10 @@ Process
 	if($VVname)	{	$cmd+=" -n $VVname "	}		
 	if ($Domian){	$cmd+= " -domain $Domian "	}
 	if($Delay)	{	$cmd+=" -d $Delay"	}		
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Get-StatCMP command displays Cache Memory Page (CMP) statistics. with the command  " 
+	if ($ShowRaw) { return $Result }
 	$range1 = $Result.count
 	if($range1 -le "3")	{	return "No data available"	}	
 	if ( $Result.Count -gt 1)
@@ -1318,6 +1317,14 @@ Function Get-A9CPUStatisticalDataReports_CLI
 	The command displays CPU statistics for all nodes.
 .DESCRIPTION
 	The command displays CPU statistics for all nodes.
+.PARAMETER delay    
+	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483
+.PARAMETER total 
+	Show only the totals for all the CPUs on each node.
+.PARAMETER Iteration 
+	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Get-A9CPUStatisticalDataReports_CLI -iteration 1	
 	
@@ -1326,19 +1333,14 @@ Function Get-A9CPUStatisticalDataReports_CLI
 	PS:> Get-A9CPUStatisticalDataReports_CLI -delay 2  -total -iteration 1	
 
 	This Example Show only the totals for all the CPUs on each node.
-.PARAMETER delay    
-	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483
-.PARAMETER total 
-	Show only the totals for all the CPUs on each node.
-.PARAMETER Iteration 
-	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$delay,
 		[Parameter()]	[switch]	$total,
-		[Parameter(Mandatory=$true)]	[String]	$Iteration 
+		[Parameter(Mandatory)]	[String]	$Iteration,
+		[Parameter()]	[switch]	$ShowRaw
 )		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1348,8 +1350,10 @@ Process
 	$cmd+=" -iter $Iteration "
 	if($delay)	{	$cmd+=" -d $delay "	}
 	if ($total)	{	$cmd+= " -t "		}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd	
 	write-verbose "  Executing  Get-StatCPU command displays Cache Memory Page (CMP) statistics. with the command  " 
+	if ($ShowRaw) { return $Result}
 	$range1 = $Result.count
 	if($range1 -eq "5"){	return "No data available"	}		
 	if ( $Result.Count -gt 1)
@@ -1391,6 +1395,24 @@ Function Get-A9LogicalDiskStatisticsReports_CLI
 	The command displays read/write (I/O) statistics about Logical Disks (LDs) in a timed loop.
 .DESCRIPTION
 	The command displays read/write (I/O) statistics about Logical Disks (LDs) in a timed loop.
+.PARAMETER RW		
+	Specifies that reads and writes are displayed separately. If this option is not used, then the total of reads plus writes is displayed.
+.PARAMETER Begin	
+	Specifies that I/O averages are computed from the system start time. If not specified, the average is computed since the first iteration of the command.
+.PARAMETER IDLEP	
+    Specifies the percent of idle columns in the output.
+.PARAMETER VVname  
+	Show only LDs that are mapped to Virtual Volumes (VVs) with names matching any of names or patterns specified
+.PARAMETER LDname  
+	Only statistics are displayed for the specified LD or pattern
+.PARAMETER Domain
+	Shows only LDs that are in domains with names matching any of the names or specified patterns.
+.PARAMETER Delay 
+	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
+.PARAMETER Iteration 
+	Specifies that I/O statistics are displayed a specified number of times as indicated by the number argument using an integer from 1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Get-A9LogicalDiskStatisticsReports_CLI -Iteration 1
 	
@@ -1411,22 +1433,6 @@ Function Get-A9LogicalDiskStatisticsReports_CLI
 	PS:> Get-A9LogicalDiskStatisticsReports_CLI -begin -LDname demoLD1 -delay 2 -Iteration 1
 
 	This example displays statistics about Logical Disks (LDs).With Only statistics are displayed for the specified LD
-.PARAMETER RW		
-	Specifies that reads and writes are displayed separately. If this option is not used, then the total of reads plus writes is displayed.
-.PARAMETER Begin	
-	Specifies that I/O averages are computed from the system start time. If not specified, the average is computed since the first iteration of the command.
-.PARAMETER IDLEP	
-    Specifies the percent of idle columns in the output.
-.PARAMETER VVname  
-	Show only LDs that are mapped to Virtual Volumes (VVs) with names matching any of names or patterns specified
-.PARAMETER LDname  
-	Only statistics are displayed for the specified LD or pattern
-.PARAMETER Domain
-	Shows only LDs that are in domains with names matching any of the names or specified patterns.
-.PARAMETER Delay 
-	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
-.PARAMETER Iteration 
-	Specifies that I/O statistics are displayed a specified number of times as indicated by the number argument using an integer from 1 through 2147483647.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1439,7 +1445,8 @@ param(	[Parameter()]	[switch]	$RW,
 		[Parameter()]	[String]	$LDname,
 		[Parameter()]	[String]	$Domain,
 		[Parameter()]	[String]	$Delay,
-		[Parameter(Mandatory=$true)]	[String]	$Iteration
+		[Parameter(Mandatory)]	[String]	$Iteration,
+		[Parameter()]	[switch]	$ShowRaw
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1450,23 +1457,17 @@ Process
 	if($IDLEP)	{	$cmd+=" -idlep "	}
 	if($Begin)	{	$cmd+=" -begin "	}
 	if($NI)		{	$cmd+=" -ni "		}
-	if($VVname)	
-		{	$ld="showvv"
-			$Result1 = Invoke-A9CLICommand -cmds  $ld
-			if($Result1 -match $VVname )	{	$cmd+=" -vv $VVname "	}
-			else 							{	Return "FAILURE : -VVname $VVname is not available .`n Try Using Get-VvList to get all available VV  "	}
-		}
+	if($VVname)	{	$cmd+=" -vv $VVname "	}
 	if($LDname)	
 		{	if($cmd -match "-vv")	{	return "Stop: Executing -VVname $VVname and  -LDname $LDname cannot be done in a single Execution "	}
-			$ld="showld"
-			$Result1 = Invoke-A9CLICommand -cmds  $ld		
-			if($Result1 -match $LDname )	{	$cmd+=" $LDname "	}
-			else 							{	Return "FAILURE : -LDname $LDname is not available . "	}
+			$cmd+=" $LDname "	
 		}	
 	if($Domain)		{	$cmd+=" -domain $Domain "	}	
 	if($Delay)		{	$cmd+=" -d $Delay "	}		
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	$range1 = $Result.count
+	if ($ShowRaw) { return $Result }
 	if($range1 -le "5")	{	return "No data available" }	
 	if ( $Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -1506,7 +1507,14 @@ Function Get-A9StatisticLinkUtilization
 	The Get-StatLink command displays statistics for link utilization for all nodes in a timed loop.
 .DESCRIPTION
 	The Get-StatLink command displays statistics for link utilization for all nodes in a timed loop.
-
+.PARAMETER Detail
+	Displays detailed information regarding the Queue statistics.	 
+.PARAMETER Interval
+	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
+.PARAMETER Iteration 
+	Specifies that I/O statistics are displayed a specified number of times as indicated by the number argument using an integer from 1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Get-A9StatisticLinkUtilization -Iteration 1
 
@@ -1517,19 +1525,14 @@ Function Get-A9StatisticLinkUtilization
 	This Example displays statistics for link utilization for all nodes in a timed loop, with a delay of 3 sec.
 .EXAMPLE
 	PS:> Get-A9StatisticLinkUtilization -Detail -Iteration 1
-.PARAMETER Detail
-	Displays detailed information regarding the Queue statistics.	 
-.PARAMETER Interval
-	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
-.PARAMETER Iteration 
-	Specifies that I/O statistics are displayed a specified number of times as indicated by the number argument using an integer from 1 through 2147483647.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]					[switch]	$Detail,
-		[Parameter(Mandatory=$true)]	[String]	$Interval,
-		[Parameter()]					[String]	$Iteration
+		[Parameter(Mandatory)]			[String]	$Interval,
+		[Parameter()]					[String]	$Iteration,
+		[Parameter()]					[switch]	$ShowRaw
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1538,7 +1541,9 @@ Process
 {	$cmd= "statlink -iter $Iteration "
 	if ($Detail)	{	$cmd+=" -detail "	}
 	if ($Interval)	{	$cmd+=" -d $Interval "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if ($ShowRaw) { return $Result }
 	$range1 = $Result.count
 	if($range1 -eq "3")	{	return "No data available"	}	
 	if ( $Result.Count -gt 1)
@@ -1582,18 +1587,6 @@ Function Get-APhysicalDiskStatisticsReports_CLI
 	The Get-StatPD command displays the read/write (I/O) statistics for physical disks in a timed loop.
 .DESCRIPTION
     The Get-StatPD command displays the read/write (I/O) statistics for physical disks in a timed loop.   
-.EXAMPLE
-	PS:> Get-APhysicalDiskStatisticsReports_CLI -RW –Iteration 1
-	
-	This example displays one iteration of I/O statistics for all PDs.
-.EXAMPLE  
-	PS:> Get-APhysicalDiskStatisticsReports_CLI -IDLEP –nodes 2 –Iteration 1
-
-	This example displays one iteration of I/O statistics for all PDs with the specification idlep preference of node 2.
-.EXAMPLE  
-	PS:> Get-APhysicalDiskStatisticsReports_CLI -NI -wwn 1122112211221122 –nodes 2 –Iteration 1
-
-	This Example Specifies that statistics for a particular Physical Disk (PD) identified by World Wide Names (WWNs) and nodes
 .PARAMETER Devinfo
 	Indicates the device disk type and speed.
 .PARAMETER RW
@@ -1612,6 +1605,20 @@ Function Get-APhysicalDiskStatisticsReports_CLI
 	Specifies that the display is limited to specified ports and PDs connected to those ports
 .PARAMETER  Iteration
 	Specifies that the histogram is to stop after the indicated number of iterations using an integer from 1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-APhysicalDiskStatisticsReports_CLI -RW –Iteration 1
+	
+	This example displays one iteration of I/O statistics for all PDs.
+.EXAMPLE  
+	PS:> Get-APhysicalDiskStatisticsReports_CLI -IDLEP –nodes 2 –Iteration 1
+
+	This example displays one iteration of I/O statistics for all PDs with the specification idlep preference of node 2.
+.EXAMPLE  
+	PS:> Get-APhysicalDiskStatisticsReports_CLI -NI -wwn 1122112211221122 –nodes 2 –Iteration 1
+
+	This Example Specifies that statistics for a particular Physical Disk (PD) identified by World Wide Names (WWNs) and nodes
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1624,8 +1631,9 @@ param(	[Parameter()]	[switch]	$RW,
 		[Parameter()]	[String]	$nodes,
 		[Parameter()]	[String]	$slots,
 		[Parameter()]	[String]	$ports ,
-		[Parameter(Mandatory=$true)]	[String]	$Iteration ,
-		[Parameter()]	[switch]	$DevInfo		
+		[Parameter(Mandatory)]	[String]	$Iteration ,
+		[Parameter()]	[switch]	$DevInfo,
+		[Parameter()] 	[switch]	$ShowRaw	
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1642,7 +1650,9 @@ Process
 	if ($nodes)	{	$cmd+=" -nodes $nodes "	}	
 	if ($slots)	{	$cmd+=" -slots $slots "	}	
 	if ($ports ){	$cmd+=" -ports $ports "	}			
-	$Result = Invoke-A9CLICommand -cmds  $cmd	
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if ($ShowRaw) { return $Result }	
 	$range1 = $Result.count	
 	if($range1 -eq "4")	{	return "No data available"	}	
 	if ( $Result.Count -gt 1)
@@ -1682,15 +1692,6 @@ Function Get-A9PortStatisticsReports_CLI
 	The command displays read/write (I/O) statistics for ports.
 .DESCRIPTION
 	The command displays read/write (I/O) statistics for ports.
-.EXAMPLE
-	PS:> Get-A9PortStatisticsReports_CLI -Iteration 1
-	This example displays one iteration of I/O statistics for all ports.
-.EXAMPLE  
-	PS:> Get-A9PortStatisticsReports_CLI -Both -Iteration 1
-	This example displays one iteration of I/O statistics for all ports,Show data transfers only. 
-.EXAMPLE  
-	Get-A9PortStatisticsReports_CLI -Host -nodes 2 -Iteration 1
-	This example displays I/O statistics for all ports associated with node 2.
 .PARAMETER Both
 	Show data transfers only.
 .PARAMETER Ctl
@@ -1731,6 +1732,17 @@ Function Get-A9PortStatisticsReports_CLI
 .PARAMETER  Iteration
 	Specifies that the histogram is to stop after the indicated number of iterations using an integer from
 	1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-A9PortStatisticsReports_CLI -Iteration 1
+	This example displays one iteration of I/O statistics for all ports.
+.EXAMPLE  
+	PS:> Get-A9PortStatisticsReports_CLI -Both -Iteration 1
+	This example displays one iteration of I/O statistics for all ports,Show data transfers only. 
+.EXAMPLE  
+	Get-A9PortStatisticsReports_CLI -Host -nodes 2 -Iteration 1
+	This example displays I/O statistics for all ports associated with node 2.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1751,7 +1763,8 @@ param(	[Parameter()]	[switch]	$Both ,
 		[Parameter()]	[String]	$nodes,
 		[Parameter()]	[String]	$slots,
 		[Parameter()]	[String]	$ports ,	
-		[Parameter(Mandatory=$true)]	[String]	$Iteration 
+		[Parameter(Mandatory)]	[String]	$Iteration ,
+		[parameter()]	[switch]	$ShowRaw
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1775,7 +1788,9 @@ Process
 	if ($nodes)		{	$cmd+=" -nodes $nodes "	}
 	if ($slots)		{	$cmd+=" -slots $slots "	}
 	if ($ports )	{	$cmd+=" -ports $ports "	}				
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd	
+	if ($ShowRaw) { return $Reusult }
 	$range1 = $Result.count
 	if($range1 -eq "4")	{	return "No data available"	}
 	if(($Both) -And ($range -eq "6"))	{	return "No data available"	}
@@ -1817,25 +1832,6 @@ Function Get-A9RCopyStatisticalReports_CLI
 	The command displays statistics for remote-copy volumes in a timed loop.
 .DESCRIPTION
     The command displays statistics for remote-copy volumes in a timed loop.
-.EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1
-	This Example displays statistics for remote-copy volumes in a timed loop.
-.EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -ASync
-.EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -Sync -VVname $VV
-.EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -TargetSum
-.EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -VVSum   
-.EXAMPLE  
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -periodic 
-
-	This Example displays statistics for remote-copy volumes in a timed loop and show only volumes that are being copied in asynchronous periodic mode	
-.EXAMPLE  
-	PS:> Get-A9RCopyStatisticalReports_CLI -target demotarget1  -Iteration 1
-
-	This Example displays statistics for remote-copy volumes in a timed loop and Show only volumes whose group is copied to the specified target name.
 .PARAMETER Async     
 	Show only volumes which are being copied in asynchronous mode.
 .PARAMETER sync		
@@ -1876,6 +1872,27 @@ Function Get-A9RCopyStatisticalReports_CLI
 	command defaults to 2 seconds.
 .PARAMETER Subset
 	Show subset statistics for Asynchronous Remote Copy on a per group basis.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1
+	This Example displays statistics for remote-copy volumes in a timed loop.
+.EXAMPLE
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -ASync
+.EXAMPLE
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -Sync -VVname $VV
+.EXAMPLE
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -TargetSum
+.EXAMPLE
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -VVSum   
+.EXAMPLE  
+	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -periodic 
+
+	This Example displays statistics for remote-copy volumes in a timed loop and show only volumes that are being copied in asynchronous periodic mode	
+.EXAMPLE  
+	PS:> Get-A9RCopyStatisticalReports_CLI -target demotarget1  -Iteration 1
+
+	This Example displays statistics for remote-copy volumes in a timed loop and Show only volumes whose group is copied to the specified target name.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1898,7 +1915,8 @@ param(	[Parameter(Mandatory=$true)][String]	$Iteration ,
 		[Parameter()]				[switch]	$VVSum,
 		[Parameter()]				[switch]	$DomainSum,
 		[Parameter()]				[switch]	$NI,
-		[Parameter()]				[switch]	$SubSet
+		[Parameter()]				[switch]	$SubSet,
+		[Parameter()]				[switch]	$ShowRaw
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -1923,44 +1941,40 @@ Process
 	if($DomainName)	{	$cmd += " -domain $DomainName "	}
 	if($NI)			{	$cmd += " -ni "	}
 	if($SubSet)		{	$cmd += " -subset "	}
-	if ($VVname)
-		{	$s= Get-A9Vv_CLI -vvName  $VVname
-			if ($s -match $VVname )		{	$cmd+=" $VVname"	}
-			else						{	Return "FAILURE : -VVname $VVname  is Unavailable to execute. "	}		
-		}
+	if ($VVname)	{	$cmd+=" $VVname"	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if ($ShowRaw) { return $Result}
 	$range1 = $Result.count
 	if($range1 -eq "4")	{	return "No data available"	}
 	if( $Result.Count -gt 1)
-	{	$tempFile = [IO.Path]::GetTempFileName()
-		$LastItem = $Result.Count - 2
-		if($TargetSum)		{	Add-Content -Path $tempFile -Value "Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-		elseif ($PortSum)	{	Add-Content -Path $tempFile -Value "Link,Target,Type,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-		elseif ($GroupSum)	{	Add-Content -Path $tempFile -Value "Group,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-		elseif ($VVSum)		{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-		elseif ($DomainSum)	{	Add-Content -Path $tempFile -Value "Domain,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-		else 				{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,Port,Type,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"}
-		foreach ($s in  $Result[0..$LastItem] )
-		{	$s= [regex]::Replace($s,"^ +","")
-			$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
-			if ($s -match "I/O")
-				{	$a=$s.split(",")
-					$global:time1 = $a[0]
-					$global:date1 = $a[1]
-					continue
-				}
-			if (($s -match "-------") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Avg"))	{	continue	}
-			$aa=$s.split(",").length
-			if ($aa -eq "11")	{	continue	}			
-			$s +=",$global:time1,$global:date1"
-			Add-Content -Path $tempFile -Value $s		
+		{	$tempFile = [IO.Path]::GetTempFileName()
+			$LastItem = $Result.Count - 2
+			if($TargetSum)		{	Add-Content -Path $tempFile -Value "Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+			elseif ($PortSum)	{	Add-Content -Path $tempFile -Value "Link,Target,Type,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+			elseif ($GroupSum)	{	Add-Content -Path $tempFile -Value "Group,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+			elseif ($VVSum)		{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+			elseif ($DomainSum)	{	Add-Content -Path $tempFile -Value "Domain,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+			else 				{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,Port,Type,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"}
+			foreach ($s in  $Result[0..$LastItem] )
+			{	$s= [regex]::Replace($s,"^ +","")
+				$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
+				if ($s -match "I/O")
+					{	$a=$s.split(",")
+						$global:time1 = $a[0]
+						$global:date1 = $a[1]
+						continue
+					}
+				if (($s -match "-------") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Avg"))	{	continue	}
+				$aa=$s.split(",").length
+				if ($aa -eq "11")	{	continue	}			
+				$s +=",$global:time1,$global:date1"
+				Add-Content -Path $tempFile -Value $s		
+			}
+			$Result = Import-Csv $tempFile
+			remove-item $tempFile
 		}
-		Import-Csv $tempFile
-		remove-item $tempFile
-	}
-	else
-	{	return $Result
-	}
+	return $Result
 }
 }
 Function Get-A9vLunStatisticsReports_CLI
@@ -1970,22 +1984,6 @@ Function Get-A9vLunStatisticsReports_CLI
 	The command displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
 .DESCRIPTION
 	The Get-StatVLun command displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
-.EXAMPLE
-	PS:> Get-A9vLunStatisticsReports_CLI -Iteration 1
-
-	This example displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
-.EXAMPLE  
-	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -Iteration 1
-
-	This example displays statistics for Virtual Volumes (VVs) and Specifies that sums for VLUNs of the same VV are displayed.
-.EXAMPLE  
-	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -RW -Iteration 1
-.EXAMPLE  
-	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -RW -VVname xxx -Iteration 1
-.EXAMPLE  
-	PS:> Get-A9vLunStatisticsReports_CLI -VVname demovv1 -Iteration 1
-
-	This example displays statistics for Virtual Volumes (VVs) and only Logical Disks (LDs) mapped to VVs that match any of the specified names to be displayed.
 .PARAMETER LW  
 	Lists the host’s World Wide Name (WWN) or iSCSI names.
 .PARAMETER Domainsum
@@ -2014,6 +2012,24 @@ Function Get-A9vLunStatisticsReports_CLI
 .PARAMETER  Iteration
 	Specifies that the histogram is to stop after the indicated number of iterations using an integer from
 	1 through 2147483647.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE
+	PS:> Get-A9vLunStatisticsReports_CLI -Iteration 1
+
+	This example displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
+.EXAMPLE  
+	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -Iteration 1
+
+	This example displays statistics for Virtual Volumes (VVs) and Specifies that sums for VLUNs of the same VV are displayed.
+.EXAMPLE  
+	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -RW -Iteration 1
+.EXAMPLE  
+	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -RW -VVname xxx -Iteration 1
+.EXAMPLE  
+	PS:> Get-A9vLunStatisticsReports_CLI -VVname demovv1 -Iteration 1
+
+	This example displays statistics for Virtual Volumes (VVs) and only Logical Disks (LDs) mapped to VVs that match any of the specified names to be displayed.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -2030,7 +2046,8 @@ param(	[Parameter()]		[switch]	$RW,
 		[Parameter()]		[String]	$VVname ,
 		[Parameter()]		[String]	$LUN ,
 		[Parameter()]		[String]	$nodes,
-		[Parameter(Mandatory=$true)]	[String]	$Iteration 
+		[Parameter(Mandatory)]	[String]	$Iteration ,
+		[Parameter()]		[switch]	$ShowRaw
 )		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -2047,14 +2064,12 @@ Process
 	if($vvSum)		{	$cmd+=" -vvsum "	}	
 	if($HostSum)	{	$cmd+=" -hostsum "	}
 	if ($domian)	{	$cmd+=" -domain $domian"	}	
-	if ($VVname)
-		{	$s= Get-Vv -vvName  $VVname
-			if ($s -match $VVname )	{	$cmd+=" -v $VVname"	}
-			else					{	Return "FAILURE : -VVname $VVname  is Unavailable to execute. "	}		
-		}
-	if ($LUN)	{	$cmd+=" -l $LUN"	}	
-	if ($nodes)	{	$cmd+=" -nodes $nodes"	}				
+	if ($VVname)	{	$cmd+=" -v $VVname"	}			
+	if ($LUN)		{	$cmd+=" -l $LUN"	}	
+	if ($nodes)		{	$cmd+=" -nodes $nodes"	}				
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if ($ShowRaw) { return $Result }
 	$range1 = $Result.count
 	if($range1 -eq "4")					{	return "No data available"	}	
 	if(($range1 -eq "6") -and ($NI))	{	return "No data available"	}
@@ -2105,6 +2120,22 @@ Function Get-A9VvStatisticsReports
 	The command displays statistics for Virtual Volumes (VVs) in a timed loop.
 .DESCRIPTION
 	The command displays statistics for Virtual Volumes (VVs) in a timed loop.
+.PARAMETER RW
+	Specifies reads and writes to be displayed separately.
+.PARAMETER Delay
+	<Seconds> Specifies the interval in seconds that statistics are sampled from using an integer from 1 through 2147483. 
+	If no count is specified, the command defaults to 2 seconds.
+.PARAMETER NI
+	Specifies that statistics for only non-idle devices are displayed. This option is shorthand for the option -filt curs,t,iops,0.
+.PARAMETER domian    
+	Shows only Virtual Volume Logical Unit Number (VLUNs) whose VVs are in domains with names that match one or more of the specified domain names or patterns.
+.PARAMETER  Iteration
+	Specifies that the histogram is to stop after the indicated number of iterations using an integer from
+	1 through 2147483647.
+.PARAMETER  VVname
+	Only statistics are displayed for the specified VV.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	PS:> Get-A9VvStatisticsReports -Iteration 1
 	
@@ -2120,20 +2151,6 @@ Function Get-A9VvStatisticsReports
 .EXAMPLE  
 	PS:> Get-A9VvStatisticsReports -RW -domain ZZZ -VVname demovv1 -Iteration 1
 	This Example displays statistics for Virtual Volumes (VVs) with Only statistics are displayed for the specified VVname.			
-.PARAMETER RW
-	Specifies reads and writes to be displayed separately.
-.PARAMETER Delay
-	<Seconds> Specifies the interval in seconds that statistics are sampled from using an integer from 1 through 2147483. 
-	If no count is specified, the command defaults to 2 seconds.
-.PARAMETER NI
-	Specifies that statistics for only non-idle devices are displayed. This option is shorthand for the option -filt curs,t,iops,0.
-.PARAMETER domian    
-	Shows only Virtual Volume Logical Unit Number (VLUNs) whose VVs are in domains with names that match one or more of the specified domain names or patterns.
-.PARAMETER  Iteration
-	Specifies that the histogram is to stop after the indicated number of iterations using an integer from
-	1 through 2147483647.
-.PARAMETER  VVname
-	Only statistics are displayed for the specified VV.
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -2143,7 +2160,8 @@ param(	[Parameter()]				[switch]	$RW ,
 		[Parameter()]				[String]	$Delay  ,
 		[Parameter()]				[String]	$domian  ,
 		[Parameter()]				[String]	$VVname ,	
-		[Parameter(Mandatory=$true)][String]	$Iteration
+		[Parameter(Mandatory)]		[String]	$Iteration,
+		[Parameter()]				[switch]	$ShowRaw
 	)			
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -2156,7 +2174,9 @@ Process
 	if ($NI)		{	$cmd+=" -ni "				}
 	if ($domian)	{	$cmd+=" -domain $domian"	}			
 	if ($VVname)	{	$cmd+="  $VVname"			}	
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd	
+	if ($ShowRaw) { return $Result }
 	$range1 = $Result.count
 	if($range1 -eq "4")	{	return "No data available"	}	
 	if ( $Result.Count -gt 1)
@@ -2195,10 +2215,6 @@ Function Set-A9StatisticsInUseChunklets
     The Set-Statch command sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD).
 .DESCRIPTION
 	The Set-Statch command sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD).
-.EXAMPLE 
-	PS:> Set-A9StatisticsInUseChunklets -Start -LDname test1 -CLnum 1  
-	
-	This example starts and stops the statistics collection mode for chunklets.with the LD name test1.
 .PARAMETER Start  
     Specifies that the collection of statistics is either started or stopped for the specified Logical Disk (LD) and chunklet.
 .PARAMETER Stop  
@@ -2207,14 +2223,18 @@ Function Set-A9StatisticsInUseChunklets
 	Specifies the name of the logical disk in which the chunklet to be configured resides.
 .PARAMETER CLnum 	
 	Specifies the chunklet that is configured using the setstatch command.	
+.EXAMPLE 
+	PS:> Set-A9StatisticsInUseChunklets -Start -LDname test1 -CLnum 1  
+	
+	This example starts and stops the statistics collection mode for chunklets.with the LD name test1.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]											[switch]	$Start,
-		[Parameter()]											[switch]	$Stop,
-		[Parameter(ValueFromPipeline=$true, Mandatory=$true)]	[String]	$LDname,
-		[Parameter(ValueFromPipeline=$true, Mandatory=$true)]	[String]	$CLnum
+param(	[Parameter()]			[switch]	$Start,
+		[Parameter()]			[switch]	$Stop,
+		[Parameter(Mandatory)]	[String]	$LDname,
+		[Parameter(Mandatory)]	[String]	$CLnum
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -2229,6 +2249,7 @@ Process
 						Else		{	return "Error:  LDname  is Invalid ."	}
 					}
 	if($CLnum)		{	$cmd1+="$CLnum"	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd1
 	write-verbose "   The Set-Statch command sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD).->$cmd"
 	if([string]::IsNullOrEmpty($Result))
@@ -2245,23 +2266,23 @@ Function Set-A9StatisticsCollectionPhysicalDiskChunklets
     The command starts and stops the statistics collection mode for chunklets.
 .DESCRIPTION
     The command starts and stops the statistics collection mode for chunklets.
-.EXAMPLE
-	PS:> Set-A9StatisticsCollectionPhysicalDiskChunklets -Start -PD_ID 2
-	
-	This Example sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD) 2.
 .PARAMETER Start  
     Specifies that the collection of statistics is either started or stopped for the specified Logical Disk (LD) and chunklet.
 .PARAMETER Stop  
     Specifies that the collection of statistics is either started or stopped for the specified Logical Disk (LD) and chunklet.
 .PARAMETER PD_ID   
     Specifies the PD ID.
+.EXAMPLE
+	PS:> Set-A9StatisticsCollectionPhysicalDiskChunklets -Start -PD_ID 2
+	
+	This Example sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD) 2.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline=$true)]					[switch]	$Start,
-		[Parameter(ValueFromPipeline=$true)]					[switch]	$Stop,
-		[Parameter(ValueFromPipeline=$true, Mandatory=$true)]	[String]	$PD_ID
+param(	[Parameter()]			[switch]	$Start,
+		[Parameter()]			[switch]	$Stop,
+		[Parameter(Mandatory)]	[String]	$PD_ID
 	)			
 Begin
 {	Test-A9Connection -ClientType SshClient
@@ -2396,6 +2417,7 @@ Process
 	if($Maxtasks)	{	$Cmd += " -maxtasks $Maxtasks " }
 	if($Maxnodetasks){	$Cmd += " -maxnodetasks $Maxnodetasks " }
 	if($Waittask)	{	$Cmd += " -waittask " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -2495,6 +2517,7 @@ Process
 	if($MaxSvct)		{	$Cmd += " maxSvct $MaxSvct "	} 
 	elseif($AvgSvct)	{	$Cmd += " avgsvct $AvgSvct "	}
 	else				{	return	"Please select at list one from [ MaxSvct or AvgSvct]."	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -2502,11 +2525,11 @@ Process
 
 
 # SIG # Begin signature block
-# MIIt2AYJKoZIhvcNAQcCoIItyTCCLcUCAQExDzANBglghkgBZQMEAgMFADCBmwYK
+# MIIsVAYJKoZIhvcNAQcCoIIsRTCCLEECAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEBaLtCgqpgn
-# uUzvmu0pW0kCC6XGBLJc7iXJXe1puZZQQII1/l6AdLnulN57kzdDoeKN14YmjZnz
-# sKn5QqtfcnNioIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABECr50vmXvKw
+# u8GpjzFRYVjWdCdoFtvI33LClJ02VOMAuZr7KsCqFG483pn3O4mAbC5UWtzrriZt
+# 5laatUC579GwoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -2599,152 +2622,144 @@ Process
 # 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
 # tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
 # NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG5UwghuRAgEBMGkwVDELMAkGA1UEBhMCR0Ix
+# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCGhEwghoNAgEBMGkwVDELMAkGA1UEBhMCR0Ix
 # GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQLwh5vM3gRjXBt+Cza5pPW8Ik4xBBhvFRLR2EH1EHJ7f+ameSnbNBf27
-# k/nYH8Bhtjo8Otn8KpzBoki19VrGfnswDQYJKoZIhvcNAQEBBQAEggGAkchU75dD
-# HwIp0JaS/V7mpBbn9h9CvXkETGYckRZuCfZpoW8IZZt6Y50d580A5RjcbAJm+SjH
-# 1Ywi2b0uqUR5AkyZGKVLJhY+b9HaQgc2acisbopZKRv8xFPtBXzEnAf7H+yajFIx
-# NlwL4mrUMOpMiZUCdZyWEIo3PxTARn8FxpqFVnC9EaR0FlI8yytYbY1fCDh8SZgI
-# lJTJKrmVIoCzqZRvYbOa1RUFw7LnZavRSJrKa4DRvS07JqsRW6UGiHgxRYVql5c/
-# YgShVOBkrzwgM1wGwZIR3ZZG5RWpuBUk/Kc6H5hl/meqFeVy7FOUO81ghACL6eEB
-# jEEWZjEHt7gzjOxyq7CO9478sRCCKvaM1P3IucDBf0eCA3aF5PI69C7o4MWwPbvN
-# Mta965F1Ng7uRhxnDxLNbgyPccEe6YALZpUm8+mOBkh4N8bCVN7S8Sk666MRGjxb
-# HSDTcdnk2ezl2bn/DiiXh878+x9Zd7aTCPILqudfBjFg3KWslnb6TYL+oYIY3jCC
-# GNoGCisGAQQBgjcDAwExghjKMIIYxgYJKoZIhvcNAQcCoIIYtzCCGLMCAQMxDzAN
-# BglghkgBZQMEAgIFADCCAQMGCyqGSIb3DQEJEAEEoIHzBIHwMIHtAgEBBgorBgEE
-# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMAtKJ6b/ssmr8pDQG7+TPRJxl6Lvw0bn
-# Ig11q9TC8qeG+ka5ncZ8UGXl+7qjvuJmdQIUSbaxLN37J4+qZfP926x6UOqM+hwY
-# DzIwMjQwNzMxMTkyNDI0WqBypHAwbjELMAkGA1UEBhMCR0IxEzARBgNVBAgTCk1h
-# bmNoZXN0ZXIxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEwMC4GA1UEAxMnU2Vj
-# dGlnbyBQdWJsaWMgVGltZSBTdGFtcGluZyBTaWduZXIgUjM1oIIS/zCCBl0wggTF
-# oAMCAQICEDpSaiyEzlXmHWX8zBLY6YkwDQYJKoZIhvcNAQEMBQAwVTELMAkGA1UE
-# BhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGln
-# byBQdWJsaWMgVGltZSBTdGFtcGluZyBDQSBSMzYwHhcNMjQwMTE1MDAwMDAwWhcN
-# MzUwNDE0MjM1OTU5WjBuMQswCQYDVQQGEwJHQjETMBEGA1UECBMKTWFuY2hlc3Rl
-# cjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTAwLgYDVQQDEydTZWN0aWdvIFB1
-# YmxpYyBUaW1lIFN0YW1waW5nIFNpZ25lciBSMzUwggIiMA0GCSqGSIb3DQEBAQUA
-# A4ICDwAwggIKAoICAQCN0Wf0wUibvf04STpNYYGbw9jcRaVhBDaNBp7jmJaA9dQZ
-# W5ighrXGNMYjK7Dey5RIHMqLIbT9z9if753mYbojJrKWO4ZP0N5dBT2TwZZaPb8E
-# +hqaDZ8Vy2c+x1NiEwbEzTrPX4W3QFq/zJvDDbWKL99qLL42GJQzX3n5wWo60Kkl
-# fFn+Wb22mOZWYSqkCVGl8aYuE12SqIS4MVO4PUaxXeO+4+48YpQlNqbc/ndTgszR
-# QLF4MjxDPjRDD1M9qvpLTZcTGVzxfViyIToRNxPP6DUiZDU6oXARrGwyP9aglPXw
-# YbkqI2dLuf9fiIzBugCDciOly8TPDgBkJmjAfILNiGcVEzg+40xUdhxNcaC+6r0j
-# uPiR7bzXHh7v/3RnlZuT3ZGstxLfmE7fRMAFwbHdDz5gtHLqjSTXDiNF58IxPtvm
-# ZPG2rlc+Yq+2B8+5pY+QZn+1vEifI0MDtiA6BxxQuOnj4PnqDaK7NEKwtD1pzoA3
-# jJFuoJiwbatwhDkg1PIjYnMDbDW+wAc9FtRN6pUsO405jaBgigoFZCw9hWjLNqgF
-# VTo7lMb5rVjJ9aSBVVL2dcqzyFW2LdWk5Xdp65oeeOALod7YIIMv1pbqC15R7QCY
-# LxcK1bCl4/HpBbdE5mjy9JR70BHuYx27n4XNOZbwrXcG3wZf9gEUk7stbPAoBQID
-# AQABo4IBjjCCAYowHwYDVR0jBBgwFoAUX1jtTDF6omFCjVKAurNhlxmiMpswHQYD
-# VR0OBBYEFGjvpDJJabZSOB3qQzks9BRqngyFMA4GA1UdDwEB/wQEAwIGwDAMBgNV
-# HRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMEoGA1UdIARDMEEwNQYM
-# KwYBBAGyMQECAQMIMCUwIwYIKwYBBQUHAgEWF2h0dHBzOi8vc2VjdGlnby5jb20v
-# Q1BTMAgGBmeBDAEEAjBKBgNVHR8EQzBBMD+gPaA7hjlodHRwOi8vY3JsLnNlY3Rp
-# Z28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcmwwegYIKwYB
-# BQUHAQEEbjBsMEUGCCsGAQUFBzAChjlodHRwOi8vY3J0LnNlY3RpZ28uY29tL1Nl
-# Y3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcnQwIwYIKwYBBQUHMAGGF2h0
-# dHA6Ly9vY3NwLnNlY3RpZ28uY29tMA0GCSqGSIb3DQEBDAUAA4IBgQCw3C7J+k82
-# TIov9slP1e8YTx+fDsa//hJ62Y6SMr2E89rv82y/n8we5W6z5pfBEWozlW7nWp+s
-# dPCdUTFw/YQcqvshH6b9Rvs9qZp5Z+V7nHwPTH8yzKwgKzTTG1I1XEXLAK9fHnmX
-# paDeVeI8K6Lw3iznWZdLQe3zl+Rejdq5l2jU7iUfMkthfhFmi+VVYPkR/BXpV7Ub
-# 1QyyWebqkjSHJHRmv3lBYbQyk08/S7TlIeOr9iQ+UN57fJg4QI0yqdn6PyiehS1n
-# SgLwKRs46T8A6hXiSn/pCXaASnds0LsM5OVoKYfbgOOlWCvKfwUySWoSgrhncihS
-# BXxH2pAuDV2vr8GOCEaePZc0Dy6O1rYnKjGmqm/IRNkJghSMizr1iIOPN+23futB
-# XAhmx8Ji/4NTmyH9K0UvXHiuA2Pa3wZxxR9r9XeIUVb2V8glZay+2ULlc445CzCv
-# VSZV01ZB6bgvCuUuBx079gCcepjnZDCcEuIC5Se4F6yFaZ8RvmiJ4hgwggYUMIID
-# /KADAgECAhB6I67aU2mWD5HIPlz0x+M/MA0GCSqGSIb3DQEBDAUAMFcxCzAJBgNV
-# BAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNVBAMTJVNlY3Rp
-# Z28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwHhcNMjEwMzIyMDAwMDAw
-# WhcNMzYwMzIxMjM1OTU5WjBVMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGln
-# byBMaW1pdGVkMSwwKgYDVQQDEyNTZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5n
-# IENBIFIzNjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAM2Y2ENBq26C
-# K+z2M34mNOSJjNPvIhKAVD7vJq+MDoGD46IiM+b83+3ecLvBhStSVjeYXIjfa3aj
-# oW3cS3ElcJzkyZlBnwDEJuHlzpbN4kMH2qRBVrjrGJgSlzzUqcGQBaCxpectRGhh
-# nOSwcjPMI3G0hedv2eNmGiUbD12OeORN0ADzdpsQ4dDi6M4YhoGE9cbY11XxM2AV
-# Zn0GiOUC9+XE0wI7CQKfOUfigLDn7i/WeyxZ43XLj5GVo7LDBExSLnh+va8WxTlA
-# +uBvq1KO8RSHUQLgzb1gbL9Ihgzxmkdp2ZWNuLc+XyEmJNbD2OIIq/fWlwBp6KNL
-# 19zpHsODLIsgZ+WZ1AzCs1HEK6VWrxmnKyJJg2Lv23DlEdZlQSGdF+z+Gyn9/CRe
-# zKe7WNyxRf4e4bwUtrYE2F5Q+05yDD68clwnweckKtxRaF0VzN/w76kOLIaFVhf5
-# sMM/caEZLtOYqYadtn034ykSFaZuIBU9uCSrKRKTPJhWvXk4CllgrwIDAQABo4IB
-# XDCCAVgwHwYDVR0jBBgwFoAU9ndq3T/9ARP/FqFsggIv0Ao9FCUwHQYDVR0OBBYE
-# FF9Y7UwxeqJhQo1SgLqzYZcZojKbMA4GA1UdDwEB/wQEAwIBhjASBgNVHRMBAf8E
-# CDAGAQH/AgEAMBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQKMAgwBgYEVR0g
-# ADBMBgNVHR8ERTBDMEGgP6A9hjtodHRwOi8vY3JsLnNlY3RpZ28uY29tL1NlY3Rp
-# Z29QdWJsaWNUaW1lU3RhbXBpbmdSb290UjQ2LmNybDB8BggrBgEFBQcBAQRwMG4w
-# RwYIKwYBBQUHMAKGO2h0dHA6Ly9jcnQuc2VjdGlnby5jb20vU2VjdGlnb1B1Ymxp
-# Y1RpbWVTdGFtcGluZ1Jvb3RSNDYucDdjMCMGCCsGAQUFBzABhhdodHRwOi8vb2Nz
-# cC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOCAgEAEtd7IK0ONVgMnoEdJVj9
-# TC1ndK/HYiYh9lVUacahRoZ2W2hfiEOyQExnHk1jkvpIJzAMxmEc6ZvIyHI5UkPC
-# bXKspioYMdbOnBWQUn733qMooBfIghpR/klUqNxx6/fDXqY0hSU1OSkkSivt51Ul
-# mJElUICZYBodzD3M/SFjeCP59anwxs6hwj1mfvzG+b1coYGnqsSz2wSKr+nDO+Db
-# 8qNcTbJZRAiSazr7KyUJGo1c+MScGfG5QHV+bps8BX5Oyv9Ct36Y4Il6ajTqV2if
-# ikkVtB3RNBUgwu/mSiSUice/Jp/q8BMk/gN8+0rNIE+QqU63JoVMCMPY2752LmES
-# sRVVoypJVt8/N3qQ1c6FibbcRabo3azZkcIdWGVSAdoLgAIxEKBeNh9AQO1gQrnh
-# 1TA8ldXuJzPSuALOz1Ujb0PCyNVkWk7hkhVHfcvBfI8NtgWQupiaAeNHe0pWSGH2
-# opXZYKYG4Lbukg7HpNi/KqJhue2Keak6qH9A8CeEOB7Eob0Zf+fU+CCQaL0cJqlm
-# nx9HCDxF+3BLbUufrV64EbTI40zqegPZdA+sXCmbcZy6okx/SjwsusWRItFA3DE8
-# MORZeFb6BmzBtqKJ7l939bbKBy2jvxcJI98Va95Q5JnlKor3m0E7xpMeYRriWklU
-# PsetMSf2NvUQa/E5vVyefQIwggaCMIIEaqADAgECAhA2wrC9fBs656Oz3TbLyXVo
-# MA0GCSqGSIb3DQEBDAUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKTmV3IEpl
-# cnNleTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJV
-# U1QgTmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9u
-# IEF1dGhvcml0eTAeFw0yMTAzMjIwMDAwMDBaFw0zODAxMTgyMzU5NTlaMFcxCzAJ
-# BgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNVBAMTJVNl
-# Y3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwggIiMA0GCSqGSIb3
-# DQEBAQUAA4ICDwAwggIKAoICAQCIndi5RWedHd3ouSaBmlRUwHxJBZvMWhUP2ZQQ
-# RLRBQIF3FJmp1OR2LMgIU14g0JIlL6VXWKmdbmKGRDILRxEtZdQnOh2qmcxGzjqe
-# mIk8et8sE6J+N+Gl1cnZocew8eCAawKLu4TRrCoqCAT8uRjDeypoGJrruH/drCio
-# 28aqIVEn45NZiZQI7YYBex48eL78lQ0BrHeSmqy1uXe9xN04aG0pKG9ki+PC6VEf
-# zutu6Q3IcZZfm00r9YAEp/4aeiLhyaKxLuhKKaAdQjRaf/h6U13jQEV1JnUTCm51
-# 1n5avv4N+jSVwd+Wb8UMOs4netapq5Q/yGyiQOgjsP/JRUj0MAT9YrcmXcLgsrAi
-# mfWY3MzKm1HCxcquinTqbs1Q0d2VMMQyi9cAgMYC9jKc+3mW62/yVl4jnDcw6ULJ
-# sBkOkrcPLUwqj7poS0T2+2JMzPP+jZ1h90/QpZnBkhdtixMiWDVgh60KmLmzXiqJ
-# c6lGwqoUqpq/1HVHm+Pc2B6+wCy/GwCcjw5rmzajLbmqGygEgaj/OLoanEWP6Y52
-# Hflef3XLvYnhEY4kSirMQhtberRvaI+5YsD3XVxHGBjlIli5u+NrLedIxsE88WzK
-# XqZjj9Zi5ybJL2WjeXuOTbswB7XjkZbErg7ebeAQUQiS/uRGZ58NHs57ZPUfECcg
-# JC+v2wIDAQABo4IBFjCCARIwHwYDVR0jBBgwFoAUU3m/WqorSs9UgOHYm8Cd8rID
-# ZsswHQYDVR0OBBYEFPZ3at0//QET/xahbIICL9AKPRQlMA4GA1UdDwEB/wQEAwIB
-# hjAPBgNVHRMBAf8EBTADAQH/MBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQK
-# MAgwBgYEVR0gADBQBgNVHR8ESTBHMEWgQ6BBhj9odHRwOi8vY3JsLnVzZXJ0cnVz
-# dC5jb20vVVNFUlRydXN0UlNBQ2VydGlmaWNhdGlvbkF1dGhvcml0eS5jcmwwNQYI
-# KwYBBQUHAQEEKTAnMCUGCCsGAQUFBzABhhlodHRwOi8vb2NzcC51c2VydHJ1c3Qu
-# Y29tMA0GCSqGSIb3DQEBDAUAA4ICAQAOvmVB7WhEuOWhxdQRh+S3OyWM637ayBeR
-# 7djxQ8SihTnLf2sABFoB0DFR6JfWS0snf6WDG2gtCGflwVvcYXZJJlFfym1Doi+4
-# PfDP8s0cqlDmdfyGOwMtGGzJ4iImyaz3IBae91g50QyrVbrUoT0mUGQHbRcF57ol
-# pfHhQEStz5i6hJvVLFV/ueQ21SM99zG4W2tB1ExGL98idX8ChsTwbD/zIExAopoe
-# 3l6JrzJtPxj8V9rocAnLP2C8Q5wXVVZcbw4x4ztXLsGzqZIiRh5i111TW7HV1Ats
-# Qa6vXy633vCAbAOIaKcLAo/IU7sClyZUk62XD0VUnHD+YvVNvIGezjM6CRpcWed/
-# ODiptK+evDKPU2K6synimYBaNH49v9Ih24+eYXNtI38byt5kIvh+8aW88WThRpv8
-# lUJKaPn37+YHYafob9Rg7LyTrSYpyZoBmwRWSE4W6iPjB7wJjJpH29308ZkpKKdp
-# kiS9WNsf/eeUtvRrtIEiSJHN899L1P4l6zKVsdrUu1FX1T/ubSrsxrYJD+3f3aKg
-# 6yxdbugot06YwGXXiy5UUGZvOu3lXlxA+fC13dQ5OlL2gIb5lmF6Ii8+CQOYDwXM
-# +yd9dbmocQsHjcRPsccUd5E9FiswEqORvz8g3s+jR3SFCgXhN4wz7NgAnOgpCdUo
-# 4uDyllU9PzGCBJEwggSNAgEBMGkwVTELMAkGA1UEBhMCR0IxGDAWBgNVBAoTD1Nl
-# Y3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMgVGltZSBTdGFt
-# cGluZyBDQSBSMzYCEDpSaiyEzlXmHWX8zBLY6YkwDQYJYIZIAWUDBAICBQCgggH5
-# MBoGCSqGSIb3DQEJAzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjQw
-# NzMxMTkyNDI0WjA/BgkqhkiG9w0BCQQxMgQwMY82l+6ANtB1LmmMSd/uuF0KI/oj
-# nQDXQrzd7DYrefmKz0VEuE/pwgtyQAad82OyMIIBegYLKoZIhvcNAQkQAgwxggFp
-# MIIBZTCCAWEwFgQU+GCYGab7iCz36FKX8qEZUhoWd18wgYcEFMauVOR4hvF8PVUS
-# SIxpw0p6+cLdMG8wW6RZMFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdv
-# IExpbWl0ZWQxLjAsBgNVBAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcg
-# Um9vdCBSNDYCEHojrtpTaZYPkcg+XPTH4z8wgbwEFIU9Yy2TgoJhfNCQNcSR3pLB
-# QtrHMIGjMIGOpIGLMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKTmV3IEplcnNl
-# eTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJVU1Qg
-# TmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9uIEF1
-# dGhvcml0eQIQNsKwvXwbOuejs902y8l1aDANBgkqhkiG9w0BAQEFAASCAgAh1JNr
-# uCNBe8GDHWdAXt73QjthkFiCH3CyVDwLqIldENVKe8+13VZwaREV93y7oJ/yGam6
-# U8vXF/4l+5nl71G4uUl2zEy58DXnZozqnwVwF1z0jblPwlud6zFmerBnHWtg/GOt
-# IzfK+aZC2VEcd/mEARo3w5LBCEuPxedAfhEuyBQ7M4QEfe5GXfgmtLd74Xs2zTSB
-# wmzl7kGtvgEPgbqiU0qL7wuQkO+US9fc2p3ZDfu6PZ7fpCUgieShVQ22aGTxZhPX
-# TNw2/xFBsk7reuAgXaH0L+sEo0jjTJeHzX+JO23WQIwy6uBSUtkKAmr0VdQL5YZN
-# hsr5YQVM4sgjyIWPdWWV50WRYDy+eNqPb4Wgv//f9ZTedequnHk5CJkomx5HA/Ty
-# GGuHVDWgSDSUYZW60PpEns5sDwsW0i+oDJanAity4qGZAXboF/P5qufXBSQHBZ2j
-# eSZcVnSV9ts+QHkul9J+Gk3kstkdDyyaXFuzc7yV4lyIkRynkzff/g5xd60bv9Dk
-# i87g83PEOsmKG6BG4nERUXdG04/wsigLzPmGS6cXuyJf2YN4N3545y5+4ZDfTNrv
-# bhx0yGgw2el+JBbxr596AlXyI41mzGVb+i/Y1e2REXorJtItQP5owNNliJa5GXEL
-# y7ArqoZEYJ44+WFKYWkypIkiMZKvqKNvgWi1PA==
+# AQkEMUIEQDB3v9NntDFW8I5I76jzN8TPywCzPYZ+5NDDlcX+AvI6v3OLzpiL3UbX
+# 0aonxKBIjT2/bo0b4tJmC3qLIQyca6cwDQYJKoZIhvcNAQEBBQAEggGATgTME8Vg
+# BpQTHMGOY5LQwvfWX9nhKIapTV5oZ7Kh5pxXxCpMhy9r1Zl6bos3ROW0FYjCpz9G
+# UhS2kHF3Fv9Nyams/GX45lRglG8a04OUEfQy9oU0Wh8qD7KqkQlwrNcLQ7orN5Cc
+# dlRmOljRjqUydp5fQ8De7S39HKncQ0up18Wk4NP2Ds5w14iAdbuuHroQ2YwbIGo1
+# j+OgyPvaGBMf04Sfty7MUf2+4t71mpdkakv3oZei3WcKMLu5vveyUQYVa/4/ij30
+# KSnNwad79RSpnSqyQ1wetHc8meZfUYAkG4safkTgNS0twsixb1ORAMV0yHCe/ser
+# L24Xp2c/qsKKK985x8dApkXNVwD3hxe9zitvC2DJnUQcrvWq1JrFmBu/VcwT2lJd
+# FG4xlAmqkceWGeIEwLM5LQOIYpibSfUfCst53gtSIvrOjdJMQ2ROUQGCru3d0tVN
+# TmNWNGXPUF0dU+CouyQean1SCwZRC+7EEHlMlCuCBHBkSXpdrGhUTFzWoYIXWjCC
+# F1YGCisGAQQBgjcDAwExghdGMIIXQgYJKoZIhvcNAQcCoIIXMzCCFy8CAQMxDzAN
+# BglghkgBZQMEAgIFADCBhwYLKoZIhvcNAQkQAQSgeAR2MHQCAQEGCWCGSAGG/WwH
+# ATBBMA0GCWCGSAFlAwQCAgUABDApuWIA5mtRvh3lSWPmmkLWgVQSBDNcJZA7eVIh
+# vomJiFbms7cJ0aAr7J+5imPi+vECEDWGdqPQCzzgmFq+35X3Ep4YDzIwMjUwNTE1
+# MDIyMTA4WqCCEwMwgga8MIIEpKADAgECAhALrma8Wrp/lYfG+ekE4zMEMA0GCSqG
+# SIb3DQEBCwUAMGMxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5j
+# LjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBU
+# aW1lU3RhbXBpbmcgQ0EwHhcNMjQwOTI2MDAwMDAwWhcNMzUxMTI1MjM1OTU5WjBC
+# MQswCQYDVQQGEwJVUzERMA8GA1UEChMIRGlnaUNlcnQxIDAeBgNVBAMTF0RpZ2lD
+# ZXJ0IFRpbWVzdGFtcCAyMDI0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKC
+# AgEAvmpzn/aVIauWMLpbbeZZo7Xo/ZEfGMSIO2qZ46XB/QowIEMSvgjEdEZ3v4vr
+# rTHleW1JWGErrjOL0J4L0HqVR1czSzvUQ5xF7z4IQmn7dHY7yijvoQ7ujm0u6yXF
+# 2v1CrzZopykD07/9fpAT4BxpT9vJoJqAsP8YuhRvflJ9YeHjes4fduksTHulntq9
+# WelRWY++TFPxzZrbILRYynyEy7rS1lHQKFpXvo2GePfsMRhNf1F41nyEg5h7iOXv
+# +vjX0K8RhUisfqw3TTLHj1uhS66YX2LZPxS4oaf33rp9HlfqSBePejlYeEdU740G
+# KQM7SaVSH3TbBL8R6HwX9QVpGnXPlKdE4fBIn5BBFnV+KwPxRNUNK6lYk2y1WSKo
+# ur4hJN0SMkoaNV8hyyADiX1xuTxKaXN12HgR+8WulU2d6zhzXomJ2PleI9V2yfmf
+# XSPGYanGgxzqI+ShoOGLomMd3mJt92nm7Mheng/TBeSA2z4I78JpwGpTRHiT7yHq
+# BiV2ngUIyCtd0pZ8zg3S7bk4QC4RrcnKJ3FbjyPAGogmoiZ33c1HG93Vp6lJ415E
+# RcC7bFQMRbxqrMVANiav1k425zYyFMyLNyE1QulQSgDpW9rtvVcIH7WvG9sqYup9
+# j8z9J1XqbBZPJ5XLln8mS8wWmdDLnBHXgYly/p1DhoQo5fkCAwEAAaOCAYswggGH
+# MA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsG
+# AQUFBwMIMCAGA1UdIAQZMBcwCAYGZ4EMAQQCMAsGCWCGSAGG/WwHATAfBgNVHSME
+# GDAWgBS6FtltTYUvcyl2mi91jGogj57IbzAdBgNVHQ4EFgQUn1csA3cOKBWQZqVj
+# Xu5Pkh92oFswWgYDVR0fBFMwUTBPoE2gS4ZJaHR0cDovL2NybDMuZGlnaWNlcnQu
+# Y29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFtcGluZ0NB
+# LmNybDCBkAYIKwYBBQUHAQEEgYMwgYAwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3Nw
+# LmRpZ2ljZXJ0LmNvbTBYBggrBgEFBQcwAoZMaHR0cDovL2NhY2VydHMuZGlnaWNl
+# cnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZEc0UlNBNDA5NlNIQTI1NlRpbWVTdGFtcGlu
+# Z0NBLmNydDANBgkqhkiG9w0BAQsFAAOCAgEAPa0eH3aZW+M4hBJH2UOR9hHbm04I
+# HdEoT8/T3HuBSyZeq3jSi5GXeWP7xCKhVireKCnCs+8GZl2uVYFvQe+pPTScVJeC
+# ZSsMo1JCoZN2mMew/L4tpqVNbSpWO9QGFwfMEy60HofN6V51sMLMXNTLfhVqs+e8
+# haupWiArSozyAmGH/6oMQAh078qRh6wvJNU6gnh5OruCP1QUAvVSu4kqVOcJVozZ
+# R5RRb/zPd++PGE3qF1P3xWvYViUJLsxtvge/mzA75oBfFZSbdakHJe2BVDGIGVNV
+# jOp8sNt70+kEoMF+T6tptMUNlehSR7vM+C13v9+9ZOUKzfRUAYSyyEmYtsnpltD/
+# GWX8eM70ls1V6QG/ZOB6b6Yum1HvIiulqJ1Elesj5TMHq8CWT/xrW7twipXTJ5/i
+# 5pkU5E16RSBAdOp12aw8IQhhA/vEbFkEiF2abhuFixUDobZaA0VhqAsMHOmaT3XT
+# hZDNi5U2zHKhUs5uHHdG6BoQau75KiNbh0c+hatSF+02kULkftARjsyEpHKsF7u5
+# zKRbt5oK5YGwFvgc4pEVUNytmB3BpIiowOIIuDgP5M9WArHYSAR16gc0dP2XdkME
+# P5eBsX7bf/MGN4K3HP50v/01ZHo/Z5lGLvNwQ7XHBx1yomzLP8lx4Q1zZKDyHcp4
+# VQJLu2kWTsKsOqQwggauMIIElqADAgECAhAHNje3JFR82Ees/ShmKl5bMA0GCSqG
+# SIb3DQEBCwUAMGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMx
+# GTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IFRy
+# dXN0ZWQgUm9vdCBHNDAeFw0yMjAzMjMwMDAwMDBaFw0zNzAzMjIyMzU5NTlaMGMx
+# CzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMy
+# RGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcg
+# Q0EwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDGhjUGSbPBPXJJUVXH
+# JQPE8pE3qZdRodbSg9GeTKJtoLDMg/la9hGhRBVCX6SI82j6ffOciQt/nR+eDzMf
+# UBMLJnOWbfhXqAJ9/UO0hNoR8XOxs+4rgISKIhjf69o9xBd/qxkrPkLcZ47qUT3w
+# 1lbU5ygt69OxtXXnHwZljZQp09nsad/ZkIdGAHvbREGJ3HxqV3rwN3mfXazL6IRk
+# tFLydkf3YYMZ3V+0VAshaG43IbtArF+y3kp9zvU5EmfvDqVjbOSmxR3NNg1c1eYb
+# qMFkdECnwHLFuk4fsbVYTXn+149zk6wsOeKlSNbwsDETqVcplicu9Yemj052FVUm
+# cJgmf6AaRyBD40NjgHt1biclkJg6OBGz9vae5jtb7IHeIhTZgirHkr+g3uM+onP6
+# 5x9abJTyUpURK1h0QCirc0PO30qhHGs4xSnzyqqWc0Jon7ZGs506o9UD4L/wojzK
+# QtwYSH8UNM/STKvvmz3+DrhkKvp1KCRB7UK/BZxmSVJQ9FHzNklNiyDSLFc1eSuo
+# 80VgvCONWPfcYd6T/jnA+bIwpUzX6ZhKWD7TA4j+s4/TXkt2ElGTyYwMO1uKIqjB
+# Jgj5FBASA31fI7tk42PgpuE+9sJ0sj8eCXbsq11GdeJgo1gJASgADoRU7s7pXche
+# MBK9Rp6103a50g5rmQzSM7TNsQIDAQABo4IBXTCCAVkwEgYDVR0TAQH/BAgwBgEB
+# /wIBADAdBgNVHQ4EFgQUuhbZbU2FL3MpdpovdYxqII+eyG8wHwYDVR0jBBgwFoAU
+# 7NfjgtJxXWRM3y5nP+e6mK4cD08wDgYDVR0PAQH/BAQDAgGGMBMGA1UdJQQMMAoG
+# CCsGAQUFBwMIMHcGCCsGAQUFBwEBBGswaTAkBggrBgEFBQcwAYYYaHR0cDovL29j
+# c3AuZGlnaWNlcnQuY29tMEEGCCsGAQUFBzAChjVodHRwOi8vY2FjZXJ0cy5kaWdp
+# Y2VydC5jb20vRGlnaUNlcnRUcnVzdGVkUm9vdEc0LmNydDBDBgNVHR8EPDA6MDig
+# NqA0hjJodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVkUm9v
+# dEc0LmNybDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEwDQYJKoZI
+# hvcNAQELBQADggIBAH1ZjsCTtm+YqUQiAX5m1tghQuGwGC4QTRPPMFPOvxj7x1Bd
+# 4ksp+3CKDaopafxpwc8dB+k+YMjYC+VcW9dth/qEICU0MWfNthKWb8RQTGIdDAiC
+# qBa9qVbPFXONASIlzpVpP0d3+3J0FNf/q0+KLHqrhc1DX+1gtqpPkWaeLJ7giqzl
+# /Yy8ZCaHbJK9nXzQcAp876i8dU+6WvepELJd6f8oVInw1YpxdmXazPByoyP6wCeC
+# RK6ZJxurJB4mwbfeKuv2nrF5mYGjVoarCkXJ38SNoOeY+/umnXKvxMfBwWpx2cYT
+# gAnEtp/Nh4cku0+jSbl3ZpHxcpzpSwJSpzd+k1OsOx0ISQ+UzTl63f8lY5knLD0/
+# a6fxZsNBzU+2QJshIUDQtxMkzdwdeDrknq3lNHGS1yZr5Dhzq6YBT70/O3itTK37
+# xJV77QpfMzmHQXh6OOmc4d0j/R0o08f56PGYX/sr2H7yRp11LB4nLCbbbxV7HhmL
+# NriT1ObyF5lZynDwN7+YAN8gFk8n+2BnFqFmut1VwDophrCYoCvtlUG3OtUVmDG0
+# YgkPCr2B2RP+v6TR81fZvAT6gt4y3wSJ8ADNXcL50CN/AAvkdgIm2fBldkKmKYcJ
+# RyvmfxqkhQ/8mJb2VVQrH4D6wPIOK+XW+6kvRBVK5xMOHds3OBqhK/bt1nz8MIIF
+# jTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkqhkiG9w0BAQwFADBlMQsw
+# CQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cu
+# ZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVkIElEIFJvb3Qg
+# Q0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5WjBiMQswCQYDVQQGEwJV
+# UzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQu
+# Y29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVkIFJvb3QgRzQwggIiMA0GCSqG
+# SIb3DQEBAQUAA4ICDwAwggIKAoICAQC/5pBzaN675F1KPDAiMGkz7MKnJS7JIT3y
+# ithZwuEppz1Yq3aaza57G4QNxDAf8xukOBbrVsaXbR2rsnnyyhHS5F/WBTxSD1If
+# xp4VpX6+n6lXFllVcq9ok3DCsrp1mWpzMpTREEQQLt+C8weE5nQ7bXHiLQwb7iDV
+# ySAdYyktzuxeTsiT+CFhmzTrBcZe7FsavOvJz82sNEBfsXpm7nfISKhmV1efVFiO
+# DCu3T6cw2Vbuyntd463JT17lNecxy9qTXtyOj4DatpGYQJB5w3jHtrHEtWoYOAMQ
+# jdjUN6QuBX2I9YI+EJFwq1WCQTLX2wRzKm6RAXwhTNS8rhsDdV14Ztk6MUSaM0C/
+# CNdaSaTC5qmgZ92kJ7yhTzm1EVgX9yRcRo9k98FpiHaYdj1ZXUJ2h4mXaXpI8OCi
+# EhtmmnTK3kse5w5jrubU75KSOp493ADkRSWJtppEGSt+wJS00mFt6zPZxd9LBADM
+# fRyVw4/3IbKyEbe7f/LVjHAsQWCqsWMYRJUadmJ+9oCw++hkpjPRiQfhvbfmQ6QY
+# uKZ3AeEPlAwhHbJUKSWJbOUOUlFHdL4mrLZBdd56rF+NP8m800ERElvlEFDrMcXK
+# chYiCd98THU/Y+whX8QgUWtvsauGi0/C1kVfnSD8oR7FwI+isX4KJpn15GkvmB0t
+# 9dmpsh3lGwIDAQABo4IBOjCCATYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQU
+# 7NfjgtJxXWRM3y5nP+e6mK4cD08wHwYDVR0jBBgwFoAUReuir/SSy4IxLVGLp6ch
+# nfNtyA8wDgYDVR0PAQH/BAQDAgGGMHkGCCsGAQUFBwEBBG0wazAkBggrBgEFBQcw
+# AYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tMEMGCCsGAQUFBzAChjdodHRwOi8v
+# Y2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3J0
+# MEUGA1UdHwQ+MDwwOqA4oDaGNGh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdp
+# Q2VydEFzc3VyZWRJRFJvb3RDQS5jcmwwEQYDVR0gBAowCDAGBgRVHSAAMA0GCSqG
+# SIb3DQEBDAUAA4IBAQBwoL9DXFXnOF+go3QbPbYW1/e/Vwe9mqyhhyzshV6pGrsi
+# +IcaaVQi7aSId229GhT0E0p6Ly23OO/0/4C5+KH38nLeJLxSA8hO0Cre+i1Wz/n0
+# 96wwepqLsl7Uz9FDRJtDIeuWcqFItJnLnU+nBgMTdydE1Od/6Fmo8L8vC6bp8jQ8
+# 7PcDx4eo0kxAGTVGamlUsLihVo7spNU96LHc/RzY9HdaXFSMb++hUD38dglohJ9v
+# ytsgjTVgHAIDyyCwrFigDkBjxZgiwbJZ9VVrzyerbHbObyMt9H5xaiNrIv8SuFQt
+# J37YOtnwtoeW/VvRXKwYw02fc7cBqZ9Xql4o4rmUMYIDhjCCA4ICAQEwdzBjMQsw
+# CQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRp
+# Z2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENB
+# AhALrma8Wrp/lYfG+ekE4zMEMA0GCWCGSAFlAwQCAgUAoIHhMBoGCSqGSIb3DQEJ
+# AzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjUwNTE1MDIyMTA4WjAr
+# BgsqhkiG9w0BCRACDDEcMBowGDAWBBTb04XuYtvSPnvk9nFIUIck1YZbRTA3Bgsq
+# hkiG9w0BCRACLzEoMCYwJDAiBCB2dp+o8mMvH0MLOiMwrtZWdf7Xc9sF1mW5BZOY
+# Q4+a2zA/BgkqhkiG9w0BCQQxMgQwX+1F8/vJuK94pqI/i/OUtawfHBdO5OHjxiSp
+# jvFGAOJuocfE0mVYy/pL0MH39LHKMA0GCSqGSIb3DQEBAQUABIICAH9l6GulWQa8
+# QS+fr7Rs/IuknmOWHeEZPE007nS+nfYdMilB6Ear/0onrkzKPZtRq/95oSOGbua6
+# owM7jvTf8+7tHtmq+ZbsUmVYSETlggPjvEvOUVD53zsFaP/7P4H41HzNPVpZm7p5
+# nA5rb/0gblmmL0OmPnSo3ce/UZ0r2Zwe29Jt+Lne/RE5g0JrtDFl49ZZ1kAP7BL7
+# Vr9lEMigV+9ZnbwntYuyGkpw1S7MuBdj1DoZWR7+1lWCu8Qlql271JX6HznXlMt8
+# ZvDcVpl7x6PEGYzbDYSErn6hqlKhhyn+HceL5Q7HtJjckGwnNKESFE5bRim0pM+M
+# b5keNmPGOTRkkfng9zY9+9dg9jGE9BgwmipSS/h9m/0Sz/weOMjLtNuLjn0Eqnza
+# 4N3hJgxinmM8Pazjgle5A2BRZ/RxaabpagSGc10vpGEZwnfAkwTsnGpmsglzWIoE
+# tcKGZiNCaT/Ms/R+jpMC/senFip9SityOkSIm7JXIzVfG+hseFC/nMaaY27J7BYL
+# EmfJdf4IacRLENxy316mPhgKNu9SgHb9959p5MCndwdP12DxYML4GcfoT6tiTDr3
+# OBV+9tlOpXGcxA69/gqQBG73IfCNIx72oyDsJuOKADlib5fiWh2WOhW1g89cpQXW
+# H6kFWPdxOae4Qnf/X32sH/xXAQ6VSOIk
 # SIG # End signature block

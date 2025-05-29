@@ -1,77 +1,8 @@
 ﻿####################################################################################
 ## 	© 2020,2021 Hewlett Packard Enterprise Development LP
 ##
+## These commands are only used by classic 3Par devices. 
 
-Function Get-A9AdaptiveOptimizationConfig
-{
-<#
-.SYNOPSIS
-	Show Adaptive Optimization configurations.
-.DESCRIPTION
-	This command shows Adaptive Optimization configurations in the system.
-.PARAMETER Domain
-	Shows only AO configurations that are in domains with names matching one or more of the <domain_name_or_pattern> argument. This option
-	does not allow listing objects within a domain of which the user is not a member. Patterns are glob-style (shell-style) patterns (see help on sub,globpat)
-.PARAMETER AOConfigurationName
-.NOTES
-	This command requires a SSH type connection.
-
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$Domain,
-		[Parameter()]	[String]	$ConfigName
-)
-begin
-{	Test-A9Connection -ClientType 'SshClient' 
-}
-process
-{	$Cmd = " showaocfg "
-	if($Domain)	{	$Cmd += " -domain $Domain "	}
-	if($ConfigName)	{	$Cmd += " $ConfigName " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count -2  
-			$oneTimeOnly = "True"
-			foreach ($s in  $Result[1..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")
-					$s= [regex]::Replace($s,"^ ","")
-					$s= [regex]::Replace($s,"^ ","")		
-					$s= [regex]::Replace($s," +",",")		
-					$s= [regex]::Replace($s,"-","")		
-					$s= $s.Trim()		
-					if($oneTimeOnly -eq "True")
-						{	$sTemp1=$s				
-							$sTemp = $sTemp1.Split(',')							
-							$sTemp[2] = "T0(CPG)"
-							$sTemp[3] = "T1(CPG)"
-							$sTemp[4] = "T2(CPG)"
-							$sTemp[5] = "T0Min(MB)"
-							$sTemp[6] = "T1Min(MB)"
-							$sTemp[7] = "T2Min(MB)"
-							$sTemp[8] = "T0Max(MB)"
-							$sTemp[9] = "T1Max(MB)"
-							$sTemp[10] = "T2Max(MB)"
-							$sTemp[11] = "T0Warn(MB)"
-							$sTemp[12] = "T1Warn(MB)"
-							$sTemp[13] = "T2Warn(MB)"
-							$sTemp[14] = "T0Limit(MB)"
-							$sTemp[15] = "T1Limit(MB)"
-							$sTemp[16] = "T2Limit(MB)"
-							$newTemp= [regex]::Replace($sTemp,"^ ","")			
-							$newTemp= [regex]::Replace($sTemp," ",",")				
-							$newTemp= $newTemp.Trim()
-							$s=$newTemp			
-						}
-					Add-Content -Path $tempfile -Value $s
-					$oneTimeOnly = "False"		
-				}
-			Import-Csv $tempFile 
-			Remove-Item  $tempFile 
-		}
-	else{	Return $Result	}
-}
-}
 
 Function New-A9AdaptiveOptimizationConfig
 {
@@ -123,7 +54,6 @@ Function New-A9AdaptiveOptimizationConfig
 	Specifies an AO configuration name up to 31 characters in length.
 .NOTES
 	This command requires a SSH type connection.
-
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$T0cpg,
@@ -140,24 +70,25 @@ param(	[Parameter()]	[String]	$T0cpg,
 		[Parameter(Mandatory=$True)]	[String]	$AOConfigurationName
 )
 begin
-{	Test-A9Connection -ClientType 'SshClient' 
-}
+	{	Test-A9Connection -ClientType 'SshClient' 
+	}
 process
-{	$Cmd = " createaocfg "
-	if($T0cpg)					{	$Cmd += " -t0cpg $T0cpg " }
-	if($T1cpg)					{	$Cmd += " -t1cpg $T1cpg " }
-	if($T2cpg)					{	$Cmd += " -t2cpg $T2cpg "}
-	if($Mode)					{	$Cmd += " -mode $Mode "}
-	if($T0min)					{	$Cmd += " -t0min $T0min "}
-	if($T1min)					{	$Cmd += " -t1min $T1min "}
-	if($T2min)					{	$Cmd += " -t2min $T2min "}
-	if($T0max)					{	$Cmd += " -t0max $T0max "	}
-	if($T1max)					{	$Cmd += " -t1max $T1max "}
-	if($T2max)					{	$Cmd += " -t2max $T2max "}
-	if($AOConfigurationName) 	{	$Cmd += " $AOConfigurationName "}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-} 
+	{	$Cmd = " createaocfg "
+		if($T0cpg)					{	$Cmd += " -t0cpg $T0cpg " }
+		if($T1cpg)					{	$Cmd += " -t1cpg $T1cpg " }
+		if($T2cpg)					{	$Cmd += " -t2cpg $T2cpg "}
+		if($Mode)					{	$Cmd += " -mode $Mode "}
+		if($T0min)					{	$Cmd += " -t0min $T0min "}
+		if($T1min)					{	$Cmd += " -t1min $T1min "}
+		if($T2min)					{	$Cmd += " -t2min $T2min "}
+		if($T0max)					{	$Cmd += " -t0max $T0max "	}
+		if($T1max)					{	$Cmd += " -t1max $T1max "}
+		if($T2max)					{	$Cmd += " -t2max $T2max "}
+		if($AOConfigurationName) 	{	$Cmd += " $AOConfigurationName "}
+		write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	} 
 }
 
 Function Remove-A9AdaptiveOptimizationConfig
@@ -175,24 +106,24 @@ Function Remove-A9AdaptiveOptimizationConfig
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$Pattern,
-		[Parameter()]	[String]	$AOConfigurationName
+param(	[Parameter(ParameterSetName='Pattern',Mandatory)]	[String]	$Pattern,
+		[Parameter(ParameterSetName='AOCfg',Mandatory)]		[String]	$AOConfigurationName
 )
 begin
-{	Test-A9Connection -ClientType 'SshClient' 
-} 
+	{	Test-A9Connection -ClientType 'SshClient' 
+	} 
 process
-{	$Cmd = " removeaocfg -f "
-	if($Pattern)
-		{	$Cmd += " -pat $Pattern "
-			if($AOConfigurationName)	{	Return "Either Pattern or AOConfigurationName."	}
-		}
-	if($AOConfigurationName)
-		{	$Cmd += " $AOConfigurationName "
-		}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-} 
+	{	$Cmd = " removeaocfg -f "
+		if($Pattern)
+			{	$Cmd += " -pat $Pattern "
+			}
+		if($AOConfigurationName)
+			{	$Cmd += " $AOConfigurationName "
+			}
+			write-verbose "Executing the following SSH command `n`t $cmd"
+			$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	} 
 }
 
 Function Start-A9AdaptiveOptimizationConfig
@@ -203,18 +134,6 @@ Function Start-A9AdaptiveOptimizationConfig
 .DESCRIPTION
 	This command starts execution of an Adaptive Optimization (AO) configuration using data region level performance data collected for the
 	specified number of hours.
-.EXAMPLE
-	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 3h -AocfgName prodaocfg
-	
-	Start execution of AO config prodaocfg using data for the past 3 hours:
-.EXAMPLE	
-	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 12h -Etsecs 3h -Maxrunh 6 -AocfgName prodaocfg
-
-	Start execution of AO config prodaocfg using data from 12 hours ago until 3 hours ago, allowing up to 6 hours to complete:
-.EXAMPLE
-	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 3h -Vv "set:dbvvset" -AocfgName prodaocfg
-
-	Start execution of AO for the vvset dbvvset in AOCFG prodaocfg using data for the past 3 hours:	
 .PARAMETER Btsecs
     Select the begin time in seconds for the analysis period. The value can be specified as either
 	- The absolute epoch time (for example 1351263600).
@@ -295,9 +214,20 @@ Function Start-A9AdaptiveOptimizationConfig
 	either the CPG sdgl, sdgw, or maximum possible growth size.
 .PARAMETER AocfgName
 	The AO configuration name, using up to 31 characters.
+.EXAMPLE
+	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 3h -AocfgName prodaocfg
+	
+	Start execution of AO config prodaocfg using data for the past 3 hours:
+.EXAMPLE	
+	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 12h -Etsecs 3h -Maxrunh 6 -AocfgName prodaocfg
+
+	Start execution of AO config prodaocfg using data from 12 hours ago until 3 hours ago, allowing up to 6 hours to complete:
+.EXAMPLE
+	PS:> Start-A9AdaptiveOptimizationConfig -Btsecs 3h -Vv "set:dbvvset" -AocfgName prodaocfg
+
+	Start execution of AO for the vvset dbvvset in AOCFG prodaocfg using data for the past 3 hours:	
 .NOTES
 	This command requires a SSH type connection.
-
 #>
 [CmdletBinding()]
 param(
@@ -320,28 +250,29 @@ param(
 	[Parameter()]	[String]	$AocfgName
 )
 begin 
-{	Test-A9Connection -ClientType 'SshClient' 
-}
+	{	Test-A9Connection -ClientType 'SshClient' 
+	}
 process
-{	$Cmd = " startao "
-	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
-	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
-	if($Compact)	{	$Cmd += " -compact $Compact " }
-	if($Dryrun)		{	$Cmd += " -dryrun " }
-	if($Maxrunh)	{	$Cmd += " -maxrunh $Maxrunh " }
-	if($Min_iops)	{	$Cmd += " -min_iops $Min_iops " }
-	if($Mode)		{	$Cmd += " -mode $Mode " }
-	if($Vv)			{	$Cmd += " -vv $Vv " }
-	if($T0min)		{	$Cmd += " -t0min $T0min " }
-	if($T1min)		{	$Cmd += " -t1min $T1min " }
-	if($T2min)		{	$Cmd += " -t2min $T2min " }
-	if($T0max)		{	$Cmd += " -t0max $T0max " }
-	if($T1max)		{	$Cmd += " -t1max $T1max " }
-	if($T2max)		{	$Cmd += " -t2max $T2max " }
-	if($AocfgName) 	{	$Cmd += " $AocfgName " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-} 
+	{	$Cmd = " startao "
+		if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
+		if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
+		if($Compact)	{	$Cmd += " -compact $Compact " }
+		if($Dryrun)		{	$Cmd += " -dryrun " }
+		if($Maxrunh)	{	$Cmd += " -maxrunh $Maxrunh " }
+		if($Min_iops)	{	$Cmd += " -min_iops $Min_iops " }
+		if($Mode)		{	$Cmd += " -mode $Mode " }
+		if($Vv)			{	$Cmd += " -vv $Vv " }
+		if($T0min)		{	$Cmd += " -t0min $T0min " }
+		if($T1min)		{	$Cmd += " -t1min $T1min " }
+		if($T2min)		{	$Cmd += " -t2min $T2min " }
+		if($T0max)		{	$Cmd += " -t0max $T0max " }
+		if($T1max)		{	$Cmd += " -t1max $T1max " }
+		if($T2max)		{	$Cmd += " -t2max $T2max " }
+		if($AocfgName) 	{	$Cmd += " $AocfgName " }
+		write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	} 
 }
 
 Function Update-A9AdaptiveOptimizationConfig
@@ -412,33 +343,104 @@ param(
 	[Parameter(Mandatory=$True)][String]	$AOConfigurationName
 )
 begin
-{	Test-A9Connection -ClientType 'SshClient' 
-}
+	{	Test-A9Connection -ClientType 'SshClient' 
+	}
 process 
-{	$Cmd = " setaocfg "
-	if($T0cpg)	{	$Cmd += " -t0cpg $T0cpg " 	}
-	if($T1cpg) 	{	$Cmd += " -t1cpg $T1cpg " 	}
-	if($T2cpg) 	{	$Cmd += " -t2cpg $T2cpg " 	}
-	if($Mode) 	{	$Cmd += " -mode $Mode " 	} 
-	if($T0min)	{	$Cmd += " -t0min $T0min " 	}
-	if($T1min) 	{	$Cmd += " -t1min $T1min " 	}
-	if($T2min) 	{	$Cmd += " -t2min $T2min " 	}
-	if($T0max) 	{	$Cmd += " -t0max $T0max " 	}
-	if($T1max) 	{	$Cmd += " -t1max $T1max " 	}
-	if($T2max) 	{	$Cmd += " -t2max $T2max " 	}
-	if($NewName){	$Cmd += " -name $NewName " 	} 
-	if($AOConfigurationName) {	$Cmd += " $AOConfigurationName " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-} 
+	{	$Cmd = " setaocfg "
+		if($T0cpg)	{	$Cmd += " -t0cpg $T0cpg " 	}
+		if($T1cpg) 	{	$Cmd += " -t1cpg $T1cpg " 	}
+		if($T2cpg) 	{	$Cmd += " -t2cpg $T2cpg " 	}
+		if($Mode) 	{	$Cmd += " -mode $Mode " 	} 
+		if($T0min)	{	$Cmd += " -t0min $T0min " 	}
+		if($T1min) 	{	$Cmd += " -t1min $T1min " 	}
+		if($T2min) 	{	$Cmd += " -t2min $T2min " 	}
+		if($T0max) 	{	$Cmd += " -t0max $T0max " 	}
+		if($T1max) 	{	$Cmd += " -t1max $T1max " 	}
+		if($T2max) 	{	$Cmd += " -t2max $T2max " 	}
+		if($NewName){	$Cmd += " -name $NewName " 	} 
+		if($AOConfigurationName) {	$Cmd += " $AOConfigurationName " }
+		write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	} 
 }
 
+Function Get-A9SystemReportAOMoves
+{
+<#
+.SYNOPSIS
+    The command shows the space that AO has moved between tiers.	
+.DESCRIPTION
+    The command shows the space that AO has moved between tiers.
+.EXAMPLE
+	PS:> Get-A9SystemReportAOMoves -btsecs 7200
+.EXAMPLE
+	PS:> Get-A9SystemReportAOMoves -etsecs 7200
+.EXAMPLE
+	PS:> Get-A9SystemReportAOMoves -oneline 
+.EXAMPLE
+	PS:> Get-A9SystemReportAOMoves -withvv 
+.EXAMPLE
+	PS:> Get-A9SystemReportAOMoves -VV_name XYZ
+.PARAMETER btsecs 
+	Select the begin time in seconds for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the time at which the report begins is 12 ho                                                          urs ago.
+	If -btsecs 0 is specified then the report begins at the earliest sample.
+.PARAMETER etsecs 
+	Select the end time in seconds for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the report ends with the most recent sample.
+.PARAMETER oneline
+	Show data in simplified format with one line per AOCFG.
+.PARAMETER VV_name
+	Limit the analysis to VVs with names that match one or more of the specified names or glob-style patterns. VV set names must be
+	prefixed by "set:".  Note that snapshot VVs will not be considered since only base VVs have region space.
+.PARAMETER withvv
+	Show the data for each VV.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[String]	$btsecs,
+		[Parameter()]	[String]	$etsecs,
+		[Parameter()]	[switch]	$oneline,
+		[Parameter()]	[String]	$VV_name,
+		[Parameter()]	[switch]	$withvv		
+)	
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process	
+{	$cmd= "sraomoves "
+	if ($btsecs)	{	$cmd+=" -btsecs $btsecs "		}	
+	if ($etsecs)	{	$cmd+=" -etsecs $etsecs "		}
+	if ($oneline)	{	$cmd+=" -oneline "		}
+	if ($VV_name)	{	$cmd+=" -vv $VV_name "		}
+	if ($withvv)	{	$cmd+=" -withvv "		}	
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $cmd
+	return 	$Result	
+} 
+}
 # SIG # Begin signature block
-# MIIsWwYJKoZIhvcNAQcCoIIsTDCCLEgCAQExDzANBglghkgBZQMEAgMFADCBmwYK
+# MIIsVQYJKoZIhvcNAQcCoIIsRjCCLEICAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEAw9Z5Xlp81
-# Gm442Y4w55llpsiaNxsfnZiJtmRnxrNiiCo/GxSHj02oaYNk9ke+Xl4KdSHQz1pB
-# A47kECOaZvMioIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABECmt0+/3Tz5
+# oTKTT2j+VvCMIzlfKuCQ5FMusKG4cB+bvPZsWaQTKcPPZ7o55L0DVnEgKe0kCCMo
+# 3phUmFwpUYrYoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -531,144 +533,144 @@ process
 # 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
 # tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
 # NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCGhgwghoUAgEBMGkwVDELMAkGA1UEBhMCR0Ix
+# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCGhIwghoOAgEBMGkwVDELMAkGA1UEBhMCR0Ix
 # GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQJOq3C2QuN3AYkn35lWbuwyNF349VnZGlCjdJF/OcU3ryaMoBoL1sc++
-# ABdnrW2g+KEJCxNCPIlccTSfhBtkEgEwDQYJKoZIhvcNAQEBBQAEggGAahbteucy
-# D3looDWJvCiVLQHcBYe52CFA+46PXnUE63y3hJjBctzxHw5Agq/9CAeYm4h8czF0
-# QQ5BWTNPsjj0saiSiD8K/jbiGeMVOCL8Y6emYXp+JyBu9OfR6cV1WQF3YVeocGDL
-# Univ4ThM3ZyG33ElYASTX+XGyJsV09SzyMB/aEmMyXWyn9xLeW8wO8ydgtZKPC2D
-# NmCQKefQlb4oPfvI9PXM7DN8MfhuH/J6uWFmsl2Sg7koNlbta3WcWCnfRgrwGuYN
-# 6iVEOwzTi5VRUI9X/tCM/oqPrgJjCEenKNH8bK71r/doq1X9RJJVucAUkCN4SleU
-# umT5duIUdF+jMpJzYcPcmtN84Dc+uAvF+URvUJDxcoQGkmGI4GK/VoAS2x4+zSXd
-# +YQ3paWjtrKMHVFUqjiNitXXxZ6yyZl1RDvpw277MZWurwfB95aU35tiAjGdVrfr
-# gSd5VmXMBZb/cW+nihBJGMks/rzy8yjOO2dtlESD0SBPH9XHpxvPEZUToYIXYTCC
-# F10GCisGAQQBgjcDAwExghdNMIIXSQYJKoZIhvcNAQcCoIIXOjCCFzYCAQMxDzAN
+# AQkEMUIEQC489pAyE88jDNv7LisZlk2lagtIgpxyDiMhZnnYYaEn/tdnWqRAPqBA
+# SgWZzmej7GKspVfUtB5x//tRhhqp2VcwDQYJKoZIhvcNAQEBBQAEggGAXQ1sgz8Q
+# UNq+/ak+JM2TrkI0zmbHMoeOPRp8rOlBhNgGTnm9Ix34iqXEW+bfKsyA5VGDxurf
+# Fwb9yezE+PdMH23FWJ8/rIx3O2e7tYy/x12SItWbR875n34Gf1nKycMf1VwrQlxB
+# 5HBvh1xKZaJVO7Zc258jJxYMztbrR9AWvzf9hm64yZNqY8+fc2FFD/2UWP5v24S+
+# zIaEBJgV3QveM0F9V7iwppo3B4DzzOguZ9d0k8DnqQf7z10QshUZJ//V4vPr7J9B
+# 8yKK9rRFaoqzKWdw+bCilMMppfykDkG7XepXxGWhkpJYdzLnoNrYgujbv4vyaosH
+# yZ86TiXMW1r6jvkDhUP/o7fCwbmJIWrU8USx2VDPnvJv9dG8cJR3+SQADmlmrqpb
+# IqCcSLMvVX9O6SlTDQRMXI3cPM6AdJUARAcYDlEMyJHwbGiWfqZ+dJ9MxCHaM8WH
+# xn5xpbVdnGjU7ypr8mvG79ctONc1LbAZVwxGMtsmBZi7uAcrxxbnmijJoYIXWzCC
+# F1cGCisGAQQBgjcDAwExghdHMIIXQwYJKoZIhvcNAQcCoIIXNDCCFzACAQMxDzAN
 # BglghkgBZQMEAgIFADCBiAYLKoZIhvcNAQkQAQSgeQR3MHUCAQEGCWCGSAGG/WwH
-# ATBBMA0GCWCGSAFlAwQCAgUABDA7f+ebBQUJygy4LvcsQreDVI54EqD0PURZhoqj
-# EeG/auBdp6CN6lGujGlbJv9St20CEQD5SNPknz7clyRTuV8I91ECGA8yMDI0MDcz
-# MTE5MTczM1qgghMJMIIGwjCCBKqgAwIBAgIQBUSv85SdCDmmv9s/X+VhFjANBgkq
+# ATBBMA0GCWCGSAFlAwQCAgUABDCgU6nTQhC/IMraBUYvIkfY/r1mC6DLl3g3Rhre
+# 9btkp1B1cMPOtUD+djFxcagWG0cCEQD9zJc0pyzGqu3z1aEDo1ebGA8yMDI1MDUx
+# NjAxMTI1NlqgghMDMIIGvDCCBKSgAwIBAgIQC65mvFq6f5WHxvnpBOMzBDANBgkq
 # hkiG9w0BAQsFADBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIElu
 # Yy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYg
-# VGltZVN0YW1waW5nIENBMB4XDTIzMDcxNDAwMDAwMFoXDTM0MTAxMzIzNTk1OVow
-# SDELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMSAwHgYDVQQD
-# ExdEaWdpQ2VydCBUaW1lc3RhbXAgMjAyMzCCAiIwDQYJKoZIhvcNAQEBBQADggIP
-# ADCCAgoCggIBAKNTRYcdg45brD5UsyPgz5/X5dLnXaEOCdwvSKOXejsqnGfcYhVY
-# wamTEafNqrJq3RApih5iY2nTWJw1cb86l+uUUI8cIOrHmjsvlmbjaedp/lvD1isg
-# HMGXlLSlUIHyz8sHpjBoyoNC2vx/CSSUpIIa2mq62DvKXd4ZGIX7ReoNYWyd/nFe
-# xAaaPPDFLnkPG2ZS48jWPl/aQ9OE9dDH9kgtXkV1lnX+3RChG4PBuOZSlbVH13gp
-# OWvgeFmX40QrStWVzu8IF+qCZE3/I+PKhu60pCFkcOvV5aDaY7Mu6QXuqvYk9R28
-# mxyyt1/f8O52fTGZZUdVnUokL6wrl76f5P17cz4y7lI0+9S769SgLDSb495uZBkH
-# NwGRDxy1Uc2qTGaDiGhiu7xBG3gZbeTZD+BYQfvYsSzhUa+0rRUGFOpiCBPTaR58
-# ZE2dD9/O0V6MqqtQFcmzyrzXxDtoRKOlO0L9c33u3Qr/eTQQfqZcClhMAD6FaXXH
-# g2TWdc2PEnZWpST618RrIbroHzSYLzrqawGw9/sqhux7UjipmAmhcbJsca8+uG+W
-# 1eEQE/5hRwqM/vC2x9XH3mwk8L9CgsqgcT2ckpMEtGlwJw1Pt7U20clfCKRwo+wK
-# 8REuZODLIivK8SgTIUlRfgZm0zu++uuRONhRB8qUt+JQofM604qDy0B7AgMBAAGj
-# ggGLMIIBhzAOBgNVHQ8BAf8EBAMCB4AwDAYDVR0TAQH/BAIwADAWBgNVHSUBAf8E
-# DDAKBggrBgEFBQcDCDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEw
-# HwYDVR0jBBgwFoAUuhbZbU2FL3MpdpovdYxqII+eyG8wHQYDVR0OBBYEFKW27xPn
-# 783QZKHVVqllMaPe1eNJMFoGA1UdHwRTMFEwT6BNoEuGSWh0dHA6Ly9jcmwzLmRp
-# Z2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQwOTZTSEEyNTZUaW1lU3Rh
-# bXBpbmdDQS5jcmwwgZAGCCsGAQUFBwEBBIGDMIGAMCQGCCsGAQUFBzABhhhodHRw
-# Oi8vb2NzcC5kaWdpY2VydC5jb20wWAYIKwYBBQUHMAKGTGh0dHA6Ly9jYWNlcnRz
-# LmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQwOTZTSEEyNTZUaW1l
-# U3RhbXBpbmdDQS5jcnQwDQYJKoZIhvcNAQELBQADggIBAIEa1t6gqbWYF7xwjU+K
-# PGic2CX/yyzkzepdIpLsjCICqbjPgKjZ5+PF7SaCinEvGN1Ott5s1+FgnCvt7T1I
-# jrhrunxdvcJhN2hJd6PrkKoS1yeF844ektrCQDifXcigLiV4JZ0qBXqEKZi2V3mP
-# 2yZWK7Dzp703DNiYdk9WuVLCtp04qYHnbUFcjGnRuSvExnvPnPp44pMadqJpddNQ
-# 5EQSviANnqlE0PjlSXcIWiHFtM+YlRpUurm8wWkZus8W8oM3NG6wQSbd3lqXTzON
-# 1I13fXVFoaVYJmoDRd7ZULVQjK9WvUzF4UbFKNOt50MAcN7MmJ4ZiQPq1JE3701S
-# 88lgIcRWR+3aEUuMMsOI5ljitts++V+wQtaP4xeR0arAVeOGv6wnLEHQmjNKqDbU
-# uXKWfpd5OEhfysLcPTLfddY2Z1qJ+Panx+VPNTwAvb6cKmx5AdzaROY63jg7B145
-# WPR8czFVoIARyxQMfq68/qTreWWqaNYiyjvrmoI1VygWy2nyMpqy0tg6uLFGhmu6
-# F/3Ed2wVbK6rr3M66ElGt9V/zLY4wNjsHPW2obhDLN9OTH0eaHDAdwrUAuBcYLso
-# /zjlUlrWrBciI0707NMX+1Br/wd3H3GXREHJuEbTbDJ8WC9nR2XlG3O2mflrLAZG
-# 70Ee8PBf4NvZrZCARK+AEEGKMIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipe
-# WzANBgkqhkiG9w0BAQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNl
-# cnQgSW5jMRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdp
-# Q2VydCBUcnVzdGVkIFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1
-# OTU5WjBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5
-# BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0
-# YW1waW5nIENBMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAxoY1Bkmz
-# wT1ySVFVxyUDxPKRN6mXUaHW0oPRnkyibaCwzIP5WvYRoUQVQl+kiPNo+n3znIkL
-# f50fng8zH1ATCyZzlm34V6gCff1DtITaEfFzsbPuK4CEiiIY3+vaPcQXf6sZKz5C
-# 3GeO6lE98NZW1OcoLevTsbV15x8GZY2UKdPZ7Gnf2ZCHRgB720RBidx8ald68Dd5
-# n12sy+iEZLRS8nZH92GDGd1ftFQLIWhuNyG7QKxfst5Kfc71ORJn7w6lY2zkpsUd
-# zTYNXNXmG6jBZHRAp8ByxbpOH7G1WE15/tePc5OsLDnipUjW8LAxE6lXKZYnLvWH
-# po9OdhVVJnCYJn+gGkcgQ+NDY4B7dW4nJZCYOjgRs/b2nuY7W+yB3iIU2YIqx5K/
-# oN7jPqJz+ucfWmyU8lKVEStYdEAoq3NDzt9KoRxrOMUp88qqlnNCaJ+2RrOdOqPV
-# A+C/8KI8ykLcGEh/FDTP0kyr75s9/g64ZCr6dSgkQe1CvwWcZklSUPRR8zZJTYsg
-# 0ixXNXkrqPNFYLwjjVj33GHek/45wPmyMKVM1+mYSlg+0wOI/rOP015LdhJRk8mM
-# DDtbiiKowSYI+RQQEgN9XyO7ZONj4KbhPvbCdLI/Hgl27KtdRnXiYKNYCQEoAA6E
-# VO7O6V3IXjASvUaetdN2udIOa5kM0jO0zbECAwEAAaOCAV0wggFZMBIGA1UdEwEB
-# /wQIMAYBAf8CAQAwHQYDVR0OBBYEFLoW2W1NhS9zKXaaL3WMaiCPnshvMB8GA1Ud
-# IwQYMBaAFOzX44LScV1kTN8uZz/nupiuHA9PMA4GA1UdDwEB/wQEAwIBhjATBgNV
-# HSUEDDAKBggrBgEFBQcDCDB3BggrBgEFBQcBAQRrMGkwJAYIKwYBBQUHMAGGGGh0
-# dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBBBggrBgEFBQcwAoY1aHR0cDovL2NhY2Vy
-# dHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZFJvb3RHNC5jcnQwQwYDVR0f
-# BDwwOjA4oDagNIYyaHR0cDovL2NybDMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1
-# c3RlZFJvb3RHNC5jcmwwIAYDVR0gBBkwFzAIBgZngQwBBAIwCwYJYIZIAYb9bAcB
-# MA0GCSqGSIb3DQEBCwUAA4ICAQB9WY7Ak7ZvmKlEIgF+ZtbYIULhsBguEE0TzzBT
-# zr8Y+8dQXeJLKftwig2qKWn8acHPHQfpPmDI2AvlXFvXbYf6hCAlNDFnzbYSlm/E
-# UExiHQwIgqgWvalWzxVzjQEiJc6VaT9Hd/tydBTX/6tPiix6q4XNQ1/tYLaqT5Fm
-# niye4Iqs5f2MvGQmh2ySvZ180HAKfO+ovHVPulr3qRCyXen/KFSJ8NWKcXZl2szw
-# cqMj+sAngkSumScbqyQeJsG33irr9p6xeZmBo1aGqwpFyd/EjaDnmPv7pp1yr8TH
-# wcFqcdnGE4AJxLafzYeHJLtPo0m5d2aR8XKc6UsCUqc3fpNTrDsdCEkPlM05et3/
-# JWOZJyw9P2un8WbDQc1PtkCbISFA0LcTJM3cHXg65J6t5TRxktcma+Q4c6umAU+9
-# Pzt4rUyt+8SVe+0KXzM5h0F4ejjpnOHdI/0dKNPH+ejxmF/7K9h+8kaddSweJywm
-# 228Vex4Ziza4k9Tm8heZWcpw8De/mADfIBZPJ/tgZxahZrrdVcA6KYawmKAr7ZVB
-# tzrVFZgxtGIJDwq9gdkT/r+k0fNX2bwE+oLeMt8EifAAzV3C+dAjfwAL5HYCJtnw
-# ZXZCpimHCUcr5n8apIUP/JiW9lVUKx+A+sDyDivl1vupL0QVSucTDh3bNzgaoSv2
-# 7dZ8/DCCBY0wggR1oAMCAQICEA6bGI750C3n79tQ4ghAGFowDQYJKoZIhvcNAQEM
-# BQAwZTELMAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UE
-# CxMQd3d3LmRpZ2ljZXJ0LmNvbTEkMCIGA1UEAxMbRGlnaUNlcnQgQXNzdXJlZCBJ
-# RCBSb290IENBMB4XDTIyMDgwMTAwMDAwMFoXDTMxMTEwOTIzNTk1OVowYjELMAkG
-# A1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRp
-# Z2ljZXJ0LmNvbTEhMB8GA1UEAxMYRGlnaUNlcnQgVHJ1c3RlZCBSb290IEc0MIIC
-# IjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAv+aQc2jeu+RdSjwwIjBpM+zC
-# pyUuySE98orYWcLhKac9WKt2ms2uexuEDcQwH/MbpDgW61bGl20dq7J58soR0uRf
-# 1gU8Ug9SH8aeFaV+vp+pVxZZVXKvaJNwwrK6dZlqczKU0RBEEC7fgvMHhOZ0O21x
-# 4i0MG+4g1ckgHWMpLc7sXk7Ik/ghYZs06wXGXuxbGrzryc/NrDRAX7F6Zu53yEio
-# ZldXn1RYjgwrt0+nMNlW7sp7XeOtyU9e5TXnMcvak17cjo+A2raRmECQecN4x7ax
-# xLVqGDgDEI3Y1DekLgV9iPWCPhCRcKtVgkEy19sEcypukQF8IUzUvK4bA3VdeGbZ
-# OjFEmjNAvwjXWkmkwuapoGfdpCe8oU85tRFYF/ckXEaPZPfBaYh2mHY9WV1CdoeJ
-# l2l6SPDgohIbZpp0yt5LHucOY67m1O+SkjqePdwA5EUlibaaRBkrfsCUtNJhbesz
-# 2cXfSwQAzH0clcOP9yGyshG3u3/y1YxwLEFgqrFjGESVGnZifvaAsPvoZKYz0YkH
-# 4b235kOkGLimdwHhD5QMIR2yVCkliWzlDlJRR3S+Jqy2QXXeeqxfjT/JvNNBERJb
-# 5RBQ6zHFynIWIgnffEx1P2PsIV/EIFFrb7GrhotPwtZFX50g/KEexcCPorF+CiaZ
-# 9eRpL5gdLfXZqbId5RsCAwEAAaOCATowggE2MA8GA1UdEwEB/wQFMAMBAf8wHQYD
-# VR0OBBYEFOzX44LScV1kTN8uZz/nupiuHA9PMB8GA1UdIwQYMBaAFEXroq/0ksuC
-# MS1Ri6enIZ3zbcgPMA4GA1UdDwEB/wQEAwIBhjB5BggrBgEFBQcBAQRtMGswJAYI
-# KwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBDBggrBgEFBQcwAoY3
-# aHR0cDovL2NhY2VydHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0QXNzdXJlZElEUm9v
-# dENBLmNydDBFBgNVHR8EPjA8MDqgOKA2hjRodHRwOi8vY3JsMy5kaWdpY2VydC5j
-# b20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3JsMBEGA1UdIAQKMAgwBgYEVR0g
-# ADANBgkqhkiG9w0BAQwFAAOCAQEAcKC/Q1xV5zhfoKN0Gz22Ftf3v1cHvZqsoYcs
-# 7IVeqRq7IviHGmlUIu2kiHdtvRoU9BNKei8ttzjv9P+Aufih9/Jy3iS8UgPITtAq
-# 3votVs/59PesMHqai7Je1M/RQ0SbQyHrlnKhSLSZy51PpwYDE3cnRNTnf+hZqPC/
-# Lwum6fI0POz3A8eHqNJMQBk1RmppVLC4oVaO7KTVPeix3P0c2PR3WlxUjG/voVA9
-# /HYJaISfb8rbII01YBwCA8sgsKxYoA5AY8WYIsGyWfVVa88nq2x2zm8jLfR+cWoj
-# ayL/ErhULSd+2DrZ8LaHlv1b0VysGMNNn3O3AamfV6peKOK5lDGCA4YwggOCAgEB
-# MHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTswOQYD
-# VQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2IFRpbWVTdGFt
-# cGluZyBDQQIQBUSv85SdCDmmv9s/X+VhFjANBglghkgBZQMEAgIFAKCB4TAaBgkq
-# hkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcNAQkFMQ8XDTI0MDczMTE5
-# MTczM1owKwYLKoZIhvcNAQkQAgwxHDAaMBgwFgQUZvArMsLCyQ+CXc6qisnGTxmc
-# z0AwNwYLKoZIhvcNAQkQAi8xKDAmMCQwIgQg0vbkbe10IszR1EBXaEE2b4KK2lWa
-# rjMWr00amtQMeCgwPwYJKoZIhvcNAQkEMTIEMFQFnknhibICmlU4H6lbSGnKFR/O
-# LW/KOZBWBkys7rwC6zxTAHthYFFqdtTOWUf2ozANBgkqhkiG9w0BAQEFAASCAgA9
-# Y938B3XgBRRXwG8ZFa3S1MrpPNpcesu8acQOg7YnaRGMGR1PVtWVLi1tgr1LgEO2
-# UiI8JpsJEmQRVOB/SRmSiOoX7bMPAHLWdGRyysWLrw9gHzd38zA4MCILi70KNjaj
-# TMqWQXHZHEq3pYrW/Uq5YTVRS0SqyO4s87Mtb7my0UG8wgu0GPNInlHKfePtzlMD
-# 9vvOlLCorzmq/MAHJ1TqtrN/iymIGscURQw3cMUKLZ6HKhyMyIfObcJWvCXSIUZq
-# 7E7rvmOzkcZbw5uUn3q48iCNnoNO51uwB4QBbuj12lf9AhC9jN0V5edsVw8J4FP0
-# bgOi2++Yr8f36RlB6od2C10oWavmvKLCnnxkQgpf9xdHXFwwBlltgfGuDZLhuu5q
-# caR8HeG+8ggrrJMRgKedgJNorgnu/0yyBzAxNiM0uWleLpfNbNkMeaNBsUwTb9lS
-# MAZIAz5hiCTuSNBn3i5TUyxoky7C+Bu6aAsQhMrFTvEi+nEwYst6q7NsDebwVvQy
-# uHs5R4hyH04HBKpmUI0y4n+zmDxPS2Tm1G8qFNBBI87orh3o9B3/9h/v/maX3Z8t
-# VzGDvTYDI/sNeZWJenAccdK5UKPTsvVQLbJHR3xWrA5qxNyOqI9g2ELP1ZSVGGyx
-# CB+90g/y7JncC5h44W3mqXUIPFKtcp+E9tWIUbOvKQ==
+# VGltZVN0YW1waW5nIENBMB4XDTI0MDkyNjAwMDAwMFoXDTM1MTEyNTIzNTk1OVow
+# QjELMAkGA1UEBhMCVVMxETAPBgNVBAoTCERpZ2lDZXJ0MSAwHgYDVQQDExdEaWdp
+# Q2VydCBUaW1lc3RhbXAgMjAyNDCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoC
+# ggIBAL5qc5/2lSGrljC6W23mWaO16P2RHxjEiDtqmeOlwf0KMCBDEr4IxHRGd7+L
+# 660x5XltSVhhK64zi9CeC9B6lUdXM0s71EOcRe8+CEJp+3R2O8oo76EO7o5tLusl
+# xdr9Qq82aKcpA9O//X6QE+AcaU/byaCagLD/GLoUb35SfWHh43rOH3bpLEx7pZ7a
+# vVnpUVmPvkxT8c2a2yC0WMp8hMu60tZR0ChaV76Nhnj37DEYTX9ReNZ8hIOYe4jl
+# 7/r419CvEYVIrH6sN00yx49boUuumF9i2T8UuKGn9966fR5X6kgXj3o5WHhHVO+N
+# BikDO0mlUh902wS/Eeh8F/UFaRp1z5SnROHwSJ+QQRZ1fisD8UTVDSupWJNstVki
+# qLq+ISTdEjJKGjVfIcsgA4l9cbk8Smlzddh4EfvFrpVNnes4c16Jidj5XiPVdsn5
+# n10jxmGpxoMc6iPkoaDhi6JjHd5ibfdp5uzIXp4P0wXkgNs+CO/CacBqU0R4k+8h
+# 6gYldp4FCMgrXdKWfM4N0u25OEAuEa3JyidxW48jwBqIJqImd93NRxvd1aepSeNe
+# REXAu2xUDEW8aqzFQDYmr9ZONuc2MhTMizchNULpUEoA6Vva7b1XCB+1rxvbKmLq
+# fY/M/SdV6mwWTyeVy5Z/JkvMFpnQy5wR14GJcv6dQ4aEKOX5AgMBAAGjggGLMIIB
+# hzAOBgNVHQ8BAf8EBAMCB4AwDAYDVR0TAQH/BAIwADAWBgNVHSUBAf8EDDAKBggr
+# BgEFBQcDCDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEwHwYDVR0j
+# BBgwFoAUuhbZbU2FL3MpdpovdYxqII+eyG8wHQYDVR0OBBYEFJ9XLAN3DigVkGal
+# Y17uT5IfdqBbMFoGA1UdHwRTMFEwT6BNoEuGSWh0dHA6Ly9jcmwzLmRpZ2ljZXJ0
+# LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQwOTZTSEEyNTZUaW1lU3RhbXBpbmdD
+# QS5jcmwwgZAGCCsGAQUFBwEBBIGDMIGAMCQGCCsGAQUFBzABhhhodHRwOi8vb2Nz
+# cC5kaWdpY2VydC5jb20wWAYIKwYBBQUHMAKGTGh0dHA6Ly9jYWNlcnRzLmRpZ2lj
+# ZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQwOTZTSEEyNTZUaW1lU3RhbXBp
+# bmdDQS5jcnQwDQYJKoZIhvcNAQELBQADggIBAD2tHh92mVvjOIQSR9lDkfYR25tO
+# CB3RKE/P09x7gUsmXqt40ouRl3lj+8QioVYq3igpwrPvBmZdrlWBb0HvqT00nFSX
+# gmUrDKNSQqGTdpjHsPy+LaalTW0qVjvUBhcHzBMutB6HzeledbDCzFzUy34VarPn
+# vIWrqVogK0qM8gJhh/+qDEAIdO/KkYesLyTVOoJ4eTq7gj9UFAL1UruJKlTnCVaM
+# 2UeUUW/8z3fvjxhN6hdT98Vr2FYlCS7Mbb4Hv5swO+aAXxWUm3WpByXtgVQxiBlT
+# VYzqfLDbe9PpBKDBfk+rabTFDZXoUke7zPgtd7/fvWTlCs30VAGEsshJmLbJ6ZbQ
+# /xll/HjO9JbNVekBv2Tgem+mLptR7yIrpaidRJXrI+UzB6vAlk/8a1u7cIqV0yef
+# 4uaZFORNekUgQHTqddmsPCEIYQP7xGxZBIhdmm4bhYsVA6G2WgNFYagLDBzpmk91
+# 04WQzYuVNsxyoVLObhx3RugaEGru+SojW4dHPoWrUhftNpFC5H7QEY7MhKRyrBe7
+# ucykW7eaCuWBsBb4HOKRFVDcrZgdwaSIqMDiCLg4D+TPVgKx2EgEdeoHNHT9l3ZD
+# BD+XgbF+23/zBjeCtxz+dL/9NWR6P2eZRi7zcEO1xwcdcqJsyz/JceENc2Sg8h3K
+# eFUCS7tpFk7CrDqkMIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkq
+# hkiG9w0BAQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5j
+# MRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBU
+# cnVzdGVkIFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBj
+# MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
+# MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
+# IENBMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAxoY1BkmzwT1ySVFV
+# xyUDxPKRN6mXUaHW0oPRnkyibaCwzIP5WvYRoUQVQl+kiPNo+n3znIkLf50fng8z
+# H1ATCyZzlm34V6gCff1DtITaEfFzsbPuK4CEiiIY3+vaPcQXf6sZKz5C3GeO6lE9
+# 8NZW1OcoLevTsbV15x8GZY2UKdPZ7Gnf2ZCHRgB720RBidx8ald68Dd5n12sy+iE
+# ZLRS8nZH92GDGd1ftFQLIWhuNyG7QKxfst5Kfc71ORJn7w6lY2zkpsUdzTYNXNXm
+# G6jBZHRAp8ByxbpOH7G1WE15/tePc5OsLDnipUjW8LAxE6lXKZYnLvWHpo9OdhVV
+# JnCYJn+gGkcgQ+NDY4B7dW4nJZCYOjgRs/b2nuY7W+yB3iIU2YIqx5K/oN7jPqJz
+# +ucfWmyU8lKVEStYdEAoq3NDzt9KoRxrOMUp88qqlnNCaJ+2RrOdOqPVA+C/8KI8
+# ykLcGEh/FDTP0kyr75s9/g64ZCr6dSgkQe1CvwWcZklSUPRR8zZJTYsg0ixXNXkr
+# qPNFYLwjjVj33GHek/45wPmyMKVM1+mYSlg+0wOI/rOP015LdhJRk8mMDDtbiiKo
+# wSYI+RQQEgN9XyO7ZONj4KbhPvbCdLI/Hgl27KtdRnXiYKNYCQEoAA6EVO7O6V3I
+# XjASvUaetdN2udIOa5kM0jO0zbECAwEAAaOCAV0wggFZMBIGA1UdEwEB/wQIMAYB
+# Af8CAQAwHQYDVR0OBBYEFLoW2W1NhS9zKXaaL3WMaiCPnshvMB8GA1UdIwQYMBaA
+# FOzX44LScV1kTN8uZz/nupiuHA9PMA4GA1UdDwEB/wQEAwIBhjATBgNVHSUEDDAK
+# BggrBgEFBQcDCDB3BggrBgEFBQcBAQRrMGkwJAYIKwYBBQUHMAGGGGh0dHA6Ly9v
+# Y3NwLmRpZ2ljZXJ0LmNvbTBBBggrBgEFBQcwAoY1aHR0cDovL2NhY2VydHMuZGln
+# aWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZFJvb3RHNC5jcnQwQwYDVR0fBDwwOjA4
+# oDagNIYyaHR0cDovL2NybDMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZFJv
+# b3RHNC5jcmwwIAYDVR0gBBkwFzAIBgZngQwBBAIwCwYJYIZIAYb9bAcBMA0GCSqG
+# SIb3DQEBCwUAA4ICAQB9WY7Ak7ZvmKlEIgF+ZtbYIULhsBguEE0TzzBTzr8Y+8dQ
+# XeJLKftwig2qKWn8acHPHQfpPmDI2AvlXFvXbYf6hCAlNDFnzbYSlm/EUExiHQwI
+# gqgWvalWzxVzjQEiJc6VaT9Hd/tydBTX/6tPiix6q4XNQ1/tYLaqT5Fmniye4Iqs
+# 5f2MvGQmh2ySvZ180HAKfO+ovHVPulr3qRCyXen/KFSJ8NWKcXZl2szwcqMj+sAn
+# gkSumScbqyQeJsG33irr9p6xeZmBo1aGqwpFyd/EjaDnmPv7pp1yr8THwcFqcdnG
+# E4AJxLafzYeHJLtPo0m5d2aR8XKc6UsCUqc3fpNTrDsdCEkPlM05et3/JWOZJyw9
+# P2un8WbDQc1PtkCbISFA0LcTJM3cHXg65J6t5TRxktcma+Q4c6umAU+9Pzt4rUyt
+# +8SVe+0KXzM5h0F4ejjpnOHdI/0dKNPH+ejxmF/7K9h+8kaddSweJywm228Vex4Z
+# iza4k9Tm8heZWcpw8De/mADfIBZPJ/tgZxahZrrdVcA6KYawmKAr7ZVBtzrVFZgx
+# tGIJDwq9gdkT/r+k0fNX2bwE+oLeMt8EifAAzV3C+dAjfwAL5HYCJtnwZXZCpimH
+# CUcr5n8apIUP/JiW9lVUKx+A+sDyDivl1vupL0QVSucTDh3bNzgaoSv27dZ8/DCC
+# BY0wggR1oAMCAQICEA6bGI750C3n79tQ4ghAGFowDQYJKoZIhvcNAQEMBQAwZTEL
+# MAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3
+# LmRpZ2ljZXJ0LmNvbTEkMCIGA1UEAxMbRGlnaUNlcnQgQXNzdXJlZCBJRCBSb290
+# IENBMB4XDTIyMDgwMTAwMDAwMFoXDTMxMTEwOTIzNTk1OVowYjELMAkGA1UEBhMC
+# VVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2ljZXJ0
+# LmNvbTEhMB8GA1UEAxMYRGlnaUNlcnQgVHJ1c3RlZCBSb290IEc0MIICIjANBgkq
+# hkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAv+aQc2jeu+RdSjwwIjBpM+zCpyUuySE9
+# 8orYWcLhKac9WKt2ms2uexuEDcQwH/MbpDgW61bGl20dq7J58soR0uRf1gU8Ug9S
+# H8aeFaV+vp+pVxZZVXKvaJNwwrK6dZlqczKU0RBEEC7fgvMHhOZ0O21x4i0MG+4g
+# 1ckgHWMpLc7sXk7Ik/ghYZs06wXGXuxbGrzryc/NrDRAX7F6Zu53yEioZldXn1RY
+# jgwrt0+nMNlW7sp7XeOtyU9e5TXnMcvak17cjo+A2raRmECQecN4x7axxLVqGDgD
+# EI3Y1DekLgV9iPWCPhCRcKtVgkEy19sEcypukQF8IUzUvK4bA3VdeGbZOjFEmjNA
+# vwjXWkmkwuapoGfdpCe8oU85tRFYF/ckXEaPZPfBaYh2mHY9WV1CdoeJl2l6SPDg
+# ohIbZpp0yt5LHucOY67m1O+SkjqePdwA5EUlibaaRBkrfsCUtNJhbesz2cXfSwQA
+# zH0clcOP9yGyshG3u3/y1YxwLEFgqrFjGESVGnZifvaAsPvoZKYz0YkH4b235kOk
+# GLimdwHhD5QMIR2yVCkliWzlDlJRR3S+Jqy2QXXeeqxfjT/JvNNBERJb5RBQ6zHF
+# ynIWIgnffEx1P2PsIV/EIFFrb7GrhotPwtZFX50g/KEexcCPorF+CiaZ9eRpL5gd
+# LfXZqbId5RsCAwEAAaOCATowggE2MA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYE
+# FOzX44LScV1kTN8uZz/nupiuHA9PMB8GA1UdIwQYMBaAFEXroq/0ksuCMS1Ri6en
+# IZ3zbcgPMA4GA1UdDwEB/wQEAwIBhjB5BggrBgEFBQcBAQRtMGswJAYIKwYBBQUH
+# MAGGGGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBDBggrBgEFBQcwAoY3aHR0cDov
+# L2NhY2VydHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0QXNzdXJlZElEUm9vdENBLmNy
+# dDBFBgNVHR8EPjA8MDqgOKA2hjRodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGln
+# aUNlcnRBc3N1cmVkSURSb290Q0EuY3JsMBEGA1UdIAQKMAgwBgYEVR0gADANBgkq
+# hkiG9w0BAQwFAAOCAQEAcKC/Q1xV5zhfoKN0Gz22Ftf3v1cHvZqsoYcs7IVeqRq7
+# IviHGmlUIu2kiHdtvRoU9BNKei8ttzjv9P+Aufih9/Jy3iS8UgPITtAq3votVs/5
+# 9PesMHqai7Je1M/RQ0SbQyHrlnKhSLSZy51PpwYDE3cnRNTnf+hZqPC/Lwum6fI0
+# POz3A8eHqNJMQBk1RmppVLC4oVaO7KTVPeix3P0c2PR3WlxUjG/voVA9/HYJaISf
+# b8rbII01YBwCA8sgsKxYoA5AY8WYIsGyWfVVa88nq2x2zm8jLfR+cWojayL/ErhU
+# LSd+2DrZ8LaHlv1b0VysGMNNn3O3AamfV6peKOK5lDGCA4YwggOCAgEBMHcwYzEL
+# MAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJE
+# aWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBD
+# QQIQC65mvFq6f5WHxvnpBOMzBDANBglghkgBZQMEAgIFAKCB4TAaBgkqhkiG9w0B
+# CQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcNAQkFMQ8XDTI1MDUxNjAxMTI1Nlow
+# KwYLKoZIhvcNAQkQAgwxHDAaMBgwFgQU29OF7mLb0j575PZxSFCHJNWGW0UwNwYL
+# KoZIhvcNAQkQAi8xKDAmMCQwIgQgdnafqPJjLx9DCzojMK7WVnX+13PbBdZluQWT
+# mEOPmtswPwYJKoZIhvcNAQkEMTIEMPIFMDvmNjyHXJCyZ7PDJD0phcZgMBojyseZ
+# vBF1Kig5UsjSA63ZmZJ6H8uLwKD3AzANBgkqhkiG9w0BAQEFAASCAgBObXxdLHJn
+# YmS5wO9kqHYhDrExBtV9CBrNHkQlh5YB5MxYe5X4WfAJUp0OOUyX/tQKKkBfhFoe
+# EGWaDyNM1fvQAwMl8uXejzBHMRlfI/oi2VJWsN3wkvwpNqqYX4QKq43s+p8Gxjod
+# OmmEDjCqn7l3lwBcJPBbN59+XB7fXy2Tx3sJI5e5Qod0Hmk+a+5Ri6c/7SVDa1S1
+# r69QEj9lOnvlBgLkbOoCeXT81o5VWLDr1c9wb9isAtc9cyRJNERge05UZGenAmy3
+# NCHHz17cIkFcPqtmth3EMXW1F8hBs5kSZt8gbuWpvuCafzP6UlOtCvNyznQphlhL
+# NKhy6dBwdDFhWFoICMgfbCC9znM17dZ6rzd2DaxrWebK05hxnquFXVDB5mzdGslH
+# INpVv4YL2C54jDWGpJOYAOM1KRTuEIumrIs43ecbCjYZVIZG8EtrhtGz2MSFgKKg
+# Fexh41FispO2i6/SsAzZdwWEl6Y7+WY5wSCk+5TXCzr/PAbu0SlvS51Sg4HrLlwH
+# uLJpquXpqT9kdXHToNgMRGwnOuMP9kXBodoIF5qLKAaZs57qCXBTna7xsYbYrUdI
+# Wwx90J2MYav+RZbT/5rUmvW4OgcdAfCDMCFIJ/zLDrm58PSOaNkiik3mAUHh3CFr
+# rHRVIjHc6h64CKVlyhUks13nLIVc+JQbnw==
 # SIG # End signature block

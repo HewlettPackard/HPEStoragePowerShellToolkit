@@ -20,13 +20,28 @@ Function Add-A9Hardware
 	Always run tunesys to rebalance the system after new disks are discovered.
 .PARAMETER Notune
 	Do not automatically run tunesys to rebalance the system after new disks are discovered.
+.NOTES
+	Authority:Super, Service
+	Usage: 
+	- Requires access to all domains.
+	- Handles any nodes, disks, or cages added into the system.
+	- Verifies the presence of all expected hardware and handles all checks, including valid states, cabling, and firmware revisions.
+	- Handles creating system logical disks while adding and rebalancing spare chunklets.
+	- Allocates spares according to the algorithm specified by the SparingAlgorithm system parameter.
+	- If new disks are discovered, the set size for existing CPGs is recalculated. Changes to the CPG occur prior to any tunesys operation so that the affected LDs are automatically tuned.
+	- Checks for drive table patch updates unless you specify the -nopatch option.
+	- In addition, discovery of new disks in any combination can cause tunesys to start automatically and rebalance the system after the admithw command has completed.
+	- Automatic tunesys occurs under the following conditions:
+		- With admithw -tune, rebalancing occurs on all systems regardless of the number of controller nodes.
+		- On systems with two controller nodes, tunesys runs automatically. To suppress this behavior, use the system variable AutoAdmitTune with the following command structure: cli% setsys AutoAdmitTune no. AutoAdmitTune defaults to yes.
+		- With admithw -notune, rebalancing does not occur after new discovery of new disks. In all circumstances, run tunesys as soon as possible after discovery of new disks.
 #>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Checkonly,
-		[Parameter()]	[switch]	$F,
-		[Parameter()]	[switch]	$Nopatch,
-		[Parameter()]	[switch]	$Tune,
-		[Parameter()]	[switch]	$Notune
+[CmdletBinding(DefaultParameterSetName='default')]
+param(	[Parameter(ParameterSetName='CheckOnly', Mandatory)]	[switch]	$Checkonly,
+		[Parameter()]												[switch]	$F,
+		[Parameter()]												[switch]	$Nopatch,
+		[Parameter(ParameterSetName="Tune", Mandatory)]		[switch]	$Tune,
+		[Parameter(ParameterSetName="NoTune",Mandatory)]		[switch]	$Notune
 )
 Begin
 {	Test-A9CLIConection
@@ -38,6 +53,7 @@ Process
 	if($Nopatch)	{	$Cmd += " -nopatch " 	}
 	if($Tune)		{	$Cmd += " -tune " 		}
 	if($Notune)		{	$Cmd += " -notune " 	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -49,28 +65,52 @@ Function Get-A9SystemPatch
 .SYNOPSIS
 	Show what patches have been applied to the system.
 .DESCRIPTION
-	The command displays patches applied to a system.
-.EXAMPLE
-	PS:> Get-A9SystemPatch
-.EXAMPLE
-	PS:> Get-A9SystemPatch -Hist
+	This command displays all the patches currently affecting the system if options are not used.
 .PARAMETER Hist
 	Provides an audit log of all patches and updates that have been applied to the system.
-.PARAMETER D
+.PARAMETER Detailed
 	When used with the -hist option, shows detailed history information including the username who installed each package. If -d is used with a patch specification,
 	it shows detailed patch information. Otherwise it shows detailed information on the currently installed patches.
+
+.Example
+	The following example shows all patches currently installed on the system, with additional detail:
+
+	PS:> Get-A9SystemPatch -detailed
+.EXAMPLE
+	The following example shows all updates that have been applied to the system over time, with all detail:
+
+	PS:> Get-A9SystemPatch -hist -detailed
+.EXAMPLE
+	The showpatchcommand with a specific individual installed patch number displays the fields below when used with the optional -d option:
+
+	PS:> Get-A9SystemPatch P### -detailed
+.NOTES
+	Patch ID.          Specifies the patch ID. 
+	Release Version.   Specifies TPD or UI release affected by the patch. 
+	Synopsis.          Specifies the purpose of the patch. 
+	Date.              Specifies the build date of the patch. 
+	Bugs fixed.        Specifies the bugs fixed. 
+	Description.       Specifies a detailed description of the problem or fix. 
+	Affected Packages. Specifies the new packages being changed. 
+	Obsoletes.         Specifies the patch IDs deleted by this patch. 
+	Requires.          Specifies the patch IDs of any other patches required by this patch. 
+	Notes.             Specifies any special instructions for the patch. 
+
 #>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Hist,
-		[Parameter()]	[switch]	$D
+[CmdletBinding(DefaultParameterSetName='Default')]
+param(	[Parameter(ParameterSetName='ByPatchId', Mandatory)]		[string]	$PatchId,
+		[Parameter(ParameterSetName='Default')]						[switch]	$Hist,
+		[Parameter()]												[switch]	$Detailed
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " showpatch "
-	if($Hist)	{	$Cmd += " -hist " }
-	if($D) 		{	$Cmd += " -d " 	}
+	if($PSCmdlet.ParameterSetName -eq 'ByPatchId') { $Cmd = $Cmd + $PatchId + ' '}
+	if($Hist)			{	$Cmd += " -hist " }
+	if($Detailed) 		{	$Cmd += " -d " 	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -83,38 +123,56 @@ Function Get-A9Version
     Get list of Storage system software version information 
 .DESCRIPTION
     Get list of Storage system software version information
+.PARAMETER All
+	Show all component versions
+.PARAMETER Build
+	Show build levels
+.PARAMETER ShowRelease
+	Show release version number only (useful for scripting).
 .EXAMPLE
     PS:> Get-A9Version
 
 	Get list of Storage system software version information
 .EXAMPLE
-    PS:> Get-A9Version -S	
+    PS:> Get-A9Version -ShowVersion	
 
 	Get list of Storage system release version number only
 .EXAMPLE
-    PS:> Get-A9Version -B	
+    PS:> Get-A9Version -Build	
 
-	Get list of Storage system build levels
-.PARAMETER A
-	Show all component versions
-.PARAMETER B
-	Show build levels
-.PARAMETER S
-	Show release version number only (useful for scripting).
+	Get list of Storage system versions including build levels
+.NOTES
+	Usage: When displaying all versions, for certain components multiple versions might be 
+	installed. In such cases, multiple lines are displayed.
+
+	If no options are specified, the overall version of the software is displayed.
+
+	Release version 4.0.3
+	Patches: None 
+	Component Name   Version 
+	CLI Server        4.0.3 
+	CLI Client        4.0.3
+	System Manager    4.0.3 
+	Kernel            4.0.0 
+	TPD Kernel Code   4.0.3
+	Drive Firmware    4.0.1        
+	Enclosure Firmware4.0.2        
+	Upgrade Tool      21 (190813) 
 #>
 [CmdletBinding()]
-param(	[Parameter()]    [switch]    $A,
-        [Parameter()]    [switch]    $B,
-        [Parameter()]    [switch]    $S
+param(	[Parameter()]    [switch]    $All,
+        [Parameter()]    [switch]    $Build,
+        [Parameter()]    [switch]    $ShowRelease
 )
 Begin
 {	Test-A9Connection -ClientType SshClient
 }
 Process
 {	$Cmd = "showversion"
-    if ($A) {    $Cmd += " -a"    }
-    if ($B) {    $Cmd += " -b"    }
-    if ($S) {    $Cmd += " -s"    }
+    if ($All) 			{    $Cmd += " -a"    }
+    if ($Build) 		{    $Cmd += " -b"    }
+    if ($ShowRelease) 	{    $Cmd += " -s"    }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
     return $Result
 }
@@ -127,33 +185,42 @@ Function Update-A9Cage
 	Upgrade firmware for the specified cage.
 .DESCRIPTION
 	The command downloads new firmware into the specified cage.
-.PARAMETER A
+.PARAMETER All
 	All drive cages are upgraded one at a time.
 .PARAMETER Parallel
 	All drive cages are upgraded in parallel by interface card domain. If -wait is specified, the command will not return until the upgrades
 	are completed. Otherwise, the command returns immediately and completion of the upgrade can be monitored with the -status option.
 .PARAMETER Status
-	Print status of the current operation in progress or the last executed operation. If any cagenames are specified, result
-is filtered to only display those cages.
+	Print status of the current operation in progress or the last executed operation. If any cagenames are specified, 
+	result is filtered to only display those cages.
+.NOTES
+	Authority: Super, Service
+	Any role granted the cage_upgrade right
+	Usage: Running this command requires access to all domains.
+	Before executing the upgradecage command, issue the showcage command to obtain the names of the drive cages in the system.
+
+	When you issue the upgradecage command, the drive cage becomes temporarily degraded as the system upgrades each interface card.
 #>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$A,
-		[Parameter()]	[switch]	$Parallel,
-		[Parameter()]	[switch]	$Wait,
-		[Parameter()]	[switch]	$Status,
-		[Parameter()]	[String]	$Cagename
+[CmdletBinding(DefaultParameterSetName='default')]
+param(	[Parameter(ParameterSetName='AllAndSequential',Mandatory)]	[switch]	$All,
+		[Parameter(ParameterSetName='Parallel',Mandatory)]			[switch]	$Parallel,
+		[Parameter(ParameterSetName='Parallel')]					[switch]	$Wait,
+		[Parameter(ParameterSetName='Status',Mandatory)]			[switch]	$Status,
+		[Parameter(ParameterSetName='Status')]	
+		[Parameter(ParameterSetName='default',Mandatory)]			[String]	$Cagename
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process 
 {	$Cmd = " upgradecage "
-	if($A) 			{	$Cmd += " -a " }
+	if($All) 		{	$Cmd += " -a " }
 	if($Parallel)	{	$Cmd += " -parallel "
 						if($Wait)		{	$Cmd += " -wait " }
 					}
 	if($Status)		{	$Cmd += " -status " }
 	if($Cagename)	{	$Cmd += " $Cagename " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Status)	
 		{	if($Result.count -gt 1)
@@ -185,8 +252,6 @@ Function Reset-A9SystemNode
 	Halts or reboots a system node.
 .DESCRIPTION
 	The command shuts down a system node.
-.EXAMPLE
-	PS:> Reset-A9SystemNode -Halt -Node_ID 0.
 .PARAMETER Node_ID
 	Specifies the node, identified by its ID, to be shut down.
 .PARAMETER Halt
@@ -198,13 +263,33 @@ Function Reset-A9SystemNode
 	generated if the loss of the specified node would interrupt connectivity to the volume and cause I/O disruption.
 .PARAMETER Restart
 	Specifies that the storage services should be restarted.
+.EXAMPLE
+	PS:> Reset-A9SystemNode -Halt -Node_ID 0.
+.NOTES
+	Authority: Super, Service
+		Any role granted the node_shutdown right
+
+	- Usage Requires access to all domains.
+	- The system manager executes a set of validation checks before proceeding with the shutdown.
+	- Unless indicated otherwise, if any of the following conditions exist, the shutdown operation will not proceed:
+	- The system checks for interrupting connectivity to various volumes and returns an error if multipathing is configured incorrectly.
+	- System software upgrade is in progress.
+	- Target node is not online.
+	- If the system is processing tasks, the command returns a warning message to inform the user that tasks are running, and that the shutdown operation can cause some tasks to fail. If the user confirms the shutdown operation, the specified node reboots even if tasks are running.
+	- If no tasks are running when the initial checks are performed, and a new task starts afterward, the shutdown fails.
+	- Any other node is online but not yet integrated into the cluster.
+	- Another shutdown node operation is already in progress.
+	- Shutdown node operation will result in the system shutting down due to loss of quorum.
+	- One or more orphaned logical disks exist on the system that cannot be preserved.
+	- One or more admin logical disks cannot be reset, resulting in the kernel being unable to access meta data from those logical disks.
+	- One or more data (user or snap) logical disks cannot be reset, causing their associated VLUNs to become inaccessible to host applications.
 #>
 [CmdletBinding()]
-param(	[Parameter(ParameterSetName='Halt',Mandatory=$true)]	[switch]	$Halt,
-		[Parameter(ParameterSetName='Reboot',Mandatory=$true)]	[switch]	$Reboot,
-		[Parameter(ParameterSetName='Check',Mandatory=$true)]	[switch]	$Check,
-		[Parameter(ParameterSetName='Restart',Mandatory=$true)]	[switch]	$Restart,
-		[Parameter(Mandatory=$True)]							[String]	$Node_ID
+param(	[Parameter(ParameterSetName='Halt',		Mandatory)]	[switch]	$Halt,
+		[Parameter(ParameterSetName='Reboot',	Mandatory)]	[switch]	$Reboot,
+		[Parameter(ParameterSetName='Check',	Mandatory)]	[switch]	$Check,
+		[Parameter(ParameterSetName='Restart',	Mandatory)]	[switch]	$Restart,
+		[Parameter(Mandatory)]								[String]	$Node_ID
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -215,9 +300,24 @@ Process
 	Elseif($Reboot)	{	$Cmd += " reboot " }
 	Elseif($Check)	{	$Cmd += " check " }
 	Elseif($Restart){	$Cmd += " restart " }
-	if($Node_ID)	{	$Cmd += " Node_ID " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
+	$Cmd += " $Node_ID"
+	$Stream = (($SanConnection.SessionObj).Session).CreateShellStream("xterm",80,24,800,600,1024)
+	$Stream.Read()
+	$ReturnData = invoke-sshstreamShellCommand -ShellStream $Stream -Command $Cmd
+	start-sleep 3 
+	if ( $Verbose )
+		{	write-host "Command sent to the system is $Cmd. The response is below"
+			$ReturnData | convertto-json | out-string
+		}
+	if ( $ReturnData -match "Permission denied") 		
+		{	write-warning "The Command returned the following error : Permission has been Denied`nYour Account permissions are not capable of executing this command."
+			return
+		}
+	if ( $ReturnData -match "yes or no" )
+		{	write-verbose "The command is asking for a confirmation Yes or No, Sending a Yes confirmation now."
+			$Stream.writeline('yes')
+		}
+	return
 } 
 }
 
@@ -228,11 +328,8 @@ Function Set-A9Magazines
 	Take magazines or disks on or off loop.
 .DESCRIPTION
 	The command takes drive magazines, or disk drives within a magazine, either on-loop or off-loop. Use this command when replacing a
-	drive magazine or disk drive within a drive magazine.
-.EXAMPLE
-	PS:> Set-A9Magazines -Offloop -Cage_name "xxx" -Magazine "xxx"
-.EXAMPLE
-	PS:> Set-A9Magazines -Offloop -Port "Both" -Cage_name "xxx" -Magazine "xxx"
+	drive magazine or disk drive within a drive magazine. This command assumes non-interactice, so unlike the SSH comamnd that requires a -F 
+	to force the command to run without a prompt, the -F is assumed.
 .PARAMETER Offloop
 	Specifies that the specified drive magazine or disk drive is either taken off-loop or brought back on-loop.
 .PARAMETER Onloop
@@ -241,23 +338,35 @@ Function Set-A9Magazines
 .PARAMETER Cage_name
 	Specifies the name of the drive cage. Drive cage information can be viewed by issuing the showcage command.
 .PARAMETER Magazine
-	Specifies the drive magazine number within the drive cage. Valid formats are <drive_cage_number>.<drive_magazine> or <drive_magazine> (for example 1.3 or 3, respectively).
+	Specifies the drive magazine number within the drive cage. Valid formats are <drive_cage_number>.<drive_magazine> 
+	or <drive_magazine> (for example 1.3 or 3, respectively).
 .PARAMETER Disk
 	Specifies that the operation is performed on the disk as determined by its position within the drive magazine.
 	If not specified, the operation is performed on the entire drive magazine.
 .PARAMETER Port
-	Specifies that the operation is performed on port A, port B, or both A and B. If not specified, the operation is performed on both ports A and B.
-.PARAMETER F
-	Specifies that the command is forced. If this option is not used, the command requires confirmation before proceeding with its operation.
+	Specifies that the operation is performed on port A, port B, or both A and B. 
+	If not specified, the operation is performed on both ports A and B.
+.EXAMPLE
+	PS:> Set-A9Magazines -Offloop -Cage_name "xxx" -Magazine "xxx"
+.EXAMPLE
+	PS:> Set-A9Magazines -Offloop -Port "Both" -Cage_name "xxx" -Magazine "xxx"
+.NOTES
+	Authority:Super, Service
+		Any role granted the mag_control right
+	- Access to all domains is required to run this command.
+	Taking a drive magazine off-loop has the following consequences:
+	- Relocation of chunklets.
+	- Affected logical disks are put into write-through mode.
+	- Momentary dip in throughput, but no loss of connectivity.
 #>
 [CmdletBinding()]
-param( 	[Parameter()]					[switch]	$Offloop,
-		[Parameter()]					[switch]	$Onloop,
-		[Parameter(Mandatory=$True)]	[String]	$Cage_name,
-		[Parameter(Mandatory=$True)]	[String]	$Magazine,
-		[Parameter()]					[String]	$Disk,
-		[Parameter()]					[String]	$Port,
-		[Parameter()]					[switch]	$F
+param( 	[Parameter(ParameterSetName='OffLoop',mandatory)]	[switch]	$Offloop,
+		[Parameter(ParameterSetName='onLoop',mandatory)]	[switch]	$Onloop,
+		[Parameter(Mandatory)]						[String]	$Cage_name,
+		[Parameter(Mandatory)]						[String]	$Magazine,
+		[Parameter()]										[String]	$Disk,
+		[Parameter()][Validateset('A','B','Both')]
+															[String]	$Port
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -265,17 +374,13 @@ Begin
 Process 
 {	$Cmd = " controlmag "
 	if($Offloop)	{	$Cmd += " offloop " }
-	Elseif($Onloop) {	$Cmd += " onloop " }
-	else			{	Return "Select at least one from [ Offloop | Onloop ] " }
+	if($Onloop) 	{	$Cmd += " onloop " }
 	if($Disk)		{	$Cmd += " -disk $Disk " }
-	if($Port)		
-		{	$Val = "A","B" ,"BOTH"
-			if($Val -eq $T.ToLower())	{	$Cmd += " -port $Port.ToLower "	}
-			else						{	return " Illegal Port value, must be either A,B or Both "	}
-		}
-	if($F) 			{	$Cmd += " -f " }
+	if($Port)		{	$Cmd += " -port $Port.ToLower "	}
+	$Cmd += " -f " 
 	if($Cage_name)	{	$Cmd += " $Cage_name " }
 	if($Magazine)	{	$Cmd += " $Magazine " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -294,40 +399,49 @@ Function Set-A9ServiceCage
 .PARAMETER End
 	Specifies the end of service on a cage.
 .PARAMETER Reset
-	Initiates a soft reset of the interface card for DCN5, DCS11, and DCS12 drive cages.
+	Initiates a soft reset of the interface card for DCN5, DCS11, and DCS12 drive cages. This specifies the interface card number of the cage to be reset and van be 0 or 1.
 .PARAMETER Hreset
-	Initiates a hard reset of the interface card for DCN5, DCS11, and DCS12 drive cages.
+	Initiates a hard reset of the interface card for DCN5, DCS11, and DCS12 drive cages. This specifies the interface card number of the cage to be reset and van be 0 or 1. 
 .PARAMETER Remove
 	Removes the indicated drive cage (indicated with the <cagename> specifier) from the system. This subcommand fails when the cage has active ports or is in use.
 .PARAMETER Pcm
 	For DCS11 and DCS12, this specifies that the Power Cooling Module (PCM) will be serviced. For DCN5, this specifies the Power Cooling Battery
-	Module (PCBM) will be serviced.
+	Module (PCBM) will be serviced. The Value for this can either be 0 or 1
 .PARAMETER Iom
-	Specifies that the I/O module will be serviced. This option is not valid for DCN5 cage.
-.PARAMETER Zero
-	For subcommands reset and hreset, this specifies the interface card	number of the cage to be reset. For subcommands start and end, this
-	specifies the number of the module indicated by -pcm or -iom to be serviced.
-.PARAMETER One
-	For subcommands reset and hreset, this specifies the interface card	number of the cage to be reset. For subcommands start and end, this
-	specifies the number of the module indicated by -pcm or -iom to be serviced.
+	Specifies that the I/O module will be serviced. This option is not valid for DCN5 cage. The Value for this can either be 0 or 1
 .PARAMETER CageName
 	Specifies the name of the cage to be serviced.
+.EXAMPLE
+	The following example starts the service of interface card module 0 on cage0:
+
+	PS:> Set-A9ServiceCage start -iom 0 cage0
 .NOTES
 	This command requires a SSH type connection.
+	Authority: Super, Service
+	Usage:Access to all domains is required to run this command.
+	Issuing the servicecage command results in chunklet relocation, causing a dip in throughput.
+	After issuing the start subcommand, the end subcommand must be issued to indicate that service is completed and to restore the cage to its normal state.
 #>
 [CmdletBinding()]
-param(	[Parameter(ParameterSetName='Start', Mandatory=$true)]	[switch]	$Start,
-		[Parameter(ParameterSetName='End',   Mandatory=$true)]	[switch]	$End,
-		[Parameter(ParameterSetName='Reset', Mandatory=$true)]	[switch]	$Reset,
-		[Parameter(ParameterSetName='HReset',Mandatory=$true)]	[switch]	$Hreset,
-		[Parameter(ParameterSetName='Remove',Mandatory=$true)]	[switch]	$Remove,
-		[Parameter()]	[switch]	$F,	
-		[Parameter()]	[switch]	$Force,	
-		[Parameter()]	[switch]	$Pcm,
-		[Parameter()]	[switch]	$Iom,
-		[Parameter()]	[switch]	$Zero,
-		[Parameter()]	[switch]	$One,
-		[Parameter(Mandatory=$true)]	[String]	$CageName
+param(	[Parameter(ParameterSetName='StartPCM', Mandatory)]	
+		[Parameter(ParameterSetName='StartIOM', Mandatory)]	
+																	[switch]	$Start,
+		[Parameter(ParameterSetName='EndPCM',   Mandatory)]	
+		[Parameter(ParameterSetName='EndIOM',   Mandatory)]	
+																	[switch]	$End,
+		[Parameter(ParameterSetName='Reset', 	Mandatory)]	
+										[ValidateSet('0','1')]		[int]		$Reset,
+		[Parameter(ParameterSetName='HReset',	Mandatory)]	
+										[ValidateSet('0','1')]		[int]		$HReset,
+		[Parameter(ParameterSetName='Remove',	Mandatory)]	
+																	[switch]	$Remove,	
+		[Parameter(ParameterSetName='StartPCM', Mandatory)]
+		[Parameter(ParameterSetName='EndPCM', 	Mandatory)]
+										[ValidateSet('0','1')]		[int]		$Pcm,
+		[Parameter(ParameterSetName='StartIOM', Mandatory)]
+		[Parameter(ParameterSetName='EndIOM', 	Mandatory)]
+										[ValidateSet('0','1')]		[int]		$Iom,
+		[Parameter(Mandatory)]								[String]	$CageName
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -336,36 +450,21 @@ Process
 {	$Cmd = " servicecage "
 	if($Start)
 		{	$Cmd += " start "	
-			if($Iom)		{	$Cmd += " -iom "	}
-			elseif($Pcm)	{	$Cmd += " -pcm "	}
-			else			{	Return "Select at least one from [ Iom | Pcm]..."	}		
-			if($Zero)		{	$Cmd += " 0 "	}
-			elseif($One)	{	$Cmd += " 1 "	}
-			else			{	Return "Select at least one from [ Zero | One]..."	}
+			if($PSBoundParameters.ContainsKey('Iom'))	{	$Cmd += " -iom "	}
+			if($PSBoundParameters.ContainsKey('Pcm'))	{	$Cmd += " -pcm "	}	
+			$Cmd += $Pcm + $Iom	+ ' ' 
 		}
-	elseif($End)
+	if($End)
 		{	$Cmd += " end "
-			if($Iom)	{	$Cmd += " -iom "	}
-			elseif($Pcm){	$Cmd += " -pcm "	}
-			else		{	Return "Select at least one from [ Iom | Pcm]..."	}
-			if($Zero)	{	$Cmd += " 0 "	}
-			elseif($One){	$Cmd += " 1 "	}
-			else		{	Return "Select at least one from [ Zero | One]..."	}
+			if($PSBoundParameters.ContainsKey('Iom'))	{	$Cmd += " -iom "	}
+			if($PSBoundParameters.ContainsKey('Pcm'))	{	$Cmd += " -pcm "	}	
+			$Cmd += $Pcm + $Iom	+ ' ' 
 		}
-	elseif($Reset)
-		{	$Cmd += " reset -f "
-			if($Zero)	{	$Cmd += " 0 "	}
-			elseif($One){	$Cmd += " 1 "	}
-			else		{	Return "Select at least one from [ Zero | One]..."	}
-		}
-	elseif($Hreset)
-		{	$Cmd += " hreset -f "
-			if($Zero)	{	$Cmd += " 0 "	}
-			elseif($One){	$Cmd += " 1 "	}
-			else		{	Return "Select at least one from [ Zero | One]..."	}
-		}
-	elseif($Remove)		{	$Cmd += " remove -f "	}
+	if($PSBoundParameters.ContainsKey('Reset'))			{	$Cmd += " reset -f " + $Reset	}
+	if($PSBoundParameters.ContainsKey('HReset'))		{	$Cmd += " hreset -f " + $HReset	}
+	if($Remove)											{	$Cmd += " remove -f "	}
 	$Cmd += " $CageName "
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
@@ -378,14 +477,8 @@ Function Set-A9ServiceNodes
 	Prepare a node for service.
 .DESCRIPTION
 	The command informs the system that a certain component will be replaced, and will cause the system to indicate the physical location of that component.
-.EXAMPLE
-	Set-A9ServiceNodes -Start -Nodeid 0
-.EXAMPLE
-	Set-A9ServiceNodes -Start -Pci 3 -Nodeid 0
 .PARAMETER Start
 	Specifies the start of service on a node. If shutting down the node is required to start the service, the command will prompt for confirmation before proceeding further.
-.PARAMETER Status
-	Displays the state of any active servicenode operations.
 .PARAMETER End
 	Specifies the end of service on a node. If the node was previously
 	halted for the service, this command will boot the node.
@@ -393,66 +486,143 @@ Function Set-A9ServiceNodes
 	Specifies which power supply will be placed into servicing-mode. Accepted values for <psid> are 0 and 1. For HPE 3PAR 600 series
 	systems, this option is not supported, use servicecage for servicing the Power Cooling Battery Module (PCBM).
 .PARAMETER Pci
-	Only the service LED corresponding to the PCI card in the specified slot will be illuminated. Accepted values for <slot> are 3 through 5 for HPE 3PAR 600 series systems.
+	Only the service LED corresponding to the PCI card in the specified slot will be illuminated. Accepted values for <slot> are 3 through 5 
+	for HPE 3PAR 600 series systems.
 .PARAMETER Fan
 	Specifies which node fan will be placed into servicing-mode. For HPE 3PAR 600 series systems, 
 	this option is not supported, use servicecage for servicing the Power Cooling Battery Module (PCBM).
 .PARAMETER Bat
 	Specifies that the node's battery backup unit will be placed into servicing-mode. For HPE 3PAR 600 series systems, this option is not
 	supported, use servicecage for servicing the Power Cooling Battery Module (PCBM).
+.EXAMPLE
+	Set-A9ServiceNodes -Start -Nodeid 0
+.EXAMPLE
+	Set-A9ServiceNodes -Start -Pci 3 -Nodeid 0
 .NOTES
 	This command requires a SSH type connection.
+	Authority: Super, Service
+	Any role granted the node_service right
+
+	Usage: Access to all domains is required to run this command. If a component is found unsafe to remove, the command will return an error.
+	If no option is specified, only node LED will be illuminated.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$True)] 	[String] 	$Nodeid,
-		[Parameter(ParameterSetName='Start', Mandatory=$true)]	[switch]	$Start,
-		[Parameter(ParameterSetName='Status', Mandatory=$true)]	[switch]	$Status,
-		[Parameter(ParameterSetName='end',   Mandatory=$true)]	[switch]	$End,
-		[Parameter()]					[String]	$Ps,
-		[Parameter()]					[String]	$Pci,
-		[Parameter()]					[String]	$Fan,
-		[Parameter()]					[switch]	$Bat
+param(	[Parameter(Mandatory)] 	
+		[ValidateSet('0','1','2','3')]	[String] 	$Nodeid,
+		[Parameter(ParameterSetName='Start', Mandatory)]	[switch]	$Start,
+		[Parameter(ParameterSetName='end',   Mandatory)]	[switch]	$End,
+		[Parameter()]					[int]	$Ps,
+		[Parameter()]					[int]	$Pci,
+		[Parameter()]					[int]	$Fan,
+		[Parameter()]					[int]	$Bat
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }	
 Process
 {	$Cmd = " servicenode "
-	if($Start) 		{	$Cmd += " start " }
-	Elseif($Status)	{	$Cmd += " status " }
-	Elseif($End) 	{	$Cmd += " end " }
-	if($Ps) 		{	$Cmd += " -ps $Ps " }
-	if($Pci)		{	$Cmd += " -pci $Pci " }
-	if($Fan)		{	$Cmd += " -fan $Fan " }
-	if($Bat)		{	$Cmd += " -bat " }
-	if($Nodeid)		{	$Cmd += " Nodeid " }
+	if($Start) 		{	$Cmd += " start " 		}
+	Elseif($End) 	{	$Cmd += " end " 		}
+	if($Ps) 		{	$Cmd += " -ps $Ps " 	}
+	if($Pci)		{	$Cmd += " -pci $Pci " 	}
+	if($Fan)		{	$Cmd += " -fan $Fan " 	}
+	if($Bat)		{	$Cmd += " -bat $Bat" 	}
+	if($Nodeid)		{	$Cmd += " $Nodeid " 	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Reset-A9System
+Function Get-A9ServiceNodes
+{
+<#
+.SYNOPSIS
+	Inquire the status of a node for service.
+.DESCRIPTION
+	The command informs the system that a certain component will be replaced, and will cause the system to indicate the physical location of that component.
+.PARAMETER Ps
+	Specifies which power supply will be placed into servicing-mode. Accepted values for <psid> are 0 and 1. For HPE 3PAR 600 series
+	systems, this option is not supported, use servicecage for servicing the Power Cooling Battery Module (PCBM).
+.PARAMETER Pci
+	Only the service LED corresponding to the PCI card in the specified slot will be illuminated. Accepted values for <slot> are 3 through 5 
+	for HPE 3PAR 600 series systems.
+.PARAMETER Fan
+	Specifies which node fan will be placed into servicing-mode. For HPE 3PAR 600 series systems, 
+	this option is not supported, use servicecage for servicing the Power Cooling Battery Module (PCBM).
+.PARAMETER Battery
+	Specifies that the node's battery backup unit will be placed into servicing-mode. For HPE 3PAR 600 series systems, this option is not
+	supported, use servicecage for servicing the Power Cooling Battery Module (PCBM).
+.EXAMPLE
+	Set-A9ServiceNodes -Start -Nodeid 0
+.EXAMPLE
+	Set-A9ServiceNodes -Start -Pci 3 -Nodeid 0
+.NOTES
+	This command requires a SSH type connection.
+	Authority: Super, Service
+	Any role granted the node_service right
+
+	Usage: Access to all domains is required to run this command. If a component is found unsafe to remove, the command will return an error.
+	If no option is specified, only node LED will be illuminated.
+#>
+[CmdletBinding()]
+param(	[Parameter(Mandatory)] 	
+		[ValidateSet('0','1','2','3')]	[String] 	$Nodeid,
+		[Parameter()]					[int]	$Ps,
+		[Parameter()]					[int]	$Pci,
+		[Parameter()]					[int]	$Fan,
+		[Parameter()]					[int]	$Battery
+)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}	
+Process
+{	$Cmd = " servicenode status "
+	if($Ps) 		{	$Cmd += " -ps $Ps " 	}
+	if($Pci)		{	$Cmd += " -pci $Pci " 	}
+	if($Fan)		{	$Cmd += " -fan $Fan " 	}
+	if($Battery)	{	$Cmd += " -bat $Battery" }
+	if($Nodeid)		{	$Cmd += " $Nodeid " 	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	Return $Result
+}
+}
+
+Function Reset-A9System 
 {
 <#
 .SYNOPSIS
 	Halts or reboots the entire system.
 .DESCRIPTION
 	The command shuts down an entire system.
-.EXAMPLE
-	PS:> Reset-A9System -Halt
 .PARAMETER Halt
 	Specifies that the system should be halted after shutdown. If this subcommand is not specified, the reboot or restart subcommand must be used.
 .PARAMETER Reboot
 	Specifies that the system should be restarted after shutdown. If this subcommand is not given, the halt or restart subcommand must be used.
 .PARAMETER Restart
 	Specifies that the storage services should be restarted. If this subcommand is not given, the halt or reboot subcommand must be used.
+.EXAMPLE
+	PS:> Reset-A9System -Halt
 .NOTES
 	This command requires a SSH type connection.
+	Authority = Super, Service
+		Any role granted the sys_shutdown right
+	
+	Usage: Access to all domains is required to run this command. The execution of shutdownsys command can affect service. Hence, a confirmation is 
+	required before proceeding with this command. After the shutdownsys command is issued, there is no indication from the CLI that the shutdown 
+	is occurring. You can issue the showsys command to display the current status of the system during the initial stage of the shutdown process 
+	and after the system has fully restarted.
+
+	If the node that was running on the system manager fails or if the system manager process exits while executing the shutdownsys command, 
+	the shutdown will not complete. The only safe action is to reissue the shutdownsys command.
+
+	Do not issue any commands other than showsys while the system is shutting down.
 #>
 [CmdletBinding()]
-param(	[Parameter(ParameterSetName='Halt',   Mandatory=$true)]	[switch]	$Halt,
-		[Parameter(ParameterSetName='Reboot', Mandatory=$true)]	[switch]	$Reboot,
-		[Parameter(ParameterSetName='Restart',Mandatory=$true)]	[switch]	$Restart
+param(	[Parameter(ParameterSetName='Halt',   Mandatory)]	[switch]	$Halt,
+		[Parameter(ParameterSetName='Reboot', Mandatory)]	[switch]	$Reboot,
+		[Parameter(ParameterSetName='Restart',Mandatory)]	[switch]	$Restart
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -462,6 +632,7 @@ Process
 	if($Halt)	{	$Cmd += " halt " }
 	if($Reboot)	{	$Cmd += " reboot " }
 	if($Restart){	$Cmd += " restart " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -474,14 +645,12 @@ Function Update-A9PdFirmware
 	Upgrade physical disk firmware.
 .DESCRIPTION
 	The command upgrades the physical disk firmware.
-.PARAMETER F
-	Upgrades the physical disk firmware without requiring confirmation.
 .PARAMETER Skiptest
 	Skips the 10 second diagnostic test normally completed after each physical disk upgrade.
-.PARAMETER A
+.PARAMETER All
 	Specifies that all physical disks with valid IDs and whose firmware is not current are upgraded. If this option is not specified, then
 	either the -w option or PD_ID specifier must be issued on the command line.
-.PARAMETER W
+.PARAMETER WWN
 	Specifies that the firmware of either one or more physical disks, identified by their WWNs, is upgraded. If this option is not specified,
 	then either the -a option or PD_ID specifier must be issued on the command line.
 .PARAMETER PD_ID
@@ -489,82 +658,33 @@ Function Update-A9PdFirmware
 	used, then the -a or -w option must be issued on the command line.
 .NOTES
 	This command requires a SSH type connection.
+	Authority: Super, Service
+		Any role granted the sys_shutdown right
+	Usage:
+	- Access to all domains is required to run this command.
+	- The execution of shutdownsys command can affect service.
+	- Hence, a confirmation is required before proceeding with this command.
+	- After the shutdownsys command is issued, there is no indication from the CLI that the shutdown is occurring. You can issue the showsys command to display the current status of the system during the initial stage of the shutdown process and after the system has fully restarted.
+	- If the node that was running on the system manager fails or if the system manager process exits while executing the shutdownsys command, the shutdown will not complete. The only safe action is to reissue the shutdownsys command.
+	- Do not issue any commands other than showsys while the system is shutting down.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[switch]	$F,
-		[Parameter()]	[switch]	$Skiptest,
-		[Parameter()]	[switch]	$A,
-		[Parameter()]	[String]	$W,
-		[Parameter()]	[String]	$PD_ID
+param(	[Parameter()]							[switch]	$Skiptest,
+		[Parameter(ParameterSetName='All')]		[switch]	$All,
+		[Parameter(ParameterSetName='byWWN')]	[String]	$WwN,
+		[Parameter(ParameterSetName='byPdId')]	[String]	$PD_ID
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " upgradepd "
-	if($F)			{	$Cmd += " -f " } 
-	if($Skiptest)	{	$Cmd += " -skiptest " } 
-	if($A)			{	$Cmd += " -a " } 
-	if($W)			{	$Cmd += " -w $W " } 
+	$Cmd += " -f " 
+	if($Skiptest)		{	$Cmd += " -skiptest " } 
+	if($All)			{	$Cmd += " -a " } 
+	if($WWN)			{	$Cmd += " -w $WWN " } 
 	if($PD_ID) 		{	$Cmd += " $PD_ID " } 
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Search-A9ServiceNode
-{
-<#
-.SYNOPSIS
-	Prepare a node for service.
-.DESCRIPTION
-	The command informs the system that a certain component will be replaced, and will cause the system to indicate the physical location of that component.
-.PARAMETER Start
-	Specifies the start of service on a node. If shutting down the node	is required to start the service, the command will prompt for confirmation before proceeding further.
-.PARAMETER Status
-	Displays the state of any active servicenode operations.
-.PARAMETER End
-	Specifies the end of service on a node. If the node was previously halted for the service, this command will boot the node.
-.PARAMETER Ps
-	Specifies which power supply will be placed into servicing-mode. Accepted values for <psid> are 0 and 1. For HPE 3PAR 600 series
-	systems, this option is not supported, use servicecage for servicing the Power Cooling Battery Module (PCBM).
-.PARAMETER Pci
-	Only the service LED corresponding to the PCI card in the specified slot will be illuminated. Accepted values for <slot> are 3 through 5 for HPE 3PAR 600 series systems.
-.PARAMETER Fan
-	Specifies which node fan will be placed into servicing-mode. For HPE 3PAR 600 series systems, this option is not supported,
-	use servicecage for servicing the Power Cooling Battery Module (PCBM).
-.PARAMETER Bat
-	Specifies that the node's battery backup unit will be placed into servicing-mode. For HPE 3PAR 600 series systems, this option is not
-	supported, use servicecage for servicing the Power Cooling Battery Module (PCBM).
-.PARAMETER NodeId  
-	Indicates which node the servicenode operation will act on. Accepted values are 0 through 3 for HPE 3PAR 600 series systems.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Start,
-		[Parameter()]	[switch]	$Status,
-		[Parameter()]	[switch]	$End,
-		[Parameter()]	[String]	$Ps,
-		[Parameter()]	[String]	$Pci,
-		[Parameter()]	[String]	$Fan,
-		[Parameter()]	[switch]	$Bat,
-		[Parameter(Mandatory=$true)]	[String]	$NodeId
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$Cmd = " servicenode "
-	if($Start)		{	$Cmd += " start "}
-	elseif($Status)	{	$Cmd += " status " }
-	elseif($End)	{	$Cmd += " end " }
-	else			{	Return "Select at least one from [Start | Status | End]..."} 
-	if($Ps)			{	$Cmd += " -ps $Ps "}
-	if($Pci)		{	$Cmd += " -pci $Pci "}
-	if($Fan) 		{	$Cmd += " -fan $Fan "}
-	if($Bat)		{	$Cmd += " -bat "}
-	if($NodeId)		{	$Cmd += " $NodeId "	}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -577,7 +697,7 @@ Function Get-A9ResetReason
 	The cmdlet displays component reset reason details.
 .DESCRIPTION
 	The command displays component reset reason details.
-.PARAMETER D
+.PARAMETER Detailed
 	Specifies that more detailed information about the system is displayed.
 .PARAMETER SANConnection 
 	Specify the SAN Connection object created with New-CLIConnection or New-PoshSshConnection  
@@ -588,21 +708,22 @@ Function Get-A9ResetReason
 .EXAMPLE
 	To display reset reason in more detail (-d option):
 	
-	PS:> Get-A9ResetReason -d
+	PS:> Get-A9ResetReason -detailed
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[switch]	$D
+param(	[Parameter()]	[switch]	$Detailed
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " showreset "
-	if ($D) {    $Cmd += " -d "   }
-    $Result = Invoke-A9CLICommand -cmds  $Cmd
-    $Result 
+	if ($Detailed) {    $Cmd += " -d "   }
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
+    return $Result 
 }
 }
 
@@ -613,22 +734,19 @@ Function Set-A9Security
 	Control security parameters.
 .DESCRIPTION
 	The cmdlet controls security parameters of the system
-.PARAMETER FipsEnable
+.PARAMETER Fips
+	Valid parameters for fips are to Enable, disable or restart. 
 	Enables the use of FIPS 140-2 validated cryptographic modules on system management interfaces.
-.PARAMETER FipsDisable
 	Disables the use of FIPS 140-2 validated cryptographic modules on system management interfaces.
-.PARAMETER FipsRestart
 	Restarts all services that are in "Enable failed" status.
-.PARAMETER SSHKeysGenerate
-	Regenerates the SSH host keys and distributes them to all nodes.
-.PARAMETER SSHKeysSync
-	Copies the SSH host keys from the current node to all other nodes.
-.PARAMETER F
-	Specifies that the operation is forced. If this option is not used, the command requires confirmation before proceeding with its operation.Valid for fips and ssh-keys
+.PARAMETER SSHKey
+	Valid parameters for SSH-Keys are Generate or SYnc
+	Generate = Regenerates the SSH host keys and distributes them to all nodes.
+	Sync = Copies the SSH host keys from the current node to all other nodes.
 .EXAMPLE
     Enables fips mode
 
-    PS:> Set-A9Security -fipsenable
+    PS:> Set-A9Security -fips enable
 
     Warning: Enabling FIPS mode requires restarting all system management interfaces,  which will terminate ALL existing connections including this one.
     When that happens, you must reconnect to continue.
@@ -636,7 +754,7 @@ Function Set-A9Security
 .EXAMPLE
     Disables fips mode
 
-    PS:> Set-A9Security -fipsdisable
+    PS:> Set-A9Security -fips disable
 
     Warning: Disabling FIPS mode requires restarting all system management interfaces,
     which will terminate ALL existing connections including this one. When that happens, you must reconnect to continue.
@@ -644,52 +762,56 @@ Function Set-A9Security
 .EXAMPLE
     Restarts services which are not currently enabled
     
-    PS:> Set-A9Security -fipsrestart
+    PS:> Set-A9Security -fips restart
     
     Warning: Will restart all services that are not enabled, which may terminate ALL existing connections including this one. When that happens, you must reconnect to continue.
     Continue restarting (yes/no)?
 .EXAMPLE
     Regenerates the SSH host keys and distributes them to the other nodes
 
-    PS:> Set-A9Security -ssh-keysgenerate
+    PS:> Set-A9Security -sshkey generate
 
     Warning: This action will restart the ssh service, which may terminate ALL existing connections including this one. When that happens, you must reconnect to continue.
     Continue restarting (yes/no)?
 .EXAMPLE
     Syncs the SSH host keys from the current node to all other nodes
 
-    PS:> Set-A9Security -ssh-keyssync
+    PS:> Set-A9Security -sshkey sync
 
     Warning: This action will restart the ssh service, which may terminate ALL existing connections including this one. When that happens, you must reconnect to continue.
     Continue restarting (yes/no)?
 .NOTES
 	This command requires a SSH type connection.
+	Authority: Super
+		Any role granted the security_control right.
+	Super, Service (for status option only)
+	Any role granted the security_status_control right.
+	Usage: 
+	- The Management Interfaces are CIM, CLI, EKM used for Data at Rest Encryption, LDAP Authentication, QW, RDA, SNMP, Syslog, SSH, and WSAPI.
+	- EKM and Syslog interfaces always have FIPS mode enabled.
+
+	WARNING:Enabling FIPS mode will terminate ALL existing management interfaces/connections/services.
+	WARNING:Regenerating or syncing the SSH host keys will terminate ALL existing SSH connections.
 #>
 [CmdletBinding()]
-param(  [Parameter(ParameterSetName='FE', Mandatory=$true)]	[switch]    $FipsEnable,
-        [Parameter(ParameterSetName='FD', Mandatory=$true)]	[switch]    $FipsDisable,
-        [Parameter(ParameterSetName='FR', Mandatory=$true)]	[switch]    $FipsRestart,
-        [Parameter(ParameterSetName='SG', Mandatory=$true)]	[switch]    $SSHKeysGenerate,
-        [Parameter(ParameterSetName='SS', Mandatory=$true)]	[switch]    $SSHKeysSync,
-        [Parameter()]   			 						[switch]    $F
+param(  [Parameter(ParameterSetName='FIPS')]	[ValidateSet('enable','disable','restart')]	[string]	$fips,
+		[Parameter(ParameterSetName='SSHKeys')]	[ValidateSet('Generate','Sync')]			[string]	$SSHKey
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process 
 {	$Cmd = " controlsecurity "
-    if ($FipsEnable) {    $Cmd += " fips enable "    }
-    if ($FipsDisable) {    $Cmd += " fips disable "    }
-    if ($FipsRestart) {    $Cmd += " fips restart "    }
-    if ($SSHKeysGenerate) {    $Cmd += " ssh-keys generate "    }
-    if ($SSHKeysSync) {    $Cmd += " ssh-keys sync "    } 
-	if ($F) {    $Cmd += " -f "    } 
-    $Result = Invoke-A9CLICommand -cmds  $Cmd
+	if ($PSBoundParameters.ContainsKey('fips')	) 		{    $Cmd += " fips $fips "    		}
+	if ($PSBoundParameters.ContainsKey('SSHKey')) 		{    $Cmd += " ssh-keys $SSHKey "   }
+	$Cmd += " -f "  
+    write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Get-A9Security
+Function Get-A9SecurityFIPS
 {    
 <#
 .SYNOPSIS
@@ -723,25 +845,25 @@ Function Get-A9Security
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param( 	[Parameter(Mandatory=$true)]   [switch]    $FipsStatus
-)
+param( 	)
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
-{	$Cmd = " controlsecurity "
-    if ($FipsStatus) {    $Cmd += " fips status "    } 
-    $Result = Invoke-A9CLICommand -cmds  $Cmd
+{	$Cmd = " controlsecurity fips status "
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
     Return $Result
 }
 }
 
+
 # SIG # Begin signature block
-# MIIt2AYJKoZIhvcNAQcCoIItyTCCLcUCAQExDzANBglghkgBZQMEAgMFADCBmwYK
+# MIIsVQYJKoZIhvcNAQcCoIIsRjCCLEICAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEBh0pNNUGjA
-# sp9mOeFFQHwM8bgHz2ab1+yiCZg+QnbYBTj4Lg1jj4t7m9vVrpR7QpnUqmyJsArQ
-# rFmmMey++dwioIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEBzBFAxLuJU
+# neGz+r09OBu7lr44fIPZFjDq7xLnEmXyIm4jRpDlqgmoMsBqQeO/QPApCUgs3B72
+# 49LnMcbRpW1EoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -834,152 +956,144 @@ Process
 # 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
 # tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
 # NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG5UwghuRAgEBMGkwVDELMAkGA1UEBhMCR0Ix
+# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCGhIwghoOAgEBMGkwVDELMAkGA1UEBhMCR0Ix
 # GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQLnC1SLMdTj31DIKq8wKgInQa3k9wZPkQtFEpcCeHSxYyBZD7iqOoXhX
-# JcB2uiihaI3/o91hl4SNmGedjBo+SgYwDQYJKoZIhvcNAQEBBQAEggGAHVnRpP5U
-# AwXCYe3mStayo+PsFDRhvgHnS3R1vZZrkOC71cNgIWNGSKmJ7yLCJqyfas2I/iQz
-# 5Ae7iAsBu6OQrsdthVJ2A7uHz3jR2PP5gNG6TVmxRtlu0LCLKebbDT3dyeayTrVP
-# yrYk2oh6gu8bIIu8zdvPHgJZMHASRIVHIL8EBPusTOdYZYkT/F6Qjw0yBCYc10kc
-# JLScOEm+PPAfBENsq9s3q4yZZhooTJYqXpBHKHj5+vjoPzmQIkjgzY12yftzdeT6
-# nIAAFBhXndA6VkNQtfB2igaXr0GUrzDYOfiBySDIne2QyXE9KjQ1ZptycFF/AcUO
-# CyhDs4IM0d2Mdfd5szSmmk+sJ4GS1jaJhcQnXwuP+oOJm9FlUMshbin4ulOoZALZ
-# 7DkSJxKB3hj78P/gExlkcuIUTHgE5PWz5fpHMmcgH9naAsgUMYzyzd4SJnYCGkea
-# /qqh9Z+xPE2bnS8KNxwtmJCaJFlni7hg5HQ2nQVMgxYt60enas5bZaBPoYIY3jCC
-# GNoGCisGAQQBgjcDAwExghjKMIIYxgYJKoZIhvcNAQcCoIIYtzCCGLMCAQMxDzAN
-# BglghkgBZQMEAgIFADCCAQMGCyqGSIb3DQEJEAEEoIHzBIHwMIHtAgEBBgorBgEE
-# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMIBZCf5UhK0pqYRX0iKAo7wE1KTMBNmo
-# NDdbxmG+D0ZKPxwXgq1gQKZZX678HvHVOgIUdQMRTq268SAeMsRKhOZ9ATaBttMY
-# DzIwMjQwNzMxMTkyNTMwWqBypHAwbjELMAkGA1UEBhMCR0IxEzARBgNVBAgTCk1h
-# bmNoZXN0ZXIxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEwMC4GA1UEAxMnU2Vj
-# dGlnbyBQdWJsaWMgVGltZSBTdGFtcGluZyBTaWduZXIgUjM1oIIS/zCCBl0wggTF
-# oAMCAQICEDpSaiyEzlXmHWX8zBLY6YkwDQYJKoZIhvcNAQEMBQAwVTELMAkGA1UE
-# BhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGln
-# byBQdWJsaWMgVGltZSBTdGFtcGluZyBDQSBSMzYwHhcNMjQwMTE1MDAwMDAwWhcN
-# MzUwNDE0MjM1OTU5WjBuMQswCQYDVQQGEwJHQjETMBEGA1UECBMKTWFuY2hlc3Rl
-# cjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTAwLgYDVQQDEydTZWN0aWdvIFB1
-# YmxpYyBUaW1lIFN0YW1waW5nIFNpZ25lciBSMzUwggIiMA0GCSqGSIb3DQEBAQUA
-# A4ICDwAwggIKAoICAQCN0Wf0wUibvf04STpNYYGbw9jcRaVhBDaNBp7jmJaA9dQZ
-# W5ighrXGNMYjK7Dey5RIHMqLIbT9z9if753mYbojJrKWO4ZP0N5dBT2TwZZaPb8E
-# +hqaDZ8Vy2c+x1NiEwbEzTrPX4W3QFq/zJvDDbWKL99qLL42GJQzX3n5wWo60Kkl
-# fFn+Wb22mOZWYSqkCVGl8aYuE12SqIS4MVO4PUaxXeO+4+48YpQlNqbc/ndTgszR
-# QLF4MjxDPjRDD1M9qvpLTZcTGVzxfViyIToRNxPP6DUiZDU6oXARrGwyP9aglPXw
-# YbkqI2dLuf9fiIzBugCDciOly8TPDgBkJmjAfILNiGcVEzg+40xUdhxNcaC+6r0j
-# uPiR7bzXHh7v/3RnlZuT3ZGstxLfmE7fRMAFwbHdDz5gtHLqjSTXDiNF58IxPtvm
-# ZPG2rlc+Yq+2B8+5pY+QZn+1vEifI0MDtiA6BxxQuOnj4PnqDaK7NEKwtD1pzoA3
-# jJFuoJiwbatwhDkg1PIjYnMDbDW+wAc9FtRN6pUsO405jaBgigoFZCw9hWjLNqgF
-# VTo7lMb5rVjJ9aSBVVL2dcqzyFW2LdWk5Xdp65oeeOALod7YIIMv1pbqC15R7QCY
-# LxcK1bCl4/HpBbdE5mjy9JR70BHuYx27n4XNOZbwrXcG3wZf9gEUk7stbPAoBQID
-# AQABo4IBjjCCAYowHwYDVR0jBBgwFoAUX1jtTDF6omFCjVKAurNhlxmiMpswHQYD
-# VR0OBBYEFGjvpDJJabZSOB3qQzks9BRqngyFMA4GA1UdDwEB/wQEAwIGwDAMBgNV
-# HRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMEoGA1UdIARDMEEwNQYM
-# KwYBBAGyMQECAQMIMCUwIwYIKwYBBQUHAgEWF2h0dHBzOi8vc2VjdGlnby5jb20v
-# Q1BTMAgGBmeBDAEEAjBKBgNVHR8EQzBBMD+gPaA7hjlodHRwOi8vY3JsLnNlY3Rp
-# Z28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcmwwegYIKwYB
-# BQUHAQEEbjBsMEUGCCsGAQUFBzAChjlodHRwOi8vY3J0LnNlY3RpZ28uY29tL1Nl
-# Y3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcnQwIwYIKwYBBQUHMAGGF2h0
-# dHA6Ly9vY3NwLnNlY3RpZ28uY29tMA0GCSqGSIb3DQEBDAUAA4IBgQCw3C7J+k82
-# TIov9slP1e8YTx+fDsa//hJ62Y6SMr2E89rv82y/n8we5W6z5pfBEWozlW7nWp+s
-# dPCdUTFw/YQcqvshH6b9Rvs9qZp5Z+V7nHwPTH8yzKwgKzTTG1I1XEXLAK9fHnmX
-# paDeVeI8K6Lw3iznWZdLQe3zl+Rejdq5l2jU7iUfMkthfhFmi+VVYPkR/BXpV7Ub
-# 1QyyWebqkjSHJHRmv3lBYbQyk08/S7TlIeOr9iQ+UN57fJg4QI0yqdn6PyiehS1n
-# SgLwKRs46T8A6hXiSn/pCXaASnds0LsM5OVoKYfbgOOlWCvKfwUySWoSgrhncihS
-# BXxH2pAuDV2vr8GOCEaePZc0Dy6O1rYnKjGmqm/IRNkJghSMizr1iIOPN+23futB
-# XAhmx8Ji/4NTmyH9K0UvXHiuA2Pa3wZxxR9r9XeIUVb2V8glZay+2ULlc445CzCv
-# VSZV01ZB6bgvCuUuBx079gCcepjnZDCcEuIC5Se4F6yFaZ8RvmiJ4hgwggYUMIID
-# /KADAgECAhB6I67aU2mWD5HIPlz0x+M/MA0GCSqGSIb3DQEBDAUAMFcxCzAJBgNV
-# BAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNVBAMTJVNlY3Rp
-# Z28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwHhcNMjEwMzIyMDAwMDAw
-# WhcNMzYwMzIxMjM1OTU5WjBVMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGln
-# byBMaW1pdGVkMSwwKgYDVQQDEyNTZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5n
-# IENBIFIzNjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAM2Y2ENBq26C
-# K+z2M34mNOSJjNPvIhKAVD7vJq+MDoGD46IiM+b83+3ecLvBhStSVjeYXIjfa3aj
-# oW3cS3ElcJzkyZlBnwDEJuHlzpbN4kMH2qRBVrjrGJgSlzzUqcGQBaCxpectRGhh
-# nOSwcjPMI3G0hedv2eNmGiUbD12OeORN0ADzdpsQ4dDi6M4YhoGE9cbY11XxM2AV
-# Zn0GiOUC9+XE0wI7CQKfOUfigLDn7i/WeyxZ43XLj5GVo7LDBExSLnh+va8WxTlA
-# +uBvq1KO8RSHUQLgzb1gbL9Ihgzxmkdp2ZWNuLc+XyEmJNbD2OIIq/fWlwBp6KNL
-# 19zpHsODLIsgZ+WZ1AzCs1HEK6VWrxmnKyJJg2Lv23DlEdZlQSGdF+z+Gyn9/CRe
-# zKe7WNyxRf4e4bwUtrYE2F5Q+05yDD68clwnweckKtxRaF0VzN/w76kOLIaFVhf5
-# sMM/caEZLtOYqYadtn034ykSFaZuIBU9uCSrKRKTPJhWvXk4CllgrwIDAQABo4IB
-# XDCCAVgwHwYDVR0jBBgwFoAU9ndq3T/9ARP/FqFsggIv0Ao9FCUwHQYDVR0OBBYE
-# FF9Y7UwxeqJhQo1SgLqzYZcZojKbMA4GA1UdDwEB/wQEAwIBhjASBgNVHRMBAf8E
-# CDAGAQH/AgEAMBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQKMAgwBgYEVR0g
-# ADBMBgNVHR8ERTBDMEGgP6A9hjtodHRwOi8vY3JsLnNlY3RpZ28uY29tL1NlY3Rp
-# Z29QdWJsaWNUaW1lU3RhbXBpbmdSb290UjQ2LmNybDB8BggrBgEFBQcBAQRwMG4w
-# RwYIKwYBBQUHMAKGO2h0dHA6Ly9jcnQuc2VjdGlnby5jb20vU2VjdGlnb1B1Ymxp
-# Y1RpbWVTdGFtcGluZ1Jvb3RSNDYucDdjMCMGCCsGAQUFBzABhhdodHRwOi8vb2Nz
-# cC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOCAgEAEtd7IK0ONVgMnoEdJVj9
-# TC1ndK/HYiYh9lVUacahRoZ2W2hfiEOyQExnHk1jkvpIJzAMxmEc6ZvIyHI5UkPC
-# bXKspioYMdbOnBWQUn733qMooBfIghpR/klUqNxx6/fDXqY0hSU1OSkkSivt51Ul
-# mJElUICZYBodzD3M/SFjeCP59anwxs6hwj1mfvzG+b1coYGnqsSz2wSKr+nDO+Db
-# 8qNcTbJZRAiSazr7KyUJGo1c+MScGfG5QHV+bps8BX5Oyv9Ct36Y4Il6ajTqV2if
-# ikkVtB3RNBUgwu/mSiSUice/Jp/q8BMk/gN8+0rNIE+QqU63JoVMCMPY2752LmES
-# sRVVoypJVt8/N3qQ1c6FibbcRabo3azZkcIdWGVSAdoLgAIxEKBeNh9AQO1gQrnh
-# 1TA8ldXuJzPSuALOz1Ujb0PCyNVkWk7hkhVHfcvBfI8NtgWQupiaAeNHe0pWSGH2
-# opXZYKYG4Lbukg7HpNi/KqJhue2Keak6qH9A8CeEOB7Eob0Zf+fU+CCQaL0cJqlm
-# nx9HCDxF+3BLbUufrV64EbTI40zqegPZdA+sXCmbcZy6okx/SjwsusWRItFA3DE8
-# MORZeFb6BmzBtqKJ7l939bbKBy2jvxcJI98Va95Q5JnlKor3m0E7xpMeYRriWklU
-# PsetMSf2NvUQa/E5vVyefQIwggaCMIIEaqADAgECAhA2wrC9fBs656Oz3TbLyXVo
-# MA0GCSqGSIb3DQEBDAUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKTmV3IEpl
-# cnNleTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJV
-# U1QgTmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9u
-# IEF1dGhvcml0eTAeFw0yMTAzMjIwMDAwMDBaFw0zODAxMTgyMzU5NTlaMFcxCzAJ
-# BgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNVBAMTJVNl
-# Y3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwggIiMA0GCSqGSIb3
-# DQEBAQUAA4ICDwAwggIKAoICAQCIndi5RWedHd3ouSaBmlRUwHxJBZvMWhUP2ZQQ
-# RLRBQIF3FJmp1OR2LMgIU14g0JIlL6VXWKmdbmKGRDILRxEtZdQnOh2qmcxGzjqe
-# mIk8et8sE6J+N+Gl1cnZocew8eCAawKLu4TRrCoqCAT8uRjDeypoGJrruH/drCio
-# 28aqIVEn45NZiZQI7YYBex48eL78lQ0BrHeSmqy1uXe9xN04aG0pKG9ki+PC6VEf
-# zutu6Q3IcZZfm00r9YAEp/4aeiLhyaKxLuhKKaAdQjRaf/h6U13jQEV1JnUTCm51
-# 1n5avv4N+jSVwd+Wb8UMOs4netapq5Q/yGyiQOgjsP/JRUj0MAT9YrcmXcLgsrAi
-# mfWY3MzKm1HCxcquinTqbs1Q0d2VMMQyi9cAgMYC9jKc+3mW62/yVl4jnDcw6ULJ
-# sBkOkrcPLUwqj7poS0T2+2JMzPP+jZ1h90/QpZnBkhdtixMiWDVgh60KmLmzXiqJ
-# c6lGwqoUqpq/1HVHm+Pc2B6+wCy/GwCcjw5rmzajLbmqGygEgaj/OLoanEWP6Y52
-# Hflef3XLvYnhEY4kSirMQhtberRvaI+5YsD3XVxHGBjlIli5u+NrLedIxsE88WzK
-# XqZjj9Zi5ybJL2WjeXuOTbswB7XjkZbErg7ebeAQUQiS/uRGZ58NHs57ZPUfECcg
-# JC+v2wIDAQABo4IBFjCCARIwHwYDVR0jBBgwFoAUU3m/WqorSs9UgOHYm8Cd8rID
-# ZsswHQYDVR0OBBYEFPZ3at0//QET/xahbIICL9AKPRQlMA4GA1UdDwEB/wQEAwIB
-# hjAPBgNVHRMBAf8EBTADAQH/MBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQK
-# MAgwBgYEVR0gADBQBgNVHR8ESTBHMEWgQ6BBhj9odHRwOi8vY3JsLnVzZXJ0cnVz
-# dC5jb20vVVNFUlRydXN0UlNBQ2VydGlmaWNhdGlvbkF1dGhvcml0eS5jcmwwNQYI
-# KwYBBQUHAQEEKTAnMCUGCCsGAQUFBzABhhlodHRwOi8vb2NzcC51c2VydHJ1c3Qu
-# Y29tMA0GCSqGSIb3DQEBDAUAA4ICAQAOvmVB7WhEuOWhxdQRh+S3OyWM637ayBeR
-# 7djxQ8SihTnLf2sABFoB0DFR6JfWS0snf6WDG2gtCGflwVvcYXZJJlFfym1Doi+4
-# PfDP8s0cqlDmdfyGOwMtGGzJ4iImyaz3IBae91g50QyrVbrUoT0mUGQHbRcF57ol
-# pfHhQEStz5i6hJvVLFV/ueQ21SM99zG4W2tB1ExGL98idX8ChsTwbD/zIExAopoe
-# 3l6JrzJtPxj8V9rocAnLP2C8Q5wXVVZcbw4x4ztXLsGzqZIiRh5i111TW7HV1Ats
-# Qa6vXy633vCAbAOIaKcLAo/IU7sClyZUk62XD0VUnHD+YvVNvIGezjM6CRpcWed/
-# ODiptK+evDKPU2K6synimYBaNH49v9Ih24+eYXNtI38byt5kIvh+8aW88WThRpv8
-# lUJKaPn37+YHYafob9Rg7LyTrSYpyZoBmwRWSE4W6iPjB7wJjJpH29308ZkpKKdp
-# kiS9WNsf/eeUtvRrtIEiSJHN899L1P4l6zKVsdrUu1FX1T/ubSrsxrYJD+3f3aKg
-# 6yxdbugot06YwGXXiy5UUGZvOu3lXlxA+fC13dQ5OlL2gIb5lmF6Ii8+CQOYDwXM
-# +yd9dbmocQsHjcRPsccUd5E9FiswEqORvz8g3s+jR3SFCgXhN4wz7NgAnOgpCdUo
-# 4uDyllU9PzGCBJEwggSNAgEBMGkwVTELMAkGA1UEBhMCR0IxGDAWBgNVBAoTD1Nl
-# Y3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMgVGltZSBTdGFt
-# cGluZyBDQSBSMzYCEDpSaiyEzlXmHWX8zBLY6YkwDQYJYIZIAWUDBAICBQCgggH5
-# MBoGCSqGSIb3DQEJAzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjQw
-# NzMxMTkyNTMwWjA/BgkqhkiG9w0BCQQxMgQwjUFkU7zmL4Uj5lH5IFxHufMWjg6x
-# rc4DXDNcwAPtZl01vFYo9Qib1eSm9/+P4z8DMIIBegYLKoZIhvcNAQkQAgwxggFp
-# MIIBZTCCAWEwFgQU+GCYGab7iCz36FKX8qEZUhoWd18wgYcEFMauVOR4hvF8PVUS
-# SIxpw0p6+cLdMG8wW6RZMFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdv
-# IExpbWl0ZWQxLjAsBgNVBAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcg
-# Um9vdCBSNDYCEHojrtpTaZYPkcg+XPTH4z8wgbwEFIU9Yy2TgoJhfNCQNcSR3pLB
-# QtrHMIGjMIGOpIGLMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKTmV3IEplcnNl
-# eTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJVU1Qg
-# TmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9uIEF1
-# dGhvcml0eQIQNsKwvXwbOuejs902y8l1aDANBgkqhkiG9w0BAQEFAASCAgB5B8u4
-# tXZd7gsgA/iD0/1LycFwW1v4PDcjQLgh2E+LJESC76coSLyPDRdPoc8dr3istqEl
-# 0Z0VHkSyjA0qljKVpBrHEJRVK9oOXj4aGoClk1LTxQq7xnAeTwlCxf69RPWqKBXT
-# VvpJYbEaVmKjhrJOrx31T/OkEuPiFnoYsOaT3IQtSrZo1LwWt+doIBs4GjpWP9Zg
-# xAjN4rLDSL0UFrzyGStg5DaNxd57Z4LxRZZJvDZThXL/PfDeXticN17+UuKvZbtg
-# HdBOrtf6qnEzuIZz/F0sJu6vHM44NtI5M2/PmMTBxNG3Jx3Vpda4sTjWtN0gEYcH
-# vSkcKu2UFm11pKicmuQ1DEGkzZqC3T6VNf5ob/0hQD+nZK1p5Xzz0GgnesCHZK+3
-# kF7mQyLWDA/71v8TwjDZ3orBup42KOoSUKQdE+zRFsd1WuMY329VnSjlZSgvtyr0
-# 6x/Xi8cW0ntZ8lyfR3THOXVlTNDISsRlds9LCk2/3+442qv95QZHWIBeB7PBIs2B
-# ctFks4vp1YmEoTZhHwFrpxDqcqEO4JV7FIyniDs6iXvvhC4gc3GhGygfFOS7aeu5
-# JLqtiGYPvb9LfWiKVKd55VW/T2MM1gwI+iNxULN5TOP46FU0/IFYH/D7mfLBDTXj
-# 6hfJNNKvEOlub9Eok1bIbstuiIn54F2SqvWVGw==
+# AQkEMUIEQJRx1oUBbiO7V5gTRDBOsogtJGwPjkt2/mPEwO/am62xHcVW5h+Sfz5a
+# vrT9phyaIUYq5UH5V92m2b+XwnmnASEwDQYJKoZIhvcNAQEBBQAEggGATcUxEc0Y
+# nntS4qbk1NIRqnOWW3DCOrpfpDxnC0tdc0U12vZCzoN67rFp93kQJR2qrxfU1NU/
+# DMXAHZI0PwKnA5YVQlhUGwj/GTJAhJMZAMA9q1k95ncMzel25MB/oSjLvQ24pAeX
+# 9ZMWJj6LIFtsI7CHBrIEPC5Qzyny7uwGKAhd8A1ACu9RRyHCF3JZhizJWhT+84N3
+# 68deOa77O0WP1OTbrfpGQ0RYsnJ/Yq+OjJFKoJ6Um/o5eYr5LSWp3NWM4YkWuj2X
+# c92m/VMBxgeRI25ctFor2QNhEf11RywejICu0iyLAqJVpllH2+3q4NkfTNzi6x37
+# GR3kynxVhN0mmb7Vm8rruTg4XILU8Uw+hFoVLyP9dcRDYBvpyzNP5R6rNI5GtO19
+# w4mD5tp8MoK7Hrrzf8rcRZtpzvG+25vkX67NCW6+43Mn52JWXb/OzOzo3OcAM1MA
+# TmSFAdjPYi1rteoxJ6G5289+jBBZVCDxVV6S6l+GQinqnFYlmRilUslwoYIXWzCC
+# F1cGCisGAQQBgjcDAwExghdHMIIXQwYJKoZIhvcNAQcCoIIXNDCCFzACAQMxDzAN
+# BglghkgBZQMEAgIFADCBiAYLKoZIhvcNAQkQAQSgeQR3MHUCAQEGCWCGSAGG/WwH
+# ATBBMA0GCWCGSAFlAwQCAgUABDBkImWRke/EFefeDzkBdmmOg0lc65nAwwf+kt8L
+# SqLAmaBwl+6diVro8prXHtK0KOMCEQC4lBDNrF/LcJxvQlZKadISGA8yMDI1MDUx
+# NTAyMjIyN1qgghMDMIIGvDCCBKSgAwIBAgIQC65mvFq6f5WHxvnpBOMzBDANBgkq
+# hkiG9w0BAQsFADBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIElu
+# Yy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYg
+# VGltZVN0YW1waW5nIENBMB4XDTI0MDkyNjAwMDAwMFoXDTM1MTEyNTIzNTk1OVow
+# QjELMAkGA1UEBhMCVVMxETAPBgNVBAoTCERpZ2lDZXJ0MSAwHgYDVQQDExdEaWdp
+# Q2VydCBUaW1lc3RhbXAgMjAyNDCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoC
+# ggIBAL5qc5/2lSGrljC6W23mWaO16P2RHxjEiDtqmeOlwf0KMCBDEr4IxHRGd7+L
+# 660x5XltSVhhK64zi9CeC9B6lUdXM0s71EOcRe8+CEJp+3R2O8oo76EO7o5tLusl
+# xdr9Qq82aKcpA9O//X6QE+AcaU/byaCagLD/GLoUb35SfWHh43rOH3bpLEx7pZ7a
+# vVnpUVmPvkxT8c2a2yC0WMp8hMu60tZR0ChaV76Nhnj37DEYTX9ReNZ8hIOYe4jl
+# 7/r419CvEYVIrH6sN00yx49boUuumF9i2T8UuKGn9966fR5X6kgXj3o5WHhHVO+N
+# BikDO0mlUh902wS/Eeh8F/UFaRp1z5SnROHwSJ+QQRZ1fisD8UTVDSupWJNstVki
+# qLq+ISTdEjJKGjVfIcsgA4l9cbk8Smlzddh4EfvFrpVNnes4c16Jidj5XiPVdsn5
+# n10jxmGpxoMc6iPkoaDhi6JjHd5ibfdp5uzIXp4P0wXkgNs+CO/CacBqU0R4k+8h
+# 6gYldp4FCMgrXdKWfM4N0u25OEAuEa3JyidxW48jwBqIJqImd93NRxvd1aepSeNe
+# REXAu2xUDEW8aqzFQDYmr9ZONuc2MhTMizchNULpUEoA6Vva7b1XCB+1rxvbKmLq
+# fY/M/SdV6mwWTyeVy5Z/JkvMFpnQy5wR14GJcv6dQ4aEKOX5AgMBAAGjggGLMIIB
+# hzAOBgNVHQ8BAf8EBAMCB4AwDAYDVR0TAQH/BAIwADAWBgNVHSUBAf8EDDAKBggr
+# BgEFBQcDCDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEwHwYDVR0j
+# BBgwFoAUuhbZbU2FL3MpdpovdYxqII+eyG8wHQYDVR0OBBYEFJ9XLAN3DigVkGal
+# Y17uT5IfdqBbMFoGA1UdHwRTMFEwT6BNoEuGSWh0dHA6Ly9jcmwzLmRpZ2ljZXJ0
+# LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQwOTZTSEEyNTZUaW1lU3RhbXBpbmdD
+# QS5jcmwwgZAGCCsGAQUFBwEBBIGDMIGAMCQGCCsGAQUFBzABhhhodHRwOi8vb2Nz
+# cC5kaWdpY2VydC5jb20wWAYIKwYBBQUHMAKGTGh0dHA6Ly9jYWNlcnRzLmRpZ2lj
+# ZXJ0LmNvbS9EaWdpQ2VydFRydXN0ZWRHNFJTQTQwOTZTSEEyNTZUaW1lU3RhbXBp
+# bmdDQS5jcnQwDQYJKoZIhvcNAQELBQADggIBAD2tHh92mVvjOIQSR9lDkfYR25tO
+# CB3RKE/P09x7gUsmXqt40ouRl3lj+8QioVYq3igpwrPvBmZdrlWBb0HvqT00nFSX
+# gmUrDKNSQqGTdpjHsPy+LaalTW0qVjvUBhcHzBMutB6HzeledbDCzFzUy34VarPn
+# vIWrqVogK0qM8gJhh/+qDEAIdO/KkYesLyTVOoJ4eTq7gj9UFAL1UruJKlTnCVaM
+# 2UeUUW/8z3fvjxhN6hdT98Vr2FYlCS7Mbb4Hv5swO+aAXxWUm3WpByXtgVQxiBlT
+# VYzqfLDbe9PpBKDBfk+rabTFDZXoUke7zPgtd7/fvWTlCs30VAGEsshJmLbJ6ZbQ
+# /xll/HjO9JbNVekBv2Tgem+mLptR7yIrpaidRJXrI+UzB6vAlk/8a1u7cIqV0yef
+# 4uaZFORNekUgQHTqddmsPCEIYQP7xGxZBIhdmm4bhYsVA6G2WgNFYagLDBzpmk91
+# 04WQzYuVNsxyoVLObhx3RugaEGru+SojW4dHPoWrUhftNpFC5H7QEY7MhKRyrBe7
+# ucykW7eaCuWBsBb4HOKRFVDcrZgdwaSIqMDiCLg4D+TPVgKx2EgEdeoHNHT9l3ZD
+# BD+XgbF+23/zBjeCtxz+dL/9NWR6P2eZRi7zcEO1xwcdcqJsyz/JceENc2Sg8h3K
+# eFUCS7tpFk7CrDqkMIIGrjCCBJagAwIBAgIQBzY3tyRUfNhHrP0oZipeWzANBgkq
+# hkiG9w0BAQsFADBiMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5j
+# MRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBU
+# cnVzdGVkIFJvb3QgRzQwHhcNMjIwMzIzMDAwMDAwWhcNMzcwMzIyMjM1OTU5WjBj
+# MQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMT
+# MkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5n
+# IENBMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAxoY1BkmzwT1ySVFV
+# xyUDxPKRN6mXUaHW0oPRnkyibaCwzIP5WvYRoUQVQl+kiPNo+n3znIkLf50fng8z
+# H1ATCyZzlm34V6gCff1DtITaEfFzsbPuK4CEiiIY3+vaPcQXf6sZKz5C3GeO6lE9
+# 8NZW1OcoLevTsbV15x8GZY2UKdPZ7Gnf2ZCHRgB720RBidx8ald68Dd5n12sy+iE
+# ZLRS8nZH92GDGd1ftFQLIWhuNyG7QKxfst5Kfc71ORJn7w6lY2zkpsUdzTYNXNXm
+# G6jBZHRAp8ByxbpOH7G1WE15/tePc5OsLDnipUjW8LAxE6lXKZYnLvWHpo9OdhVV
+# JnCYJn+gGkcgQ+NDY4B7dW4nJZCYOjgRs/b2nuY7W+yB3iIU2YIqx5K/oN7jPqJz
+# +ucfWmyU8lKVEStYdEAoq3NDzt9KoRxrOMUp88qqlnNCaJ+2RrOdOqPVA+C/8KI8
+# ykLcGEh/FDTP0kyr75s9/g64ZCr6dSgkQe1CvwWcZklSUPRR8zZJTYsg0ixXNXkr
+# qPNFYLwjjVj33GHek/45wPmyMKVM1+mYSlg+0wOI/rOP015LdhJRk8mMDDtbiiKo
+# wSYI+RQQEgN9XyO7ZONj4KbhPvbCdLI/Hgl27KtdRnXiYKNYCQEoAA6EVO7O6V3I
+# XjASvUaetdN2udIOa5kM0jO0zbECAwEAAaOCAV0wggFZMBIGA1UdEwEB/wQIMAYB
+# Af8CAQAwHQYDVR0OBBYEFLoW2W1NhS9zKXaaL3WMaiCPnshvMB8GA1UdIwQYMBaA
+# FOzX44LScV1kTN8uZz/nupiuHA9PMA4GA1UdDwEB/wQEAwIBhjATBgNVHSUEDDAK
+# BggrBgEFBQcDCDB3BggrBgEFBQcBAQRrMGkwJAYIKwYBBQUHMAGGGGh0dHA6Ly9v
+# Y3NwLmRpZ2ljZXJ0LmNvbTBBBggrBgEFBQcwAoY1aHR0cDovL2NhY2VydHMuZGln
+# aWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZFJvb3RHNC5jcnQwQwYDVR0fBDwwOjA4
+# oDagNIYyaHR0cDovL2NybDMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZFJv
+# b3RHNC5jcmwwIAYDVR0gBBkwFzAIBgZngQwBBAIwCwYJYIZIAYb9bAcBMA0GCSqG
+# SIb3DQEBCwUAA4ICAQB9WY7Ak7ZvmKlEIgF+ZtbYIULhsBguEE0TzzBTzr8Y+8dQ
+# XeJLKftwig2qKWn8acHPHQfpPmDI2AvlXFvXbYf6hCAlNDFnzbYSlm/EUExiHQwI
+# gqgWvalWzxVzjQEiJc6VaT9Hd/tydBTX/6tPiix6q4XNQ1/tYLaqT5Fmniye4Iqs
+# 5f2MvGQmh2ySvZ180HAKfO+ovHVPulr3qRCyXen/KFSJ8NWKcXZl2szwcqMj+sAn
+# gkSumScbqyQeJsG33irr9p6xeZmBo1aGqwpFyd/EjaDnmPv7pp1yr8THwcFqcdnG
+# E4AJxLafzYeHJLtPo0m5d2aR8XKc6UsCUqc3fpNTrDsdCEkPlM05et3/JWOZJyw9
+# P2un8WbDQc1PtkCbISFA0LcTJM3cHXg65J6t5TRxktcma+Q4c6umAU+9Pzt4rUyt
+# +8SVe+0KXzM5h0F4ejjpnOHdI/0dKNPH+ejxmF/7K9h+8kaddSweJywm228Vex4Z
+# iza4k9Tm8heZWcpw8De/mADfIBZPJ/tgZxahZrrdVcA6KYawmKAr7ZVBtzrVFZgx
+# tGIJDwq9gdkT/r+k0fNX2bwE+oLeMt8EifAAzV3C+dAjfwAL5HYCJtnwZXZCpimH
+# CUcr5n8apIUP/JiW9lVUKx+A+sDyDivl1vupL0QVSucTDh3bNzgaoSv27dZ8/DCC
+# BY0wggR1oAMCAQICEA6bGI750C3n79tQ4ghAGFowDQYJKoZIhvcNAQEMBQAwZTEL
+# MAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3
+# LmRpZ2ljZXJ0LmNvbTEkMCIGA1UEAxMbRGlnaUNlcnQgQXNzdXJlZCBJRCBSb290
+# IENBMB4XDTIyMDgwMTAwMDAwMFoXDTMxMTEwOTIzNTk1OVowYjELMAkGA1UEBhMC
+# VVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2ljZXJ0
+# LmNvbTEhMB8GA1UEAxMYRGlnaUNlcnQgVHJ1c3RlZCBSb290IEc0MIICIjANBgkq
+# hkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAv+aQc2jeu+RdSjwwIjBpM+zCpyUuySE9
+# 8orYWcLhKac9WKt2ms2uexuEDcQwH/MbpDgW61bGl20dq7J58soR0uRf1gU8Ug9S
+# H8aeFaV+vp+pVxZZVXKvaJNwwrK6dZlqczKU0RBEEC7fgvMHhOZ0O21x4i0MG+4g
+# 1ckgHWMpLc7sXk7Ik/ghYZs06wXGXuxbGrzryc/NrDRAX7F6Zu53yEioZldXn1RY
+# jgwrt0+nMNlW7sp7XeOtyU9e5TXnMcvak17cjo+A2raRmECQecN4x7axxLVqGDgD
+# EI3Y1DekLgV9iPWCPhCRcKtVgkEy19sEcypukQF8IUzUvK4bA3VdeGbZOjFEmjNA
+# vwjXWkmkwuapoGfdpCe8oU85tRFYF/ckXEaPZPfBaYh2mHY9WV1CdoeJl2l6SPDg
+# ohIbZpp0yt5LHucOY67m1O+SkjqePdwA5EUlibaaRBkrfsCUtNJhbesz2cXfSwQA
+# zH0clcOP9yGyshG3u3/y1YxwLEFgqrFjGESVGnZifvaAsPvoZKYz0YkH4b235kOk
+# GLimdwHhD5QMIR2yVCkliWzlDlJRR3S+Jqy2QXXeeqxfjT/JvNNBERJb5RBQ6zHF
+# ynIWIgnffEx1P2PsIV/EIFFrb7GrhotPwtZFX50g/KEexcCPorF+CiaZ9eRpL5gd
+# LfXZqbId5RsCAwEAAaOCATowggE2MA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYE
+# FOzX44LScV1kTN8uZz/nupiuHA9PMB8GA1UdIwQYMBaAFEXroq/0ksuCMS1Ri6en
+# IZ3zbcgPMA4GA1UdDwEB/wQEAwIBhjB5BggrBgEFBQcBAQRtMGswJAYIKwYBBQUH
+# MAGGGGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBDBggrBgEFBQcwAoY3aHR0cDov
+# L2NhY2VydHMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0QXNzdXJlZElEUm9vdENBLmNy
+# dDBFBgNVHR8EPjA8MDqgOKA2hjRodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGln
+# aUNlcnRBc3N1cmVkSURSb290Q0EuY3JsMBEGA1UdIAQKMAgwBgYEVR0gADANBgkq
+# hkiG9w0BAQwFAAOCAQEAcKC/Q1xV5zhfoKN0Gz22Ftf3v1cHvZqsoYcs7IVeqRq7
+# IviHGmlUIu2kiHdtvRoU9BNKei8ttzjv9P+Aufih9/Jy3iS8UgPITtAq3votVs/5
+# 9PesMHqai7Je1M/RQ0SbQyHrlnKhSLSZy51PpwYDE3cnRNTnf+hZqPC/Lwum6fI0
+# POz3A8eHqNJMQBk1RmppVLC4oVaO7KTVPeix3P0c2PR3WlxUjG/voVA9/HYJaISf
+# b8rbII01YBwCA8sgsKxYoA5AY8WYIsGyWfVVa88nq2x2zm8jLfR+cWojayL/ErhU
+# LSd+2DrZ8LaHlv1b0VysGMNNn3O3AamfV6peKOK5lDGCA4YwggOCAgEBMHcwYzEL
+# MAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJE
+# aWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2IFRpbWVTdGFtcGluZyBD
+# QQIQC65mvFq6f5WHxvnpBOMzBDANBglghkgBZQMEAgIFAKCB4TAaBgkqhkiG9w0B
+# CQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcNAQkFMQ8XDTI1MDUxNTAyMjIyN1ow
+# KwYLKoZIhvcNAQkQAgwxHDAaMBgwFgQU29OF7mLb0j575PZxSFCHJNWGW0UwNwYL
+# KoZIhvcNAQkQAi8xKDAmMCQwIgQgdnafqPJjLx9DCzojMK7WVnX+13PbBdZluQWT
+# mEOPmtswPwYJKoZIhvcNAQkEMTIEMB3iU3HRi0uLUcaEshkopS/m0cs3GxQwmAUk
+# 5LICnGlKsCCkq6TcUM2uC+6hFDkbqjANBgkqhkiG9w0BAQEFAASCAgCOAch8eIcL
+# lXjJntg8p7C6Qh3OuygE7ZIIP56e1uyxp36nw/cb+Z1GH/GM7f67nMUjIvQNmG1E
+# +k/jhKIKZkeqQh15rA3f44VHEsWOJHoBJQN0ads7BlKWIlZPvE1VQHPkzJ8Nv/IY
+# yllgz9iKkthdsekSrZs9A5+ZuFtViAyrvIKXSs6jqfyTroTO81WKy97BGwCD1BJJ
+# IB/CAAspeqnOV1MGe2tuSS3SKVFTmSqgKm5+81VeZgAj0uKJPERyWQZMG4Dbesx9
+# sDSqfjzE4ypXmOeXDA8pt6gZ0Ghz35xpEs81sfQQNPobrSIBJN/sNKtnFfS5c/m0
+# S41cx2hJWePiHSHBgmoEQPSuaVjhrLLd59LkCK5eFkYl+0uq2CYu7wlr2F6XEr6f
+# Q38trJY/KocK+o5dV4fmy3Kv8/Wx2/mmAfjZ1RsXz+sWy/nDnA4+Y0mwc0U0ohVo
+# +93febRIFyChLnabRHpe0msFC9GBSrq3Rxb+wlLJUfb3Jx+RCzCHc+wAiYYWSFDN
+# tzIZ12xXCWX5unO4hmcowmpVOoUuOAUIPZasHRRBwpBYx48csQaFFJ4uuO9PnyBC
+# GQDmvwk8CMq20jEgm4DZrvclqHL6lYZQQODd7w7TwGSlmWxsIJa8RDbwokAtf3NN
+# SpplABpaqpDa+/e7AKuRtlM4Vrar8onCKg==
 # SIG # End signature block

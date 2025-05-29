@@ -17,13 +17,14 @@ Function Start-A9FSNDMP
 [CmdletBinding()]
 param()		
 Begin	
-{	Test-A9Connection -ClientType 'SshClient' 
-}
+	{	Test-A9Connection -ClientType 'SshClient' 
+	}
 Process
-{	$cmd= "startfsndmp "	
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	Return $Result	
-}
+	{	$cmd= "startfsndmp "	
+		write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result = Invoke-A9CLICommand -cmds  $cmd
+		Return $Result	
+	}
 }
 
 Function Stop-A9FSNDMP
@@ -41,22 +42,941 @@ Function Stop-A9FSNDMP
 [CmdletBinding()]
 param()		
 Begin
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
+Process	
+	{	$cmd= "stopfsndmp "
+		write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result = Invoke-A9CLICommand -cmds  $cmd	
+		return $Result	
+	}
+}
+
+Function Get-A9SRStatfsfpg
+{
+<#
+.SYNOPSIS
+	Get-SRStatfsfpg - System reporter performance reports for File Persona FPGs.
+.DESCRIPTION	
+	The Get-SRStatfsfpg command displays historical performance data reports for File Persona file provisioning groups.
+.PARAMETER Attime
+	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
+	groupby option. Without this option performance is shown versus time, with a row per time interval.
+.PARAMETER Btsecs
+	Select the begin time in seconds for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):
+		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
+		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
+		- For daily, the default begin time is 90 days ago (-btsecs -90d).
+	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
+	If -btsecs 0 is specified then the report begins at the earliest sample.
+.PARAMETER Etsecs
+	Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the report ends with the most recent
+	sample.
+.PARAMETER Hires
+	Select high resolution samples (5 minute intervals) for the report.  This is the default.
+.PARAMETER Hourly
+	Select hourly samples for the report.
+.PARAMETER Daily
+	Select daily samples for the report.
+.PARAMETER Summary
+	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
+		min   Display the minimum for each metric
+		avg   Display the average for each metric
+		max   Display the maximum for each metric
+		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
+	Other keywords which modify the summary display or computation:
+		detail		Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
+		per_time	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per time. By default, one summary is computed across all records.
+		per_group	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per object grouping. By default, one summary is computed across all records.
+		only_compareby	When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries using only that reduced set of object groupings. By default,
+				summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
+.PARAMETER Groupby
+	For -attime reports, generate a separate row for each combination of <groupby> items. Each <groupby> must be different and one of the following:
+	FPG_NAME  File Provisioning Group name
+	FPG_ID    File Provisioning Group ID
+	NODE      The controller node
+.PARAMETER Compareby
+	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects can be displayed, up to 32 objects for vstime reports or 128 objects
+	for attime reports.  The field used for comparison can be any of the groupby fields or one of the following: Totalblocks, Freeblocks, Numreads, Numbytesread, Numwrites,	
+	NumBytesWritten, Creates, Removes, Errors, ReadLatency, WriteLatency
+.PARAMETER Node
+	Limit the data to that corresponding to one of the specified nodes.
+.PARAMETER Sortcol
+	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
+	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
+		inc		Sort in increasing order (default).
+		dec		Sort in decreasing order.
+	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted  by values in later columns.
+.PARAMETER FpgName
+	File provisioning groups matching either the specified name or glob-style pattern are included. This specifier can be repeated to
+	display information for multiple FPGs. If not specified, all FPGs are included.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[switch]	$Attime,
+		[Parameter()]	[String]	$Btsecs,
+		[Parameter()]	[String]	$Etsecs,
+		[Parameter()]	[switch]	$Hires,
+		[Parameter()]	[switch]	$Hourly,
+		[Parameter()]	[switch]	$Daily,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[String]	$Node,
+		[Parameter()]	[String]	$Sortcol,
+		[Parameter()]	[String]	$FpgName,
+		[Parameter()]	[String]	$ShowRaw
+		
+)
+Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
-Process	
-{	$cmd= "stopfsndmp "
-	$Result = Invoke-A9CLICommand -cmds  $cmd	
-	write-verbose "  Executing  Stop-FSNDMP command that displays information iSNS table for iSCSI ports in the system  "	
-	return $Result	
+Process
+{	$Cmd = " srstatfsfpg "
+	if($Attime)		{	$Cmd += " -attime " 			}
+	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " 	}
+	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " 	}
+	if($Hires) 		{	$Cmd += " -hires " 				}
+	if($Hourly)		{	$Cmd += " -hourly " 			}
+	if($Daily)		{	$Cmd += " -daily " 				}
+	if($Summary)	{	$Cmd += " -summary $Summary " 	}
+	if($Groupby)	{	$Cmd += " -groupby $Groupby "	}
+	if($Compareby) 	{	$Cmd += " -compareby $Compareby "}
+	if($Node)		{	$Cmd += " -node $Node " 		}
+	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "	}
+	if($FpgName)	{	$Cmd += " $FpgName " 			}
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	Return $Result
 }
 }
 
+Function Get-A9SystemReporterStatfscpu
+{
+<#
+.SYNOPSIS
+	Get-SRStatfscpu - System reporter performance reports for File Persona CPU usage.
+.DESCRIPTION
+	The Get-SRStatfscpu command displays historical performance data reports for File Persona CPU utilization.
+.PARAMETER Attime
+	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
+	groupby option. Without this option performance is shown versus time, with a row per time interval.
+.PARAMETER Btsecs
+	Select the begin time in seconds for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):
+		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
+		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
+		- For daily, the default begin time is 90 days ago (-btsecs -90d).
+	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
+	If -btsecs 0 is specified then the report begins at the earliest sample.
+.PARAMETER Etsecs
+	Select the end time in seconds for the report.  If -attime is specified, select the time for the report.
+	The value can be specified as either
+		- The absolute epoch time (for example 1351263600).
+		- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+		- A negative number indicating the number of seconds before the
+	current time. Instead of a number representing seconds, <secs> can be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the report ends with the most recent sample.
+.PARAMETER Hires
+	Select high resolution samples (5 minute intervals) for the report. This is the default.
+.PARAMETER Hourly
+	Select hourly samples for the report.
+.PARAMETER Daily
+	Select daily samples for the report.
+.PARAMETER Summary
+	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
+		min   Display the minimum for each metric
+		avg   Display the average for each metric
+		max   Display the maximum for each metric
+		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
+	Other keywords which modify the summary display or computation:
+	detail
+		Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
+	per_time
+		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per time. By default, one summary is computed across all records.
+	per_group
+		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per
+		object grouping. By default, one summary is computed across all records.
+	only_compareby
+		When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries using only that reduced set of object groupings. By default,
+		summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail"  output does conform to the -compareby object limitation.
+.PARAMETER Groupby
+	For -attime reports, generate a separate row for each combination of <groupby> items. Each <groupby> must be different and one of the following:
+	NODE   The controller node
+	CPU    The CPU within the controller node
+.PARAMETER Compareby
+	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects
+	can be displayed, up to 32 objects for vstime reports or 128 objects for attime reports.  The field used for comparison can be any of the
+	groupby fields or one of the following: usage_pct, iowait_pct, idle_pct
+.PARAMETER Node
+	Limit the data to that corresponding to one of the specified nodes.
+.PARAMETER Sortcol
+	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
+	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
+		inc		Sort in increasing order (default).
+		dec		Sort in decreasing order.
+	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.PARAMETER CpuId
+	Only the specified CPU ID numbers are included. This specifier can be repeated to display information for multiple CPUs. If not specified, all CPUs are included.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[switch]	$Attime,
+		[Parameter()]	[String]	$Btsecs,
+		[Parameter()]	[String]	$Etsecs,
+		[Parameter()]	[switch]	$Hires,
+		[Parameter()]	[switch]	$Hourly,
+		[Parameter()]	[switch]	$Daily,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[String]	$Node,
+		[Parameter()]	[String]	$Sortcol,
+		[Parameter()]	[String]	$CpuId,
+		[Parameter()]	[Switch]	$ShowRaw		
+	)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process
+{	$Cmd = " srstatfscpu "
+	if($Attime)		{	$Cmd += " -attime " }
+	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs "}
+	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
+	if($Hires)		{	$Cmd += " -hires " }
+	if($Hourly)		{	$Cmd += " -hourly " }
+	if($Daily)		{	$Cmd += " -daily " }
+	if($Summary)	{	$Cmd += " -summary $Summary " }
+	if($Groupby)	{	$Cmd += " -groupby $Groupby " }
+	if($Compareby)	{	$Cmd += " -compareby $Compareby "}
+	if($Node)		{	$Cmd += " -node $Node " }
+	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
+	if($CpuId)		{	$Cmd += " $CpuId " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	Return $Result
+}
+}
+
+Function Get-A9SRStatfsmem
+{
+<#
+.SYNOPSIS
+	srstatfsmem - System reporter performance reports for File Persona memory usage
+.DESCRIPTION
+	The srstatfsmem command displays historical performance data reports for File Persona memory utilization.
+.PARAMETER Attime
+	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
+	groupby option. Without this option performance is shown versus time, with a row per time interval.
+.PARAMETER Btsecs
+	Select the begin time in seconds for the report. The value can be specified as either
+		- The absolute epoch time (for example 1351263600).
+		- The absolute time as a text string in one of the following formats:
+			- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+			- Full time string excluding time zone: "2012-10-26 11:00:00"
+			- Date string: "2012-10-26" or 2012-10-26
+			- Time string: "11:00:00" or 11:00:00
+		- A negative number indicating the number of seconds before the
+	current time. Instead of a number representing seconds, <secs> can be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):
+		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
+		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
+		- For daily, the default begin time is 90 days ago (-btsecs -90d).
+	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires. If -btsecs 0 is specified then the report begins at the earliest sample.
+.PARAMETER Etsecs
+	Select the end time in seconds for the report.  If -attime is specified, select the time for the report.
+	The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the report ends with the most recent sample.
+.PARAMETER Hires
+	Select high resolution samples (5 minute intervals) for the report. This is the default.
+.PARAMETER Hourly
+	Select hourly samples for the report.
+.PARAMETER Daily
+	Select daily samples for the report.
+.PARAMETER Summary
+	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
+		min   Display the minimum for each metric
+		avg   Display the average for each metric
+		max   Display the maximum for each metric
+		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
+	Other keywords which modify the summary display or computation:
+		detail		Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
+		per_time	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per time. By default, one summary is computed across all records.
+		per_group	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per object grouping. By default, one summary is computed across all records.
+		only_compareby	When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries  using only that reduced set of object groupings. By default,
+					summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
+.PARAMETER Groupby
+	For -attime reports, generate a separate row for each combination of <groupby> items. Each <groupby> must be different and one of the following:
+	NODE   The controller node
+.PARAMETER Compareby
+	The compareby option limits output records to only certain objects,	compared by a specified field.  Either the top or bottom X objects can be displayed, up to 32 objects for vstime reports or 128 objects
+	for attime reports.  The field used for comparison can be any of the groupby fields or one of the following: usage_pct, swap_pct, free_pct
+.PARAMETER Node
+	Limit the data to that corresponding to one of the specified nodes.
+.PARAMETER Sortcol
+	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
+	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
+		inc		Sort in increasing order (default).
+		dec		Sort in decreasing order.
+	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[switch]	$Attime,
+		[Parameter()]	[String]	$Btsecs,
+		[Parameter()]	[String]	$Etsecs,
+		[Parameter()]	[switch]	$Hires,
+		[Parameter()]	[switch]	$Hourly,
+		[Parameter()]	[switch]	$Daily,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()] 	[String]	$Groupby,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[String]	$Node,
+		[Parameter()]	[String]	$Sortcol
+)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process
+{	$Cmd = " srstatfsmem "
+	if($Attime)		{	$Cmd += " -attime " }
+	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
+	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
+	if($Hires)		{	$Cmd += " -hires " }
+	if($Hourly)		{	$Cmd += " -hourly " }
+	if($Daily)		{	$Cmd += " -daily " }
+	if($Summary)	{	$Cmd += " -summary $Summary " }
+	if($Groupby)	{	$Cmd += " -groupby $Groupby " }
+	if($Compareby)	{	$Cmd += " -compareby $Compareby " }
+	if($Node)		{	$Cmd += " -node $Node " }
+	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	Return $Result
+}
+}
+
+Function Get-A9SystemReporterStatfsblock
+{
+<#
+.SYNOPSIS
+	Get-SRStatfsblock - System reporter performance reports for File Persona block devices.
+.DESCRIPTION
+	The Get-SRStatfsblock command displays historical performance data reports for File Persona block devices.
+.PARAMETER Attime
+	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
+	groupby option. Without this option performance is shown versus time, with a row per time interval.
+.PARAMETER Btsecs
+	Select the begin time in seconds for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):
+		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
+		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
+		- For daily, the default begin time is 90 days ago (-btsecs -90d).
+	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
+	If -btsecs 0 is specified then the report begins at the earliest sample.
+.PARAMETER Etsecs
+	Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the report ends with the most recent sample.
+.PARAMETER Hires
+	Select high resolution samples (5 minute intervals) for the report. This is the default.
+.PARAMETER Hourly
+	Select hourly samples for the report.
+.PARAMETER Daily
+	Select daily samples for the report.
+.PARAMETER Summary
+	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
+		min   Display the minimum for each metric
+		avg   Display the average for each metric
+		max   Display the maximum for each metric
+		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
+	Other keywords which modify the summary display or computation:
+	detail
+		Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
+	per_time
+		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per
+		time. By default, one summary is computed across all records.
+	per_group
+		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per
+		object grouping. By default, one summary is computed across all records.
+	only_compareby
+		When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries using only that reduced set of object groupings. By default,
+		summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
+.PARAMETER Groupby
+	For -attime reports, generate a separate row for each combination of <groupby> items.  Each <groupby> must be different and one of the following:
+	NODE            The controller node
+	BLOCKDEV_NAME   The block device name
+.PARAMETER Compareby
+	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects can be displayed, up to 32 objects for vstime reports 
+	or 128 objects for attime reports.  The field used for comparison can be any of the groupby fields or one of the following: reads, reads_merged, read_sectors, read_time_ms, writes, 
+	writes_merged,  write_sectors, write_time_ms, ios_current, io_time_ms, io_time_weighted_ms
+.PARAMETER Node
+	Limit the data to that corresponding to one of the specified nodes.
+.PARAMETER Sortcol
+	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
+	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
+		inc		Sort in increasing order (default).
+		dec		Sort in decreasing order.
+	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.PARAMETER BlockdevName  
+	Block Devices matching either the specified name or glob-style pattern are included. This specifier can be repeated to display information
+	for multiple devices. If not specified, all block devices are included.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[switch]	$Attime,
+		[Parameter()]	[String]	$Btsecs,
+		[Parameter()]	[String]	$Etsecs,
+		[Parameter()]	[switch]	$Hires,
+		[Parameter()]	[switch]	$Hourly,
+		[Parameter()]	[switch]	$Daily,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[String]	$Node,
+		[Parameter()]	[String]	$Sortcol,
+		[Parameter()]	[String]	$BlockdevName,
+		[Parameter()]	[Switch]	$ShowRaw
+		
+)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process	
+{	$Cmd = " srstatfsblock "
+	if($Attime)		{	$Cmd += " -attime " }
+	if($Btsecs) 	{	$Cmd += " -btsecs $Btsecs " }
+	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
+	if($Hires)		{	$Cmd += " -hires " }
+	if($Hourly)		{	$Cmd += " -hourly " }
+	if($Daily)		{	$Cmd += " -daily " }
+	if($Summary)	{	$Cmd += " -summary $Summary "}
+	if($Groupby)	{	$Cmd += " -groupby $Groupby " }
+	if($Compareby)	{	$Cmd += " -compareby $Compareby " }
+	if($Node)		{	$Cmd += " -node $Node "}
+	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
+	if($BlockdevName){	$Cmd += " $Blockdev_name " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	Return $Result
+}
+}
+
+Function Get-A9SystemReporterStatfsav
+{
+<#
+.SYNOPSIS
+	Get-SRStatfsav - System reporter performance reports for File Persona anti-virus.
+.DESCRIPTION
+	The Get-SRStatfsav command displays historical performance data reports for File Persona anti-virus activity.
+.PARAMETER Attime
+	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
+	groupby option. Without this option performance is shown versus time, with a row per time interval.
+.PARAMETER Btsecs
+	Select the begin time in seconds for the report. The value can be specified as either
+		- The absolute epoch time (for example 1351263600).
+		- The absolute time as a text string in one of the following formats:
+			- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+			- Full time string excluding time zone: "2012-10-26 11:00:00"
+			- Date string: "2012-10-26" or 2012-10-26
+			- Time string: "11:00:00" or 11:00:00
+		- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+			be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the time at which the report begins depends
+	on the sample category (-hires, -hourly, -daily):
+		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
+		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
+		- For daily, the default begin time is 90 days ago (-btsecs -90d).
+	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
+	If -btsecs 0 is specified then the report begins at the earliest sample.
+
+.PARAMETER Etsecs
+	Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
+		- The absolute epoch time (for example 1351263600).
+		- The absolute time as a text string in one of the following formats:
+			- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+			- Full time string excluding time zone: "2012-10-26 11:00:00"
+			- Date string: "2012-10-26" or 2012-10-26
+			- Time string: "11:00:00" or 11:00:00
+		- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+			be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the report ends with the most recent
+	sample.
+.PARAMETER Hires
+	Select high resolution samples (5 minute intervals) for the report. This is the default.
+.PARAMETER Hourly
+	Select hourly samples for the report.
+.PARAMETER Daily
+	Select daily samples for the report.
+.PARAMETER Summary
+	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
+		min   Display the minimum for each metric
+		avg   Display the average for each metric
+		max   Display the maximum for each metric
+		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
+	Other keywords which modify the summary display or computation:
+		detail	 	Display individual performance records in addition to one  or more summaries. By default, -summary output excludes individual records and only displays the summary.
+		per_time	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per  time. By default, one summary is computed across all records.
+		per_group	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per object grouping. By default, one summary is computed across all records.
+	only_compareby	When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries using only that reduced set of object groupings. By default,
+		summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
+.PARAMETER Groupby
+	For -attime reports, generate a separate row for each combination of <groupby> items.  Each <groupby> must be different and	one of the following:
+	NODE      The controller node
+.PARAMETER Compareby
+	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects
+	can be displayed, up to 32 objects for vstime reports or 128 objects for attime reports.  The field used for comparison can be any of the
+	groupby fields or one of the following: scanengine, maxscanengine, totalscanned, totalinfected, totalquarantined
+.PARAMETER Node
+	Limit the data to that corresponding to one of the specified nodes.
+.PARAMETER Sortcol
+	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
+	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
+	inc		Sort in increasing order (default).
+	dec		Sort in decreasing order.
+	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[switch]	$Attime,
+		[Parameter()]	[String]	$Btsecs,
+		[Parameter()]	[String]	$Etsecs,
+		[Parameter()]	[switch]	$Hires,
+		[Parameter()]	[switch]	$Hourly,
+		[Parameter()]	[switch]	$Daily,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[String]	$Node,
+		[Parameter()]	[String]	$Sortcol,	
+		[Parameter()]	[String]	$FPGname,
+		[Parameter()]	[switch]	$ShowRaw
+)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process	
+{	$Cmd = " srstatfsav "
+	if($Attime)		{	$Cmd += " -attime " 		}
+	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
+	if($Etsecs) 	{	$Cmd += " -etsecs $Etsecs " }
+	if($Hires)		{	$Cmd += " -hires " 			}
+	if($Hourly)		{	$Cmd += " -hourly " 		}
+	if($Daily)		{	$Cmd += " -daily " 			}
+	if($Summary)	{	$Cmd += " -summary $Summary "}
+	if($Groupby)	{	$Cmd += " -groupby $Groupby "}
+	if($Compareby)	{	$Cmd += " -compareby $Compareby "}
+	if($Node)		{	$Cmd += " -node $Node "		}
+	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
+	if($FPGname)	{	$Cmd += " $FPGname " 		} 
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	Return $Result
+}
+}
+
+Function Get-A9SRStatfsnet
+{
+<#
+.SYNOPSIS
+	Get-SRStatfsnet - System reporter performance reports for File Persona networking.
+.DESCRIPTION
+	The Get-SRStatfsnet command displays historical performance data reports for File Persona networking devices.
+.PARAMETER Attime
+	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
+	groupby option. Without this option performance is shown versus time, with a row per time interval.
+.PARAMETER Btsecs
+	Select the begin time in seconds for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):
+		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
+		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
+		- For daily, the default begin time is 90 days ago (-btsecs -90d).
+	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
+	If -btsecs 0 is specified then the report begins at the earliest sample.
+.PARAMETER Etsecs
+	Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the report ends with the most recent sample.
+.PARAMETER Hires
+	Select high resolution samples (5 minute intervals) for the report. This is the default.
+.PARAMETER Hourly
+	Select hourly samples for the report.
+.PARAMETER Daily
+	Select daily samples for the report.
+.PARAMETER Summary
+	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
+		min   Display the minimum for each metric
+		avg   Display the average for each metric
+		max   Display the maximum for each metric
+		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
+	Other keywords which modify the summary display or computation:
+		detail			Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
+		per_time		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per time. By default, one summary is computed across all records.
+		per_group		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per object grouping. By default, one summary is computed across all records.
+		only_compareby	When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries using only that reduced set of object groupings. By default,
+						summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
+.PARAMETER Groupby
+	For -attime reports, generate a separate row for each combination of <groupby> items. Each <groupby> must be different and one of the following:
+	NODE      The controller node
+	DEV_NAME  Ethernet interface name
+.PARAMETER Compareby
+	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects can be displayed, up to 32 objects for vstime reports or 128 objects
+	for attime reports.  The field used for comparison can be any of the groupby fields or one of the following: rx_bytes, rx_packets, tx_bytes, tx_packets
+.PARAMETER Node
+	Limit the data to that corresponding to one of the specified nodes.
+.PARAMETER Sortcol
+	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
+	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
+		inc		Sort in increasing order (default).
+		dec		Sort in decreasing order.
+	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.PARAMETER EthdevName
+	Ethernet interface devices matching either the specified name or glob-style pattern are included. This specifier can be repeated to
+	display information for multiple devices. If not specified, all devices are included.
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(
+	[Parameter()]	[switch]	$Attime,
+	[Parameter()]	[String]	$Btsecs,
+	[Parameter()]	[String]	$Etsecs,
+	[Parameter()]	[switch]	$Hires,
+	[Parameter()]	[switch]	$Hourly,
+	[Parameter()]	[switch]	$Daily,
+	[Parameter()]	[String]	$Summary,
+	[Parameter()]	[String]	$Groupby,
+	[Parameter()]	[String]	$Compareby,
+	[Parameter()]	[String]	$Node,
+	[Parameter()]	[String]	$Sortcol,
+	[Parameter()]	[String]	$EthdevName
+)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process
+{	$Cmd = " srstatfsnet "
+	if($Attime)		{	$Cmd += " -attime " }
+	if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
+	if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
+	if($Hires) 		{	$Cmd += " -hires " 	}
+	if($Hourly) 	{	$Cmd += " -hourly " }
+	if($Daily)		{	$Cmd += " -daily " }
+	if($Summary)	{	$Cmd += " -summary $Summary " }
+	if($Groupby)	{	$Cmd += " -groupby $Groupby " }
+	if($Compareby)	{	$Cmd += " -compareby $Compareby " }
+	if($Node)		{	$Cmd += " -node $Node " }
+	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
+	if($EthdevName)	{	$Cmd += " $EthdevName " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	Return $Result
+}
+}
+
+Function Get-A9SRStatfsnfs
+{
+<#
+.SYNOPSIS
+	Get-SRStatfsnfs - System reporter performance reports for File Persona NFS shares.
+.DESCRIPTION
+	The Get-SRStatfsnfs command displays historical performance data reports for File Persona NFS shares.
+.PARAMETER Attime
+	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
+	groupby option. Without this option performance is shown versus time, with a row per time interval.
+.PARAMETER Btsecs
+	Select the begin time in seconds for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the time at which the report begins depends
+	on the sample category (-hires, -hourly, -daily):
+		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
+		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
+		- For daily, the default begin time is 90 days ago (-btsecs -90d).
+	If begin time and sample category are not specified then the time
+	the report begins is 12 hours ago and the default sample category is hires.
+	If -btsecs 0 is specified then the report begins at the earliest sample.
+.PARAMETER Etsecs
+	Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the report ends with the most recent sample.
+.PARAMETER Hires
+	Select high resolution samples (5 minute intervals) for the report. This is the default.
+.PARAMETER Hourly
+	Select hourly samples for the report.
+.PARAMETER Daily
+	Select daily samples for the report.
+.PARAMETER Summary
+	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
+		min   Display the minimum for each metric
+		avg   Display the average for each metric
+		max   Display the maximum for each metric
+		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
+	Other keywords which modify the summary display or computation:
+		detail		Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
+		per_time	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per time. By default, one summary is computed across all records.
+		per_group	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per object grouping. By default, one summary is computed across all records.
+		only_compareby	When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries
+					using only that reduced set of object groupings. By default, summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
+.PARAMETER Groupby
+	For -attime reports, generate a separate row for each combination of <groupby> items. Each <groupby> must be different and one of the following:
+	NODE   The controller node
+.PARAMETER Compareby
+	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects
+	can be displayed, up to 32 objects for vstime reports or 128 objects for attime reports.  The field used for comparison can be any of the  groupby fields or one of the following:
+	Client_RPC_calls, Client_RPC_retrans, Server_RPC_calls, Server_RPC_badcalls, V3_Null, V3_GetAttr, V3_SetAttr, V3_lookup, V3_access, V3_ReadLink, V3_Read,
+	V3_Write, V3_Create, V3_MkDir, V3_Symlink, V3_Mknod, V3_Remove, V3_RmDir, V3_Rename, V3_Link, V3_ReadDir, V3_ReadDirPlus, V3_FsStat, V3_FsInfo,
+	V3_PathConf, V3_Commit, V4_op0_unused, V4_op1_unused, V4_op2_future, V4_access, V4_close, V4_commit, V4_create, V4_delegpurge, V4_delegreturn,
+	V4_getattr, V4_getfh, V4_link, V4_lock, V4_lockt, V4_locku, V4_lookup, V4_lookup_root, V4_nverify, V4_open, V4_openattr, V4_open_conf, V4_open_dgrd,
+	V4_putfh, V4_putpubfh, V4_putrootfh, V4_Read, V4_reddir, V4_readlink, V4_remove, V4_rename, V4_renew, V4_restorefh, V4_savefh, V4_secinfo, V4_setattr, V4_setcltid,
+	V4_setcltidconf, V4_verify, V4_Write, V4_rellockowner, V4_bc_ctl, V4_bind_conn, V4_exchange_id, V4_create_ses, V4_destroy_ses, V4_free_stateid, V4_getdirdeleg,	
+	V4_getdevinfo, V4_getdevlist, V4_layoutcommit, V4_layoutget, V4_layoutreturn, V4_secinfononam, V4_sequence, V4_set_ssv, V4_test_stateid, V4_want_deleg, V4_destroy_clid, V4_reclaim_comp
+.PARAMETER Node
+	Limit the data to that corresponding to one of the specified nodes.
+.PARAMETER Sortcol
+	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
+		inc		Sort in increasing order (default).
+		dec		Sort in decreasing order.
+	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[switch]	$Attime,
+		[Parameter()]	[String]	$Btsecs,
+		[Parameter()]	[String]	$Etsecs,
+		[Parameter()]	[switch]	$Hires,
+		[Parameter()]	[switch]	$Hourly,
+		[Parameter()]	[switch]	$Daily,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[String]	$Node,
+		[Parameter()]	[String]	$Sortcol
+)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process	
+{	$Cmd = " srstatfsnfs "
+	if($Attime)			{	$Cmd += " -attime "}
+	if($Btsecs)			{	$Cmd += " -btsecs $Btsecs "}
+	if($Etsecs)			{	$Cmd += " -etsecs $Etsecs "}
+	if($Hires)			{	$Cmd += " -hires " }
+	if($Hourly)			{	$Cmd += " -hourly " }
+	if($Daily)			{	$Cmd += " -daily " }
+	if($Summary)		{	$Cmd += " -summary $Summary " }
+	if($Groupby) 		{	$Cmd += " -groupby $Groupby " }
+	if($Compareby)		{	$Cmd += " -compareby $Compareby " }
+	if($Node)			{	$Cmd += " -node $Node " }
+	if($Sortcol)		{	$Cmd += " -sortcol $Sortcol " }
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	Return $Result
+}
+}
+
+Function Get-A9SystemReporterStatfssmb
+{
+<#
+.SYNOPSIS
+	System reporter performance reports for File Persona SMB shares.
+.DESCRIPTION
+	The command displays historical performance data reports for File Persona SMB shares.
+.PARAMETER Attime
+	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
+	groupby option. Without this option performance is shown versus time, with a row per time interval.
+.PARAMETER Btsecs
+	Select the begin time in seconds for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the time at which the report begins depends
+	on the sample category (-hires, -hourly, -daily):
+		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
+		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
+		- For daily, the default begin time is 90 days ago (-btsecs -90d).
+	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
+	If -btsecs 0 is specified then the report begins at the earliest sample.
+.PARAMETER Etsecs
+	Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the report ends with the most recent sample.
+.PARAMETER Hires
+	Select high resolution samples (5 minute intervals) for the report. This is the default.
+.PARAMETER Hourly
+	Select hourly samples for the report.
+.PARAMETER Daily
+	Select daily samples for the report.
+.PARAMETER Summary
+	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
+		min   Display the minimum for each metric
+		avg   Display the average for each metric
+		max   Display the maximum for each metric
+		<N>%  Display percentile for each metric. <N> may be any number	from 0 to 100. Multiple percentiles may be specified.
+	Other keywords which modify the summary display or computation:
+		detail			Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
+		per_time		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per time. By default, one summary is computed across all records.
+		per_group		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per object grouping. By default, one summary is computed across all records.
+		only_compareby	When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries using only that reduced set of object groupings. By default,
+						summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
+.PARAMETER Groupby
+	For -attime reports, generate a separate row for each combination of <groupby> items. Each <groupby> must be different and one of the following:
+	NODE   Statistics per node
+.PARAMETER Compareby
+	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects can be displayed, up to 32 objects for vstime reports or 128 objects
+	for attime reports.  The field used for comparison can be any of the groupby fields or one of the following: connections, maxConnections, sessions, maxSessions, treeConnects, maxTreeConnects, openFiles, 
+	maxOpenFiles, ReadSumRecorded, ReadSampleRecorded, WriteSumRecorded, WriteSampleRecorded
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[switch]	$Attime,
+		[Parameter()]	[String]	$Btsecs,
+		[Parameter()]	[String]	$Etsecs,
+		[Parameter()]	[switch]	$Hires,
+		[Parameter()]	[switch]	$Hourly,
+		[Parameter()]	[switch]	$Daily,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[ValidateSet('DOM_NAME','LDID','LD_NAME','CPG_NAME','NODE')]
+						[String]	$Groupby,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[switch]	$ShowRaw
+)
+Begin
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
+Process	
+	{	$Cmd = " srstatfssmb "
+		if($Attime)		{	$Cmd += " -attime " }
+		if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
+		if($Etsecs)		{	$Cmd += " -etsecs $Etsecs " }
+		if($Hires)		{	$Cmd += " -hires " }
+		if($Hourly)		{	$Cmd += " -hourly " }
+		if($Daily)		{	$Cmd += " -daily " }
+		if($Summary)	{	$Cmd += " -summary $Summary " }
+		if($Groupby)	{	$Cmd += " -groupby $Groupby " }
+		if($Compareby)	{	$Cmd += " -compareby $Compareby " }
+		write-verbose "Executing the following SSH command `n`t $cmd"
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
+}
+
+
 # SIG # Begin signature block
-# MIIt2AYJKoZIhvcNAQcCoIItyTCCLcUCAQExDzANBglghkgBZQMEAgMFADCBmwYK
+# MIIt4wYJKoZIhvcNAQcCoIIt1DCCLdACAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEBjjI9BlVut
-# 8qu4rM7RMH6gSSa4cM8fRqnwFPtAznc4IOVP1nkbXajrY2X/FEX8UH+99bSo8ljG
-# wSGTfu01bmuyoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEC6NtJUp6XC
+# nEtWXn8i0zoHMnOSTgmU9J1x/4DPgILnvU53/9SExlG8cQUh/Qeu+gT6CKW8KvwU
+# R/b2JNTpjIAqoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -149,152 +1069,152 @@ Process
 # 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
 # tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
 # NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG5UwghuRAgEBMGkwVDELMAkGA1UEBhMCR0Ix
+# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG6AwghucAgEBMGkwVDELMAkGA1UEBhMCR0Ix
 # GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQMiDj138qfKfhoI79xuZW4PbfW+ENsSSyU/N+vGg9nRDG4aD9CPyuRfb
-# rFkKiL0vz6hziKslL5EzL+g53Kb9TUwwDQYJKoZIhvcNAQEBBQAEggGAgKoh4mmZ
-# /4H79wFKdv9VDC1xKHCtsIuSRqm9u3tTp2o47IprhCR6jmGIiElkt/TE7DbC6/qQ
-# evByEKnEz3Q092GTbdjwIgEBFssS0BOAKjhlsGR3ueMyIjCSPEIGadIscbdJVuTg
-# iOJOyMNsC05ZRpyqDRyFLRyWLLa01ojGJb9tr2ve6iieyQXfMkMLhU92KKIUrW6s
-# jSUtCq04nKQZH94d+8tbCW7GicVzcgkWf5N5mxdlllksZHsKVBxYyZo6BnOhxwh3
-# 5yq+wJhuaGHOpSVIwQzSU8K8EJwJxTVMjG+4tVskB0LgP6SlywCjS2ic/omswJdr
-# nrn1jqa3YewSv+dbqTQKATGEejKgjl9px2V7vPss4xkhIZLXWYSuE8HHCjFPPJcd
-# TAnu8CtUEf46UBnqAOGYVtpt3+t6vQl9rX3ii1fmCXqkSJjwXoIXeXoSs2wrLFus
-# nzV8wMzv5CFhFZigGgALtMKtsto+Yn3bj7rjRxlacxvGoY9jCTiEhO1GoYIY3jCC
-# GNoGCisGAQQBgjcDAwExghjKMIIYxgYJKoZIhvcNAQcCoIIYtzCCGLMCAQMxDzAN
-# BglghkgBZQMEAgIFADCCAQMGCyqGSIb3DQEJEAEEoIHzBIHwMIHtAgEBBgorBgEE
-# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMNbfQLaJ1Jx6CSJ0EFehXqCIT3NK2k9j
-# kvHnBCFPh4KoPgfeRn87WoOYtGcDqHZt3gIUSONzk1RmPISkgsT1wIf1lrAEedsY
-# DzIwMjQwNzMxMTkyMDM5WqBypHAwbjELMAkGA1UEBhMCR0IxEzARBgNVBAgTCk1h
-# bmNoZXN0ZXIxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEwMC4GA1UEAxMnU2Vj
-# dGlnbyBQdWJsaWMgVGltZSBTdGFtcGluZyBTaWduZXIgUjM1oIIS/zCCBl0wggTF
-# oAMCAQICEDpSaiyEzlXmHWX8zBLY6YkwDQYJKoZIhvcNAQEMBQAwVTELMAkGA1UE
-# BhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGln
-# byBQdWJsaWMgVGltZSBTdGFtcGluZyBDQSBSMzYwHhcNMjQwMTE1MDAwMDAwWhcN
-# MzUwNDE0MjM1OTU5WjBuMQswCQYDVQQGEwJHQjETMBEGA1UECBMKTWFuY2hlc3Rl
-# cjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTAwLgYDVQQDEydTZWN0aWdvIFB1
-# YmxpYyBUaW1lIFN0YW1waW5nIFNpZ25lciBSMzUwggIiMA0GCSqGSIb3DQEBAQUA
-# A4ICDwAwggIKAoICAQCN0Wf0wUibvf04STpNYYGbw9jcRaVhBDaNBp7jmJaA9dQZ
-# W5ighrXGNMYjK7Dey5RIHMqLIbT9z9if753mYbojJrKWO4ZP0N5dBT2TwZZaPb8E
-# +hqaDZ8Vy2c+x1NiEwbEzTrPX4W3QFq/zJvDDbWKL99qLL42GJQzX3n5wWo60Kkl
-# fFn+Wb22mOZWYSqkCVGl8aYuE12SqIS4MVO4PUaxXeO+4+48YpQlNqbc/ndTgszR
-# QLF4MjxDPjRDD1M9qvpLTZcTGVzxfViyIToRNxPP6DUiZDU6oXARrGwyP9aglPXw
-# YbkqI2dLuf9fiIzBugCDciOly8TPDgBkJmjAfILNiGcVEzg+40xUdhxNcaC+6r0j
-# uPiR7bzXHh7v/3RnlZuT3ZGstxLfmE7fRMAFwbHdDz5gtHLqjSTXDiNF58IxPtvm
-# ZPG2rlc+Yq+2B8+5pY+QZn+1vEifI0MDtiA6BxxQuOnj4PnqDaK7NEKwtD1pzoA3
-# jJFuoJiwbatwhDkg1PIjYnMDbDW+wAc9FtRN6pUsO405jaBgigoFZCw9hWjLNqgF
-# VTo7lMb5rVjJ9aSBVVL2dcqzyFW2LdWk5Xdp65oeeOALod7YIIMv1pbqC15R7QCY
-# LxcK1bCl4/HpBbdE5mjy9JR70BHuYx27n4XNOZbwrXcG3wZf9gEUk7stbPAoBQID
-# AQABo4IBjjCCAYowHwYDVR0jBBgwFoAUX1jtTDF6omFCjVKAurNhlxmiMpswHQYD
-# VR0OBBYEFGjvpDJJabZSOB3qQzks9BRqngyFMA4GA1UdDwEB/wQEAwIGwDAMBgNV
-# HRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMEoGA1UdIARDMEEwNQYM
-# KwYBBAGyMQECAQMIMCUwIwYIKwYBBQUHAgEWF2h0dHBzOi8vc2VjdGlnby5jb20v
-# Q1BTMAgGBmeBDAEEAjBKBgNVHR8EQzBBMD+gPaA7hjlodHRwOi8vY3JsLnNlY3Rp
-# Z28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcmwwegYIKwYB
-# BQUHAQEEbjBsMEUGCCsGAQUFBzAChjlodHRwOi8vY3J0LnNlY3RpZ28uY29tL1Nl
-# Y3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcnQwIwYIKwYBBQUHMAGGF2h0
-# dHA6Ly9vY3NwLnNlY3RpZ28uY29tMA0GCSqGSIb3DQEBDAUAA4IBgQCw3C7J+k82
-# TIov9slP1e8YTx+fDsa//hJ62Y6SMr2E89rv82y/n8we5W6z5pfBEWozlW7nWp+s
-# dPCdUTFw/YQcqvshH6b9Rvs9qZp5Z+V7nHwPTH8yzKwgKzTTG1I1XEXLAK9fHnmX
-# paDeVeI8K6Lw3iznWZdLQe3zl+Rejdq5l2jU7iUfMkthfhFmi+VVYPkR/BXpV7Ub
-# 1QyyWebqkjSHJHRmv3lBYbQyk08/S7TlIeOr9iQ+UN57fJg4QI0yqdn6PyiehS1n
-# SgLwKRs46T8A6hXiSn/pCXaASnds0LsM5OVoKYfbgOOlWCvKfwUySWoSgrhncihS
-# BXxH2pAuDV2vr8GOCEaePZc0Dy6O1rYnKjGmqm/IRNkJghSMizr1iIOPN+23futB
-# XAhmx8Ji/4NTmyH9K0UvXHiuA2Pa3wZxxR9r9XeIUVb2V8glZay+2ULlc445CzCv
-# VSZV01ZB6bgvCuUuBx079gCcepjnZDCcEuIC5Se4F6yFaZ8RvmiJ4hgwggYUMIID
-# /KADAgECAhB6I67aU2mWD5HIPlz0x+M/MA0GCSqGSIb3DQEBDAUAMFcxCzAJBgNV
-# BAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNVBAMTJVNlY3Rp
-# Z28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwHhcNMjEwMzIyMDAwMDAw
-# WhcNMzYwMzIxMjM1OTU5WjBVMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGln
-# byBMaW1pdGVkMSwwKgYDVQQDEyNTZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5n
-# IENBIFIzNjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAM2Y2ENBq26C
-# K+z2M34mNOSJjNPvIhKAVD7vJq+MDoGD46IiM+b83+3ecLvBhStSVjeYXIjfa3aj
-# oW3cS3ElcJzkyZlBnwDEJuHlzpbN4kMH2qRBVrjrGJgSlzzUqcGQBaCxpectRGhh
-# nOSwcjPMI3G0hedv2eNmGiUbD12OeORN0ADzdpsQ4dDi6M4YhoGE9cbY11XxM2AV
-# Zn0GiOUC9+XE0wI7CQKfOUfigLDn7i/WeyxZ43XLj5GVo7LDBExSLnh+va8WxTlA
-# +uBvq1KO8RSHUQLgzb1gbL9Ihgzxmkdp2ZWNuLc+XyEmJNbD2OIIq/fWlwBp6KNL
-# 19zpHsODLIsgZ+WZ1AzCs1HEK6VWrxmnKyJJg2Lv23DlEdZlQSGdF+z+Gyn9/CRe
-# zKe7WNyxRf4e4bwUtrYE2F5Q+05yDD68clwnweckKtxRaF0VzN/w76kOLIaFVhf5
-# sMM/caEZLtOYqYadtn034ykSFaZuIBU9uCSrKRKTPJhWvXk4CllgrwIDAQABo4IB
-# XDCCAVgwHwYDVR0jBBgwFoAU9ndq3T/9ARP/FqFsggIv0Ao9FCUwHQYDVR0OBBYE
-# FF9Y7UwxeqJhQo1SgLqzYZcZojKbMA4GA1UdDwEB/wQEAwIBhjASBgNVHRMBAf8E
-# CDAGAQH/AgEAMBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQKMAgwBgYEVR0g
-# ADBMBgNVHR8ERTBDMEGgP6A9hjtodHRwOi8vY3JsLnNlY3RpZ28uY29tL1NlY3Rp
-# Z29QdWJsaWNUaW1lU3RhbXBpbmdSb290UjQ2LmNybDB8BggrBgEFBQcBAQRwMG4w
-# RwYIKwYBBQUHMAKGO2h0dHA6Ly9jcnQuc2VjdGlnby5jb20vU2VjdGlnb1B1Ymxp
-# Y1RpbWVTdGFtcGluZ1Jvb3RSNDYucDdjMCMGCCsGAQUFBzABhhdodHRwOi8vb2Nz
-# cC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOCAgEAEtd7IK0ONVgMnoEdJVj9
-# TC1ndK/HYiYh9lVUacahRoZ2W2hfiEOyQExnHk1jkvpIJzAMxmEc6ZvIyHI5UkPC
-# bXKspioYMdbOnBWQUn733qMooBfIghpR/klUqNxx6/fDXqY0hSU1OSkkSivt51Ul
-# mJElUICZYBodzD3M/SFjeCP59anwxs6hwj1mfvzG+b1coYGnqsSz2wSKr+nDO+Db
-# 8qNcTbJZRAiSazr7KyUJGo1c+MScGfG5QHV+bps8BX5Oyv9Ct36Y4Il6ajTqV2if
-# ikkVtB3RNBUgwu/mSiSUice/Jp/q8BMk/gN8+0rNIE+QqU63JoVMCMPY2752LmES
-# sRVVoypJVt8/N3qQ1c6FibbcRabo3azZkcIdWGVSAdoLgAIxEKBeNh9AQO1gQrnh
-# 1TA8ldXuJzPSuALOz1Ujb0PCyNVkWk7hkhVHfcvBfI8NtgWQupiaAeNHe0pWSGH2
-# opXZYKYG4Lbukg7HpNi/KqJhue2Keak6qH9A8CeEOB7Eob0Zf+fU+CCQaL0cJqlm
-# nx9HCDxF+3BLbUufrV64EbTI40zqegPZdA+sXCmbcZy6okx/SjwsusWRItFA3DE8
-# MORZeFb6BmzBtqKJ7l939bbKBy2jvxcJI98Va95Q5JnlKor3m0E7xpMeYRriWklU
-# PsetMSf2NvUQa/E5vVyefQIwggaCMIIEaqADAgECAhA2wrC9fBs656Oz3TbLyXVo
-# MA0GCSqGSIb3DQEBDAUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKTmV3IEpl
-# cnNleTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJV
-# U1QgTmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9u
-# IEF1dGhvcml0eTAeFw0yMTAzMjIwMDAwMDBaFw0zODAxMTgyMzU5NTlaMFcxCzAJ
-# BgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNVBAMTJVNl
-# Y3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwggIiMA0GCSqGSIb3
-# DQEBAQUAA4ICDwAwggIKAoICAQCIndi5RWedHd3ouSaBmlRUwHxJBZvMWhUP2ZQQ
-# RLRBQIF3FJmp1OR2LMgIU14g0JIlL6VXWKmdbmKGRDILRxEtZdQnOh2qmcxGzjqe
-# mIk8et8sE6J+N+Gl1cnZocew8eCAawKLu4TRrCoqCAT8uRjDeypoGJrruH/drCio
-# 28aqIVEn45NZiZQI7YYBex48eL78lQ0BrHeSmqy1uXe9xN04aG0pKG9ki+PC6VEf
-# zutu6Q3IcZZfm00r9YAEp/4aeiLhyaKxLuhKKaAdQjRaf/h6U13jQEV1JnUTCm51
-# 1n5avv4N+jSVwd+Wb8UMOs4netapq5Q/yGyiQOgjsP/JRUj0MAT9YrcmXcLgsrAi
-# mfWY3MzKm1HCxcquinTqbs1Q0d2VMMQyi9cAgMYC9jKc+3mW62/yVl4jnDcw6ULJ
-# sBkOkrcPLUwqj7poS0T2+2JMzPP+jZ1h90/QpZnBkhdtixMiWDVgh60KmLmzXiqJ
-# c6lGwqoUqpq/1HVHm+Pc2B6+wCy/GwCcjw5rmzajLbmqGygEgaj/OLoanEWP6Y52
-# Hflef3XLvYnhEY4kSirMQhtberRvaI+5YsD3XVxHGBjlIli5u+NrLedIxsE88WzK
-# XqZjj9Zi5ybJL2WjeXuOTbswB7XjkZbErg7ebeAQUQiS/uRGZ58NHs57ZPUfECcg
-# JC+v2wIDAQABo4IBFjCCARIwHwYDVR0jBBgwFoAUU3m/WqorSs9UgOHYm8Cd8rID
-# ZsswHQYDVR0OBBYEFPZ3at0//QET/xahbIICL9AKPRQlMA4GA1UdDwEB/wQEAwIB
-# hjAPBgNVHRMBAf8EBTADAQH/MBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQK
-# MAgwBgYEVR0gADBQBgNVHR8ESTBHMEWgQ6BBhj9odHRwOi8vY3JsLnVzZXJ0cnVz
-# dC5jb20vVVNFUlRydXN0UlNBQ2VydGlmaWNhdGlvbkF1dGhvcml0eS5jcmwwNQYI
-# KwYBBQUHAQEEKTAnMCUGCCsGAQUFBzABhhlodHRwOi8vb2NzcC51c2VydHJ1c3Qu
-# Y29tMA0GCSqGSIb3DQEBDAUAA4ICAQAOvmVB7WhEuOWhxdQRh+S3OyWM637ayBeR
-# 7djxQ8SihTnLf2sABFoB0DFR6JfWS0snf6WDG2gtCGflwVvcYXZJJlFfym1Doi+4
-# PfDP8s0cqlDmdfyGOwMtGGzJ4iImyaz3IBae91g50QyrVbrUoT0mUGQHbRcF57ol
-# pfHhQEStz5i6hJvVLFV/ueQ21SM99zG4W2tB1ExGL98idX8ChsTwbD/zIExAopoe
-# 3l6JrzJtPxj8V9rocAnLP2C8Q5wXVVZcbw4x4ztXLsGzqZIiRh5i111TW7HV1Ats
-# Qa6vXy633vCAbAOIaKcLAo/IU7sClyZUk62XD0VUnHD+YvVNvIGezjM6CRpcWed/
-# ODiptK+evDKPU2K6synimYBaNH49v9Ih24+eYXNtI38byt5kIvh+8aW88WThRpv8
-# lUJKaPn37+YHYafob9Rg7LyTrSYpyZoBmwRWSE4W6iPjB7wJjJpH29308ZkpKKdp
-# kiS9WNsf/eeUtvRrtIEiSJHN899L1P4l6zKVsdrUu1FX1T/ubSrsxrYJD+3f3aKg
-# 6yxdbugot06YwGXXiy5UUGZvOu3lXlxA+fC13dQ5OlL2gIb5lmF6Ii8+CQOYDwXM
-# +yd9dbmocQsHjcRPsccUd5E9FiswEqORvz8g3s+jR3SFCgXhN4wz7NgAnOgpCdUo
-# 4uDyllU9PzGCBJEwggSNAgEBMGkwVTELMAkGA1UEBhMCR0IxGDAWBgNVBAoTD1Nl
-# Y3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMgVGltZSBTdGFt
-# cGluZyBDQSBSMzYCEDpSaiyEzlXmHWX8zBLY6YkwDQYJYIZIAWUDBAICBQCgggH5
-# MBoGCSqGSIb3DQEJAzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjQw
-# NzMxMTkyMDM5WjA/BgkqhkiG9w0BCQQxMgQwXHRpf7GD+9Ffe27tjboOCTIU/Q7q
-# 6JbuJSkkyQZnKysHcdKv9xaq2hjUp10KJaPoMIIBegYLKoZIhvcNAQkQAgwxggFp
-# MIIBZTCCAWEwFgQU+GCYGab7iCz36FKX8qEZUhoWd18wgYcEFMauVOR4hvF8PVUS
-# SIxpw0p6+cLdMG8wW6RZMFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdv
-# IExpbWl0ZWQxLjAsBgNVBAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcg
-# Um9vdCBSNDYCEHojrtpTaZYPkcg+XPTH4z8wgbwEFIU9Yy2TgoJhfNCQNcSR3pLB
-# QtrHMIGjMIGOpIGLMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKTmV3IEplcnNl
-# eTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRoZSBVU0VSVFJVU1Qg
-# TmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0aWZpY2F0aW9uIEF1
-# dGhvcml0eQIQNsKwvXwbOuejs902y8l1aDANBgkqhkiG9w0BAQEFAASCAgB6YD+N
-# Mm3kb4daqp9YAI5SmyIvW7E2mVLhv4a2l/zvRZFFQf5sybqzOeu8LyzWwOAt9JTI
-# YAOyM2aqqHBxIlCQ3AFoIV00Lx/w8K9XSK9qq42Q04YkiR3UAqx/MMhGItfH3YtC
-# MC9Z4WeVSumQJ02vShD105VL0yeVQffMxYKvF0uGCVKwPPQmIIBH4hsF+I8Klh4N
-# vEh3ezDLKKpibeWm3BIEKiGKHznuDO2UMQPl2dtgDcHdHPPvYIj0ZOF5XHSKFo7m
-# lw24pe5xuYqLkMtS17KW3FjDZRHb0fnmdWpKlkcXtwi1vJMDmkDAm0fM9UTZq6QG
-# tKtXsAE+XMneXAFuO9CZtwN346IFFhO9utbi1gbAZ3zgfzXhsVh2m+r2M/Z9/WrR
-# QB+4msjUBXGVGEAW6fINhdx8rQdfrOuc5KelCjPaGLSLlYYK1+IUivpj1ExFjwOr
-# toiMgaRP35KqN54CUKtxyxOx/9IgX1LD1UqayuncFjxKEEAu10rl3misOvgGUEHt
-# sK7dRyl8hCMUGJyaTX64InF3NnBLOnSxBuuOuNlDoBERKvxM3KDA/GWGD3DnxH7X
-# mLWrkXsiqXzvvdyMqiRZ1Ofhry8MYT4mn6n2GIFKYeMoAmsnPxe0RgD3UyOV8iZx
-# TLsw66gF0BWWOEdqvMj5YBHtu9cf1ligvsYmxA==
+# AQkEMUIEQOO92vl/DtVF7k+aN5a2T8jr6D4v96D1XsV5W3zdXxuXOl4TXclDlIdD
+# J8l1nSxz33o87vD+k72GXieba7j3wicwDQYJKoZIhvcNAQEBBQAEggGARojiPPu2
+# 8g8CGU82OXLe+/GZGJAL8fy6/7m4q6SrYdbrbl/OKOl5ilgsKwo2CJ+RbAmWzkBJ
+# G83jC+G73ZENV2IJXmJKpPFqvB9J99mu92rFO8Ni91nplUX2E9q5CSYdgUxPObMN
+# BaaV31Up7bFGhLecsO/7UN9m9rHdJcew2T/FSiNq14mAu/u3HjMriM2HTcEdId4R
+# AOCwU3qeHPSaRx3R+y+j5KU7P+7dUeEV4ONNqMxinNKLY1hT8FTgjR24wpI9OaLk
+# cm+JrahEDZPR1HB+6GoDjY0cvhv2MI2ZDUGeGP6qbCdG9ZYuRAjK30XPzhy/aXqC
+# SGQqp888PtLBRQ9TkMYvSTDHdvMp90SFZggT9lA2JnPBHUgdGzfSe6CBdRBIGjDw
+# xWkmnphveGnb27S7lASrRVYdbUAC8CnsHQpmFR6jnK1t0B2xSg6rGhIfqLAIs7cU
+# uFPBYWBtok2x6K6udZj8AZqSTxMJsb6mbVvk1lE89uK3QMjfdFzHhWd7oYIY6TCC
+# GOUGCisGAQQBgjcDAwExghjVMIIY0QYJKoZIhvcNAQcCoIIYwjCCGL4CAQMxDzAN
+# BglghkgBZQMEAgIFADCCAQgGCyqGSIb3DQEJEAEEoIH4BIH1MIHyAgEBBgorBgEE
+# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMPIGOGtPBkXl8lreVkCkgeoNUDYsKMf2
+# cbmmkC5ZfEtVHvPfYSS82PtA64K82kGE0AIVANitYTLrweKa0Ov1AmxEDbkR2Vc1
+# GA8yMDI1MDUxNTAyMTczNVqgdqR0MHIxCzAJBgNVBAYTAkdCMRcwFQYDVQQIEw5X
+# ZXN0IFlvcmtzaGlyZTEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTAwLgYDVQQD
+# EydTZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIFNpZ25lciBSMzagghMEMIIG
+# YjCCBMqgAwIBAgIRAKQpO24e3denNAiHrXpOtyQwDQYJKoZIhvcNAQEMBQAwVTEL
+# MAkGA1UEBhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMj
+# U2VjdGlnbyBQdWJsaWMgVGltZSBTdGFtcGluZyBDQSBSMzYwHhcNMjUwMzI3MDAw
+# MDAwWhcNMzYwMzIxMjM1OTU5WjByMQswCQYDVQQGEwJHQjEXMBUGA1UECBMOV2Vz
+# dCBZb3Jrc2hpcmUxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEwMC4GA1UEAxMn
+# U2VjdGlnbyBQdWJsaWMgVGltZSBTdGFtcGluZyBTaWduZXIgUjM2MIICIjANBgkq
+# hkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA04SV9G6kU3jyPRBLeBIHPNyUgVNnYayf
+# sGOyYEXrn3+SkDYTLs1crcw/ol2swE1TzB2aR/5JIjKNf75QBha2Ddj+4NEPKDxH
+# Ed4dEn7RTWMcTIfm492TW22I8LfH+A7Ehz0/safc6BbsNBzjHTt7FngNfhfJoYOr
+# kugSaT8F0IzUh6VUwoHdYDpiln9dh0n0m545d5A5tJD92iFAIbKHQWGbCQNYplqp
+# AFasHBn77OqW37P9BhOASdmjp3IijYiFdcA0WQIe60vzvrk0HG+iVcwVZjz+t5Oc
+# XGTcxqOAzk1frDNZ1aw8nFhGEvG0ktJQknnJZE3D40GofV7O8WzgaAnZmoUn4PCp
+# vH36vD4XaAF2CjiPsJWiY/j2xLsJuqx3JtuI4akH0MmGzlBUylhXvdNVXcjAuIEc
+# EQKtOBR9lU4wXQpISrbOT8ux+96GzBq8TdbhoFcmYaOBZKlwPP7pOp5Mzx/UMhyB
+# A93PQhiCdPfIVOCINsUY4U23p4KJ3F1HqP3H6Slw3lHACnLilGETXRg5X/Fp8G8q
+# lG5Y+M49ZEGUp2bneRLZoyHTyynHvFISpefhBCV0KdRZHPcuSL5OAGWnBjAlRtHv
+# sMBrI3AAA0Tu1oGvPa/4yeeiAyu+9y3SLC98gDVbySnXnkujjhIh+oaatsk/oyf5
+# R2vcxHahajMCAwEAAaOCAY4wggGKMB8GA1UdIwQYMBaAFF9Y7UwxeqJhQo1SgLqz
+# YZcZojKbMB0GA1UdDgQWBBSIYYyhKjdkgShgoZsx0Iz9LALOTzAOBgNVHQ8BAf8E
+# BAMCBsAwDAYDVR0TAQH/BAIwADAWBgNVHSUBAf8EDDAKBggrBgEFBQcDCDBKBgNV
+# HSAEQzBBMDUGDCsGAQQBsjEBAgEDCDAlMCMGCCsGAQUFBwIBFhdodHRwczovL3Nl
+# Y3RpZ28uY29tL0NQUzAIBgZngQwBBAIwSgYDVR0fBEMwQTA/oD2gO4Y5aHR0cDov
+# L2NybC5zZWN0aWdvLmNvbS9TZWN0aWdvUHVibGljVGltZVN0YW1waW5nQ0FSMzYu
+# Y3JsMHoGCCsGAQUFBwEBBG4wbDBFBggrBgEFBQcwAoY5aHR0cDovL2NydC5zZWN0
+# aWdvLmNvbS9TZWN0aWdvUHVibGljVGltZVN0YW1waW5nQ0FSMzYuY3J0MCMGCCsG
+# AQUFBzABhhdodHRwOi8vb2NzcC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOC
+# AYEAAoE+pIZyUSH5ZakuPVKK4eWbzEsTRJOEjbIu6r7vmzXXLpJx4FyGmcqnFZoa
+# 1dzx3JrUCrdG5b//LfAxOGy9Ph9JtrYChJaVHrusDh9NgYwiGDOhyyJ2zRy3+kdq
+# hwtUlLCdNjFjakTSE+hkC9F5ty1uxOoQ2ZkfI5WM4WXA3ZHcNHB4V42zi7Jk3ktE
+# nkSdViVxM6rduXW0jmmiu71ZpBFZDh7Kdens+PQXPgMqvzodgQJEkxaION5XRCoB
+# xAwWwiMm2thPDuZTzWp/gUFzi7izCmEt4pE3Kf0MOt3ccgwn4Kl2FIcQaV55nkjv
+# 1gODcHcD9+ZVjYZoyKTVWb4VqMQy/j8Q3aaYd/jOQ66Fhk3NWbg2tYl5jhQCuIsE
+# 55Vg4N0DUbEWvXJxtxQQaVR5xzhEI+BjJKzh3TQ026JxHhr2fuJ0mV68AluFr9qs
+# hgwS5SpN5FFtaSEnAwqZv3IS+mlG50rK7W3qXbWwi4hmpylUfygtYLEdLQukNEX1
+# jiOKMIIGFDCCA/ygAwIBAgIQeiOu2lNplg+RyD5c9MfjPzANBgkqhkiG9w0BAQwF
+# ADBXMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMS4wLAYD
+# VQQDEyVTZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIFJvb3QgUjQ2MB4XDTIx
+# MDMyMjAwMDAwMFoXDTM2MDMyMTIzNTk1OVowVTELMAkGA1UEBhMCR0IxGDAWBgNV
+# BAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMgVGlt
+# ZSBTdGFtcGluZyBDQSBSMzYwggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIB
+# gQDNmNhDQatugivs9jN+JjTkiYzT7yISgFQ+7yavjA6Bg+OiIjPm/N/t3nC7wYUr
+# UlY3mFyI32t2o6Ft3EtxJXCc5MmZQZ8AxCbh5c6WzeJDB9qkQVa46xiYEpc81KnB
+# kAWgsaXnLURoYZzksHIzzCNxtIXnb9njZholGw9djnjkTdAA83abEOHQ4ujOGIaB
+# hPXG2NdV8TNgFWZ9BojlAvflxNMCOwkCnzlH4oCw5+4v1nssWeN1y4+RlaOywwRM
+# Ui54fr2vFsU5QPrgb6tSjvEUh1EC4M29YGy/SIYM8ZpHadmVjbi3Pl8hJiTWw9ji
+# CKv31pcAaeijS9fc6R7DgyyLIGflmdQMwrNRxCulVq8ZpysiSYNi79tw5RHWZUEh
+# nRfs/hsp/fwkXsynu1jcsUX+HuG8FLa2BNheUPtOcgw+vHJcJ8HnJCrcUWhdFczf
+# 8O+pDiyGhVYX+bDDP3GhGS7TmKmGnbZ9N+MpEhWmbiAVPbgkqykSkzyYVr15OApZ
+# YK8CAwEAAaOCAVwwggFYMB8GA1UdIwQYMBaAFPZ3at0//QET/xahbIICL9AKPRQl
+# MB0GA1UdDgQWBBRfWO1MMXqiYUKNUoC6s2GXGaIymzAOBgNVHQ8BAf8EBAMCAYYw
+# EgYDVR0TAQH/BAgwBgEB/wIBADATBgNVHSUEDDAKBggrBgEFBQcDCDARBgNVHSAE
+# CjAIMAYGBFUdIAAwTAYDVR0fBEUwQzBBoD+gPYY7aHR0cDovL2NybC5zZWN0aWdv
+# LmNvbS9TZWN0aWdvUHVibGljVGltZVN0YW1waW5nUm9vdFI0Ni5jcmwwfAYIKwYB
+# BQUHAQEEcDBuMEcGCCsGAQUFBzAChjtodHRwOi8vY3J0LnNlY3RpZ28uY29tL1Nl
+# Y3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdSb290UjQ2LnA3YzAjBggrBgEFBQcwAYYX
+# aHR0cDovL29jc3Auc2VjdGlnby5jb20wDQYJKoZIhvcNAQEMBQADggIBABLXeyCt
+# DjVYDJ6BHSVY/UwtZ3Svx2ImIfZVVGnGoUaGdltoX4hDskBMZx5NY5L6SCcwDMZh
+# HOmbyMhyOVJDwm1yrKYqGDHWzpwVkFJ+996jKKAXyIIaUf5JVKjccev3w16mNIUl
+# NTkpJEor7edVJZiRJVCAmWAaHcw9zP0hY3gj+fWp8MbOocI9Zn78xvm9XKGBp6rE
+# s9sEiq/pwzvg2/KjXE2yWUQIkms6+yslCRqNXPjEnBnxuUB1fm6bPAV+Tsr/Qrd+
+# mOCJemo06ldon4pJFbQd0TQVIMLv5koklInHvyaf6vATJP4DfPtKzSBPkKlOtyaF
+# TAjD2Nu+di5hErEVVaMqSVbfPzd6kNXOhYm23EWm6N2s2ZHCHVhlUgHaC4ACMRCg
+# XjYfQEDtYEK54dUwPJXV7icz0rgCzs9VI29DwsjVZFpO4ZIVR33LwXyPDbYFkLqY
+# mgHjR3tKVkhh9qKV2WCmBuC27pIOx6TYvyqiYbntinmpOqh/QPAnhDgexKG9GX/n
+# 1PggkGi9HCapZp8fRwg8RftwS21Ln61euBG0yONM6noD2XQPrFwpm3GcuqJMf0o8
+# LLrFkSLRQNwxPDDkWXhW+gZswbaiie5fd/W2ygcto78XCSPfFWveUOSZ5SqK95tB
+# O8aTHmEa4lpJVD7HrTEn9jb1EGvxOb1cnn0CMIIGgjCCBGqgAwIBAgIQNsKwvXwb
+# Ouejs902y8l1aDANBgkqhkiG9w0BAQwFADCBiDELMAkGA1UEBhMCVVMxEzARBgNV
+# BAgTCk5ldyBKZXJzZXkxFDASBgNVBAcTC0plcnNleSBDaXR5MR4wHAYDVQQKExVU
+# aGUgVVNFUlRSVVNUIE5ldHdvcmsxLjAsBgNVBAMTJVVTRVJUcnVzdCBSU0EgQ2Vy
+# dGlmaWNhdGlvbiBBdXRob3JpdHkwHhcNMjEwMzIyMDAwMDAwWhcNMzgwMTE4MjM1
+# OTU5WjBXMQswCQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMS4w
+# LAYDVQQDEyVTZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIFJvb3QgUjQ2MIIC
+# IjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAiJ3YuUVnnR3d6LkmgZpUVMB8
+# SQWbzFoVD9mUEES0QUCBdxSZqdTkdizICFNeINCSJS+lV1ipnW5ihkQyC0cRLWXU
+# JzodqpnMRs46npiJPHrfLBOifjfhpdXJ2aHHsPHggGsCi7uE0awqKggE/LkYw3sq
+# aBia67h/3awoqNvGqiFRJ+OTWYmUCO2GAXsePHi+/JUNAax3kpqstbl3vcTdOGht
+# KShvZIvjwulRH87rbukNyHGWX5tNK/WABKf+Gnoi4cmisS7oSimgHUI0Wn/4elNd
+# 40BFdSZ1EwpuddZ+Wr7+Dfo0lcHflm/FDDrOJ3rWqauUP8hsokDoI7D/yUVI9DAE
+# /WK3Jl3C4LKwIpn1mNzMyptRwsXKrop06m7NUNHdlTDEMovXAIDGAvYynPt5lutv
+# 8lZeI5w3MOlCybAZDpK3Dy1MKo+6aEtE9vtiTMzz/o2dYfdP0KWZwZIXbYsTIlg1
+# YIetCpi5s14qiXOpRsKqFKqav9R1R5vj3NgevsAsvxsAnI8Oa5s2oy25qhsoBIGo
+# /zi6GpxFj+mOdh35Xn91y72J4RGOJEoqzEIbW3q0b2iPuWLA911cRxgY5SJYubvj
+# ay3nSMbBPPFsyl6mY4/WYucmyS9lo3l7jk27MAe145GWxK4O3m3gEFEIkv7kRmef
+# DR7Oe2T1HxAnICQvr9sCAwEAAaOCARYwggESMB8GA1UdIwQYMBaAFFN5v1qqK0rP
+# VIDh2JvAnfKyA2bLMB0GA1UdDgQWBBT2d2rdP/0BE/8WoWyCAi/QCj0UJTAOBgNV
+# HQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zATBgNVHSUEDDAKBggrBgEFBQcD
+# CDARBgNVHSAECjAIMAYGBFUdIAAwUAYDVR0fBEkwRzBFoEOgQYY/aHR0cDovL2Ny
+# bC51c2VydHJ1c3QuY29tL1VTRVJUcnVzdFJTQUNlcnRpZmljYXRpb25BdXRob3Jp
+# dHkuY3JsMDUGCCsGAQUFBwEBBCkwJzAlBggrBgEFBQcwAYYZaHR0cDovL29jc3Au
+# dXNlcnRydXN0LmNvbTANBgkqhkiG9w0BAQwFAAOCAgEADr5lQe1oRLjlocXUEYfk
+# tzsljOt+2sgXke3Y8UPEooU5y39rAARaAdAxUeiX1ktLJ3+lgxtoLQhn5cFb3GF2
+# SSZRX8ptQ6IvuD3wz/LNHKpQ5nX8hjsDLRhsyeIiJsms9yAWnvdYOdEMq1W61KE9
+# JlBkB20XBee6JaXx4UBErc+YuoSb1SxVf7nkNtUjPfcxuFtrQdRMRi/fInV/AobE
+# 8Gw/8yBMQKKaHt5eia8ybT8Y/Ffa6HAJyz9gvEOcF1VWXG8OMeM7Vy7Bs6mSIkYe
+# YtddU1ux1dQLbEGur18ut97wgGwDiGinCwKPyFO7ApcmVJOtlw9FVJxw/mL1TbyB
+# ns4zOgkaXFnnfzg4qbSvnrwyj1NiurMp4pmAWjR+Pb/SIduPnmFzbSN/G8reZCL4
+# fvGlvPFk4Uab/JVCSmj59+/mB2Gn6G/UYOy8k60mKcmaAZsEVkhOFuoj4we8CYya
+# R9vd9PGZKSinaZIkvVjbH/3nlLb0a7SBIkiRzfPfS9T+JesylbHa1LtRV9U/7m0q
+# 7Ma2CQ/t392ioOssXW7oKLdOmMBl14suVFBmbzrt5V5cQPnwtd3UOTpS9oCG+ZZh
+# eiIvPgkDmA8FzPsnfXW5qHELB43ET7HHFHeRPRYrMBKjkb8/IN7Po0d0hQoF4TeM
+# M+zYAJzoKQnVKOLg8pZVPT8xggSSMIIEjgIBATBqMFUxCzAJBgNVBAYTAkdCMRgw
+# FgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLDAqBgNVBAMTI1NlY3RpZ28gUHVibGlj
+# IFRpbWUgU3RhbXBpbmcgQ0EgUjM2AhEApCk7bh7d16c0CIetek63JDANBglghkgB
+# ZQMEAgIFAKCCAfkwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3
+# DQEJBTEPFw0yNTA1MTUwMjE3MzVaMD8GCSqGSIb3DQEJBDEyBDCVZMr0724zyQJa
+# yHrdPQvP0ys6EuNdWmv5FxbD9Oi1+ySR+dsIbLnr411VGCpbegEwggF6BgsqhkiG
+# 9w0BCRACDDGCAWkwggFlMIIBYTAWBBQ4yRSBEES03GY+k9R0S4FBhqm1sTCBhwQU
+# xq5U5HiG8Xw9VRJIjGnDSnr5wt0wbzBbpFkwVzELMAkGA1UEBhMCR0IxGDAWBgNV
+# BAoTD1NlY3RpZ28gTGltaXRlZDEuMCwGA1UEAxMlU2VjdGlnbyBQdWJsaWMgVGlt
+# ZSBTdGFtcGluZyBSb290IFI0NgIQeiOu2lNplg+RyD5c9MfjPzCBvAQUhT1jLZOC
+# gmF80JA1xJHeksFC2scwgaMwgY6kgYswgYgxCzAJBgNVBAYTAlVTMRMwEQYDVQQI
+# EwpOZXcgSmVyc2V5MRQwEgYDVQQHEwtKZXJzZXkgQ2l0eTEeMBwGA1UEChMVVGhl
+# IFVTRVJUUlVTVCBOZXR3b3JrMS4wLAYDVQQDEyVVU0VSVHJ1c3QgUlNBIENlcnRp
+# ZmljYXRpb24gQXV0aG9yaXR5AhA2wrC9fBs656Oz3TbLyXVoMA0GCSqGSIb3DQEB
+# AQUABIICAGs/Mc2pomzLt+kB3F61cOh9FBK5bLgvB68iN3mgpPNzMGRkpFaWLlcP
+# IQ73WbsNiythtn/r/V3z5H6BECSQqjH5sFmNpHv0NY0Is/mqr7UUu7GJj1SnEotw
+# wD5R73vcEVYD3lPuUcNwzRZ8znr8zdx+s+XM06Tzj5TcieRjVF8yG+XChzP14zRH
+# QO9e70LcBOAATH83xeh/MtdZW3QpYLFSNpPv/SXKsMRSjicmzL2yNZVuj2yhdx2g
+# Dc3rECJ5BVVrzKeEqMh71OtKnXNu00lZUeJfJF4Cz98IRX+YabXKnRQXKmuGnay0
+# IsY2Xdu1AO+20ElmLI2PC0WeTvMqypJ7cVA9hIYbHO5zGo84sdkYHFAG1K5Uu3yc
+# dDPVZ1tImwy0yfBUt9IvxJru7P1nWTcgIPldlfDKdXYCpZMxalUnOGJsA1pJ8T3k
+# s9aRssucsqvr6ZQ+9LeiROhk1/3d7VqBKO6TmU/QHjPJlpU4WyYDPH73MrsxapRv
+# JXt6atfeSPe9gTOa9XctKSLi6+1gJMO6/l3QeLRMFLpG4awplOvfzgs/o/+sIprh
+# ch/yjOi+jpjXJQCMdbcnB9T+wzwyaIzFMvFQvQbDc+Zyvmms2SnEAm074z7a7XA0
+# v2kZ7Y3edrm8ZnHfYPzNNCSQb6uu9ZrnW4uA4xC2AjNBnttdrdFr
 # SIG # End signature block
