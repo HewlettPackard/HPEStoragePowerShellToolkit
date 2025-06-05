@@ -22,7 +22,7 @@ Once connected to a Alletra6000/Nimble type array, run the following command;
 
 <code>PS:> Get-Command -Module (Get-Module HPEAlletra6000andNimbleStorage) </code>
 
-Once connected to a Alletra6000/Nimble type array, run the following command;
+Once connected to a Alletra6000/Alletra5000/Nimble type array, run the following command;
 
 <code>PS:> Get-Command -Module (Get-Module HPEMSA) </code>
 
