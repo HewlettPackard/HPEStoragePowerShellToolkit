@@ -61,11 +61,11 @@ Param(	[Parameter(Mandatory)]	[string]	$Cmds
 function Invoke-A9API 
 {
 [CmdletBinding()]
-Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex. /volumes)")]
+Param (	[parameter(Mandatory, HelpMessage = "Enter the resource URI (ex. /volumes)")]
 		[ValidateScript( { if ($_.startswith('/')) { $true } else { throw "-URI must begin with a '/' (eg. /volumes) in its value. Correct the value and try again." } })]
 		[string]	$uri,
 		
-		[parameter(Mandatory = $true)][ValidateSet('GET','POST','DELETE')]
+		[parameter(Mandatory)][ValidateSet('GET','POST','DELETE')]
 		[string]	$type,
 		
 		[parameter()]
@@ -74,19 +74,24 @@ Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex.
 		[Parameter()]
 		$WsapiConnection = $global:WsapiConnection
 	)
-	Write-Verbose  "Request: Request Invoke-A9API URL : $uri TYPE : $type " 
+	 
 	$ip = $WsapiConnection.IPAddress
 	$key = $WsapiConnection.Key
-	$arrtyp = $global:ArrayType
-	if ($arrtyp.ToLower() -eq "3par") {
-		$APIurl = 'https://' + $ip + ':8080/api/v1' 	
-	}
-	Elseif(($arrtyp.ToLower() -eq "primera") -or ($arrtyp.ToLower() -eq "alletra9000")) 
-		{	$APIurl = 'https://' + $ip + ':443/api/v1'	
+	$arrtype = $global:ArrayType
+	write-verbose "Arraytype = $ArrayType"
+	$APIurl='https://'
+	if ($arrtype -like "3Par") 
+		{	$APIurl = $APIurl + $ip + ':8080/api/v1' 
+			write-verbose "Arraytpe detected 3PAR"	
+		}
+	Elseif(($arrtype -like "Primera") -or ($arrtype -like "Alletra9000")) 
+		{	$APIurl = $APIurl + $ip + ':443/api/v1'	
+			write-verbose "arraytype is primera or alletra9k"
 		}
 	else{	return "Array type is Null."
 		}
 	$url = $APIurl + $uri
+	Write-Verbose  "Request: Request Invoke-A9API URL : $url TYPE : $type "
 	Write-Verbose  "Running: Constructing header." 
 	$headers = @{}
 	$headers["Accept"] = "application/json"
@@ -94,6 +99,8 @@ Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex.
 	$headers["Content-Type"] = "application/json"
 	$headers["X-HP3PAR-WSAPI-SessionKey"] = $key
 	$data = $null
+
+	write-verbose "Request: URL Header is as follows $headers"
 	If ($type -eq 'GET') 
 		{	Try 	{	if ($PSEdition -eq 'Core') 
 							{	$data = Invoke-WebRequest -Uri "$url" -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck
@@ -107,9 +114,10 @@ Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex.
 					}
 		}
 	If (($type -eq 'POST') -or ($type -eq 'PUT')) 
-		{	Try {	Write-Verbose  "Request: Invoke-WebRequest for Data, Request Type : $type" 
-					$json = $body | ConvertTo-Json  -Compress -Depth 10	
-					if ($PSEdition -eq 'Core') 
+		{	Write-Verbose  "Request: Invoke-WebRequest for Data, Request Type : $type" 
+			$json = $body | ConvertTo-Json  -Compress -Depth 10
+			write-verbose "This is he Body `n $json"			
+			Try {	if ($PSEdition -eq 'Core') 
 						{	$data = Invoke-WebRequest -Uri "$url" -Body $json -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck
 						}
 					else{	$data = Invoke-WebRequest -Uri "$url" -Body $json -Headers $headers -Method $type -UseBasicParsing 

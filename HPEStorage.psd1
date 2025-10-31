@@ -1,6 +1,6 @@
 ﻿@{
     RootModule          = '.\HPEStorage.psm1'
-    ModuleVersion       = '4.5.0.0'
+    ModuleVersion       = '4.2.0.0'
     GUID                = '46a7e8f6-729c-45d0-b979-96c684fb28fe'
     Author              = 'Hewlett Packard Enterprise Development LP'
     CompanyName         = 'Hewlett Packard Enterprise Development LP'
@@ -8,9 +8,9 @@
     Description         = 'HPE Storage Module providing support for the following platforms; Alletra MP B10000, Alletra 9000, Primera, 3PAR, Alletra 6000, and MSA which provides storage administrators the convenience of managing from a PowerShell environment.'
     PowerShellVersion   = '5.0'
     FormatsToProcess 	= @('Formatters/HPEMSA.format.ps1xml','Formatters/HPEA6NS.format.ps1xml')  
-    CmdletsToExport     = '*'
-    VariablesToExport   = '*'
-    AliasesToExport     = '*'
+    # CmdletsToExport     = '*'
+    # VariablesToExport   = '*'
+    # AliasesToExport     = '*'
     PrivateData         = @{
             PSData      = @{    Tags        = @('Alletra' , 'Primera' , '3PAR' , 'Nimble', 'MSA', '3PAR' , 'FilePersona','MP', 'B10000') 
                                 LicenseUri  = 'https://github.com/HewlettPackard/HPEStoragePowerShellToolkit/blob/main/License.txt'

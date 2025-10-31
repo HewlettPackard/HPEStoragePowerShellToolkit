@@ -79,7 +79,7 @@ Param(	[Parameter()]	[String]	$HostName,
 		[Parameter()]	[String]	$Model,
 		[Parameter()]	[String]	$Contact,
 		[Parameter()]   [String]	$Comment,
-		[Parameter()][ValidateSet('GENERIC','GENERIC_ALUA','GENERIC_LEGACY','HPUX_LEGACY','AIX_LEGACY','EGENERA','ONTAP_LEGACY','VMWARE','OPENVMS','HPUX')]
+		[Parameter()][ValidateSet('WINDOWS','GENERIC','GENERIC_ALUA','GENERIC_LEGACY','HPUX_LEGACY','AIX_LEGACY','EGENERA','ONTAP_LEGACY','VMWARE','OPENVMS','HPUX')]
 						[String]	$Persona,
 		[Parameter()]	[String[]]	$Port
 )
@@ -93,7 +93,7 @@ Process
     If ($FCWWN)    		{	$body["FCWWNs"] = $FCWWN    		} 
 	If ($ForceTearDown)	{$body["forceTearDown"] = $ForceTearDown}
 	If ($ISCSINames)	{	$body["iSCSINames"] = $ISCSINames	}
-	$PersonaHash = @{ 'GENERIC' = 1;'GENERIC_ALUA'=2;'GENERIC_LEGACY'=3;'HPUX_LEGACY'=4;'AIX_LEGACY'=5;'EGENERA'=6;'ONTAP_LEGACY'=7;'VMWARE'=8;'OPENVMS'=9;'HPUX'=10}
+	$PersonaHash = @{ 'GENERIC' = 1;'GENERIC_ALUA'=2;'GENERIC_LEGACY'=3;'HPUX_LEGACY'=4;'AIX_LEGACY'=5;'EGENERA'=6;'ONTAP_LEGACY'=7;'VMWARE'=8;'OPENVMS'=9;'HPUX'=10; 'WINDOWS'=11}
 	if($Persona)		{	$body['persona'] = $PersonaHash[$Persona] }
 	If ($Port)     		{	$body["port"] = $Port    			}
 	$DescriptorsBody = @{}   
@@ -109,7 +109,7 @@ Process
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
-			Get-Host_WSAPI -HostName $HostName
+			Get-A9Host -HostName $HostName
 		}
 	else
 		{	Write-Error "Failure:  While creating Host:$HostName " 

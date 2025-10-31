@@ -2,8 +2,8 @@
 . $PSScriptRoot\Connection.ps1
 
 Export-ModuleMember -Function       Show-HPESANArrayCommandSet,
-        Disconnect-HPESAN,          Connect-HPESAN,         Import-HPESANCertificate
-#       Connect-A9API,              Close-A9Connection,      Test-A9Connection,       01 Connect-A9SSH,
+        Disconnect-HPESAN,          Connect-HPESAN,         Import-HPESANCertificate,
+        Connect-A9API,              Close-A9Connection,      Test-A9Connection,       Connect-A9SSH
 
 if ( $PersistArrayType -like 'MSA' )
     {   write-host "Loading MSA Type Commands"
@@ -152,6 +152,7 @@ if ( $PersistArrayType -like 'Nimble' -or $PersistArrayType -like 'Alletra6000' 
 if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra9000') -or ($PersistArrayType -like 'AlletraMP-B10000') -or ($PersistArrayType -like '3Par') )
     {   if ( $LoadA9CLI -or $LoadA9SSH )
         {   # Load the Global scripts (API + CLI)
+            write-verbose "--------------Loaded All CLI and Rest function from Global set"
             . $PSScriptRoot\A9.GLOBAL\VS-Functions.ps1
             Export-ModuleMember -Function Invoke-A9CLICommand , Invoke-A9API
             . $PSScriptRoot\A9.GLOBAL\VVCommands.ps1
@@ -166,9 +167,11 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             Export-ModuleMember -Function Remove-A9CPG, Get-A9CPG, New-A9Cpg, Set-A9Cpg , Compress-A9CPG 
             . $PSScriptRoot\A9.GLOBAL\System.ps1
             Export-ModuleMember -Function Get-A9System
+            
         }
         if ( $LoadA9CLI )
         {   # Load the CLI specific Commnands
+            write-verbose "--------------Loaded All CLI and Rest function from CLI set"
             . $PSScriptRoot\A9.CLI\Cage.ps1
             Export-ModuleMember -Function Find-A9Cage, Get-A9Cage, Set-A9Cage
             . $PSScriptRoot\A9.CLI\Certificate.ps1
@@ -245,7 +248,8 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             Set-A9Host_CLI,Show-A9Peer_CLI,Resize-A9Vv
         }
         if ( $LoadA9API )
-        {   # Load the API specific Commands
+        {   write-verbose "--------------Loaded All CLI and Rest function from REST set"
+            # Load the API specific Commands
             . $PSScriptRoot\A9.scripts\AvailableSpace.ps1 
             Export-ModuleMember -Function Get-A9CapacityInfo
             . $PSScriptRoot\A9.scripts\CopyOperations.ps1 
@@ -264,8 +268,6 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             Export-ModuleMember -Function New-A9RCopyGroup,Start-A9RCopyGroup ,Stop-A9RCopyGroup,Sync-A9RCopyGroup,Remove-A9RCopyGroup,Update-A9RCopyGroup,Update-A9RCopyGroupTarget,
             Restore-A9RCopyGroup,Add-A9VvToRCopyGroup,Remove-A9VvFromRCopyGroup,New-A9RCopyTarget,Update-A9RCopyTarget,Add-A9TargetToRCopyGroup, Remove-A9TargetFromRCopyGroup,
             New-A9SnapRcGroupVv,Get-A9RCopyInfo,Get-A9RCopyTarget,Get-A9RCopyGroup,Get-A9RCopyGroupTarget,Get-A9RCopyGroupVv,Get-A9RCopyLink
-            . $PSScriptRoot\A9.scripts\SessionKeysAndWsapiSystemAccess.ps1
-            Export-ModuleMember -Function Invoke-A9API 
             . $PSScriptRoot\A9.scripts\StorageVolumes.ps1 
             Export-ModuleMember -Function New-a9Vv,Get-A9VvSpaceDistribution,Resize-a9Vv,Compress-A9Vv
             . $PSScriptRoot\A9.scripts\SystemEvents.ps1

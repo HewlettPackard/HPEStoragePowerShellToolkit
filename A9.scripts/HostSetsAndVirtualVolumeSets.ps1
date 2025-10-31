@@ -32,9 +32,14 @@ Function New-A9HostSet
 
 	Creates a new host Set with name MyHostSet with Set Members MyHost.	
 .EXAMPLE	
-	PS:> New-A9HostSet -HostSetName MyHostSet -Comment "this Is Test Set" -Domain MyDomain -SetMembers "MyHost,MyHost1,MyHost2"
+	PS:> New-A9HostSet -HostSetName MyHostSet -SetMembers AzureLocalNode1A, AzureLocalNode1B, AzureLocalNode2A, AzureLocalNode2B
+	Cmdlet executed successfully
 
-	Creates a new host Set with name MyHostSet with Set Members MyHost.	
+	 id uuid                                 name              setmembers
+ 	-- ----                                 ----              ----------
+	102 f78a33cc-e60d-4465-910c-28ba9e85d767 AzureLocalCluster {AzureLocalNode1A, AzureLocalNode1B, AzureLocalNode2A,…
+	
+	Creates a new host Set with name MyHostSet with Set Members AzureLocalNode**.	
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory)]	[String]	$HostSetName,	  
@@ -52,7 +57,7 @@ Process
 	If ($Domain) 	{	$body["domain"] = "$($Domain)"    }	
 	If ($SetMembers){	$body["setmembers"] = $SetMembers    }
     $Result = $null
-    $Result = Invoke-A9API -uri '/hostsets' -type 'POST' -body $body
+    $Result = Invoke-A9API -uri '/hostsets' -type 'POST' -body $body 
 	$status = $Result.StatusCode	
 	if($status -eq 201)
 	{	write-host "Cmdlet executed successfully" -foreground green

@@ -518,9 +518,7 @@ Process
 	$CurrentModulePath = (Get-Module HPEStorage).path
 	[string]$CurrentModulePath = Split-Path $CurrentModulePath -Parent
 	$ModPath = $CurrentModulePath	
-	write-host "Reloading the HPEStorage Module with the included Array Type Specific commands"
-	$ModPath = $ModPath + '\HPEStorage.psd1'
-	Import-Module $ModPath -force -scope Global
+	
 	$pass = $Credential.GetNetworkCredential().password 
 	$user = $Credential.GetNetworkCredential().username
 					
@@ -539,6 +537,11 @@ Process
 	elseif	($ArrayType -eq 'MSA')	
 			{	Connect-MSAGroup -FQDNorIP $ArrayNameOrIPAddress -Username $user -Password $pass
 			}
+	write-host "Reloading the HPEStorage Module with the included Array Type Specific commands"
+	$ModPath = $ModPath + '\HPEStorage.psd1'
+	if ($verbose)
+			{	Import-Module $ModPath -force -scope Global -verbose }
+		else{	Import-Module $ModPath -force -scope Global }
 	$pass = $null; $user = $null		
 	Write-host "To View the list of commands available to you please use 'Get-Command -module HPEStorage'." -ForegroundColor Green
 }
