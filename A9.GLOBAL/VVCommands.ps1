@@ -8,17 +8,9 @@ Function Get-A9Vv
 .SYNOPSIS
 	Get Single or list of virtual volumes.
 .DESCRIPTION
-	Get Single or list of virtual volumes.
+	Get Single or list of virtual volumes. 
 .PARAMETER VVName
 	Specify name of the volume. This option an be used with either API or SSH connections
-.PARAMETER WWN
-	Querying volumes with Single or multiple WWNs. This option can only be used with a API type connection.
-.PARAMETER UserCPG
-	User CPG Name.  This option can only be used with a API type connection.
-.PARAMETER SnapCPG
-	Snp CPG Name 
-.PARAMETER CopyOf
-	Querying volume copies it required name of the vv to copy.  This option can only be used with a API type connection.
 .PARAMETER ProvisioningType
 	Querying volume with Provisioning Type.  This option can only be used with a API type connection.
 	FULL : 	• FPVV, with no snapshot space or with statically allocated snapshot space.
@@ -35,6 +27,13 @@ Function Get-A9Vv
     Queries volumes in the domain specified DomainName. The option can only be used with a SSH type connection
 .PARAMETER CPGName
     Queries volumes that belongs to a given CPG. The option can only be used with a SSH type connection
+.NOTES 
+	While the API supports issuing a command that filters the results based on some common parameters such as 'filter by userCPG', however that 
+	type of filtering is far more commonly done as a pipeline operation from powershell. In each case, a filter is shown to get the same effect 
+	in the examples.
+	In the output, the value of compressionState is <1=enabled, 2=disabled,3=off,4=Not avaiable,5=CompressionVersion1,6=CompressionVersion2>
+	In the output, The value of deduplicationState is <1=Yes, 2=Disabled, 3=Not Available, 4=Off>
+
 .EXAMPLE
 	PS:> Get-A9Vv | format-table
 
@@ -57,27 +56,23 @@ Function Get-A9Vv
 
 	Get the list of virtual volumes using a SSH methof
 .EXAMPLE
-	PS:> Get-A9Vv -useAPI -VVName MyVV
+	PS:> Get-A9Vv -VVName MyVV
 
 	Get the detail of given VV	
 .EXAMPLE
-	PS:> Get-A9Vv -useAPI -WWN XYZ
+	PS:> Get-A9Vv | where-object {$_.wwn -like '60002AC00000000000001EBE0007EB2E' }
 
-	Querying volumes with single WWN
+	Querying volumes and filter the results to a single WWN
 .EXAMPLE
-	PS:> Get-A9Vv -useAPI -WWN "XYZ,XYZ1,XYZ2,XYZ3"
+	PS:> Get-A9Vv | where-object {$_.userCPG -like 'ABC' } 
 
-	Querying volumes with multiple WWNs
+	Querying volumes with a specific CPG only
 .EXAMPLE
-	PS:> Get-A9Vv -useAPI -WWN "XYZ,XYZ1,XYZ2,XYZ3" -UserCPG ABC 
-
-	Querying volumes with multiple filters
+	PS:> Get-A9Vv | where-object {$_.snapCPG -like 'ABC'} | where-object {$_.userCPG -like 'CDE' }
+	 
+	Querying volumes with multiple filters can be done by chaining more piles
 .EXAMPLE
-	PS:> Get-A9Vv -useAPI -WWN "XYZ" -SnapCPG ABC 
-
-	Querying volumes with multiple filters
-.EXAMPLE
-	PS:> Get-A9Vv -useAPI -WWN "XYZ" -CopyOf MyVV 
+	PS:> Get-A9Vv | where-object {$_.copyOf -like 'Test'} 
 
 	Querying volumes with multiple filters
 .EXAMPLE
@@ -85,18 +80,14 @@ Function Get-A9Vv
 
 	Querying volumes with Provisioning Type FULL
 .EXAMPLE
-	PS:> Get-A9Vv -useAPI -ProvisioningType TPVV  
+	PS:> Get-A9Vv -useSSH | where-object { $_.CPG -like "MyCPG" }  
 
-	Querying volumes with Provisioning Type TPVV
+	Querying volumes specifically using the SSH type connection, and filtering by CPG name
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
 Param(	[Parameter(ParameterSetName='API')]		
 		[Parameter(ParameterSetName='SSH')]	[String]	$VVName,
 		[Parameter(ParameterSetName='SSH')]	[Switch]	$UseSSH,
-		[Parameter(ParameterSetName='API')]	[String]	$WWN,
-		[Parameter(ParameterSetName='API')]	[String]	$UserCPG,
-		[Parameter(ParameterSetName='API')]	[String]	$SnapCPG,
-		[Parameter(ParameterSetName='API')]	[String]	$CopyOf,
 		[Parameter(ParameterSetName='API')]	
 		[ValidateSet('FULL','TPW','SNP','PEER','UNKNOWN','TDVV','DDS')]
 											[String]	$ProvisioningType,
@@ -128,67 +119,25 @@ Process
 	{	'API'	
 				{	$Result = $null
 					$dataPS = $null	
-					$Query="?query=""  """	
-					if($VVName)
-						{	$uri = '/volumes/'+$VVName
-							$Result = Invoke-A9API -uri $uri -type 'GET' 
-							If($Result.StatusCode -eq 200)
-								{	$dataPS = $Result.content | ConvertFrom-Json
-									write-host "Cmdlet executed successfully" -foreground green
-									return $dataPS
-								}
-							else
-								{	Write-warning "VVName: This VV was not detected." 
-									return $Result.StatusDescription
-								}
-						}	
-					if($WWN)
-						{	$count = 1
-							$lista = $WWN.split(",")
-							foreach($sub in $lista)
-								{	$Query = $Query.Insert($Query.Length-3," wwn EQ $sub")			
-									if($lista.Count -gt 1)
-										{	if($lista.Count -ne $count)
-												{	$Query = $Query.Insert($Query.Length-3," OR ")
-													$count = $count + 1
-												}				
-										}
-								}		
-						}
-					if($UserCPG)
-						{	if($WWN)	{	$Query = $Query.Insert($Query.Length-3," OR userCPG EQ $UserCPG")	}
-							else		{	$Query = $Query.Insert($Query.Length-3," userCPG EQ $UserCPG")		}
-						}
-					if($SnapCPG)
-						{	if($WWN -or $UserCPG)	{	$Query = $Query.Insert($Query.Length-3," OR snapCPG EQ $SnapCPG")	}
-							else					{	$Query = $Query.Insert($Query.Length-3," snapCPG EQ $SnapCPG")		}
-						}
-					if($CopyOf)
-						{	if($WWN -Or $UserCPG -Or $SnapCPG)	{	$Query = $Query.Insert($Query.Length-3," OR copyOf EQ $CopyOf")	}
-							else								{	$Query = $Query.Insert($Query.Length-3," copyOf EQ $CopyOf")	}
-						}
-					if($ProvisioningType)
-						{	if($ProvisioningType -eq "FULL")	{	$PEnum = 1	}
-									if($ProvisioningType -eq "TPVV")	{	$PEnum = 2	}
-									if($ProvisioningType -eq "SNP")		{	$PEnum = 3	}
-									if($ProvisioningType -eq "PEER")	{	$PEnum = 4	}
-									if($ProvisioningType -eq "UNKNOWN")	{	$PEnum = 5	}
-									if($ProvisioningType -eq "TDVV")	{	$PEnum = 6	}
-									if($ProvisioningType -eq "DDS")		{	$PEnum = 7	}	
-							if($WWN -Or $UserCPG -Or $SnapCPG -Or $CopyOf)	{	$Query = $Query.Insert($Query.Length-3," OR provisioningType EQ $PEnum")	}
-							else											{	$Query = $Query.Insert($Query.Length-3," provisioningType EQ $PEnum")	}
-						}
 					$uri = '/volumes'
-					if($WWN -Or $UserCPG -Or $SnapCPG -Or $CopyOf -Or $ProvisioningType)	{	$uri = $uri+'/'+$Query }
-					$Result = Invoke-A9API -uri '/volumes' -type 'GET' 
+					$Result = Invoke-A9API -uri $uri -type 'GET' 
 					If($Result.StatusCode -eq 200)
 						{	$dataPS = ($Result.content | ConvertFrom-Json).members
+							if ($ProvisioningType)
+								{	$PT = @{Full=1; TPVV=2; SNP=3; PEER=4; UNKNOWN=5;TDVV=6;DDS=7}
+									$PEnum = $PT."$ProvisioningType"
+									$dataPS = $dataPS | where-object { $_.provisioningType -like $PEnum }
+								}
 							if($dataPS.Count -gt 0)
 								{	write-host "Cmdlet executed successfully" -foreground green
-									return $dataPS
+									if ($VVName) 
+										{	return ($dataPS | where-object {$_.name -like $VVName })
+										}
+									else{ 	return $dataPS
+										}
 								}
 							else
-								{	Write-warning "Failure:  While Executing Get-A9Vv. Expected Result Not Found with Given Filter Option : UserCPG/$UserCPG | WWN/$WWN | SnapCPG/$SnapCPG | CopyOf/$CopyOf | ProvisioningType/$ProvisioningType." 
+								{	Write-warning "While Executing Get-A9Vv, No Expected Results Found." 
 									return 
 								}
 						}
@@ -995,37 +944,36 @@ Function New-A9vLun
 	are used, the command will attempt to fail back to a SSH type connection to accomplish the goal. You can force  the command to use the SSH type connection using the -UseSSH as a parameter.
 .PARAMETER VolumeName
 	Name of the volume or VV set to export.
-.PARAMETER LUNID
-	LUN ID.	
+.PARAMETER LUN
+	Will assign the LUN ID number specified, however if LUN is not specified, then Autolun is assumed.	
 .PARAMETER HostName  
 	Name of the host or host set to which the volume or VV set is to be exported.
-	The host set should be in set:hostset_name format.
+	You may either select a Host or a HostSet but not both. 
+.PARAMETER HostSet
+	Specifies the host set where the LUN is exported, using up to 31 characters in length. 
+	You may either select a Host or a HostSet but not both. 
 .PARAMETER NSP
 	System port of VLUN exported to. It includes node number, slot number, and card port number. Specifies the system port of the virtual LUN export.
 	node:  Specifies the system node, where the node is a number from 0 through 7.
 	slot: Specifies the PCI bus slot in the node, where the slot is a number from 0 through 5.
 	port: Specifies the port number on the FC card, where the port number is 1 through 4.
+	If no host or hostname is specified, the exported LUN will be visible to all devices on those ports
 .PARAMETER NoVcn
 	Specifies that a VCN not be issued after export (-novcn). Default: false.
-.PARAMETER vvName 
+.PARAMETER volumeName 
 	Specifies the virtual volume or virtual volume set name, using up to 31 characters in length. 
-	The volume name is provided in the syntax of basename.int.  The VV set name must start with "set:".
-.PARAMETER vvSet 
-	Specifies the virtual volume or virtual volume set name, using up to 31 characters in length. The volume name is provided in the syntax of basename.int.  
-	The VV set name must start with "set:".
+	The volume name is provided in the syntax of basename. Ether a Volume or Volume Set can be specified but not both.
+.PARAMETER volumeSet 
+	Specifies the virtual volume or virtual volume set name, using up to 31 characters in length. The volume name is provided in the syntax of basename.
+	Ether a Volume or Volume Set can be specified but not both.
 .PARAMETER LUN
 	Specifies the LUN as an integer from 0 through 16383. Alternatively n+ can be used to indicate a LUN should be auto assigned, but be
 	a minimum of n, or m-n to indicate that a LUN should be chosen in the range m to n. In addition the keyword auto may be used and is treated as 0+.
-.PARAMETER HostSet
-	Specifies the host set where the LUN is exported, using up to 31 characters in length. The set name must start with "set:".
-.PARAMETER Cnt
-	Specifies that a sequence of VLUNs, as specified by the num argument, are exported to the same system port and host that is created. The num
-	argument can be specified as any integer. For each VLUN created, the .int suffix of the VV_name specifier and LUN are incremented by one.
 .PARAMETER NoVcn
 	Specifies that a VLUN Change Notification (VCN) not be issued after export. For direct connect or loop configurations, a VCN consists of a
 	Fibre Channel Loop Initialization Primitive (LIP). For fabric configurations, a VCN consists of a Registered State Change
 	Notification (RSCN) that is sent to the fabric controller.
-.PARAMETER Ovrd
+.PARAMETER OverRide
 	Specifies that existing lower priority VLUNs will be overridden, if necessary. Can only be used when exporting to a specific host.
 
 .EXAMPLE
@@ -1034,74 +982,92 @@ Function New-A9vLun
 .EXAMPLE
 	PS:> New-A9vLun -VolumeName xxx -LUNID x -HostName xxx -NSP 1:1:1
 #>
-[CmdletBinding(DefaultParameterSetName='API')]
-Param(	[Parameter(Mandatory=$true, ParameterSetName='API')]					[String]	$VolumeName,
-		[Parameter(Mandatory=$true, ParameterSetName='API')]					[int]		$LUNID,
+[CmdletBinding(DefaultParameterSetName='APIvvName_HostSet')]
 
-		[Parameter(ParameterSetName='SSHvvName_HostName', 	Mandatory=$true)]
-		[Parameter(ParameterSetName='SSHvvSet_HostSet', 	Mandatory=$true)]
-		[Parameter(ParameterSetName='API', 					Mandatory=$true)]	[String]	$HostName,
+Param(	[Parameter(Mandatory, ParameterSetName='SSHvvName_NSP')		]
+		[Parameter(Mandatory, ParameterSetName='SSHvvName_HostSet')	]
+		[Parameter(Mandatory, ParameterSetName='SSHvvName_HostName')]
+		[Parameter(Mandatory, ParameterSetName='APIvvName_NSP')		]
+		[Parameter(Mandatory, ParameterSetName='APIvvName_HostSet')	]
+		[Parameter(Mandatory, ParameterSetName='APIvvName_HostName')]		[String]	$VolumeName,
 
-		[Parameter(ParameterSetName='SSHvvSet_NSP', 	 	Mandatory=$true)]
-		[Parameter(ParameterSetName='SSHvvName_NSP', 		Mandatory=$true)]
-		[Parameter(ParameterSetName='API')]										[String]	$NSP,
+		[Parameter(Mandatory, ParameterSetName='SSHvvSet_NSP')		]
+		[Parameter(Mandatory, ParameterSetName='SSHvvSet_HostSet')	]
+		[Parameter(Mandatory, ParameterSetName='SSHvvSet_HostName')	]
+		[Parameter(Mandatory, ParameterSetName='APIvvSet_NSP')		]
+		[Parameter(Mandatory, ParameterSetName='APIvvSet_HostSet')	]
+		[Parameter(Mandatory, ParameterSetName='APIvvSet_HostName')	]		[String]	$VolumeSet,		
 
-		[Parameter(ParameterSetName='SSHvvName_NSP')]										
-		[Parameter(ParameterSetName='SSHvvName_HostSet')]										
-		[Parameter(ParameterSetName='SSHvvName_HostName')]										
-		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
-		[Parameter(ParameterSetName='SSHvvSet_HostSet')]										
-		[Parameter(ParameterSetName='SSHvvSet_HostName')]	
-		[Parameter(ParameterSetName='API')]										[Boolean]	$NoVcn = $false,
+		[Parameter(Mandatory, ParameterSetName='SSHvvName_HostName')]
+		[Parameter(Mandatory, ParameterSetName='SSHvvSet_HostName')	]
+		[Parameter(Mandatory, ParameterSetName='APIvvName_HostName')]
+		[Parameter(Mandatory, ParameterSetName='APIvvSet_HostName')	]		[String]	$HostName,
 
-		[Parameter(ParameterSetName='SSHvvName_NSP', 			Mandatory=$true)]
-		[Parameter(ParameterSetName='SSHvvName_HostSet', 		Mandatory=$true)]
-		[Parameter(ParameterSetName='SSHvvName_HostName', 		Mandatory=$true)]	[String]	$vvName,
+		[Parameter(Mandatory, ParameterSetName='SSHvvName_HostSet')]
+		[Parameter(Mandatory, ParameterSetName='SSHvvSet_HostSet')]
+		[Parameter(Mandatory, ParameterSetName='APIvvName_HostSet')]
+		[Parameter(Mandatory, ParameterSetName='APIvvSet_HostSet')]			[String]	$HostSet,
+		[Parameter(Mandatory, ParameterSetName='SSHvvName_NSP')		]
+		[Parameter(			  ParameterSetName='SSHvvName_HostSet')	]
+		[Parameter(			  ParameterSetName='SSHvvName_HostName')]
+		[Parameter(Mandatory, ParameterSetName='SSHvvSet_NSP')		]
+		[Parameter(           ParameterSetName='SSHvvSet_HostSet')	]
+		[Parameter(           ParameterSetName='SSHvvSet_HostName')	]
+		[Parameter(Mandatory, ParameterSetName='APIvvName_NSP')		]
+		[Parameter(           ParameterSetName='APIvvName_HostSet')	]
+		[Parameter(           ParameterSetName='APIvvName_HostName')]
+		[Parameter(Mandatory, ParameterSetName='APIvvSet_NSP')		]
+		[Parameter(           ParameterSetName='APIvvSet_HostSet')	]
+		[Parameter(           ParameterSetName='APIvvSet_HostName')	]		[String]	$NSP,
 
-		[Parameter(ParameterSetName='SSHvvSet_NSP',  			Mandatory=$true)]	
-		[Parameter(ParameterSetName='SSHvvSet_HostSet',  		Mandatory=$true)]	
-		[Parameter(ParameterSetName='SSHvvSet_HostName', 		Mandatory=$true)]
-		[ValidateScript({	if( $_ -match "^set:") { $true } else { throw "Valid vvSet Parameter must start with 'Set:'"} } )]	
-																				[String]	$vvSet,
+		[Parameter(ParameterSetName='SSHvvName_NSP')		]
+		[Parameter(ParameterSetName='SSHvvName_HostSet')	]
+		[Parameter(ParameterSetName='SSHvvName_HostName')	]
+		[Parameter(ParameterSetName='SSHvvSet_NSP')			]
+		[Parameter(ParameterSetName='SSHvvSet_HostSet')		]
+		[Parameter(ParameterSetName='SSHvvSet_HostName')	]
+		[Parameter(ParameterSetName='APIvvName_NSP')		]
+		[Parameter(ParameterSetName='APIvvName_HostSet')	]
+		[Parameter(ParameterSetName='APIvvName_HostName')	]
+		[Parameter(ParameterSetName='APIvvSet_NSP')			]
+		[Parameter(ParameterSetName='APIvvSet_HostSet')		]
+		[Parameter(ParameterSetName='APIvvSet_HostName')	]				[Boolean]	$NoVcn,
 
-		[Parameter(ParameterSetName='SSHvvName_NSP',			Mandatory=$true)]										
-		[Parameter(ParameterSetName='SSHvvName_HostSet', 	Mandatory=$true)]										
-		[Parameter(ParameterSetName='SSHvvName_HostName', 	Mandatory=$true)]										
-		[Parameter(ParameterSetName='SSHvvSet_NSP',  		Mandatory=$true)]										
-		[Parameter(ParameterSetName='SSHvvSet_HostSet',  	Mandatory=$true)]										
-		[Parameter(ParameterSetName='SSHvvSet_HostName', 	Mandatory=$true)]												
-																				[String]	$LUN,
-
-		[Parameter(ParameterSetName='SSHvvName_HostSet', 	Mandatory=$true)]
-		[Parameter(ParameterSetName='SSHvvSet_HostSet',  	Mandatory=$true)]
-		[ValidateScript({	if( $_ -match "^set:") { $true } else { throw "Valid vvSet Parameter must start with 'Set:'"} } )]	
-																				[String]	$HostSet,
-
-		[Parameter(ParameterSetName='SSHvvName_NSP')]										
-		[Parameter(ParameterSetName='SSHvvName_HostSet')]										
-		[Parameter(ParameterSetName='SSHvvName_HostName')]										
-		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
-		[Parameter(ParameterSetName='SSHvvSet_HostSet')]										
-		[Parameter(ParameterSetName='SSHvvSet_HostName')]	
-																				[String]	$Cnt,
-
-		[Parameter(ParameterSetName='SSHvvName_NSP')]										
-		[Parameter(ParameterSetName='SSHvvName_HostSet')]										
-		[Parameter(ParameterSetName='SSHvvName_HostName')]										
-		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
-		[Parameter(ParameterSetName='SSHvvSet_HostSet')]										
-		[Parameter(ParameterSetName='SSHvvSet_HostName')]	
-																				[switch]	$Ovrd,
-		[Parameter(ParameterSetName='SSHvvName_NSP')]										
-		[Parameter(ParameterSetName='SSHvvName_HostSet')]										
-		[Parameter(ParameterSetName='SSHvvName_HostName')]										
-		[Parameter(ParameterSetName='SSHvvSet_NSP')]										
-		[Parameter(ParameterSetName='SSHvvSet_HostSet')]										
-		[Parameter(ParameterSetName='SSHvvSet_HostName')]
-																				[Switch]	$UseSSH
+		[Parameter(ParameterSetName='SSHvvName_NSP')		]
+		[Parameter(ParameterSetName='SSHvvName_HostSet')	]
+		[Parameter(ParameterSetName='SSHvvName_HostName')	]
+		[Parameter(ParameterSetName='SSHvvSet_NSP')			]
+		[Parameter(ParameterSetName='SSHvvSet_HostSet')		]
+		[Parameter(ParameterSetName='SSHvvSet_HostName')	]
+		[Parameter(ParameterSetName='APIvvName_NSP')		]
+		[Parameter(ParameterSetName='APIvvName_HostSet')	]
+		[Parameter(ParameterSetName='APIvvName_HostName')	]
+		[Parameter(ParameterSetName='APIvvSet_NSP')			]
+		[Parameter(ParameterSetName='APIvvSet_HostSet')		]
+		[Parameter(ParameterSetName='APIvvSet_HostName')	]												
+																			[String]	$LUN,
+		[Parameter(ParameterSetName='SSHvvName_NSP')		]
+		[Parameter(ParameterSetName='SSHvvName_HostSet')	]
+		[Parameter(ParameterSetName='SSHvvName_HostName')	]
+		[Parameter(ParameterSetName='SSHvvSet_NSP')			]
+		[Parameter(ParameterSetName='SSHvvSet_HostSet')		]
+		[Parameter(ParameterSetName='SSHvvSet_HostName')	]
+		[Parameter(ParameterSetName='APIvvName_NSP')		]
+		[Parameter(ParameterSetName='APIvvName_HostSet')	]
+		[Parameter(ParameterSetName='APIvvName_HostName')	]
+		[Parameter(ParameterSetName='APIvvSet_NSP')			]
+		[Parameter(ParameterSetName='APIvvSet_HostSet')		]
+		[Parameter(ParameterSetName='APIvvSet_HostName')	]	
+																			[switch]	$Override,
+		[Parameter(Mandatory, ParameterSetName='SSHvvName_NSP')		]
+		[Parameter(Mandatory, ParameterSetName='SSHvvName_HostSet')	]
+		[Parameter(Mandatory, ParameterSetName='SSHvvName_HostName')]
+		[Parameter(Mandatory, ParameterSetName='SSHvvSet_NSP')		]
+		[Parameter(Mandatory, ParameterSetName='SSHvvSet_HostSet')	]
+		[Parameter(Mandatory, ParameterSetName='SSHvvSet_HostName')	]		[Switch]	$UseSSH
 		)
 Begin 
-{	if ( $PSCmdlet.ParameterSetName -eq 'API' )
+{	if ( $PSCmdlet.ParameterSetName -like 'API*' )
 		{	if ( (Test-A9Connection -ClientType 'API' -returnBoolean) -and -not $UseSSH )
 				{	$PSetName = 'API'
 				}
@@ -1120,26 +1086,32 @@ Begin
 		}
 }
 Process 
-{	switch ( $PSetName)
+{	write-verbose "Executing New-a9VVLun using $PSetName"
+	if( $HostSet   -match "^set:") 	{ 	$HostSet   = $HostSet.substring(4)}
+	if( $VolumeSet -match "^set:") 	{ 	$VolumeSet = $VolumeSet.substring(4)}
+	switch ( $PSetName)
 	{	
-		'API'	{	
+		'API'	{	write-verbose "API operational State Detected"
 					$body = @{}    
-					$body["volumeName"] ="$($VolumeName)" 
-					$body["lun"] =$LUNID
-					$body["hostname"] ="$($HostName)" 
-					If ($NSP) 
-						{	$NSPbody = @{} 
-							$list = $NSP.split(":")
-							$NSPbody["node"] = [int]$list[0]		
-							$NSPbody["slot"] = [int]$list[1]
-							$NSPbody["cardPort"] = [int]$list[2]		
-							$body["portPos"] = $NSPbody		
-						}
-					If ($NoVcn) 
-						{	$body["noVcn"] = $NoVcn
-						}
+					if ( $VolumeName){	$body["volumeName"] ="$($VolumeName)"}
+					if ( $VolumeSet){	$body["volumeName"] ="Set:$($VolumeSet)"} 
+					if ( $LUN ) 	{	$body["lun"] = $LUN }
+					else			{	$body['autoLun'] = $true }
+					if ($HostName)	{ 	$body["hostname"] = "$($HostName)" }
+					if ($HostSet)	{ 	$body["hostname"] = "Set:$HostSet" }
+					If ($NSP)		{	$NSPbody = @{} 
+										$list = $NSP.split(":")
+										$NSPbody["node"] = [int]$list[0]		
+										$NSPbody["slot"] = [int]$list[1]
+										$NSPbody["cardPort"] = [int]$list[2]		
+										$body["portPos"] = $NSPbody		
+									}
+					If ($NoVcn) 	{	$body["noVcn"] = $NoVcn	}
 					$Result = $null
-					$Result = Invoke-A9API -uri '/vluns' -type 'POST' -body $body 
+					$x = $body
+					$x = $x | ConvertTo-Json
+					write-verbose "The Body of the command will be `n $x"
+					$Result = Invoke-A9API -uri '/vluns' -type 'POST' -body $body -verbose
 					$status = $Result.StatusCode	
 					if($status -eq 201)
 						{	write-host "Cmdlet executed successfully" -foreground green
@@ -1151,21 +1123,23 @@ Process
 						}	
 				}
 		'SSH'	{
-					$cmdVlun = " createvlun -f"
-					if($Cnt)			{	$cmdVlun += " -cnt $Cnt "	}
-					if($NoVcn)			{	$cmdVlun += " -novcn "	}
-					if($Ovrd)			{	$cmdVlun += " -ovrd "	}	
-					if($vvName)			{	$cmdVlun += " $vvName "	}
-					if($vvSet)			{	$cmdVlun += " $vvSet "	}
-					if($LUN)			{	$cmdVlun += " $LUN "	}
-					if($NSP)			{	$cmdVlun += " $NSP "	}
-					elseif($HostSet)	{	$cmdVlun += " $HostSet "	}
-					elseif($HostName)	{	$cmdVlun += " $HostName "	}
+					$cmdVlun = " createvlun "
+					if($NoVcn)			{	$cmdVlun += "-novcn "			}
+					if($Override)		{	$cmdVlun += "-ovrd "			}	
+					if($VolumeName)		{	$cmdVlun += "$VolumeName "		}
+					if($VolumeSet)		{	$cmdVlun += "Set:$VolumeSet "	}
+					if($vvSet)			{	$cmdVlun += "$vvSet "			}
+					if($LUN)			{	$cmdVlun += "$LUN "			}
+						else 			{	$cmdVlun += "auto "			}
+					if($HostSet)		{	$cmdVlun += "Set:$HostSet "	}
+					elseif($HostName)	{	$cmdVlun += "$HostName "		}
+					if($NSP)			{	$cmdVlun += "$NSP "			}
+					write-verbose "Executing the following SSH Command `n $cmdVlun"
 					$Result1 = Invoke-A9CLICommand -cmds  $cmdVlun
-					write-verbose "Presenting $vvName to server $item with the command --> $cmdVlun" 
+					write-verbose "Presenting $VolumeName $VolumeSet to server $Hostname $HostSet with the command --> $cmdVlun" 
 					if($Result1 -match "no active paths")		{	$successmsg += $Result1	}
-					elseif([string]::IsNullOrEmpty($Result1))	{	$successmsg += "Success : $vvName exported to host $objName`n"	}
-					else										{	$successmsg += "FAILURE : While exporting vv $vvName to host $objName Error : $Result1`n"	}		
+					elseif([string]::IsNullOrEmpty($Result1))	{	$successmsg += "Success : $VolumeName $VolumeSet exported to $HostName $HostName $NSP`n"	}
+					else										{	$successmsg += "FAILURE : While exporting vv $Volumename $VolumeSet to $HostName $HostName $NSP Error : $Result1`n"	}		
 					return $successmsg
 				}
 	}
