@@ -88,8 +88,8 @@ param(	[Parameter(Mandatory)]				[String]	$ArrayFQDNorIPAddress,
 		[Parameter(Mandatory)]				[String]	$SANUserName,
 		[Parameter()]						[String]	$SANPassword,
 		[Parameter(Mandatory)]
-		[ValidateSet("3par", "Primera", "Alletra9000", "AlletraMP-B10000", IgnoreCase=$true, ErrorMessage="Value '{0}' is invalid. Try one of: '{1}' and remember it is case sensitive")]
-																			[String]	$ArrayType
+		[ValidateSet("3par", "Primera", "Alletra9000", "AlletraMP-B10000")]
+											[String]	$ArrayType
 	)
 process
 {	# This section if required for Self-Signed Certs
@@ -117,16 +117,16 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 		}
 	$APIurl = $null
 	$Global:ArrayType = $ArrayType
-	if($ArrayType.ToLower() -eq "3par")
+	if($ArrayType.ToLower() -like "3par")
 		{	$APIurl = "https://$($ArrayFQDNorIPAddress):8080/api/v1" 	
 		}
-	elseif($ArrayType.ToLower() -eq "primera")
+	elseif($ArrayType.ToLower() -like "primera")
 		{	$APIurl = "https://$($ArrayFQDNorIPAddress):443/api/v1" 	
 		}
-	elseif($ArrayType.ToLower() -eq "alletra9000")
+	elseif($ArrayType.ToLower() -like "alletra9000")
 		{	$APIurl = "https://$($ArrayFQDNorIPAddress):443/api/v1" 	
 		}
-	elseif($ArrayType.ToLower() -eq "alletramp-b10000")
+	elseif($ArrayType.ToLower() -like "alletramp-b10000")
 		{	$APIurl = "https://$($ArrayFQDNorIPAddress):443/api/v1" 	
 		}
 	else
