@@ -700,7 +700,7 @@ Begin
 				}
 		}
 		elseif ( $PSCmdlet.ParameterSetName -eq 'SSH' )	
-		{	if ( Test-A9COnnection -ClientType 'SSH' -returnBoolean )
+		{	if ( Test-A9Connection -ClientType 'SSHClient' -returnBoolean )
 				{	$PSetName = 'SSH'
 				}
 			else{	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
@@ -793,7 +793,7 @@ Function Remove-A9vLun
 	If present, perform forcible delete operation. This option is required unless you are running the WhatIf Option
 .PARAMETER Novcn
 	Specifies that a VLUN Change Notification (VCN) not be issued after removal of the VLUN.
-	.PARAMETER Pat
+.PARAMETER Pat
 	Specifies that the <VV_name>, <LUN>, <node:slot:port>, and <host_name> specifiers are treated as glob-style patterns and that all VLUNs matching the specified pattern are removed.
 .PARAMETER Remove_All
 	It removes all vluns associated with a VVOL Container.
@@ -833,27 +833,27 @@ Function Remove-A9vLun
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
 
-Param(	[Parameter(Mandatory=$true, ParameterSetName='SSHF')]
-		[Parameter(Mandatory=$true, ParameterSetName='SSHW')]
-		[Parameter(Mandatory=$true, ParameterSetName='API')]	[String]	$VolumeName,
-		[Parameter(Mandatory=$true, ParameterSetName='API')]	[int]		$LUNID,
-		[Parameter(Mandatory=$true, ParameterSetName='API')]
-		[Parameter(Mandatory=$true, ParameterSetName='SSHF')]
-		[Parameter(Mandatory=$true, ParameterSetName='SSHW')]	[String]	$HostName,
-		[Parameter(ParameterSetName='API')]						[String]	$NSP,
+Param(	[Parameter(Mandatory, ParameterSetName='SSHF')]
+		[Parameter(Mandatory, ParameterSetName='SSHW')]
+		[Parameter(Mandatory, ParameterSetName='API')]	[String]	$VolumeName,
+		[Parameter(Mandatory, ParameterSetName='API')]	[int]		$LUNID,
+		[Parameter(Mandatory, ParameterSetName='API')]
+		[Parameter(Mandatory, ParameterSetName='SSHF')]
+		[Parameter(Mandatory, ParameterSetName='SSHW')]	[String]	$HostName,
+		[Parameter(ParameterSetName='API')]				[String]	$NSP,
 
-		[Parameter(ParameterSetName='SSHF',Mandatory=$true)]	[Switch]	$force, 
-		[Parameter(ParameterSetName='SSHW',Mandatory=$true)]	[Switch]	$whatif, 		
+		[Parameter(ParameterSetName='SSHF',Mandatory)]	[Switch]	$force, 
+		[Parameter(ParameterSetName='SSHW',Mandatory)]	[Switch]	$whatif, 		
 
-																[String]	$vvName,		
+														[String]	$vvName,		
 		[Parameter(ParameterSetName='SSHF')]
-		[Parameter(ParameterSetName='SSHW')]					[Switch]	$Novcn,
+		[Parameter(ParameterSetName='SSHW')]			[Switch]	$Novcn,
 		[Parameter(ParameterSetName='SSHF')]
-		[Parameter(ParameterSetName='SSHW')]					[Switch]	$Pat,
+		[Parameter(ParameterSetName='SSHW')]			[Switch]	$Pat,
 		[Parameter(ParameterSetName='SSHF')]
-		[Parameter(ParameterSetName='SSHW')]					[Switch]	$Remove_All,	
+		[Parameter(ParameterSetName='SSHW')]			[Switch]	$Remove_All,	
 		[Parameter(ParameterSetName='SSHF')]
-		[Parameter(ParameterSetName='SSHW')]					[switch]	$UseSSH
+		[Parameter(ParameterSetName='SSHW')]			[switch]	$UseSSH
 	)
 Begin 
 {	if ( $PSCmdlet.ParameterSetName -eq 'API' )
@@ -975,12 +975,14 @@ Function New-A9vLun
 	Notification (RSCN) that is sent to the fabric controller.
 .PARAMETER OverRide
 	Specifies that existing lower priority VLUNs will be overridden, if necessary. Can only be used when exporting to a specific host.
-
 .EXAMPLE
-	PS:> New-A9vLun -VolumeName xxx -LUNID x -HostName xxx
+	PS:> New-A9vLun -VolumeName MyVolume1 -LUN 2 -HostName MyServer1 -NSP 1:3:1
 
+	This command will connect the host record with the name MyServer to the MyVolume1 voolume using the array port 1:3:1, and will assign the LUN number 2
 .EXAMPLE
-	PS:> New-A9vLun -VolumeName xxx -LUNID x -HostName xxx -NSP 1:1:1
+	PS:> New-A9vLun -VolumeName MyVolume2 -HostSet MyServerCluster -NSP 1:3:1
+
+	This command will connect the hostset with the record with the name MyServerCluster to the MyVolume2 voolume using the array port 1:3:1, and will assign the next available LUN
 #>
 [CmdletBinding(DefaultParameterSetName='APIvvName_HostSet')]
 

@@ -65,7 +65,7 @@ Param (	[parameter(Mandatory, HelpMessage = "Enter the resource URI (ex. /volume
 		[ValidateScript( { if ($_.startswith('/')) { $true } else { throw "-URI must begin with a '/' (eg. /volumes) in its value. Correct the value and try again." } })]
 		[string]	$uri,
 		
-		[parameter(Mandatory)][ValidateSet('GET','POST','DELETE')]
+		[parameter(Mandatory)][ValidateSet('GET','POST','DELETE','PUT')]
 		[string]	$type,
 		
 		[parameter()]
@@ -84,9 +84,9 @@ Param (	[parameter(Mandatory, HelpMessage = "Enter the resource URI (ex. /volume
 		{	$APIurl = $APIurl + $ip + ':8080/api/v1' 
 			write-verbose "Arraytpe detected 3PAR"	
 		}
-	Elseif(($arrtype -like "Primera") -or ($arrtype -like "Alletra9000")) 
+	Elseif(($arrtype -like "Primera") -or ($arrtype -like "Alletra9000") -or ($arrtype -like "AlletraMP-B10000")) 
 		{	$APIurl = $APIurl + $ip + ':443/api/v1'	
-			write-verbose "arraytype is primera or alletra9k"
+			write-verbose "arraytype is primera or alletra9k or AlletraB10000"
 		}
 	else{	return "Array type is Null."
 		}
@@ -116,7 +116,7 @@ Param (	[parameter(Mandatory, HelpMessage = "Enter the resource URI (ex. /volume
 	If (($type -eq 'POST') -or ($type -eq 'PUT')) 
 		{	Write-Verbose  "Request: Invoke-WebRequest for Data, Request Type : $type" 
 			$json = $body | ConvertTo-Json  -Compress -Depth 10
-			write-verbose "This is he Body `n $json"			
+			write-verbose "This is the Body `n $json"			
 			Try {	if ($PSEdition -eq 'Core') 
 						{	$data = Invoke-WebRequest -Uri "$url" -Body $json -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck
 						}
@@ -125,7 +125,7 @@ Param (	[parameter(Mandatory, HelpMessage = "Enter the resource URI (ex. /volume
 					return $data
 				}
 			Catch 	
-				{	$_
+				{	write-error $_
 					return
 				}
 		}

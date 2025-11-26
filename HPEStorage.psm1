@@ -258,7 +258,7 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             . $PSScriptRoot\A9.scripts\FlashCacheOperations.ps1 
             Export-ModuleMember -Function Set-A9FlashCache,New-A9FlashCache,Remove-A9FlashCache,Get-FlashCache,Set-A9VvSetFlashCachePolicy
             . $PSScriptRoot\A9.scripts\HostManagement.ps1
-            Export-ModuleMember -Function New-A9Host,Set-A9HostTargetZoneingWWN,Update-A9Host ,Remove-A9Host,Get-A9HostWithFilter,Get-A9HostPersona 
+            Export-ModuleMember -Function New-A9Host,Set-A9HostTargetZoneingWWN,Update-A9Host ,Remove-A9Host,Get-A9HostWithFilter,Get-A9HostPersona, Set-A9Host
             . $PSScriptRoot\A9.scripts\HostSetsAndVirtualVolumeSets.ps1 
             Export-ModuleMember -Function New-A9HostSet ,Update-A9HostSet , Remove-A9HostSet,New-A9VvSet,Update-A9VvSet ,Get-A9VvSet 
             . $PSScriptRoot\A9.scripts\PortsAndSwitches.ps1 
