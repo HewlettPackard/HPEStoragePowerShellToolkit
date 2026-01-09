@@ -1047,7 +1047,7 @@ Param(	[Parameter(Mandatory, ParameterSetName='SSHvvName_NSP')		]
 		[Parameter(ParameterSetName='APIvvSet_NSP')			]
 		[Parameter(ParameterSetName='APIvvSet_HostSet')		]
 		[Parameter(ParameterSetName='APIvvSet_HostName')	]												
-																			[String]	$LUN,
+																			[int]	$LUN,
 		[Parameter(ParameterSetName='SSHvvName_NSP')		]
 		[Parameter(ParameterSetName='SSHvvName_HostSet')	]
 		[Parameter(ParameterSetName='SSHvvName_HostName')	]
@@ -1096,11 +1096,11 @@ Process
 		'API'	{	write-verbose "API operational State Detected"
 					$body = @{}    
 					if ( $VolumeName){	$body["volumeName"] ="$($VolumeName)"}
-					if ( $VolumeSet){	$body["volumeName"] ="Set:$($VolumeSet)"} 
+					if ( $VolumeSet){	$body["volumeName"] ="set:$($VolumeSet)"} 
 					if ( $LUN ) 	{	$body["lun"] = $LUN }
-					else			{	$body['autoLun'] = $true }
 					if ($HostName)	{ 	$body["hostname"] = "$($HostName)" }
-					if ($HostSet)	{ 	$body["hostname"] = "Set:$HostSet" }
+					if ($HostSet)	{ 	$body["hostname"] = "set:$HostSet" }
+					if (-not $LUN)	{	$body['autoLun'] = $true }
 					If ($NSP)		{	$NSPbody = @{} 
 										$list = $NSP.split(":")
 										$NSPbody["node"] = [int]$list[0]		
@@ -1129,11 +1129,11 @@ Process
 					if($NoVcn)			{	$cmdVlun += "-novcn "			}
 					if($Override)		{	$cmdVlun += "-ovrd "			}	
 					if($VolumeName)		{	$cmdVlun += "$VolumeName "		}
-					if($VolumeSet)		{	$cmdVlun += "Set:$VolumeSet "	}
+					if($VolumeSet)		{	$cmdVlun += "set:$VolumeSet "	}
 					if($vvSet)			{	$cmdVlun += "$vvSet "			}
-					if($LUN)			{	$cmdVlun += "$LUN "			}
+					if($LUN)			{	$cmdVlun += $LUN 		}
 						else 			{	$cmdVlun += "auto "			}
-					if($HostSet)		{	$cmdVlun += "Set:$HostSet "	}
+					if($HostSet)		{	$cmdVlun += "set:$HostSet "	}
 					elseif($HostName)	{	$cmdVlun += "$HostName "		}
 					if($NSP)			{	$cmdVlun += "$NSP "			}
 					write-verbose "Executing the following SSH Command `n $cmdVlun"
