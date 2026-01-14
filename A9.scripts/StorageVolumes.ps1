@@ -143,7 +143,7 @@ Process
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
-			return Get-A9Vv -VVName $VVName
+			return ( Get-A9Vv | where-object { $_.name -like $VVName} ) 
 		}
 	else
 		{	Write-Error "Failure:  While creating Volumes: $VVName " 

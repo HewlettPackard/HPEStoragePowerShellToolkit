@@ -167,7 +167,6 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             Export-ModuleMember -Function Remove-A9CPG, Get-A9CPG, New-A9Cpg, Set-A9Cpg , Compress-A9CPG 
             . $PSScriptRoot\A9.GLOBAL\System.ps1
             Export-ModuleMember -Function Get-A9System
-            
         }
         if ( $LoadA9CLI )
         {   # Load the CLI specific Commnands
@@ -189,7 +188,7 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             . $PSScriptRoot\A9.CLI\HealthAndAlertManagement.ps1
             Export-ModuleMember -Function Get-A9Alert, Get-A9EventLog_CLI, Get-A9Health, Remove-A9Alerts, Set-A9Alert
             . $PSScriptRoot\A9.CLI\HostManagement.ps1
-            Export-ModuleMember -Function New-A9Host, Set-A9HostTargetZoneingWWN, Update-A9Host , Remove-A9Host, Get-A9HostWithFilter ,  Get-A9HostPersona 
+            Export-ModuleMember -Function New-A9Host_CLI, Set-A9HostTargetZoneingWWN, Update-A9Host , Remove-A9Host_CLI,  Get-A9HostPersona 
             . $PSScriptRoot\A9.CLI\Internal.ps1
             Export-ModuleMember -Function Get-A9FcPorts, Get-A9FcPortsToCsv, Test-A9CLIObject 
             . $PSScriptRoot\A9.CLI\InventoryManagement.ps1
@@ -237,12 +236,12 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             . $PSScriptRoot\A9.CLI\TaskManagement.ps1
             Export-ModuleMember -Function Remove-A9Task, Wait-A9Task, Set-A9Task
             . $PSScriptRoot\A9.CLI\UserManagement.ps1
-            Export-ModuleMember -Function Get-A9UserConnection
+            Export-ModuleMember -Function Get-A9UserConnection, Remove-A9UserConnection
             . $PSScriptRoot\A9.CLI\Vasa.ps1
             Export-ModuleMember -Function Show-A9VVolStorageContainerVM_CLI, Get-A9VolStorageContainer_CLI, Set-A9VVolStorageContainer
             . $PSScriptRoot\A9.CLI\VirtualVolumeManagement.ps1
             Export-ModuleMember -Function Add-A9Vv, Compress-A9LogicalDisk,Confirm-A9LogicalDisk,Get-A9LogicalDisk, Get-A9LogicalDiskChunklet,
-            Get-A9Space,Get-A9VvList,Get-A9VvSet,Import-A9Vv,New-A9Vv_CLI,New-A9VvSet_CLI,Remove-A9LogicalDisk,Remove-A9VvLogicalDiskCpgTemplates,
+            Get-A9Space,Get-A9VvList_CLI,Import-A9Vv,New-A9Vv_CLI,Remove-A9LogicalDisk,Remove-A9VvLogicalDiskCpgTemplates,
             Set-A9Template_CLI,Set-A9VvSpace_CLI,Show-A9LdMappingToVvs_CLI,Show-A9VvScsiReservations,Show-A9Template,Show-A9VvMappedToPD,Show-A9VvMapping,
             Show-A9VvpDistribution, Start-A9LD_CLI,Start-A9Vv_CLI,Test-A9Vv_CLI, Update-A9SnapSpace_CLI,Update-A9VvProperties_CLI,Update-A9VvSetProperties_CLI,
             Set-A9Host_CLI,Show-A9Peer_CLI,Resize-A9Vv
@@ -282,7 +281,7 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             Export-ModuleMember -Function Get-A9Users,Get-A9Roles 
             
         }
-        if ( $Load3Par )
+        if ( ($PersistArrayType -like '3Par') )
             {   # Load the 3PAR specific Commands
                 . $PSScriptRoot\A9.GLOBAL\AdaptiveOptimization.ps1
                 Export-ModuleMember -Function  Get-A9AdaptiveOptimizationConfig

@@ -344,7 +344,7 @@ Function Get-A9HostWithFilter
 .DESCRIPTION
 	Get Single or list of Hotes information with WWN filtering. specify the FCPaths WWN or the iSCSIPaths name.
 .EXAMPLE
-	Get-A9HostWithFilter_WSAPI -WWN 123 
+	Get-A9HostWithFilter -WWN 123 
 
 	Get a host detail with single wwn name
 .EXAMPLE
