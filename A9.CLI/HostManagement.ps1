@@ -272,60 +272,6 @@ Process
 }
 }
 
-Function Remove-A9HostSet_CLI
-{
-<#
-.SYNOPSIS
-    Remove a host set or remove hosts from an existing set
-.DESCRIPTION
-	Remove a host set or remove hosts from an existing set
-.PARAMETER hostsetName 
-    Specify name of the hostsetName
-.PARAMETER hostName 
-    Specify name of  a host to remove from hostset
-.PARAMETER force
-	If present, perform forcible delete operation
-.PARAMETER Pattern
-	Specifies that both the set name and hosts will be treated as glob-style patterns.
-.EXAMPLE
-    PS:> Remove-A9HostSet_CLI -hostsetName "MyHostSet"  -force 
-
-	Remove a hostset  "MyHostSet"
-.EXAMPLE
-	PS:> Remove-A9HostSet_CLI -hostsetName "MyHostSet" -hostName "MyHost" -force
-
-	Remove a single host "MyHost" from a hostset "MyHostSet"
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory)]	[String]	$hostsetName,
-		[Parameter()]			[String]	$hostName,
-		[Parameter()]			[switch]	$Pattern
-)		
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$Cmd = "removehostset "
-	$Cmd += " -f "	
-	if($Pattern)	{	$Cmd += " -pat "	}
-	$Cmd += " $hostsetName "
-	if($hostName)	{	$Cmd +=" $hostName"	}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result2 = Invoke-A9CLICommand -cmds  $Cmd
-	if([string]::IsNullOrEmpty($Result2))
-		{	if($hostName)
-				{	Write-host "Success : Removed host $hostName from hostset $hostsetName " -ForegroundColor green 
-				}
-			else{	Write-host "Success : Removed hostset $hostsetName "
-				}
-		}
-	else{	write-host "FAILURE : While removing hostset $hostsetName" -ForegroundColor green
-		}
-	return			
-}
-} 
 
 Function Update-A9HostSet_CLI
 {

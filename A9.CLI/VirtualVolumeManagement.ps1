@@ -524,7 +524,7 @@ end{	$tempFile = [IO.Path]::GetTempFileName()
 	}
 }
 
-Function Get-A9VvList
+Function Get-A9VvList_CLI
 {
 <#
 .SYNOPSIS
@@ -742,114 +742,6 @@ end
 	}
 }
 
-Function Get-A9VvSet
-{
-<#
-.SYNOPSIS
-    Get list of Virtual Volume(VV) sets defined on the storage system and their members
-.DESCRIPTION
-    Get lists of Virtual Volume(VV) sets defined on the storage system and their members
-.PARAMETER vvSetName 
-    Specify name of the vvset to be listed.
-.PARAMETER Detailed
-	Show a more detailed listing of each set.
-.PARAMETER VV
-	Show VV sets that contain the supplied vvnames or patterns
-.PARAMETER Summary
-	Shows VV sets with summarized output with VV sets names and number of VVs in those sets
-.PARAMETER vvName 
-    Specifies that the sets containing virtual volumes.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 	
-.EXAMPLE
-	PS:> Get-A9VvSet | format-table
-	Cmdlet executed successfully
-
-	id uuid                                 name              setmembers                                          count vvolStorageContainerEnabled qosEnabled
-	-- ----                                 ----              ----------                                          ----- --------------------------- ----------
-	1 51d61280-2ef2-4fdc-88a5-9e1b4b0d97a7 vvset_dscc-test    {dscc-test}                                          1                       False      False
-	5 2f00cefc-b14d-4098-a9c9-d4cd6cbcb044 vvset_Oradata1     {MySQLData}                                          1                       False      False
-	7 b8f1a3e6-81ff-47da-887f-5fd529427789 AppSet_SAP_HANA    {HANA_data, HANA_log, HANA_shared, Veeam_datastore}  4                       False      False
-.EXAMPLE
-	PS:> Get-A9VvSet_CLI -vvname vvsnodes
-
-	Id Name     Members
-	-- ----     -------
-	27 vvsnodes elastic-01
-	27 vvsnodes elastic-02
-	27 vvsnodes elastic-03
-	27 vvsnodes elastic-04
-.NOTES
-	This command requires a SSH type connection
-#>
-[CmdletBinding(DefaultParameterSetName='default')]
-param(	[Parameter()]	[switch]	$Detailed,
-		[Parameter()]	[switch]	$VV,
-		[Parameter()]	[switch]	$Summary,
-		[Parameter(parametersetname='vvset',mandatory)]	[String]	$vvSetName,
-		[Parameter(parametersetname='vvname',mandatory)]	[String]	$vvName,
-		[Parameter()]	[Switch]	$ShowRaw
-	)	
-Begin
-	{	Test-A9Connection -ClientType 'SshClient'
-	}	
-process
-	{	$GetVVSetCmd = "showvvset "
-		if ($Detailed)	{	$GetVVSetCmd += " -d "	}
-		if ($VV)		{	$GetVVSetCmd += " -vv "	}
-		if ($Summary)	{	$GetVVSetCmd += " -summary "	}	
-		if ($vvSetName)	{	$GetVVSetCmd += " $vvSetName"	}
-		elseif($vvName)	{	$GetVVSetCmd += " $vvName"	}
-		else			{	write-verbose "VVSet parameter $vvSetName is empty. Simply return all existing vvset " 			}	
-		$Result = Invoke-A9CLICommand -cmds  $GetVVSetCmd
-	}
-end
-	{	if($ShowRaw)	{	Return $Result }
-		if($Result -match "No vv set listed")	{	return "FAILURE : No vv set listed"	}
-		if($Result -match "total" -and $Detailed )
-			{	$tempFile = [IO.Path]::GetTempFileName()
-				$s = ( (($Result[0].split(' ')).trim() ).trim('-') | where-object { $_ -ne '' } ) -join ','
-				Add-Content -Path $tempFile -Value $s
-				$LastItem = $Result.Count -3
-				foreach ($s in  $Result[1..$LastItem] )
-					{	$s = ( ($s.split(' ')).trim()  | where-object { $_ -ne '' } ) 
-						if ($s.count -eq 1)	
-							{	$TempFullLine = $FullLine
-								$TempFullLine[2] = $s
-								$s = $TempFullLine -join ',' 
-							}
-						else{	$FullLine = $s
-								$s = $s -join ','
-							}
-						Add-Content -Path $tempFile -Value $s
-					}
-				$returndata = Import-Csv $tempFile 
-				Remove-Item $tempFile
-				return $returndata
-			}
-		
-		elseif($Result -match "total" )
-			{	$tempFile = [IO.Path]::GetTempFileName()
-				$s = ( (($Result[0].split(' ')).trim() ).trim('-') | where-object { $_ -ne '' } ) -join ','
-				Add-Content -Path $tempFile -Value $s
-				$LastItem = $Result.Count -3
-				foreach ($s in  $Result[1..$LastItem] )
-					{	$s = ( ($s.split(' ')).trim() )| where-object { $_ -ne '' } 
-						if ($s.count -eq 1)	
-							{	$s=$FullLine[0]+','+$FullLine[1]+','+$s 
-							}
-						else{	$FullLine = $s
-								$s = $s -join ','
-							}
-						Add-Content -Path $tempFile -Value $s
-					}
-				$returndata = Import-Csv $tempFile 
-				Remove-Item $tempFile
-				return $returndata
-			}
-		else{	return $Result	}		
-	}
-}
 
 Function Import-A9Vv
 {
@@ -960,7 +852,7 @@ Function New-A9Vv_CLI
 .SYNOPSIS
     Creates a vitual volume.
 .DESCRIPTION
-	Creates a vitual volume. `e[3mThis text is italic`e[0m
+	Creates a vitual volume.
 
 .PARAMETER vvName 
     Specify new name of the virtual volume
@@ -1147,87 +1039,6 @@ process
 	else
 		{	return $failuremsg
 		}			 
-}
-}
-
-Function New-A9VvSet_CLI
-{
-<#
-.SYNOPSIS
-    Creates a new VolumeSet 
-.DESCRIPTION
-	Creates a new VolumeSet
-.PARAMETER vvSetName 
-    Specify new name of the VolumeSet
-.PARAMETER Domain 
-    Specify the domain where the Volume set will reside
-.PARAMETER vvName 
-    Specify the VV  to add  to the Volume set 
-.PARAMETER Comment 
-    Specifies any comment or additional information for the set.	
-.PARAMETER Count
-	Add a sequence of <num> VVs starting with "vvname". vvname should be of the format <basename>.<int>
-	For each VV in the sequence, the .<int> suffix of the vvname is incremented by 1.
-.PARAMETER Add 
-	Specifies that the VVs listed should be added to an existing set. At least one VV must be specified.	
-.EXAMPLE
-    PS:> New-A9VvSet_CLI -vvSetName "MyVolumeSet"  
-
-	Creates a VolumeSet named MyVolumeSet
-.EXAMPLE	
-	PS:> New-A9VvSet_CLI -vvSetName "MYVolumeSet" -Domain MyDomain
-
-	Creates a VolumeSet named MyVolumeSet in the domain MyDomain
-.EXAMPLE
-	PS:> New-A9VvSet_CLI -vvSetName "MYVolumeSet" -Domain MyDomain -vvName "MyVV"
-
-	Creates a VolumeSet named MyVolumeSet in the domain MyDomain and adds VV "MyVV" to that vvset
-.EXAMPLE
-	PS:> New-A9VvSet_CLI -vvSetName "MYVolumeSet" -vvName "MyVV"
-
-	adds vv "MyVV"  to existing vvset "MyVolumeSet" if vvset exist, if not it will create vvset and adds vv to vvset
-.EXAMPLE
-	PS:> New-A9VvSet_CLI -vvSetName asVVset2 -vvName "as4 as5 as6"
-.EXAMPLE
-	PS:> New-A9VvSet_CLI -vvSetName set:asVVset3 -Add -vvName as3
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]			[String]	$vvSetName,
-		[Parameter()]	[switch]	$Add,
-		[Parameter()]	[String]	$Count,
-		[Parameter()]	[String]	$Comment,
-		[Parameter()]	[String]	$Domain,		
-		[Parameter()]	[String]	$vvName
-	)	
-Begin	
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$CreateVolumeSetCmd = "createvvset "
-	if($Add) 	{	$CreateVolumeSetCmd += " -add "				}
-	if($Count) 	{	$CreateVolumeSetCmd += " -cnt $Count "		}
-	if($Comment){	$CreateVolumeSetCmd += " -comment $Comment "}
-	if($Domain) {	$CreateVolumeSetCmd += " -domain $Domain "	}
-	if($vvSetName){	$CreateVolumeSetCmd += " $vvSetName "		}
-	if($vvName)	{	$CreateVolumeSetCmd += " $vvName "			}
-	$Result = Invoke-A9CLICommand -cmds  $CreateVolumeSetCmd
-	if($Add)
-		{	if([string]::IsNullOrEmpty($Result))
-				{	return "Success : command executed vv : $vvName is added to vvSet : $vvSetName"
-				}
-			else{	return $Result	}
-		}	
-	else
-	{	if([string]::IsNullOrEmpty($Result))
-		{	return "Success :  command executed vvSet : $vvSetName is created with vv : $vvName"
-		}
-		else
-		{	return $Result
-		}			
-	}		
-	
 }
 }
 
