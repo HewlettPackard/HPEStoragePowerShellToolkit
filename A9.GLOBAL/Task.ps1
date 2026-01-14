@@ -79,16 +79,16 @@ Function Get-A9Task
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
 param(	[Parameter(Parametersetname='API')]	
-        [Parameter(Parametersetname='SSHOne')]  [String]	$TaskID, 
-        [Parameter(parametersetname='SSHAll')]	[String]	$Task_type,
-        [Parameter(parametersetname='SSHAll')]	[Switch]	$All,	
-        [Parameter(parametersetname='SSHAll')]	[Switch]	$Done,
-        [Parameter(parametersetname='SSHAll')]	[Switch]	$Failed,
-        [Parameter(parametersetname='SSHAll')]	[Switch]	$Active,
-        [Parameter(parametersetname='SSHAll')]	[int] 	    $Hours,
-        [Parameter(Parametersetname='SSHOne')]	[String]	$Detailed,
+        [Parameter(mandatory,Parametersetname='SSHOne')][String]	$TaskID, 
+        [Parameter(parametersetname='SSHAll')]	        [String]	$Task_type,
+        [Parameter(parametersetname='SSHAll')]	        [Switch]	$All,	
+        [Parameter(parametersetname='SSHAll')]	        [Switch]	$Done,
+        [Parameter(parametersetname='SSHAll')]      	[Switch]	$Failed,
+        [Parameter(parametersetname='SSHAll')]	        [Switch]	$Active,
+        [Parameter(parametersetname='SSHAll')]	        [int] 	    $Hours,
+        [Parameter(Parametersetname='SSHOne')]	        [switch]	$Detailed,
         [Parameter(Parametersetname='SSHOne')]
-        [Parameter(parametersetname='SSHAll')]	[Switch]	$UseSSH
+        [Parameter(parametersetname='SSHAll')]	        [Switch]	$UseSSH
         
         
 	)		
@@ -119,7 +119,8 @@ Process
                         $Result = Invoke-A9API -uri $uri -type 'GET' 
                         if($Result.StatusCode -eq 200)
                             {	$dataPS = $Result.content | ConvertFrom-Json
-                                return $dataPS
+                                if ($dataPS.members ) { return $dataPS.members }
+                                else { return $dataPS }
                             }
                         else
                             {	Write-Error "Failure:  While Executing Get-Task_WSAPI." 
@@ -165,21 +166,15 @@ Function Stop-A9Task
 {	
 <#
 .SYNOPSIS
-    Cancel one or more tasks
+    Cancel one task
 .DESCRIPTION
-    The Stop Task command cancels one or more tasks.
-.PARAMETER ALL
-    Cancels all active tasks. If not specified, a task ID(s) must be specified. The All option requires an SSH type connection.
+    The Stop Task command cancels a task.
 .PARAMETER TaskID
     Cancels only tasks identified by their task IDs. TaskID must be an unsigned integer within 1-29999 range. If this is unset, then ALL must be set.
 .EXAMPLE
     Cancel a task using the task ID
 
-    PS:> Stop-A9Task 1        
-.EXAMPLE
-    Cancel all ongoing tasks using the all option
-
-    PS:> Stop-A9Task -all        
+    PS:> Stop-A9Task 1234       
 .NOTES
     The Stop-Task command can return before a cancellation is completed. Thus, resources reserved for a task might not be immediately available. This can
     prevent actions like restarting the canceled task. Use the waittask command to ensure orderly completion of the cancellation before taking other
@@ -189,57 +184,26 @@ Function Stop-A9Task
     Authority:Super, Service, Edit
     Any role granted the task_cancel right
     Usage:
-    - The canceltask command can return before a cancellation is completed. Thus, resources reserved for a task might not be immediately available. 
-    This can prevent actions like restarting the canceled task. Use the waittask command to ensure orderly completion of the cancellation before taking other actions. 
-    See waittask for more details.
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
-Param(	[Parameter(ParameterSetName='API',Mandatory)]
-        [Parameter(ParameterSetName='SSHONE',Mandatory)]    [String]	$TaskID,
-        [Parameter(ParameterSetName='SSHALL',Mandatory)]    [String]    $All,	
-        [Parameter(ParameterSetName='SSHONE',Mandatory)]    [Switch]    $UseSSH	
+Param(	[Parameter(Mandatory)][String]	$TaskID
 	)
 Begin 
-    {	if ( $PSCmdlet.ParameterSetName -eq 'API' )
-            {	if ( Test-A9Connection -CLientType 'API' -returnBoolean )
-                    {	$PSetName = 'API'
-                    }
-                else{	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
-                            {	$PSetName = 'SSH'
-                            }
-                    }
-            }
-        elseif ( ($PSCmdlet.ParameterSetName -eq 'SSHAll') -or ($PSCmdlet.ParameterSetName -eq 'SSHONE') )	
-            {	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
-                    {	$PSetName = 'SSH'
-                    }
-                else{	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
-                        return
-                    }
-            }
+    {	Test-A9Connection -CLientType 'API' 
     }
 Process 
-    {	switch( $PSetName )
-        {   'SSH'   {   $cmd = "canceltask -f "	
-                        if ($TaskID){   $cmd += "$TaskID"		}
-                        if ($All)   {   $cmd += " -all"		  }    	
-                        $Result = Invoke-A9CLICommand -cmds  $cmd
-                        return 	$Result	
-                    }
-            'API'   {   $body = @{}	
-                        $body["action"] = 4
-                        $Result = $null	
-                        $uri = "/tasks/" + $TaskID
-                        $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
-                        if($Result.StatusCode -eq 200)
-                            {	write-host "Cmdlet executed successfully" -foreground green
-                                return $Result		
-                            }
-                        else
-                            {	Write-Error "Failure:  While Cancelling the ongoing task : $TaskID " 
-                                return $Result.StatusDescription
-                            }
-                    }
-        }
+    {	$body = @{}	
+        $body["action"] = 1
+        $Result = $null	
+        $uri = "/tasks/" + $TaskID
+        $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
+        if($Result.StatusCode -eq 200)
+            {	write-host "Cmdlet executed successfully" -foreground green
+                return $Result		
+            }
+        else
+            {	Write-Error "Failure:  While Cancelling the ongoing task : $TaskID " 
+                return $Result.StatusDescription
+            }
     }
 }

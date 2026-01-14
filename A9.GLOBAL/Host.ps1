@@ -181,40 +181,14 @@ Function Get-A9Host
 .DESCRIPTION
 	Get Single or list of Hotes. the command will attempt to use the API to accomplish the task, 
     if the API is unavalable or other parameters are used, the command will attempt to fail back to a SSH type connection to accomplish the goal. 
-.EXAMPLE
-	PS:> get-a9host | format-table
-    Cmdlet executed successfully
-
-    id name              descriptors          FCPaths                                                                      iSCSIPaths
-    -- ----              -----------          -------                                                                      ----------
-    0 bm9                @{os=VMware (ESXi)}  {@{wwn=10009440C9CF767B; portPos=}, @{wwn=10009440C9CF767B; portPos=}…} {}
-    5 virt-r-node3                            {}                                                                           {@{name=iqn…
-    7 ftc-tmaas-cl1-esx1 @{os=VMware (ESXi)}  {@{wwn=1000FC15B443AE94; portPos=}, @{wwn=1000FC15B443AE94; portPos=}}  {}
-.EXAMPLE
-    PS C:\Users\clionetti\Desktop\Powershell\HPEStoragePowerShellToolkit> get-a9host -usessh | format-table
-
-    Address               Name    Persona       ID Port
-    -------               ----    -------       -- ----
-    100070106F76081F      bm8     VMware        16 0:3:3
-    10009440C9CF767C      bm9     VMware        0  0:3:3
-    1000E0071BCE3B3B      BM45    WindowsServer 42 1:3:2
-    1000E0071BCE3B3A      BM45    WindowsServer 42 1:3:1
 .PARAMETER HostName
 	Specify name of the Host.
-    .PARAMETER D
-	Shows a detailed listing of host and path information. This option can be used with -agent and -domain options. This parameter is only valid for SSH type connections.
-.PARAMETER Verb
-	Shows a verbose listing of all host information. This option cannot be used with -d. This parameter is only valid for SSH type connections.
 .PARAMETER CHAP
 	Shows the CHAP authentication properties. This option cannot be used with -d. This parameter is only valid for SSH type connections.
 .PARAMETER Descriptor
 	Shows the host descriptor information. This option cannot be used with -d. This parameter is only valid for SSH type connections.
 .PARAMETER Agent
 	Shows information provided by host agent. This parameter is only valid for SSH type connections.
-.PARAMETER Pathsum
-	Shows summary information about hosts and paths. This option cannot be used with -d. This parameter is only valid for SSH type connections.
-.PARAMETER Persona
-	Shows the host persona settings in effect. This option cannot be used with -d. This parameter is only valid for SSH type connections.
 .PARAMETER Listpersona
 	Lists the defined host personas. This option cannot be used with -d. This parameter is only valid for SSH type connections.
 .PARAMETER NoName
@@ -227,22 +201,31 @@ Function Get-A9Host
 	Shows the CRC error counts for the host/port.
 .PARAMETER UseSSH
     Will override the parameter set and force the command to use the SSH type operation instead of an API call.
-#>
+.EXAMPLE
+	PS:> get-a9host | format-table
+    Cmdlet executed successfully
+
+    id name              descriptors          FCPaths                                                                      iSCSIPaths
+    -- ----              -----------          -------                                                                      ----------
+    0 bm9                @{os=VMware (ESXi)}  {@{wwn=10009440C9CF767B; portPos=}, @{wwn=10009440C9CF767B; portPos=}…} {}
+    5 virt-r-node3                            {}                                                                           {@{name=iqn…
+    7 ftc-tmaas-cl1-esx1 @{os=VMware (ESXi)}  {@{wwn=1000FC15B443AE94; portPos=}, @{wwn=1000FC15B443AE94; portPos=}}  {}
+.EXAMPLE
+    PS:> get-a9host -hostname | convertto-json -depth 5
+
+    This command will replicate the '-d', 'persona' as well as the '-verbose' option from the CLI, as you can gather exactly the same information from the API returned data
+
+.NOTES
+    To replicate the following CLI features, see the examples
+    #>
 [CmdletBinding(DefaultParameterSetName="API")]
 Param(	[Parameter(ParameterSetName='API')]
         [Parameter(ParameterSetName='SSH')]	[String]	$HostName,
-        [Parameter(ParameterSetName='SSH')]	[String]	$Domain,
-		[Parameter(ParameterSetName='SSH')]	[Switch]	$D,
-		[Parameter(ParameterSetName='SSH')]	[Switch]	$Verb,
 		[Parameter(ParameterSetName='SSH')]	[Switch]	$CHAP,
-		[Parameter(ParameterSetName='SSH')]	[Switch]	$Descriptor,
-		[Parameter(ParameterSetName='SSH')]	[Switch]	$Agent,
-		[Parameter(ParameterSetName='SSH')]	[Switch]	$Pathsum,
-		[Parameter(ParameterSetName='SSH')]	[Switch]	$Persona,
-		[Parameter(ParameterSetName='SSH')]	[Switch]	$Listpersona,
-		[Parameter(ParameterSetName='SSH')]	[Switch]	$NoName,
+		[Parameter(ParameterSetName='SSHps')]	[Switch]	$Pathsum,
+		[Parameter(ParameterSetName='SSHl')]	[Switch]	$Listpersona,
 		[Parameter(ParameterSetName='SSH')]	[Switch]	$CRCError,
-        [Parameter(ParameterSetName='SSH')] [Switch]    $UseSSH 
+        [Parameter()]                           [Switch]    $ReturnRaw
 )
 Begin 
 {	if ( $PSCmdlet.ParameterSetName -eq 'API' )
@@ -254,7 +237,7 @@ Begin
                         }
                 }
         }
-        elseif ( $PSCmdlet.ParameterSetName -eq 'SSH' )	
+        elseif ( $PSCmdlet.ParameterSetName -contains "SSH" )	
         {	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
                 {	$PSetName = 'SSH'
                 }
@@ -264,7 +247,7 @@ Begin
         }
 }
 Process 
-{	switch( $PSetName )
+{	switch -wildcard ( $PSetName )
     {   
         'API'   {   if($HostName)
                         {	$uri = '/hosts/'+$HostName
@@ -284,22 +267,13 @@ Process
                             return $Result.StatusDescription
                         }
                 }
-        'SSH'   {   
+        default {   
                     $CurrentId = $CurrentName = $CurrentPersona = $null
                     $ListofvHosts = @()	
                     $GetHostCmd = "showhost "	
-                    if ($Domain)		{	$GetHostCmd +=" -domain $Domain"}
-                    if ($D)				{	$GetHostCmd +=" -d "			}
-                    if ($Verb)			{	$GetHostCmd +=" -verbose "		}
-                    if ($CHAP)			{	$GetHostCmd +=" -chap "			}
-                    if ($Descriptor)	{	$GetHostCmd +=" -desc "			}
-                    if ($Agent)			{	$GetHostCmd +=" -agent "		}
-                    if ($Pathsum)		{	$GetHostCmd +=" -pathsum "		}
-                    if ($Persona)		{	$GetHostCmd +=" -persona "		}
                     if ($Listpersona)	{	$GetHostCmd +=" -listpersona "	}
-                    if ($NoName)		{	$GetHostCmd +=" -noname "		}
                     if ($CRCError)		{	$GetHostCmd +=" -lesb "			}	
-                    if($hostName)		{	$objType = "host"
+                    if ($hostName)		{	$objType = "host"
                                             $objMsg  = "hosts"
                                             if ( -not (Test-A9CLIObject -objectType $objType -objectName $hostName -objectMsg $objMsg ))
                                                 {	return "FAILURE : No host $hostName found"
@@ -316,7 +290,8 @@ Process
                     $Result_Count = $Result.Count - 3
                     if($Agent)	{	$Result_Count = $Result.Count - 3	}
                     if($Result.Count -gt 3)
-                        {	$CurrentId = $null
+                        {	if ( $ReturnRaw -or $chap )  { return $Result } 
+                            $CurrentId = $null
                             $CurrentName = $null
                             $CurrentPersona = $null		
                             $address = $null
