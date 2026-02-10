@@ -124,7 +124,7 @@ Function Confirm-A9LogicalDisk
 	- Using the -recover option allows one LD only
 	This command requires a SSH type connection.
 #>
-[CmdletBinding(DefaultParameterSetName('default'))]
+[CmdletBinding(DefaultParameterSetName='default')]
 param(
 	[Parameter(mandatory,parameterset='fix')]		[switch]	$FixError,
 	[Parameter(mandatory,parameterset='report')]	[switch]	$Progress,
