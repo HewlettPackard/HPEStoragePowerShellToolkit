@@ -76,36 +76,19 @@ Function Update-A9HostSet
 .SYNOPSIS
 	Update an existing Host Set.
 .DESCRIPTION
-	Update an existing Host Set.
-    Any user with the Super or Edit role can modify a host set. Any role granted hostset_set permission can add a host to the host set or remove a host from the host set.   
+	Update an existing Host Set. by adding or removing members, or altering its name or comment.
+.EXAMPLE    
+	PS:> Update-A9HostSet -HostSetName xxx -NewName yyy
 .EXAMPLE    
 	PS:> Update-A9HostSet -HostSetName xxx -RemoveMember -Members as-Host4
 .EXAMPLE
 	PS:> Update-A9HostSet -HostSetName xxx -AddMember -Members as-Host4
-.EXAMPLE	
-	PS:> Update-A9HostSet -HostSetName xxx -ResyncPhysicalCopy
-.EXAMPLE	
-	PS:> Update-A9HostSet -HostSetName xxx -StopPhysicalCopy 
-.EXAMPLE
-	PS:> Update-A9HostSet -HostSetName xxx -PromoteVirtualCopy
-.EXAMPLE
-	PS:> Update-A9HostSet -HostSetName xxx -StopPromoteVirtualCopy
-.EXAMPLE
-	PS:> Update-A9HostSet -HostSetName xxx -ResyncPhysicalCopy -Priority high
 .PARAMETER HostSetName
 	Existing Host Name
 .PARAMETER AddMember
 	Adds a member to the VV set.
 .PARAMETER RemoveMember
 	Removes a member from the VV set.
-.PARAMETER ResyncPhysicalCopy
-	Resynchronize the physical copy to its VV set.
-.PARAMETER StopPhysicalCopy
-	Stops the physical copy.
-.PARAMETER PromoteVirtualCopy
-	Promote virtual copies in a VV set.
-.PARAMETER StopPromoteVirtualCopy
-	Stops the promote virtual copy operations in a VV set.
 .PARAMETER NewName
 	New name of the set.
 .PARAMETER Comment
@@ -113,62 +96,37 @@ Function Update-A9HostSet
 	To remove the comment, use “”.
 .PARAMETER Members
 	The volume or host to be added to or removed from the set.
-.PARAMETER Priority
-	1: high
-	2: medium
-	3: low
 #>
 [CmdletBinding(DefaultParameterSetName="default")]
-Param(	[Parameter(Mandatory)]					[String]	$HostSetName,
-		[Parameter(ParameterSetName='AddMember', ValueFromPipeline=$true)]		[switch]	$AddMember,	
-		[Parameter(ParameterSetName='RemoveMember', ValueFromPipeline=$true)]	[switch]	$RemoveMember,
-		[Parameter(ParameterSetName='Resync', ValueFromPipeline=$true)]			[switch]	$ResyncPhysicalCopy,
-		[Parameter(ParameterSetName='Stop', ValueFromPipeline=$true)]			[switch]	$StopPhysicalCopy,
-		[Parameter(ParameterSetName='Promote', ValueFromPipeline=$true)]		[switch]	$PromoteVirtualCopy,
-		[Parameter(ParameterSetName='StopPromote', ValueFromPipeline=$true)]	[switch]	$StopPromoteVirtualCopy,
-		[Parameter()]									[String]	$NewName,
-		[Parameter()]									[String]	$Comment,
-		[Parameter()]									[String[]]	$Members,
-		[Parameter()]	
-		[ValidateSet('high','medium','low')]									[String]	$Priority
-)
+Param(
+		[Parameter(Mandatory, ParameterSetName='Default')]	
+		[Parameter(Mandatory, ParameterSetName='AddMember')]
+		[Parameter(Mandatory, ParameterSetName='RemoveMember')]
+																[String]	$HostSetName,
+		[Parameter(Mandatory, ParameterSetName='AddMember')]	[switch]	$AddMember,	
+		[Parameter(Mandatory, ParameterSetName='RemoveMember')]	[switch]	$RemoveMember,
+		[Parameter(Mandatory, ParameterSetName='Default')]		[String]	$NewName,
+		[Parameter(Mandatory, ParameterSetName='Default')]		[String]	$Comment,
+		[Parameter(Mandatory, ParameterSetName='AddMember')]	
+		[Parameter(Mandatory, ParameterSetName='RemoveMember')] [String[]]	$Members
+	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
-	$counter
-	If ($AddMember)			{	 $body["action"] = 1
-								$counter = $counter + 1
-							}
-	If ($RemoveMember) 		{	 $body["action"] = 2
-								$counter = $counter + 1
-							}
-	If ($ResyncPhysicalCopy){	$body["action"] = 3
-								$counter = $counter + 1
-							}
-	If ($StopPhysicalCopy) 	{	$body["action"] = 4
-								$counter = $counter + 1
-							}
-	If ($PromoteVirtualCopy){	$body["action"] = 5
-								$counter = $counter + 1
-							}
-	If ($StopPromoteVirtualCopy){	$body["action"] = 6
-									$counter = $counter + 1
-								}
-	if($counter -gt 1)
-		{	return "Please Select Only One from [ AddMember | RemoveMember | ResyncPhysicalCopy | StopPhysicalCopy | PromoteVirtualCopy | StopPromoteVirtualCopy]. "
-		}
+	Switch($PSCmdlet.ParameterSetName)
+			{	'AddMember'		{	$body['action'] = 1 }
+				'RemoveMember'	{	$body['action'] = 2 }
+			}
 	If ($NewName) 	{	$body["newName"] = "$($NewName)"	}
 	If ($Comment) 	{	$body["comment"] = "$($Comment)"    }	
-	If ($Members) 	{	$body["setmembers"] = $Members    }
-	If ($Priority) 
-		{	if($Priority -eq "high")	{	$body["priority"] = 1	}	
-			if($Priority -eq "medium")	{	$body["priority"] = 2	}
-			if($Priority -eq "low")		{	$body["priority"] = 3	}
-		}
-	
-    $Result = $null	
+	If ($Members) 	{	$body["setmembers"] = $Members  	}
+	if ( $Body = @{} )
+			{	write-warning "No Changable Options have been selected. You must choose to change something"
+				return
+			}
+	$Result = $null	
 	$uri = '/hostsets/'+$HostSetName 
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
@@ -335,53 +293,42 @@ Function Update-A9VvSet
 	2: medium
 	3: low
 #>
-[CmdletBinding()]
+[CmdletBinding(DefaultParameterSetName='Default')]
 Param(
-	[Parameter(Mandatory)]	[String]	$VVSetName,
-	[Parameter()]	[switch]	$AddMember,	
-	[Parameter()]	[switch]	$RemoveMember,	
-	[Parameter()]	[switch]	$ResyncPhysicalCopy,	
-	[Parameter()]	[switch]	$StopPhysicalCopy,	
-	[Parameter()]	[switch]	$PromoteVirtualCopy,
-	[Parameter()]	[switch]	$StopPromoteVirtualCopy,	
-	[Parameter()]	[String]	$NewName,	
-	[Parameter()]	[String]	$Comment,
-	[Parameter()]	[String[]]	$Members,
-	[Parameter()]
-	[ValidateSet('high','medium','low')]	[String]	$Priority
+	[Parameter(Mandatory)]									[String]	$VVSetName,
+	[Parameter(Mandatory, ParameterSetName='AddMember')]	[switch]	$AddMember,	
+	[Parameter(Mandatory, ParameterSetName='RemoveMember')]	[switch]	$RemoveMember,	
+	[Parameter(Mandatory, ParameterSetName='Resync')]		[switch]	$ResyncPhysicalCopy,	
+	[Parameter(Mandatory, ParameterSetName='StopCopy')]		[switch]	$StopPhysicalCopy,	
+	[Parameter(Mandatory, ParameterSetName='Promote')]		[switch]	$PromoteVirtualCopy,
+	[Parameter(Mandatory, ParameterSetName='StopPromote')]	[switch]	$StopPromoteVirtualCopy,	
+	[Parameter()]											[String]	$NewName,	
+	[Parameter()]											[String]	$Comment,
+	[Parameter(Mandatory, ParameterSetName='AddMember')]
+	[Parameter(Mandatory, ParameterSetName='RemoveMember')]	[String[]]	$Members,
+	[Parameter(ParameterSetName='Resync')]
+	[ValidateSet('high','medium','low')]					[String]	$Priority
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
-	$counter
-	If ($AddMember)			{	$body["action"] = 1
-								$counter = $counter + 1
-							}
-	If ($RemoveMember) 		{	$body["action"] = 2
-								$counter = $counter + 1
-							}
-	If ($ResyncPhysicalCopy){	$body["action"] = 3
-								$counter = $counter + 1
-							}
-	If ($StopPhysicalCopy) 	{	$body["action"] = 4
-								$counter = $counter + 1
-							}
-	If ($PromoteVirtualCopy){	$body["action"] = 5
-								$counter = $counter + 1
-							}
-	If ($StopPromoteVirtualCopy) 
-							{	$body["action"] = 6
-								$counter = $counter + 1
-							}
-	if($counter -gt 1)		{	return "Please Select Only One from [ AddMember | RemoveMember | ResyncPhysicalCopy | StopPhysicalCopy | PromoteVirtualCopy | StopPromoteVirtualCopy]. "	}
-	If ($NewName) 			{	$body["newName"] = "$($NewName)" }
-	If ($Comment) 			{	$body["comment"] = "$($Comment)" }
-	If ($Members) 			{	$body["setmembers"] = $Members    }
-	if($Priority -eq "high"){	$body["priority"] = 1	}	
-	if($Priority -eq "medium"){	$body["priority"] = 2	}
-	if($Priority -eq "low")	{	$body["priority"] = 3	}
+	Switch($PSCmdlet.ParameterSetName)
+			{	'AddMember'		{	$body['action'] = 1 }
+				'RemoveMember'	{	$body['action'] = 2 }
+				'Resync'		{	$body['action'] = 3 }
+				'StopCopy'		{	$body['action'] = 4 }
+				'Promote'		{	$body['action'] = 5 }
+				'StopPromote'	{	$body['action'] = 6	}
+			}
+	If ($NewName) 				{	$body["newName"] = "$($NewName)" }
+	If ($Comment) 				{	$body["comment"] = "$($Comment)" }
+	If ($Members) 				{	$body["setmembers"] = $Members   }
+	if ($Priority -eq "high")	{	$body["priority"] = 1			 }	
+	if ($Priority -eq "medium")	{	$body["priority"] = 2			 }
+	if ($Priority -eq "low")	{	$body["priority"] = 3			 }
+	
     $Result = $null	
 	$uri = '/volumesets/'+$VVSetName 
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
