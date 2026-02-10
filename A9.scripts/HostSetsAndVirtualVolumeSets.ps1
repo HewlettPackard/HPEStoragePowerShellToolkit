@@ -295,7 +295,7 @@ Function Update-A9VvSet
 #>
 [CmdletBinding(DefaultParameterSetName='Default')]
 Param(
-	[Parameter(Mandatory)]									[String]	$VVSetName,
+	[Parameter(Mandatory)]									[String]	$VolumeSetName,
 	[Parameter(Mandatory, ParameterSetName='AddMember')]	[switch]	$AddMember,	
 	[Parameter(Mandatory, ParameterSetName='RemoveMember')]	[switch]	$RemoveMember,	
 	[Parameter(Mandatory, ParameterSetName='Resync')]		[switch]	$ResyncPhysicalCopy,	
@@ -330,20 +330,20 @@ Process
 	if ($Priority -eq "low")	{	$body["priority"] = 3			 }
 	
     $Result = $null	
-	$uri = '/volumesets/'+$VVSetName 
+	$uri = '/volumesets/'+$VolumeSetName 
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			if($NewName)
-				{	return Get-A9VvSet -VVSetName $NewName
+				{	return Get-A9VvSet -VolumeSetName $NewName
 				}
 			else
-				{	return Get-A9VvSet -VVSetName $VVSetName
+				{	return Get-A9VvSet -VolumeSetName $VolumeSetName
 				}
 			Write-Verbose "End: Update-A9VvSet"
 		}
 	else
-	{	Write-Error "Failure:  While Updating virtual volume Set: $VVSetName " 
+	{	Write-Error "Failure:  While Updating virtual volume Set: $VolumeSetName " 
 		return $Result.StatusDescription
 	}
 }
@@ -390,6 +390,10 @@ Process
 	If($Result.StatusCode -eq 200)
 		{	$dataPS = $Result.content | ConvertFrom-Json
 			write-host "Cmdlet executed successfully" -foreground green
+			if ( $VolumeSetName )
+				{	$MySet = $dataPS.members | where-object {$_.name -like $VolumeSetName }
+					return $MySet
+				}
 			return $dataPS.members
 		}
 	else{	Write-Error "Failure:  While Executing Get-VvSet_WSAPI." 
