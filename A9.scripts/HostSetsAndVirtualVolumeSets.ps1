@@ -173,8 +173,8 @@ Process
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
-			if($NewName)	{	Get-HostSet_WSAPI -HostSetName $NewName	}	
-			else			{	Get-HostSet_WSAPI -HostSetName $HostSetName	}
+			if($NewName)	{	Get-A9HostSet -HostSetName $NewName	}	
+			else			{	Get-A9HostSet -HostSetName $HostSetName	}
 		}
 	else
 		{	Write-Error "Failure:  While Updating Host Set: $HostSetName " 

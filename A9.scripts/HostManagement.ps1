@@ -9,45 +9,20 @@ Function New-A9Host
 	Creates a new host.
 .DESCRIPTION    
 	Creates a new host. Any user with Super or Edit role, or any role granted host_create permission, can perform this operation. Requires access to all domains.    
-.EXAMPLE
-	New-A9Host -HostName MyHost
-    Creates a new host.
-.EXAMPLE
-	New-A9Host -HostName MyHost -Domain MyDoamin	
-	Create the host MyHost in the specified domain MyDoamin.
-.EXAMPLE
-	New-A9Host -HostName MyHost -Domain MyDoamin -FCWWN XYZ
-	Create the host MyHost in the specified domain MyDoamin with WWN XYZ
-.EXAMPLE
-	PS:> New-A9Host -HostName MyHost -Domain MyDoamin -FCWWN XYZ -Persona GENERIC_ALUA
-.EXAMPLE	
-	PS:> New-A9Host -HostName MyHost -Domain MyDoamin -Persona GENERIC
-.EXAMPLE	
-	PS:> New-A9Host -HostName MyHost -Location 1
-.EXAMPLE
-	PS:> New-A9Host -HostName MyHost -IPAddr 1.0.1.0
-.EXAMPLE	
-	PS:> New-A9Host -HostName $hostName -Port 1:0:1
 .PARAMETER HostName
 	Specifies the host name. Required for creating a host.
+.PARAMETER IPAddr
+	The host’s IP address.
 .PARAMETER Domain
 	Create the host in the specified domain, or in the default domain, if unspecified.
 .PARAMETER FCWWN
 	Set WWNs for the host.
-.PARAMETER ForceTearDown
-	If set to true, forces tear down of low-priority VLUN exports.
 .PARAMETER ISCSINames
 	Set one or more iSCSI names for the host.
-.PARAMETER Location
-	The host’s location.
-.PARAMETER IPAddr
-	The host’s IP address.
-.PARAMETER OS
-	The operating system running on the host.
-.PARAMETER Model
-	The host’s model.
-.PARAMETER Contact
-	The host’s owner and contact.
+.PARAMETER NQNNames
+	Set one or more NQN names for the host.
+.PARAMETER ForceTearDown
+	If set to true, forces tear down of low-priority VLUN exports.
 .PARAMETER Comment
 	Any additional information for the host.
 .PARAMETER Persona
@@ -66,22 +41,29 @@ Function New-A9Host
 	12	AIX_ALUA
 .PARAMETER Port
 	Specifies the desired relationship between the array ports and the host for target-driven zoning. Use this option when the Smart SAN license is installed only.
+.EXAMPLE
+	New-A9Host -HostName MyHost
+
+	Creates a new host.
+.EXAMPLE
+	PS:> New-A9Host -HostName MyHost -FCWWN 51aCaEC0CABBFA6F -Persona GENERIC_ALUA
 #>
 [CmdletBinding()]
-Param(	[Parameter()]	[String]	$HostName,
-		[Parameter()]   [String]	$Domain,
-		[Parameter()]	[String[]]	$FCWWN,
-		[Parameter()]	[Boolean]	$ForceTearDown,
-		[Parameter()]	[String[]]	$ISCSINames,
-		[Parameter()]   [String]	$Location,
-		[Parameter()]	[String]	$IPAddr,
-		[Parameter()]   [String]	$OS,
-		[Parameter()]	[String]	$Model,
-		[Parameter()]	[String]	$Contact,
-		[Parameter()]   [String]	$Comment,
+Param(	[Parameter()]							[String]	$HostName,
+		[Parameter()]							[String]	$IPAddr,
+		[Parameter(ParameterSetName='FC')]		[String[]]	$FCWWN,
+		[Parameter(ParameterSetName='iSCSI')]	[String[]]	$ISCSINames,
+		[Parameter(ParameterSetName='NQN')]		[String[]]	$NQNNames,
 		[Parameter()][ValidateSet('WINDOWS','GENERIC','GENERIC_ALUA','GENERIC_LEGACY','HPUX_LEGACY','AIX_LEGACY','EGENERA','ONTAP_LEGACY','VMWARE','OPENVMS','HPUX')]
-						[String]	$Persona,
-		[Parameter()]	[String[]]	$Port
+												[String]	$Persona,
+		[Parameter()]							[object[]]	$Port,
+		[Parameter()]							[String]	$OS,
+		[Parameter()]							[String]	$Model,
+		[Parameter()]							[String]	$Contact,
+		[Parameter()]							[String]	$Location,
+		[Parameter()]							[String]	$Comment,		
+		[Parameter()]							[String]	$Domain,
+		[Parameter()]							[Boolean]	$ForceTearDown
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -90,21 +72,26 @@ Process
 {	$body = @{}    
     $body["name"] = "$($HostName)"
     If ($Domain)  		{	$body["domain"] = "$($Domain)"    	}
-    If ($FCWWN)    		{	$body["FCWWNs"] = $FCWWN    		} 
-	If ($ForceTearDown)	{$body["forceTearDown"] = $ForceTearDown}
+	If ($FCWWN)    		{	$body["FCWWNs"] = @($FCWWN)    		} 
+	# If ($Port)     		{	$body["port"] = @("0:3:3") }
+	
+	If ($ForceTearDown)	{	$body["forceTearDown"] = $ForceTearDown}
 	If ($ISCSINames)	{	$body["iSCSINames"] = $ISCSINames	}
 	$PersonaHash = @{ 'GENERIC' = 1;'GENERIC_ALUA'=2;'GENERIC_LEGACY'=3;'HPUX_LEGACY'=4;'AIX_LEGACY'=5;'EGENERA'=6;'ONTAP_LEGACY'=7;'VMWARE'=8;'OPENVMS'=9;'HPUX'=10; 'WINDOWS'=11}
-	if($Persona)		{	$body['persona'] = $PersonaHash[$Persona] }
-	If ($Port)     		{	$body["port"] = $Port    			}
+	if ($Persona)		{	$body['persona'] = $PersonaHash[$Persona] }
+	# If ($Port)     		{	$body["port"] = $Port    			}
+	# BElow are the Descriptors
+	
 	$DescriptorsBody = @{}   
-	If ($Location)		{	$DescriptorsBody["location"] = "$($Location)"   }
 	If ($IPAddr) 		{	$DescriptorsBody["IPAddr"] = "$($IPAddr)"	    }
 	If ($OS)  			{	$DescriptorsBody["os"] = "$($OS)" 				}
 	If ($Model) 		{	$DescriptorsBody["model"] = "$($Model)"    		}
 	If ($Contact)		{	$DescriptorsBody["contact"] = "$($Contact)" 	}
 	If ($Comment)		{	$DescriptorsBody["Comment"] = "$($Comment)"		}
+	If ($Location)		{	$DescriptorsBody["location"] = "$($Location)"   }
 	if($DescriptorsBody.Count -gt 0){	$body["descriptors"] = $DescriptorsBody}
-    $Result = $null
+    
+	$Result = $null
     $Result = Invoke-A9API -uri '/hosts' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
@@ -246,24 +233,26 @@ Function Update-A9Host
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory)]    [String]	$HostName,
-	[Parameter()]    [String]	$ChapName,
-	[Parameter()] 	[int]		$ChapOperationMode,
-	[Parameter()]    [Switch]	$ChapRemoveTargetOnly,
-	[Parameter()]    [String]	$ChapSecret,
-	[Parameter()]    [Switch]	$ChapSecretHex,
+	[Parameter(Mandatory)]  [String]	$HostName,
+	[Parameter()]    		[String]	$ChapName,
+	[Parameter()] 			[int]		$ChapOperationMode,
+	[Parameter()]    		[Switch]	$ChapRemoveTargetOnly,
+	[Parameter()]    		[String]	$ChapSecret,
+	[Parameter()]    		[Switch]	$ChapSecretHex,
 	[Parameter()]
-    [ValidateSet('INITIATOR','TARGET')]		[String]	$ChapOperation,
-	[Parameter()]    [String]	$Descriptors,
-	[Parameter()]    [String[]]	$FCWWN,
-	[Parameter()]    [Switch]	$ForcePathRemoval,
-	[Parameter()]    [String[]]	$iSCSINames,
-	[Parameter()]	[String]	$NewName,
+    [ValidateSet('INITIATOR','TARGET')]		
+							[String]	$ChapOperation,
+	[Parameter()]    		[String]	$Descriptors,
+	[Parameter()]    		[String[]]	$FCWWN,
+	[Parameter()]    		[Switch]	$ForcePathRemoval,
+	[Parameter()]    		[String[]]	$iSCSINames,
+	[Parameter()]			[String]	$NewName,
 	[Parameter()]
-	[ValidateSet('ADD','REMOVE')]			[String]	$PathOperation,
+	[ValidateSet('ADD','REMOVE')]			
+							[String]	$PathOperation,
 	[Parameter()]
 	[ValidateSet('GENERIC','GENERIC_ALUA','GENERIC_LEGACY','HPUX_LEGACY','AIX_LEGACY','EGENERA','ONTAP_LEGACY','VMWARE','OPENVMS','HPUX')]
-											[String]	$Persona
+							[String]	$Persona
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -275,7 +264,7 @@ Process
 	If($ChapRemoveTargetOnly) 		{	$body["chapRemoveTargetOnly"] = $true    		}
 	If($ChapSecret) 				{	$body["chapSecret"] = "$($ChapSecret)"    		}
 	If($ChapSecretHex) 				{	$body["chapSecretHex"] = $true    				}
-	$ChapHash=@{'INITIATOR'=1;'TARGET'=2}
+										$ChapHash=@{'INITIATOR'=1;'TARGET'=2}
 	If($ChapOperation) 				{	$body["chapOperation"]=$ChapHash[$ChapOperation]}
 	If($Descriptors) 				{	$body["descriptors"] = "$($Descriptors)"    	}
 	If($FCWWN) 						{	$body["FCWWNs"] = $FCWWN    					}
@@ -292,8 +281,8 @@ Process
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
-			if($NewName)	{	Get-Host_WSAPI -HostName $NewName	}
-			else			{	Get-Host_WSAPI -HostName $HostName	}
+			if($NewName)	{	Get-A9Host -HostName $NewName	}
+			else			{	Get-A9Host -HostName $HostName }
 		}
 	else
 		{	Write-Error "Failure:  While Updating Host : $HostName." 
@@ -310,12 +299,12 @@ Function Remove-A9Host
 .DESCRIPTION
 	Remove a Host. Any user with Super or Edit role, or any role granted host_remove permission, can perform this operation. Requires access to all domains.
 .EXAMPLE    
-	PS:> Remove-Host_WSAPI -HostName MyHost
+	PS:> Remove-Host -HostName MyHost
 .PARAMETER HostName 
 	Specify the name of Host to be removed.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory = $true)]	[String]$HostName
+Param(	[Parameter(Mandatory)]	[String]	$HostName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'

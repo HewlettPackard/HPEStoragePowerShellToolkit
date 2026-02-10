@@ -105,52 +105,44 @@ Function Confirm-A9LogicalDisk
 .SYNOPSIS
 	Perform validity checks of data on logical disks (LD).
 .DESCRIPTION
-	The command executes consistency checks of data on LDs in the event of an uncontrolled 
-	system shutdown and optionally repairs inconsistent LDs.
-.PARAMETER ModifyError
-	Specifies that if errors are found they are either modified so they are valid ($true) or left 
-	unmodified ($false). If not specified, errors are left unmodified ($false).
+	The command executes consistency checks of data on Logical Disks in the event of an uncontrolled 
+	system shutdown and optionally repairs inconsistent Logical Disks.
+.PARAMETER FixError
+	Specifies that if errors are found they are fixed instead of the default behaviour which is to only report.
 .PARAMETER Progress
-	Poll sysmgr to get ldck report.
+	Poll the system manager to get ldck report.
 .PARAMETER Recover
 	Attempt to recover the chunklet specified by giving physical disk (<pdid>) and the chunklet's position on 
-	that disk (<pdch>). If this options is specified, the ModifyError option must be specified as well.
+	that disk (<pdch>). The format will look like PhysicalDiskID:PhysicalDiskChunklet i.e. 1032:10
 .PARAMETER RAIDSet
 	Check only the specified RAID set. You must supply the RAID set number
 .PARAMETER LD_Name
-	Requests that the integrity of a specified LD is checked. This specifier can be repeated to execute validity checks on multiple LDs.
+	Requests that the integrity of a specified LD is checked.
 .NOTES
-	Authority: Super, Service	
-		Any role granted the ld_check right
-	Usage:
-	- Requires access to all domains.
-	- Repairing LDs refers to making LDs consistent.
-	- Defines consistency for RAID-6 as: parity is consistent with the data in the set.
-	- Using the -recover option allows one LD only and requires use of the-y option.
-	- Enter the checkld command on any LD, whether started or not.
 
+	Usage:
+	- Using the -recover option allows one LD only
 	This command requires a SSH type connection.
 #>
-[CmdletBinding()]
+[CmdletBinding(DefaultParameterSetName('default'))]
 param(
-	[Parameter()]	[Boolean]	$ModifyError,
-	[Parameter()]	[switch]	$Progress,
-	[Parameter()]	[String]	$Recover,
-	[Parameter()]	[String]	$RAIDSet,
-	[Parameter(Mandatory=$True)]	[String]	$LD_Name
+	[Parameter(mandatory,parameterset='fix')]		[switch]	$FixError,
+	[Parameter(mandatory,parameterset='report')]	[switch]	$Progress,
+	[Parameter(mandatory,parameterset='recover')]	[String]	$Recover,
+	[Parameter()]						[String]	$RAIDSet,
+	[Parameter(Mandatory)]				[String]	$LD_Name
 )
 Begin
 	{	Test-A9Connection -ClientType 'SshClient'
 	}
 PROCESS
 	{	$Cmd = " checkld "
-		if($ModifyError) {	$Cmd += " -y " }
-		else			{	$Cmd += " -n " }
-		if($Progress)	{	$Cmd += " -progress " }
-		if($Recover -and $ModifyError)	
-						{	$Cmd += " -recover $Recover " }
-		if($RAIDSet)	{	$Cmd += " -rs $Rs " }
-		if($LD_Name)	{	$Cmd += " $LD_Name "}
+		if($FixError) 		{	$Cmd += " -y " }
+		else				{	$Cmd += " -n " }
+		if($Progress)		{	$Cmd += " -progress " }
+		if($Recover)		{	$Cmd += " -y -recover $Recover " }
+		if($RAIDSet)		{	$Cmd += " -rs $Rs " }
+		if($LD_Name)		{	$Cmd += " $LD_Name "}
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 		Return $Result
 	}
@@ -409,7 +401,7 @@ end
 	}
 }
 
-Function Get-A9Space
+Function Get-A9Space_CLI
 {
 <#
 .SYNOPSIS
@@ -417,11 +409,11 @@ Function Get-A9Space
 .DESCRIPTION
     Displays estimated free space for logical disk creation.
 .EXAMPLE
-    PS:> Get-A9Space
+    PS:> Get-A9Space_CLI
 
 	Displays estimated free space for logical disk creation.
 .EXAMPLE
-    PS:> Get-A9Space -RaidType r1
+    PS:> Get-A9Space_CLI -RaidType r1
 		
 	Example displays the estimated free space for a RAID-1 logical disk:
 .PARAMETER cpgName
@@ -436,37 +428,37 @@ Function Get-A9Space
 	Specifies that free space history over time for CPGs specified.
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-	PS:> Get-A9Space -cpgName 'rancher2023'
 
-	Name         : rancher2023
-	RawFree(MiB) : 13759040
-	LDFree(MiB)  : 11007232
-	OPFree(MiB)  : -
-	Base(MiB)    : 374784
-	Snp(MiB)     : 5120
-	Free(MiB)    : 13056
-	Total(MiB)   : 392960
-	Compact      : 7.64
-	Dedup        : -
-	Compress     : -
-	DataReduce   : -
-	Overprov     : 0.23
 .EXAMPLE
-	PS:> get-a9space
+	PS:> get-a9space_CLI
 
 	RawFree  UsableFree
 	-------  ----------
 	55307064 43016610
 .EXAMPLE
-	PS:> get-a9space -cpg SSD_r6 -History | format-table *
+	PS:> get-a9space_cli -cpgName SSD_r6
+
+	CPGName              : SSD_r6
+	EstFree_RawFree(MiB) : 184612836
+	EstFree_LDFree(MiB)  : 112818957
+	EstFree_OPFree(MiB)  : -
+	Used(MiB)            : 23551500
+	Free(MiB)            : 23111025
+	Total(MiB)           : 46662525
+	Compact              : 6.52
+	DeDup                : 1.08
+	Compress             : 2.08
+	DataReduce           : 2.21
+	OverProv             : 14.41
+.EXAMPLE
+	PS:> get-a9space_CLI -cpg SSD_r6 -History | format-table *
 
 	TimeMonth TimeDay TimeHMS  HrsAgo EstFree_RawFree EstFree_LDFree EstFree_OPFree RawFree_ReduceRatePerHour LDFree_ReduceRatePerHour Used     Free     Total    Compact Dedup Compress DataReduce Overprov
 	--------- ------- -------  ------ --------------- -------------- -------------- ------------------------- ------------------------ ----     ----     -----    ------- ----- -------- ---------- --------
 	Feb       08      18:39:52 0      55307064        43016610       -              -                         -                        3782100  19293225 23075325 15.63   1.01  0.04     1.18       0.62
 	Feb       08      03:37:07 15     66350964        51606310       -              734017                    570902                   8864625  5017425  13882050 6.50    1.01  0.04     1.18       0.62
 .EXAMPLE
-	PS:> get-a9space -cpg SSD_r6 | format-table *
+	PS:> get-a9space_CLI -cpg SSD_r6 | format-table *
 
 	CPGName EstFree_RawFree(MiB) EstFree_LDFree(MiB) EstFree_OPFree(MiB) Used(MiB) Free(MiB) Total(MiB) Compact DeDup Compress DataReduce OverProv
 	------- -------------------- ------------------- ------------------- --------- --------- ---------- ------- ----- -------- ---------- --------
@@ -523,225 +515,6 @@ end{	$tempFile = [IO.Path]::GetTempFileName()
 		
 	}
 }
-
-Function Get-A9VvList_CLI
-{
-<#
-.SYNOPSIS
-    The Get-VvList command displays information about all Virtual Volumes (VVs) or a specific VV in a system. 
-.DESCRIPTION
-    The Get-VvList command displays information about all Virtual Volumes (VVs) or a specific VV in a system.
-.PARAMETER Listcols
-	List the columns available to be shown in the -showcols option described below
-.PARAMETER D
-	Displays detailed information about the VVs.  The following columns are shown:
-	Id Name Rd Mstr Prnt Roch Rwch PPrnt PBlkRemain VV_WWN CreationTime Udid
-.PARAMETER Pol
-	Displays policy information about the VVs. The following columns
-	are shown: Id Name Policies
-.PARAMETER Space
-	Displays Logical Disk (LD) space use by the VVs.  The following columns are shown:
-	Id Name Prov Compr Dedup Type Adm_Rsvd_MB Adm_Used_MB Snp_Rsvd_MB Snp_Used_MB Snp_Used_Perc Warn_Snp_Perc Limit_Snp_Perc Usr_Rsvd_MB
-	Usr_Used_MB Usr_Used_Perc Warn_Usr_Perc Limit_Usr_Perc Tot_Rsvd_MB Tot_Used_MB VSize_MB Host_Wrt_MB Compaction Compression
-
-	Note: For snapshot (vcopy) VVs, the Adm_Used_MB, Snp_Used_MB, Usr_Used_MB and the corresponding _Perc columns have a '*' before
-	the number for two reasons: to indicate that the number is an estimate that must be updated using the updatesnapspace command, and to indicate
-	that the number is not included in the total for the column since the corresponding number for the snapshot's base VV already includes that number.
-.PARAMETER RawSpace
-	Displays raw space use by the VVs.  The following columns are shown: Id Name Prov Compr Dedup Type Adm_RawRsvd_MB Adm_Rsvd_MB Snp_RawRsvd_MB
-	Snp_Rsvd_MB Usr_RawRsvd_MB Usr_Rsvd_MB Tot_RawRsvd_MB Tot_Rsvd_MB VSize_MB
-.PARAMETER Zone
-	Displays mapping zone information for VVs. The following columns are shown:
-	Id Name Prov Compr Dedup Type VSize_MB Adm_Zn Adm_Free_Zn Snp_Zn Snp_Free_Zn Usr_Zn Usr_Free_Zn
-.PARAMETER G
-	Displays the SCSI geometry settings for the VVs.  The following columns are shown: Id Name SPT HPC SctSz
-.PARAMETER Alert
-	Indicates whether alerts are posted on behalf of the VVs. The following columns are shown:
-	Id Name Prov Compr Dedup Type VSize_MB Snp_Used_Perc Warn_Snp_Perc Limit_Snp_Perc Usr_Used_Perc Warn_Usr_Perc Limit_Usr_Perc
-	Alert_Adm_Fail_Y Alert_Snp_Fail_Y Alert_Snp_Wrn_Y Alert_Snp_Lim_Y Alert_Usr_Fail_Y Alert_Usr_Wrn_Y Alert_Usr_Lim_Y
-.PARAMETER AlertTime
-	Shows times when alerts were posted (when applicable). The following columns are shown:
-	Id Name Alert_Adm_Fail Alert_Snp_Fail Alert_Snp_Wrn Alert_Snp_Lim Alert_Usr_Fail Alert_Usr_Wrn Alert_Usr_Lim
-.PARAMETER CPProg
-	Shows the physical copy and promote progress. The following columns are shown:
-	Id Name Prov Compr Dedup Type CopyOf VSize_MB Copied_MB Copied_Perc
-.PARAMETER CpgAlloc
-	Shows CPGs associated with each VV.  The following columns are shown: Id Name Prov Compr Dedup Type UsrCPG SnpCPG
-.PARAMETER State
-	Shows the detailed state information for the VVs.  The following columns are shown: Id Name Prov Compr Dedup Type State Detailed_State SedState
-.PARAMETER Hist
-	Shows the history information of the VVs. The following columns are shown:
-	Id Name Prov Compr Dedup Type CreationTime RetentionEndTime ExpirationTime SpaceCalcTime Comment
-.PARAMETER RCopy
-	This option appends two columns, RcopyStatus and RcopyGroup, to any of the display options above.
-.PARAMETER NoTree
-	Do not display VV names in tree format. Unless either the -notree or the -sortcol option described below
-	are specified, the VVs are ordered and the  names are indented in tree format to indicate the virtual copy snapshot hierarchy.
-.PARAMETER Expired
-	Show only VVs that have expired.
-.PARAMETER Retained
-	Shows only VVs that have a retention time.
-.PARAMETER Failed
-	Shows only failed VVs.
-.PARAMETER Domain
-    Shows only VVs that are in domains with names matching one or more of the specified domain_name or patterns. This option does not allow
-	listing objects within a domain of which the user is not a member.
-.PARAMETER ShowCols 
-    Explicitly select the columns to be shown using a comma-separated list of column names.  For this option the full column names are shown in the header.
-    Run 'showvv -listcols' to list the available columns.
-    Run 'clihelp -col showvv' for a description of each column.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-	PS:> Get-A9VvList | format-table *
-
-	Id   Name             Prov Compr Dedup Type CopyOf BsId Rd Detailed_State
-	--   ----             ---- ----- ----- ---- ------ ---- -- --------------
-	2    .mgmtdata        full NA    NA    base ---    2    RW normal
-	2047 .shared.SSD_r6_0 dds  v2    NA    base ---    2047 RW normal
-	2048 .shared.SSD_r6_1 dds  v2    NA    base ---    2048 RW normal
-	2049 .shared.SSD_r6_2 dds  v2    NA    base ---    2049 RW normal
-
-.EXAMPLE	
-	PS:> Get-A9VvList -space | format-table *
-
-	Id   Name             Prov Compr DeDupe Type Used(MiB) Rsvd(MiB) HostWr VSize
-	--   ----             ---- ----- ------ ---- --------- --------- ------ -----
-	2047 .shared.SSD_r6_0 dds  v2    NA     base 314       6300      --     4194304
-	2048 .shared.SSD_r6_1 dds  v2    NA     base 310       8400      --     4194304
-	2049 .shared.SSD_r6_2 dds  v2    NA     base 310       8400      --     4194304
-.EXAMPLE	
-	PS:> Get-A9VvList_CLI -showcols 'Type,Name,Dedup' | ft *
-
-	Type Name             Dedup
-	---- ----             -----
-	base .mgmtdata        --
-	base .shared.SSD_r6_0 --
-	base .shared.SSD_r6_1 --
-	base elastic-07       1.08
-	base elastic-12       1.02
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding(DefaultParameterSetName='default')]
-	param(
-		[Parameter(parametersetname='listcols',mandatory)]	[switch]	$Listcols,
-		[Parameter(parametersetname='Details')]				[switch]	$Details,
-		[Parameter(parametersetname='Policy')]				[switch]	$Pol,
-		[Parameter(parametersetname='Space')]				[switch]	$Space,
-		[Parameter(parametersetname='RawSpace')]			[switch]	$RawSpace,
-		[Parameter(parametersetname='Zone')]				[switch]	$Zone,
-		[Parameter(parametersetname='Geometry')]			[switch]	$Geometry,
-		[Parameter(parametersetname='Alert')]				[switch]	$Alert,
-		[Parameter(parametersetname='AlertTime')]			[switch]	$AlertTime,
-		[Parameter(parametersetname='CPProg')]				[switch]	$CPProg,	
-		[Parameter(parametersetname='CPGAlloc')]			[switch]	$CpgAlloc,	
-		[Parameter(parametersetname='State')]				[switch]	$State,	
-		[Parameter(parametersetname='Hist')]				[switch]	$Hist,	
-		[Parameter(parametersetname='RCopy')]				[switch]	$RCopy,	
-		[Parameter(parametersetname='NoTree')]				[switch]	$NoTree,	
-		[Parameter(parametersetname='default')]				[String]	$Domain,	
-		[Parameter(parametersetname='default')]				[String]	$vvName,
-		[Parameter()]										[String]	$ShowCols,
-		[Parameter()]										[switch]	$ShowRaw
-	)	
-Begin
-	{	Test-A9Connection -ClientType 'SshClient'
-	}	
-process	
-	{	$GetvVolumeCmd = "showvv "
-		if ($Listcols)	{	$GetvVolumeCmd += "-listcols "
-							$Result = Invoke-A9CLICommand -cmds  $GetvVolumeCmd
-							return $Result				
-						}
-		if($Details)	{	$GetvVolumeCmd += "-d "	}	
-		if($Pol)		{	$GetvVolumeCmd += "-pol "	}
-		if($Space)		{	$GetvVolumeCmd += "-space "	}	
-		if($RawSpace)	{	$GetvVolumeCmd += "-r "	}
-		if($Zone)		{	$GetvVolumeCmd += "-zone "	}
-		if($Geometry)	{	$GetvVolumeCmd += "-g "	}
-		if($Alert)		{	$GetvVolumeCmd += "-alert "	}
-		if($AlertTime)	{	$GetvVolumeCmd += "-alerttime "	}
-		if($CPProg)		{	$GetvVolumeCmd += "-cpprog "	}
-		if($CpgAlloc)	{	$GetvVolumeCmd += "-cpgalloc "	}
-		if($State)		{	$GetvVolumeCmd += "-state "	}
-		if($Hist)		{	$GetvVolumeCmd += "-hist "	}
-		if($RCopy)		{	$GetvVolumeCmd += "-rcopy "	}
-		if($NoTree)		{	$GetvVolumeCmd += "-notree "	}
-		if($Domain)		{	$GetvVolumeCmd += "-domain $Domain "	}
-		if($ShowCols)	{	$GetvVolumeCmd += "-showcols $ShowCols "	}	
-		if ($vvName)	{	$GetvVolumeCmd += " $vvName"	}
-		$Result = Invoke-A9CLICommand -cmds  $GetvVolumeCmd
-	}
-end
-	{	if ( $ShowRaw ) { return $Result }
-		if($Result -match "no vv listed")	
-			{	write-warning "FAILURE : No Results found. To see details choose the ShowRaw Option."
-				return
-			}
-		if ( $Result.Count -gt 1)
-			{	if ( $hist ) { return $result }
-				$tempFile = [IO.Path]::GetTempFileName()
-				if ($Pol )
-					{	$CustomHeader = (($Result[0].split(' ')).trim()).trim('-') | where-object { $_ -ne '' }
-						foreach ($s in  $Result[1..($Result.count-3)] )
-							{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
-								Add-Content -Path $tempFile -Value $s
-							}
-						$returndata = Import-Csv -Delimiter "Z" -header $CustomHeader $tempFile
-						Remove-Item $tempFile
-						return $returndata
-					}
-				if ($PSBoundParameters.count -lt 1 -or $Geometry -or $CPProg -or $CPGAlloc -or $state -or $rcopy -or $NoTree -or $vvName -or $ShowCols)
-					{	$s = ( (($Result[0].split(' ')).trim() ).trim('-') | where-object { $_ -ne '' } ) -join ','
-						$StartIndex=1
-						$EndIndex=$Result.count-3
-					}
-				if ($Details)
-					{	$s = 'Id,Name,Rd,Mstr,Prnt,Roch,Rwch,PPrnt,SPrnt,PBlkRemain,VV_WWN,CreationMonth,CreationDat,CreationTime,Udid'
-						$StartIndex=1
-						$EndIndex=$Result.count-3
-					}
-				if ($Zone)
-					{	$s = 'Id,Prov,Compr,DeDupe,Type,VVSize(MiB),Zn(adm),Free_Zn(Adm),Zn(Data),Free_Zn(Data)'
-						$StartIndex=2
-						$EndIndex=$Result.count-3
-					}
-				if ($Alert)
-					{	$s = @('Id,Name,Prov,Compr,DeDupe,Type,VVSize(MiB),Rsvd(%VSize),Wrn(%VSize),Lim(VSize),Fail(Adm(Alerts)),Fail(Data(Alerts)),Wrn(Data(Alerts)),Lim(Data(Alerts))')
-						$StartIndex=3
-						$EndIndex=$Result.count-3
-					}
-				if ($AlertTime)
-					{	$s = ( @('Id','Name','Fasl(adm(AlertTime)','Fail(Data(AlertTime))','Wrn(Data(AlertTIme))','Lim(Data(AlertTime))') ) -join ','
-						$StartIndex=3
-						$EndIndex=$Result.count-3
-					}
-				if ($Space)
-					{	$s = 'Id,Name,Prov,Compr,DeDupe,Type,Used(MiB),Rsvd(MiB),HostWr,VSize,Used(%VSize),Wrn(%VSize),Lim(%VSize),Used(MiB(Branch)),VSize(MiB(Branch)),Used(%VSize(Branch)),Compact(Efficiency),Compress(Efficiency)'
-						$StartIndex=4
-						$EndIndex=$Result.count-3
-					}
-				if ($RawSpace)
-					{	$s = ((($Result[1].split(' ')).trim()).trim('-') | where-object { $_ -ne '' } ) -join ','
-						$StartIndex=2
-						$EndIndex=$Result.count-3
-					}
-				Add-Content -Path $tempFile -Value $s
-				foreach ($s in  $Result[$StartIndex..$EndIndex] )
-					{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' }) -join ','
-						Add-Content -Path $tempFile -Value $s
-					}
-				$returndata = Import-Csv $tempFile
-				Remove-Item $tempFile
-				return $returndata
-			}	
-		else{	write-warning "FAILURE : No Results found"
-				return $result	
-			}	
-	}
-}
-
 
 Function Import-A9Vv
 {
@@ -846,201 +619,6 @@ process
 	}
 } 
 
-Function New-A9Vv_CLI
-{
-<#
-.SYNOPSIS
-    Creates a vitual volume.
-.DESCRIPTION
-	Creates a vitual volume.
-
-.PARAMETER vvName 
-    Specify new name of the virtual volume
-.PARAMETER Size 
-    Specify the size of the new virtual volume. Valid input is: 1 for 1 MB , 1g or 1G for 1GB , 1t or 1T for 1TB
-.PARAMETER CPGName
-    Specify the name of CPG
-.PARAMETER Template
-	Use the options defined in template <tname>.  
-.PARAMETER Volume_ID
-	Specifies the ID of the volume. By default, the next available ID is chosen.
-.PARAMETER Count
-	Specifies the number of identical VVs to create. 
-.PARAMETER Shared
-	Specifies that the system will try to share the logical disks among the VVs. 
-.PARAMETER Wait
-	If the command would fail due to the lack of clean space, the -wait
-.PARAMETER vvSetName
-    Specify the name of a volume set. If it does not exist, the command will also create new volume set.
-.PARAMETER minalloc	
-	This option specifies the default allocation size (in MB) to be set
-.PARAMETER Snp_aw
-	Enables a snapshot space allocation warning. A warning alert is generated when the reserved snapshot space of the VV exceeds the indicated percentage of the VV size.
-.PARAMETER Snp_al
-	Sets a snapshot space allocation limit. The snapshot space of the VV is prevented from growing beyond the indicated percentage of the virtual volume size.
-.PARAMETER Comment
-	Specifies any additional information up to 511 characters for the volume.
-.PARAMETER tdvv
-	Deprecated. Should use -dedup.
-.PARAMETER tpvv
-	Specifies that the volume should be a thinly provisioned volume.
-.PARAMETER snp_cpg 
-	Specifies the name of the CPG from which the snapshot space will be allocated.
-.PARAMETER sectors_per_track
-	Defines the virtual volume geometry sectors per track value that is reported to the hosts through the SCSI mode pages. The valid range is
-	between 4 to 8192 and the default value is 304.
-.PARAMETER minalloc 
-	This option specifies the default allocation size (in MB) to be set. Allocation size specified should be at least (number-of-nodes * 256) and
-	less than the CPG grow size.
-.PARAMETER heads_per_cylinder
-	Allows you to define the virtual volume geometry heads per cylinder value that is reported to the hosts though the SCSI mode pages. The
-	valid range is between 1 to 255 and the default value is 8.
-.PARAMETER snp_aw
-	Enables a snapshot space allocation warning. A warning alert is generated when the reserved snapshot space of the VV exceeds the indicated percentage of the VV size.
-.PARAMETER snp_al
-	Sets a snapshot space allocation limit. The snapshot space of the VV is prevented from growing beyond the indicated
-	percentage of the virtual volume size.
-.EXAMPLE	
-	PS:> New-A9Vv_CLI
-.EXAMPLE
-	PS:> New-A9Vv_CLI -vvName AVV
-.EXAMPLE
-	PS:> New-A9Vv_CLI -vvName AVV -CPGName ACPG
-.EXAMPLE
-	PS:> New-A9Vv_CLI -vvName XX -CPGName ZZ
-.EXAMPLE
-	PS:> New-A9Vv_CLI -vvName AVV -CPGName ZZ
-.EXAMPLE
-	PS:> New-A9Vv_CLI -vvName AVV1 -CPGName ZZ -Force
-.EXAMPLE
-	PS:> New-A9Vv_CLI -vvName AVV -CPGName ZZ -Force -tpvv
-.EXAMPLE
-	PS:> New-A9Vv_CLI -vvName AVV -CPGName ZZ -Force -Template Test_Template
-.EXAMPLE
-    PS:> New-A9Vv_CLI -vvName PassThru-Disk -Size 100g -CPGName HV -vvSetName MyVolumeSet
-
-	The command creates a new volume named PassThru-disk of size 100GB.
-	The volume is created under the HV CPG group and will be contained inside the MyvolumeSet volume set.
-	If MyvolumeSet does not exist, the command creates a new volume set.	
-.EXAMPLE
-    PS:> New-A9Vv_CLI -vvName PassThru-Disk1 -Size 100g -CPGName MyCPG -tpvv -minalloc 2048 -vvSetName MyVolumeSet 
-	
-	The command creates a new thin provision volume named PassThru-disk1 of size 100GB.
-	The volume is created under the MyCPG CPG group and will be contained inside the MyvolumeSet volume set. If MyvolumeSet does not exist, the command creates a new volume set and allocates minimum 2048MB.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory)]			[String]	$vvName,
-		[Parameter()]	[String]	$Size="1G", 	# Default is 1GB
-		[Parameter(Mandatory)]	[String]    $CPGName,		
-		[Parameter()]	[String]    $vvSetName,
-		[Parameter()]	[String]    $Template,
-		[Parameter()]	[String]    $Volume_ID,
-		[Parameter()]	[String]    $Count,
-		[Parameter()]	[String]    $Wait,
-		[Parameter()]	[String]    $Comment,
-		[Parameter()]	[Switch]	$Shared,
-		[Parameter()]	[Switch]	$tpvv,
-		[Parameter()]	[Switch]	$tdvv,
-		[Parameter()]	[Switch]	$Snp_Cpg,
-		[Parameter()]	[String]    $Sectors_per_track,
-		[Parameter()]	[String]    $Heads_per_cylinder,
-		[Parameter()]	[String]    $minAlloc,
-		[Parameter()]	[String]    $Snp_aw,
-		[Parameter()]	[String]    $Snp_al
-	)	
-Begin	
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process	
-{	if ( !( Test-A9CLIObject -objectType 'cpg' -objectName $CPGName -SANConnection $SANConnection))
-		{	write-verbose " CPG $CPGName does not exist. Please use New-CPG to create a CPG before creating vv"  
-			return "FAILURE : No cpg $cpgName found"
-		}		
-	## Check vv Name . Create if necessary
-	if (Test-A9CLIObject -objectType 'vv' -objectName $vvName -SANConnection $SANConnection)
-		{	write-verbose " virtual Volume $vvName already exists. No action is required"
-			return "FAILURE : vv $vvName already exists"
-		}			
-	$CreateVVCmd = "createvv -f "
-	if ($minAlloc)
-		{	if(!($tpvv))	{	return "FAILURE : -minalloc optiong should not use without -tpvv"	}
-		}					
-	if ($tpvv)
-		{	$CreateVVCmd += " -tpvv "
-			if ($minAlloc)
-				{	$ps3parbuild = Get-Version -S -SANConnection $SANConnection
-					if($ps3parbuild -ge "3.2.1" -Or $ps3parbuild -ge "3.1.1")
-						{	$CreateVVCmd += " -minalloc $minAlloc"
-						}
-					else
-						{	return "FAILURE : -minalloc option not supported in the OS version: $ps3parbuild"
-						}
-				}
-		}
-	if($tdvv)	{	$CreateVVCmd +=" -tdvv "	}
-	if($Template){	$CreateVVCmd +=" -templ $Template "	}
-	if($Volume_ID){	$CreateVVCmd +=" -i $Volume_ID "	}
-	if($Count)
-		{	$CreateVVCmd +=" -cnt $Count "
-			if($Shared)
-				{	if(!($tpvv))	{	$CreateVVCmd +=" -shared "	}
-				}
-		}
-	if($Wait)
-		{	if(!($tpvv))	{	$CreateVVCmd +=" -wait $Wait "	}
-		}
-	if($Comment)			{	$CreateVVCmd +=" -comment $Comment "	}
-	if($Sectors_per_track)	{	$CreateVVCmd +=" -spt $Sectors_per_track "	}
-	if($Heads_per_cylinder)	{	$CreateVVCmd +=" -hpc $Heads_per_cylinder "}
-	if($Snp_Cpg)			{	$CreateVVCmd +=" -snp_cpg $CPGName "}
-	if($Snp_aw)				{	$CreateVVCmd +=" -snp_aw $Snp_aw "	}
-	if($Snp_al)				{	$CreateVVCmd +=" -snp_al $Snp_al "	}
-	$CreateVVCmd +=" $CPGName $vvName $Size"			
-	$Result1 = $Result2 = $Result3 = ""
-	$Result1 = Invoke-A9CLICommand -cmds  $CreateVVCmd
-	#write-host "Result = ",$Result1
-	if([string]::IsNullOrEmpty($Result1))
-		{	$successmsg += "Success : Created vv $vvName"
-		}
-	else
-		{	$failuremsg += "FAILURE : While creating vv $vvName"
-		}
-	write-verbose " Creating Virtual Name with the command --> $CreatevvCmd"  
-	# If VolumeSet is specified then add vv to existing Volume Set
-	if ($vvSetName)
-		{	## Check vvSet Name 
-			if ( !( Test-A9CLIObject -objectType 'vv set' -objectName $vvSetName -SANConnection $SANConnection))
-				{	write-verbose " Volume Set $vvSetName does not exist. Use New-vVolumeSet to create a Volume set before creating vLUN"  
-					$CreatevvSetCmd = "createvvset $vvSetName"
-					$Result2 =Invoke-A9CLICommand -cmds  $CreatevvSetCmd
-					if([string]::IsNullOrEmpty($Result2))
-						{	$successmsg += "Success : Created vvset $vvSetName"
-						}
-					else
-						{	$failuremsg += "FAILURE : While creating vvset $vvSetName"					
-						}
-					write-verbose " Creating Volume set with the command --> $CreatevvSetCmd" 
-				}
-			$AddVVCmd = "createvvset -add $vvSetName $vvName" 	## Add vv to existing Volume set
-			$Result3 = Invoke-A9CLICommand -cmds  $AddVVCmd
-			if([string]::IsNullOrEmpty($Result3))
-				{	$successmsg += "Success : vv $vvName added to vvset $vvSetName"
-				}
-			else
-				{	$failuremsg += "FAILURE : While adding vv $vvName to vvset $vvSetName"					
-				}					
-			write-verbose " Adding vv to Volume set with the command --> $AddvvCmd"
-		}
-	if(([string]::IsNullOrEmpty($Result1)) -and ([string]::IsNullOrEmpty($Result2)) -and ([string]::IsNullOrEmpty($Result3)))
-		{	return $successmsg 
-		}
-	else
-		{	return $failuremsg
-		}			 
-}
-}
 
 Function Remove-A9LogicalDisk
 {
@@ -1175,26 +753,21 @@ Function Set-A9VvSpace_CLI
 	Free SA and SD space from a VV if they are not in use.
 .DESCRIPTION
 	The command frees snapshot administration and snapshot data spaces from a Virtual Volume (VV) if they are not in use.
-.PARAMETER Pattern
-	Remove the snapshot administration and snapshot data spaces from all the virtual volumes that match any of the specified glob-style patterns.
-.PARAMETER VV_Name
-	Specifies the virtual volume name, using up to 31 characters.
+.PARAMETER VolumeName
+	Specifies the Volume name.
 .EXAMPLE
-	PS:> Set-A9VvSpace_CLI -VV_Name xxx
+	PS:> Set-A9VvSpace_CLI -VolumeName xxx
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]					[switch]	$Pattern,
-		[Parameter(Mandatory=$True)]	[String]	$VV_Name
+param(	[Parameter(Mandatory)]	[String]	$VolumeName
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
-{	$Cmd = " freespace -f "
-	if($Pattern)	{	$Cmd += " -pat "}
-	if($VV_Name)	{	$Cmd += " $VV_Name "}
+{	$Cmd = " freespace -f $VolumeName "
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1208,13 +781,23 @@ Function Show-A9LdMappingToVvs_CLI
 .DESCRIPTION
 	The command displays the mapping from a logical (LD) disk to virtual volumes (VVs).
 .PARAMETER LD_Name
-	Specifies the logical disk name.
+	Specifies the logical disk name. To obtain a list of valid logical disks, issue the Get-A9LogicalDisk
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
 	The following example displays the region of logical disk v0.usr.0 that is used for a virtual volume: 
 	
 	PS:> Show-A9LdMappingToVvs_CLI -LD_Name v0.usr.0
+.EXAMPLE
+	PS:> Show-A9LdMappingToVvs_CLI -LD_Name tp-0-sd-0.230 | format-table
+
+	Area Start(MB) Length(MB) VVId Name                                        VVSp VVOff(MB)
+	---- --------- ---------- ---- ----                                        ---- ---------
+	0    0         525        7893 HPE_VM_b9ac6dd2-52eb-4816-8cc6-d246f92f5406 data 0
+	1    525       525        7763 HPE_VM_89c1943b-fa8d-4717-8c5f-f537cab6b9fe data 0
+	2    1050      525        7763 HPE_VM_89c1943b-fa8d-4717-8c5f-f537cab6b9fe data 525
+	3    1575      525        7763 HPE_VM_89c1943b-fa8d-4717-8c5f-f537cab6b9fe data 1050
+	4    2100      525        7763 HPE_VM_89c1943b-fa8d-4717-8c5f-f537cab6b9fe data 1575
 .NOTES
 	This command requires a SSH type connection.
 #>
@@ -1308,11 +891,11 @@ Function Show-A9Template
 	Show templates.
 .DESCRIPTION
 	The command displays existing templates that can be used for Virtual Volume (VV), Logical Disk (LD) Common Provisioning Group (CPG) creation.
-.PARAMETER T
-	Specifies that the template type displayed is a VV, LD, or CPG template.
-.PARAMETER Fit
+.PARAMETER TemplateType
+	Specifies that the template type displayed is a Volume, LogicalDisk, or CPG template.
+.PARAMETER Fit80Columns
 	Specifies that the properties of the template is displayed to fit within 80 character lines.
-.PARAMETER Template_name_or_pattern
+.PARAMETER TemplateNameOrPattern
 	Specifies the name of a template, using up to 31 characters or glob-style pattern for matching multiple template names. If not specified, all templates are displayed.
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
@@ -1320,23 +903,32 @@ Function Show-A9Template
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$T,
-		[Parameter()]	[switch]	$Fit,
-		[Parameter()]	[String]	$Template_name_or_pattern,
+param(	[Parameter()]	
+		[ValidatePattern('Volume','LogicalDisk','CPG')]
+						[String]	$TemplateType,
+		[Parameter()]	[switch]	$Fit80Columns,
+		[Parameter()]	[String]	$TemplateNameOrPattern,
 		[Parameter()]	[switch]	$ShowRaw
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
+	
 }
 process 
-{	$Cmd = " showtemplate "
-	if($T)	{	$Val = "vv","cpg" ,"ld"
-				if($Val -eq $T.ToLower())
-					{	$Cmd += " -t $T "	}
-				else{	return " Illegal template type LDA, must be either vv,cpg or ld "	}
+{	if ($PersistArrayType -like 'AlletraMP-B10000') 
+		{ 	Write-warning "This command (Show-A9Template) has been depreciated in the HPE Alletra MP B10000 type arrays."
+			return 
+		}
+	$Cmd = " showtemplate "
+	if($TemplateType)
+			{	switch($TemplateType)
+					{	'Volume'		{ $Cmd += " -t vv " }
+						'LogicalDisk'	{ $Cmd += " -t ld " }
+						'CPG'			{ $Cmd += " -t cpg "}
+					}
 			}
-	if($Fit) 						{	$Cmd += " -fit " }
-	if($Template_name_or_pattern) 	{	$Cmd += " $Template_name_or_pattern " }
+	if($Fit80Columns) 					{	$Cmd += " -fit " }
+	if($TemplateNameOrPattern) 			{	$Cmd += " $TemplateNameOrPattern " }
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 }
 End
@@ -1361,134 +953,48 @@ Function Show-A9VvMappedToPD
 	Show which virtual volumes are mapped to a physical disk (or a chunklet in that physical disk).
 .DESCRIPTION
 	The command displays the virtual volumes that are mapped to a particular physical disk.
-.EXAMPLE
-	PS:> Show-A9VvMappedToPD_CLI -PD_ID 4
 .PARAMETER PD_ID
 	Specifies the physical disk ID using an integer. This specifier is not required if -p option is used, otherwise it must be used at least once on the command line.
 .PARAMETER Sum
 	Shows number of chunklets used by virtual volumes for different space types for each physical disk.
-.PARAMETER P
-	Specifies a pattern to select <PD_ID> disks. The following arguments can be specified as patterns for this option: An item is specified as an integer, a comma-separated list of integers,
-	or a range of integers specified from low to high.
-.PARAMETER Nd
-	Specifies one or more nodes. Nodes are identified by one or more integers (item). Multiple nodes are separated with a single comma
-	(e.g. 1,2,3). A range of nodes is separated with a hyphen (e.g. 0-7). The primary path of the disks must be on the specified node(s).
-.PARAMETER St
-	Specifies one or more PCI slots. Slots are identified by one or more integers (item). Multiple slots are separated with a single comma
-	(e.g. 1,2,3). A range of slots is separated with a hyphen (e.g. 0-7). The primary path of the disks must be on the specified PCI slot(s).
-.PARAMETER Pt
-	Specifies one or more ports. Ports are identified by one or more integers (item). Multiple ports are separated with a single comma
-	(e.g. 1,2,3). A range of ports is separated with a hyphen (e.g. 0-4). The primary path of the disks must be on the specified port(s).
-.PARAMETER Cg
-	Specifies one or more drive cages. Drive cages are identified by one or more integers (item). Multiple drive cages are separated with a
-	single comma (e.g. 1,2,3). A range of drive cages is separated with a hyphen (e.g. 0-3). The specified drive cage(s) must contain disks.
-.PARAMETER Mg
-	Specifies one or more drive magazines. The "1." or "0." displayed in the CagePos column of showpd output indicating the side of the
-	cage is omitted when using the -mg option. Drive magazines are identified by one or more integers (item). Multiple drive magazines
-	are separated with a single comma (e.g. 1,2,3). A range of drive magazines is separated with a hyphen(e.g. 0-7). The specified drive
-	magazine(s) must contain disks.
-.PARAMETER Pn
-	Specifies one or more disk positions within a drive magazine. Disk positions are identified by one or more integers (item). Multiple
-	disk positions are separated with a single comma(e.g. 1,2,3). A range of disk positions is separated with a hyphen(e.g. 0-3). The
-	specified position(s) must contain disks.
-.PARAMETER Dk
-	Specifies one or more physical disks. Disks are identified by one or more integers(item). Multiple disks are separated with a single
-	comma (e.g. 1,2,3). A range of disks is separated with a hyphen(e.g. 0-3).  Disks must match the specified ID(s).
-.PARAMETER Tc_gt
-	Specifies that physical disks with total chunklets greater than the number specified be selected.
-.PARAMETER Tc_lt
-	Specifies that physical disks with total chunklets less than the number specified be selected.
-.PARAMETER Fc_gt
-	Specifies that physical disks with free chunklets greater than the number specified be selected.
-.PARAMETER Fc_lt
-	Specifies that physical disks with free chunklets less than the	number specified be selected.
-.PARAMETER Devid
-	Specifies that physical disks identified by their models be selected. Models can be specified in a comma-separated list.
-	Models can be displayed by issuing the "showpd -i" command.
-.PARAMETER Devtype
-	Specifies that physical disks must have the specified device type (FC for Fast Class, NL for Nearline, SSD for Solid State Drive)
-	to be used. Device types can be displayed by issuing the "showpd" command.
-.PARAMETER Rpm
-	Drives must be of the specified relative performance metric, as shown in the "RPM" column of the "showpd" command. 
-	The number does not represent a rotational speed for the drives without spinning media (SSD). It is meant as a rough estimation of
-	the performance difference between the drive and the other drives in the system.  For FC and NL drives, the number corresponds to
-	both a performance measure and actual rotational speed. For SSD drives, the number is to be treated as a relative performance
-	benchmark that takes into account I/O's per second, bandwidth and access time.
-	Disks that satisfy all of the specified characteristics are used. For example -p -fc_gt 60 -fc_lt 230 -nd 2 specifies all the disks that
-	have greater than 60 and less than 230 free chunklets and that are connected to node 2 through their primary path.
-.PARAMETER Sortcol
-	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
-	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
-		inc:Sort in increasing order (default).
-		dec:Sort in decreasing order.
-	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted
-	by values in later columns.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
-	PS:> Show-A9VvMappedToPD_CLI -Sum -PD_ID 4
+	PS:> Show-A9VvMappedToPD_CLI -PD_ID 4
 .EXAMPLE
-	PS:> Show-A9VvMappedToPD_CLI -P -Nd 1 -PD_ID 4
+	PS:> Show-A9VvMappedToPD -PD_ID 10 -sum
+                                                                        --Chunklets---
+	PDId CagePos Type RPM VVId VVName                                       Adm Data Total
+  	10 1:11    SSD  N/A    1 .srdata                                        0    6     6
+  	10 1:11    SSD  N/A    2 .mgmtdata                                      0   21    21
+  	10 1:11    SSD  N/A  669 .shared.SSD_r6_0                               1    5     6
+  	10 1:11    SSD  N/A  670 .shared.SSD_r6_1                               0   10    10
+  	10 1:11    SSD  N/A 2963 pe_dmlvcenter8.2                               0    1     1
+  	10 1:11    SSD  N/A 5009 NOEXPORT-BM87-Vol2                             0   17    17
+  	10 1:11    SSD  N/A 5075 OLD-ARCHIVE-nfs-WL-templatelibrary             1    1     2
+  	10 1:11    SSD  N/A 5077 BM88-Vol1                                      0   71    71
+  	10 1:11    SSD  N/A 5080 BM88-Vol2                                      0   98    98
+  	10 1:11    SSD  N/A 5341 gfs2-2                                         1    4     5
+  	10 1:11    SSD  N/A 7684 OTAD-cluster1.1                                1    0     1
+  	10 1:11    SSD  N/A 8468 TestVolx                                       0    1     1
+  	10 1:11    SSD  N/A 8469 HPE_VM_22023a20-6fa5-4067-aae8-6bbef4e18ea1    1   27    28	
+  	10 1:11    SSD  N/A 8503 pvc-d92b3c64-0aa2-4e7e-bb4a-ece                0    1     1
+	--------------------------------------------------------------------------------------
+	xxx total                                                                5   97   203
+PS C:\Users\clionetti\Desktop\HPEStorage4.2>
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
-	[Parameter()]	[switch]	$Sum,
-	[Parameter()]	[switch]	$P,
-	[Parameter()]	[String]	$Nd,
-	[Parameter()]	[String]	$St,
-	[Parameter()]	[String]	$Pt,
-	[Parameter()]	[String]	$Cg,
-	[Parameter()]	[String]	$Mg,
-	[Parameter()]	[String]	$Pn,
-	[Parameter()]	[String]	$Dk,
-	[Parameter()]	[String]	$Tc_gt,
-	[Parameter()]	[String]	$Tc_lt,
-	[Parameter()]	[String]	$Fc_gt,
-	[Parameter()]	[String]	$Fc_lt,
-	[Parameter()]	[String]	$Devid,
-	[Parameter()]	[String]	$Devtype,
-	[Parameter()]	[String]	$Rpm,
-	[Parameter()]	[String]	$Sortcol,
-	[Parameter()]	[String]	$PD_ID,
-	[Parameter()]	[switch]	$ShowRaw
+	[Parameter(Mandatory)]	[String]	$PD_ID,
+	[Parameter()]			[switch]	$Sum
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
-{ 	$Cmd = " showpdvv "
-	if($Sum)		{	$Cmd += " -sum "		 		}
-	if($P)			{	$Cmd += " -p "					}
-	if($Nd)			{	$Cmd += " -nd $Nd " 			}
-	if($St)			{	$Cmd += " -st $St "				}
-	if($Pt)			{	$Cmd += " -pt $Pt "				}
-	if($Cg)			{	$Cmd += " -cg $Cg "				}
-	if($Mg)			{	$Cmd += " -mg $Mg "				}
-	if($Pn)			{	$Cmd += " -pn $Pn "				}
-	if($Dk) 		{	$Cmd += " -dk $Dk " 			}
-	if($Tc_gt)		{	$Cmd += " -tc_gt $Tc_gt "		}
-	if($Tc_lt)		{	$Cmd += " -tc_lt $Tc_lt "		}
-	if($Fc_gt)		{	$Cmd += " -fc_gt $Fc_gt "		}
-	if($Fc_lt)		{	$Cmd += " -fc_lt $Fc_lt " 		}
-	if($Devid) 		{	$Cmd += " -devid $Devid " 		}
-	if($Devtype)	{	$Cmd += " -devtype $Devtype " 	}
-	if($Rpm) 		{	$Cmd += " -rpm $Rpm " 			}
-	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " 	}
-	if($PD_ID) 		{	$Cmd += " PD_ID "			 	}
+{ 	$Cmd = " showpdvv $PD_ID "
+	if($Sum) {	$Cmd += "-sum "	}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1 -and (-not $ShowRaw) -and ( -not $Result -match "SYNTAX" ) )
-		{	if($Result -match "SYNTAX" )	{	Return $Result	}
-			$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			foreach ($S in  $Result[0..$LastItem] )
-				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
-					Add-Content -Path $tempfile -Value $s				
-				}
-			$Result = Import-Csv $tempFile 
-			Remove-Item $tempFile	
-		}
 	Return  $Result 
 }
 }
@@ -1500,22 +1006,23 @@ Function Show-A9VvMapping
 	Show mapping from the virtual volume to logical disks.
 .DESCRIPTION
 	The command displays information about how virtual volume regions are mapped to logical disks.
-.PARAMETER VV_Name
-	The virtual volume name.
+.PARAMETER VolumeName
+	The Volume name with the specified name (31 character maximum) or matches the glob-style pattern for which information is displayed. 
+	If not specified, configuration information for all virtual volumes in the system is displayed.
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$True)]	[String]	$VV_Name
+param(	[Parameter(Mandatory)]	[String]	$VolumeName
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
 {	$Cmd = " showvvmap "
-	if($VV_Name)	{	$Cmd += " $VV_Name "}
+	if($VolumeName)	{	$Cmd += " $VolumeName "}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Write-Verbose "Executing function : Show-VvMapping command -->" 
 	if($Result.count -gt 1 -and (-not $ShowRaw) -and (-not ($Result -match "SYNTAX" )))
@@ -1538,21 +1045,12 @@ Function Show-A9VvpDistribution
 .SYNOPSIS
 	Show virtual volume distribution across physical disks.
 .DESCRIPTION
-	The command displays virtual volume (VV) distribution across physical disks (PD). Use Get-A9VVList to obtain the name which is the VV_name
-.PARAMETER VV_Name
+	The command displays virtual volume (VV) distribution across physical disks (PD). Use Get-A9Vv to obtain the name which is the VolumeName
+.PARAMETER VolumeName
 	Specifies the virtual volume with the specified name (31 character maximum) or matches the glob-style pattern for which information is
-	displayed. This specifier can be repeated to display configuration information about multiple virtual volumes. This specifier is not
-	required. If not specified, configuration information for all virtual volumes in the system is displayed.
-.PARAMETER Sortcol
-	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
-	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
-		inc : Sort in increasing order (default).
-		dec : Sort in decreasing order.
-	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
+	displayed. This specifier can be repeated to display configuration information about multiple virtual volumes. 
 .EXAMPLE
-	PS:> Show-A9VvpDistribution_CLI -VV_Name Zertobm9 | format-table
+	PS:> Show-A9VvpDistribution -VolumeName Zertobm9 | format-table
 
 	Id                          Cage_Pos SA SD usr total
 	--                          -------- -- -- --- -----
@@ -1565,30 +1063,16 @@ Function Show-A9VvpDistribution
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$Sortcol,
-		[Parameter()]	[String]	$VV_Name,
-		[Parameter()]	[switch]	$ShowRaw
-)
+param(	[Parameter(Mandatory)]		[String]	$VolumeName
+	)
 Begin	
-{	Test-A9Connection -ClientType 'SshClient'
-}
+	{	Test-A9Connection -ClientType 'SshClient'
+	}
 process
-{	$Cmd = " showvvpd "
-	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol " }
-	if($VV_Name) 	{	$Cmd += " $VV_Name " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1 -and (-not $ShowRaw) -and (-not ($Result -match "SYNTAX" ) ))
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			foreach ($S in  $Result[0..$LastItem] )
-				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
-					Add-Content -Path $tempfile -Value $s				
-				}
-			$Result = Import-Csv $tempFile 
-			remove-item $tempFile	
-		}
-	Return  $Result
-}
+	{	$Cmd = " showvvpd $VolumeName"
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return  $Result
+	}
 } 
 
 Function Start-A9LD_CLI
@@ -1608,7 +1092,7 @@ Function Start-A9LD_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]					[switch]	$Override,
+param(	[Parameter()]			[switch]	$Override,
 		[Parameter(Mandatory)]	[String]	$LD_Name
 )
 Begin	
@@ -1617,7 +1101,7 @@ Begin
 process
 { 	$Cmd = " startld "
 	if($Override)	{	$Cmd += " -ovrd " }
-	if($LD_Name) 	{	$Cmd += " $LD_Name " }
+	$Cmd += " $LD_Name "
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1641,7 +1125,7 @@ Function Start-A9Vv_CLI
 #>
 [CmdletBinding()]
 param(	[Parameter()]				[switch]	$Override,
-		[Parameter(Mandatory=$True)][String]	$VV_Name
+		[Parameter(Mandatory)]		[String]	$VolumeName
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
@@ -1649,7 +1133,7 @@ Begin
 process
 {	$Cmd = " startvv "
 	if($Override)	{	$Cmd += " -ovrd "	}
-	if($VV_Name)	{	$Cmd += " $VV_Name "	}
+	$Cmd += " $VolumeName "	
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1731,19 +1215,19 @@ Function Update-A9SnapSpace_CLI
 	The command starts a non-cancelable task to update the snapshot space usage accounting. The snapshot space usage displayed by
 	"showvv -hist" is not necessarily the current usage and the SpaceCalcTime column will show when it was last calculated.  This command causes the
 	system to start calculating current snapshot space usage.  If one or more VV names or patterns are specified, only the specified VVs will be updated.
-	If none are specified, all VVs will be updated.
+.PARAMETER VolumeName
+	Specifies the virtual volume name to update. 
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$VV_Name
+param(	[Parameter(Mandatory)]	[String]	$VolumeName
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
-{	$Cmd = " updatesnapspace "
-	if($VV_Name)	{	$Cmd += " $VV_Name " }
+{	$Cmd = " updatesnapspace $VolumeName " 
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
@@ -1760,8 +1244,6 @@ Function Update-A9VvProperties_CLI
 .PARAMETER Vvname  
 	Specifies the virtual volume name or all virtual volumes that match the pattern specified, using up to 31 characters. The patterns are glob-
 	style patterns (see help on sub, globpat). Valid characters include alphanumeric characters, periods, dashes, and underscores.
-.PARAMETER Name
-	Specifies that the name of the virtual volume be changed to a new name (as indicated by the <new_name> specifier) that uses up to 31 characters.
 .PARAMETER Wwn
 	Specifies that the WWN of the virtual volume be changed to a new WWN as indicated by the <new_wwn> specifier. If <new_wwn> is set to "auto", the
 	system will automatically choose the WWN based on the system serial number, the volume ID, and the wrap counter. This option is not allowed
@@ -1773,38 +1255,6 @@ Function Update-A9VvProperties_CLI
 	Specifies that all reservation keys (i.e. registrations) and all persistent reservations on the virtual volume are cleared.
 .PARAMETER Clralua
 	Restores ALUA state of the virtual volume to ACTIVE/OPTIMIZED state. In ACTIVE/OPTIMIZED state hosts will have complete access to the volume.
-.PARAMETER Exp
-	Specifies the relative time from the current time that volume will expire. <time> is a positive integer value and in the range of 1 minute - 1825 days. 
-	Time can be specified in days, hours, or minutes.  Use "d" or "D" for days, "h" or "H" for hours, or "m" or "M" for minutes following the entered time value.
-	To remove the expiration time for the volume, enter 0 for <time>.
-.PARAMETER Comment
-	Specifies any additional information up to 511 characters for the volume. Use -comment "" to remove the comments.
-.PARAMETER Retain
-	Specifies the amount of time, relative to the current time, that the volume will be retained. <time> is a positive integer value and in the
-	range of 1 minute - 1825 days. Time can be specified in days, hours, or minutes.  Use "d" or "D" for days, "h" or "H" for hours, or "m" or "M"
-	for minutes following the entered time value.	
-	Note: If the volume is not in any domain, then its retention time cannot exceed the value of the system's VVRetentionTimeMax. The default
-	value for the system's VVRetentionTimeMax is 14 days. If the volume belongs to a domain, then its retention time cannot exceed the value of
-	the domain's VVRetentionTimeMax, if set. The retention time cannot be removed or reduced once it is set. If the volume has its retention time
-	set, it cannot be removed within its retention time. If both expiration time and retention time are specified, then the retention time cannot
-	be longer than the expiration time. This option requires the Virtual Lock license. Contact your
-	local service provider for more information.
-.PARAMETER Pol
-	Specifies the following policies that the created virtual volume follows.
-.PARAMETER Snp_cpg
-	Specifies that the volume snapshot space is to be provisioned from the specified CPG. If no snp_cpg is currently defined, 
-	or no snapshots exist for the volume, the snp_cpg may be set to any CPG.
-.PARAMETER Snp_aw
-	Enables a snapshot space allocation warning. A warning alert is generated when the reserved snapshot space of the VV exceeds the indicated percentage of the VV size.
-.PARAMETER Snp_al
-	Sets a snapshot space allocation limit. The snapshot space of the VV is prevented from growing beyond the indicated  percentage of the virtual volume size.
-	The following options can only be used on thinly provisioned volumes:
-.PARAMETER Usr_aw
-	This option enables user space allocation warning. Generates a warning alert when the user data space of the TPVV exceeds the specified
-	percentage of the virtual volume size.
-.PARAMETER Usr_al
-	Indicates the user space allocation limit. The user space of the TPVV is prevented from growing beyond the indicated percentage of the virtual
-	volume size. After this limit is reached, any new writes to the virtual volume will fail.
 .PARAMETER Spt
 	Defines the virtual volume geometry sectors per track value that is reported to the hosts through the SCSI mode pages. The valid range is
 	between 4 to 8192 and the default value is 304.
@@ -1815,10 +1265,6 @@ Function Update-A9VvProperties_CLI
 	The following example sets the policy of virtual volume vv1 to no_stale_ss.
 	
 	PS:> Update-A9VvProperties_CLI -Pol "no_stale_ss" -Vvname vv1
-.EXAMPLE
-	Use the command to change the name:
-	
-	PS:> Update-A9VvProperties_CLI setvv -name newtest test
 .EXAMPLE
 	The following example modifies the WWN of virtual volume vv1
 
@@ -1831,20 +1277,11 @@ Function Update-A9VvProperties_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$Name,
+param(	[Parameter(mandatory)]	[String]	$VolumeName,
 		[Parameter()]	[String]	$Wwn,
 		[Parameter()]	[String]	$Udid,
 		[Parameter()]	[switch]	$Clrrsv,
 		[Parameter()]	[switch]	$Clralua,
-		[Parameter()]	[String]	$Exp,
-		[Parameter()]	[String]	$Comment,
-		[Parameter()]	[String]	$Retain,
-		[Parameter()]	[String]	$Pol,
-		[Parameter()]	[String]	$Snp_cpg,
-		[Parameter()]	[String]	$Snp_aw,
-		[Parameter()]	[String]	$Snp_al,
-		[Parameter()]	[String]	$Usr_aw,
-		[Parameter()]	[String]	$Usr_al,
 		[Parameter()]	[String]	$Spt,
 		[Parameter()]	[String]	$Hpc,
 		[Parameter(Mandatory=$True)]	[String]	$Vvname
@@ -1854,24 +1291,13 @@ Begin
 }
 process
 {	$Cmd = " setvv -f "
-	if($Name)		{	$Cmd += " -name $Name " 	}
 	if($Wwn)		{	$Cmd += " -wwn $Wwn " 		}
 	if($Udid)		{	$Cmd += " -udid $Udid " 	}
 	if($Clrrsv)		{	$Cmd += " -clrrsv " 		}
 	if($Clralua)	{	$Cmd += " -clralua " 		}
-	if($Exp) 		{	$Cmd += " -exp $Exp " 		}
-	if($Comment)	{	$Cmd += " -comment $Comment "}
-	if($Retain)		{	$Cmd += " -retain $Retain " }
-	if($Pol) 		{	$Cmd += " -pol $Pol " 		}
-	if($Snp_cpg)	{	$Cmd += " -snp_cpg $Snp_cpg "}
-	if($Snp_aw) 	{	$Cmd += " -snp_aw $Snp_aw " }
-	if($Snp_al)		{	$Cmd += " -snp_al $Snp_al " }
-	if($Usr_aw)		{	$Cmd += " -usr_aw $Usr_aw "	}
-	if($Usr_al)		{	$Cmd += " -usr_al $Usr_al " }
 	if($Spt)		{	$Cmd += " -spt $Spt " 		}
 	if($Hpc)		{	$Cmd += " -hpc $Hpc " 		}
-	if($Pol)		{	$Cmd += " -pol $Pol " 		}
-	if($Vvname) 	{	$Cmd += " $Vvname " 		}
+	if($VolumeName) {	$Cmd += " $VolumeName " 	}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Write-verbose "Executing function : Update-VvProperties command -->"
 	Return $Result
@@ -1915,91 +1341,6 @@ process
 }
 }
 
-Function Set-A9Host_CLI
-{
-<#
-.SYNOPSIS
-    Add WWN or iSCSI name to an existing host.
-.DESCRIPTION
-	Add WWN or iSCSI name to an existing host.
-.PARAMETER hostName
-    Name of an existing host
-.PARAMETER Address
-    Specify the list of WWNs for the new host
-.PARAMETER iSCSI
-    If present, the address provided is an iSCSI address instead of WWN
-.PARAMETER Add
-	Add the specified WWN(s) or iscsi_name(s) to an existing host (at least one WWN or iscsi_name must be specified).  Do not specify host persona.
-.PARAMETER Domain <domain | domain_set>
-	Create the host in the specified domain or domain set.
-.PARAMETER Loc <location>
-	Specifies the host's location.
-.PARAMETER  IP <IP address>
-	Specifies the host's IP address.
-.PARAMETER  OS <OS>
-	Specifies the operating system running on the host.
-.PARAMETER Model <model>
-	Specifies the host's model.
-.PARAMETER  Contact <contact>
-	Specifies the host's owner and contact information.
-.PARAMETER  Comment <comment>
-	Specifies any additional information for the host.
-.PARAMETER  Persona <hostpersonaval>
-	Sets the host persona that specifies the personality for all ports which are part of the host set.  
-.EXAMPLE
-    PS:> Set-A9Host_CLI -hostName HV01A -Address  10000000C97B142E, 10000000C97B142F
-	Adds WWN 10000000C97B142E, 0000000C97B142F to host HV01A
-.EXAMPLE	
-	PS:> Set-A9Host_CLI -hostName HV01B  -iSCSI:$true -Address  iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com
-	Adds iSCSI  iqn.1991-06.com.microsoft:dt-391-xp.hq.3par.com to host HV01B
-.EXAMPLE
-    PS:> Set-A9Host_CLI -hostName HV01A  -Domain D_Aslam
-.EXAMPLE
-    PS:> Set-A9Host_CLI -hostName HV01A  -Add
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]		[String]	$hostName,		
-		[Parameter()][String[]]	$Address,
-		[Parameter()][Switch]    $iSCSI=$false,
-		[Parameter()][Switch]    $Add,
-		[Parameter()][String[]]  $Domain,
-		[Parameter()][String[]]	$Loc,
-		[Parameter()][String[]]	$IP,
-		[Parameter()][String[]]	$OS,
-		[Parameter()][String[]]	$Model,
-		[Parameter()][String[]]	$Contact,
-		[Parameter()][String[]]	$Comment,
-		[Parameter()][String[]]	$Persona		
-)		
-Begin
-{	Test-A9Connection -ClientType 'SshClient' 
-}
-process
-{	$SetHostCmd = "createhost -f "			 
-	if ($iSCSI)			{ 	$SetHostCmd +=" -iscsi "	}
-	if($Add)			{	$SetHostCmd +=" -add "		}
-	if($Domain)			{	$SetHostCmd +=" -domain $Domain"}
-	if($Loc)			{	$SetHostCmd +=" -loc $Loc"	}
-	if($Persona)		{	$SetHostCmd +=" -persona $Persona"	}
-	if($IP)				{	$SetHostCmd +=" -ip $IP"}
-	if($OS)				{	$SetHostCmd +=" -os $OS"	}
-	if($Model)			{	$SetHostCmd +=" -model $Model"	}
-	if($Contact)		{	$SetHostCmd +=" -contact $Contact"	}
-	if($Comment)		{	$SetHostCmd +=" -comment $Comment"	}	
-	$Addr = [string]$Address
-	$SetHostCmd +=" $hostName $Addr"
-	$Result1 = Invoke-A9CLICommand -cmds  $SetHostCmd
-	write-verbose " Setting  Host with the command --> $SetHostCmd" 
-	if([string]::IsNullOrEmpty($Result1))
-		{	return "Success : Set host $hostName with Optn_Iscsi $Optn_Iscsi $Addr "
-		}
-	else
-		{	return $Result1
-		}			
-} 
-}
 
 Function Show-A9Peer_CLI
 {
@@ -2067,251 +1408,3 @@ PROCESS
 	}
 }
 
-
-# SIG # Begin signature block
-# MIIt4gYJKoZIhvcNAQcCoIIt0zCCLc8CAQExDzANBglghkgBZQMEAgMFADCBmwYK
-# KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEAcmw1gVnzC
-# zfEf8p7RLeJDFZVtJw7a6mkSYwtv5uT0NX4eE6kMSk6OYUT+4GA0C84idYOyFVZt
-# VqqdmCMYCdxJoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
-# KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
-# Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
-# bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
-# MjUwMDAwMDBaFw0yODEyMzEyMzU5NTlaMFYxCzAJBgNVBAYTAkdCMRgwFgYDVQQK
-# Ew9TZWN0aWdvIExpbWl0ZWQxLTArBgNVBAMTJFNlY3RpZ28gUHVibGljIENvZGUg
-# U2lnbmluZyBSb290IFI0NjCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIB
-# AI3nlBIiBCR0Lv8WIwKSirauNoWsR9QjkSs+3H3iMaBRb6yEkeNSirXilt7Qh2Mk
-# iYr/7xKTO327toq9vQV/J5trZdOlDGmxvEk5mvFtbqrkoIMn2poNK1DpS1uzuGQ2
-# pH5KPalxq2Gzc7M8Cwzv2zNX5b40N+OXG139HxI9ggN25vs/ZtKUMWn6bbM0rMF6
-# eNySUPJkx6otBKvDaurgL6en3G7X6P/aIatAv7nuDZ7G2Z6Z78beH6kMdrMnIKHW
-# uv2A5wHS7+uCKZVwjf+7Fc/+0Q82oi5PMpB0RmtHNRN3BTNPYy64LeG/ZacEaxjY
-# cfrMCPJtiZkQsa3bPizkqhiwxgcBdWfebeljYx42f2mJvqpFPm5aX4+hW8udMIYw
-# 6AOzQMYNDzjNZ6hTiPq4MGX6b8fnHbGDdGk+rMRoO7HmZzOatgjggAVIQO72gmRG
-# qPVzsAaV8mxln79VWxycVxrHeEZ8cKqUG4IXrIfptskOgRxA1hYXKfxcnBgr6kX1
-# 773VZ08oXgXukEx658b00Pz6zT4yRhMgNooE6reqB0acDZM6CWaZWFwpo7kMpjA4
-# PNBGNjV8nLruw9X5Cnb6fgUbQMqSNenVetG1fwCuqZCqxX8BnBCxFvzMbhjcb2L+
-# plCnuHu4nRU//iAMdcgiWhOVGZAA6RrVwobx447sX/TlAgMBAAGjggESMIIBDjAf
-# BgNVHSMEGDAWgBSgEQojPpbxB+zirynvgqV/0DCktDAdBgNVHQ4EFgQUMuuSmv81
-# lkgvKEBCcCA2kVwXheYwDgYDVR0PAQH/BAQDAgGGMA8GA1UdEwEB/wQFMAMBAf8w
-# EwYDVR0lBAwwCgYIKwYBBQUHAwMwGwYDVR0gBBQwEjAGBgRVHSAAMAgGBmeBDAEE
-# ATBDBgNVHR8EPDA6MDigNqA0hjJodHRwOi8vY3JsLmNvbW9kb2NhLmNvbS9BQUFD
-# ZXJ0aWZpY2F0ZVNlcnZpY2VzLmNybDA0BggrBgEFBQcBAQQoMCYwJAYIKwYBBQUH
-# MAGGGGh0dHA6Ly9vY3NwLmNvbW9kb2NhLmNvbTANBgkqhkiG9w0BAQwFAAOCAQEA
-# Er+h74t0mphEuGlGtaskCgykime4OoG/RYp9UgeojR9OIYU5o2teLSCGvxC4rnk7
-# U820+9hEvgbZXGNn1EAWh0SGcirWMhX1EoPC+eFdEUBn9kIncsUj4gI4Gkwg4tsB
-# 981GTyaifGbAUTa2iQJUx/xY+2wA7v6Ypi6VoQxTKR9v2BmmT573rAnqXYLGi6+A
-# p72BSFKEMdoy7BXkpkw9bDlz1AuFOSDghRpo4adIOKnRNiV3wY0ZFsWITGZ9L2PO
-# mOhp36w8qF2dyRxbrtjzL3TPuH7214OdEZZimq5FE9p/3Ef738NSn+YGVemdjPI6
-# YlG87CQPKdRYgITkRXta2DCCBeEwggRJoAMCAQICEQCZcNC3tMFYljiPBfASsES3
-# MA0GCSqGSIb3DQEBDAUAMFQxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdv
-# IExpbWl0ZWQxKzApBgNVBAMTIlNlY3RpZ28gUHVibGljIENvZGUgU2lnbmluZyBD
-# QSBSMzYwHhcNMjIwNjA3MDAwMDAwWhcNMjUwNjA2MjM1OTU5WjB3MQswCQYDVQQG
-# EwJVUzEOMAwGA1UECAwFVGV4YXMxKzApBgNVBAoMIkhld2xldHQgUGFja2FyZCBF
-# bnRlcnByaXNlIENvbXBhbnkxKzApBgNVBAMMIkhld2xldHQgUGFja2FyZCBFbnRl
-# cnByaXNlIENvbXBhbnkwggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQCi
-# DYlhh47xvo+K16MkvHuwo3XZEL+eEWw4MQEoV7qsa3zqMx1kHryPNwVuZ6bAJ5OY
-# oNch6usNWr9MZlcgck0OXnRGrxl2FNNKOqb8TAaoxfrhBSG7eZ1FWNqxJAOlzXjg
-# 6KEPNdlhmfVvsSDolVDGr6yEXYK9WVhVtEApyLbSZKLED/0OtRp4CtjacOCF/unb
-# vfPZ9KyMVKrCN684Q6BpknKH3ooTZHelvfAzUGbHxfKvq5HnIpONKgFhbpdZXKN7
-# kynNjRm/wrzfFlp+m9XANlmDnXieTeKEeI3y3cVxvw9HTGm4yIFt8IS/iiZwsKX6
-# Y94RkaDzaGB1fZI19FnRo2Fx9ovz187imiMrpDTsj8Kryl4DMtX7a44c8vORYAWO
-# B17CKHt52W+ngHBqEGFtce3KbcmIqAH3cJjZUNWrji8nCuqu2iL2Lq4bjcLMdjqU
-# +2Uc00ncGfvP2VG2fY+bx78e47m8IQ2xfzPCEBd8iaVKaOS49ZE47/D9Z8sAVjcC
-# AwEAAaOCAYkwggGFMB8GA1UdIwQYMBaAFA8qyyCHKLjsb0iuK1SmKaoXpM0MMB0G
-# A1UdDgQWBBRtaOAY0ICfJkfK+mJD1LyzN0wLzjAOBgNVHQ8BAf8EBAMCB4AwDAYD
-# VR0TAQH/BAIwADATBgNVHSUEDDAKBggrBgEFBQcDAzBKBgNVHSAEQzBBMDUGDCsG
-# AQQBsjEBAgEDAjAlMCMGCCsGAQUFBwIBFhdodHRwczovL3NlY3RpZ28uY29tL0NQ
-# UzAIBgZngQwBBAEwSQYDVR0fBEIwQDA+oDygOoY4aHR0cDovL2NybC5zZWN0aWdv
-# LmNvbS9TZWN0aWdvUHVibGljQ29kZVNpZ25pbmdDQVIzNi5jcmwweQYIKwYBBQUH
-# AQEEbTBrMEQGCCsGAQUFBzAChjhodHRwOi8vY3J0LnNlY3RpZ28uY29tL1NlY3Rp
-# Z29QdWJsaWNDb2RlU2lnbmluZ0NBUjM2LmNydDAjBggrBgEFBQcwAYYXaHR0cDov
-# L29jc3Auc2VjdGlnby5jb20wDQYJKoZIhvcNAQEMBQADggGBACPwE9q/9ANM+zGO
-# lq4SZg7qDpsDW09bDbdjyzAmxxJk2GhD35Md0IluPppla98zFjnuXWpVqakGk9vM
-# KxiooQ9QVDrKYtx9+S8Qui21kT8Ekhrm+GYecVfkgi4ryyDGY/bWTGtX5Nb5G5Gp
-# DZbv6wEuu3TXs6o531lN0xJSWpJmMQ/5Vx8C5ZwRgpELpK8kzeV4/RU5H9P07m8s
-# W+cmLx085ndID/FN84WmBWYFUvueR5juEfibuX22EqEuuPBORtQsAERoz9jStyza
-# gj6QxPG9C4ItZO5LT+EDcHH9ti6CzxexePIMtzkkVV9HXB6OUjgeu6MbNClduKY4
-# qFiutdbVC8VPGncuH2xMxDtZ0+ip5swHvPt/cnrGPMcVSEr68cSlUU26Ln2u/03D
-# eZ6b0R3IUdwWf4K/1X6NwOuifwL9gnTM0yKuN8cOwS5SliK9M1SWnF2Xf0/lhEfi
-# VVeFlH3kZjp9SP7v2I6MPdI7xtep9THwDnNLptqeF79IYoqT3TCCBhowggQCoAMC
-# AQICEGIdbQxSAZ47kHkVIIkhHAowDQYJKoZIhvcNAQEMBQAwVjELMAkGA1UEBhMC
-# R0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDEtMCsGA1UEAxMkU2VjdGlnbyBQ
-# dWJsaWMgQ29kZSBTaWduaW5nIFJvb3QgUjQ2MB4XDTIxMDMyMjAwMDAwMFoXDTM2
-# MDMyMTIzNTk1OVowVDELMAkGA1UEBhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGlt
-# aXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJsaWMgQ29kZSBTaWduaW5nIENBIFIz
-# NjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAJsrnVP6NT+OYAZDasDP
-# 9X/2yFNTGMjO02x+/FgHlRd5ZTMLER4ARkZsQ3hAyAKwktlQqFZOGP/I+rLSJJmF
-# eRno+DYDY1UOAWKA4xjMHY4qF2p9YZWhhbeFpPb09JNqFiTCYy/Rv/zedt4QJuIx
-# eFI61tqb7/foXT1/LW2wHyN79FXSYiTxcv+18Irpw+5gcTbXnDOsrSHVJYdPE9s+
-# 5iRF2Q/TlnCZGZOcA7n9qudjzeN43OE/TpKF2dGq1mVXn37zK/4oiETkgsyqA5lg
-# AQ0c1f1IkOb6rGnhWqkHcxX+HnfKXjVodTmmV52L2UIFsf0l4iQ0UgKJUc2RGarh
-# OnG3B++OxR53LPys3J9AnL9o6zlviz5pzsgfrQH4lrtNUz4Qq/Va5MbBwuahTcWk
-# 4UxuY+PynPjgw9nV/35gRAhC3L81B3/bIaBb659+Vxn9kT2jUztrkmep/aLb+4xJ
-# bKZHyvahAEx2XKHafkeKtjiMqcUf/2BG935A591GsllvWwIDAQABo4IBZDCCAWAw
-# HwYDVR0jBBgwFoAUMuuSmv81lkgvKEBCcCA2kVwXheYwHQYDVR0OBBYEFA8qyyCH
-# KLjsb0iuK1SmKaoXpM0MMA4GA1UdDwEB/wQEAwIBhjASBgNVHRMBAf8ECDAGAQH/
-# AgEAMBMGA1UdJQQMMAoGCCsGAQUFBwMDMBsGA1UdIAQUMBIwBgYEVR0gADAIBgZn
-# gQwBBAEwSwYDVR0fBEQwQjBAoD6gPIY6aHR0cDovL2NybC5zZWN0aWdvLmNvbS9T
-# ZWN0aWdvUHVibGljQ29kZVNpZ25pbmdSb290UjQ2LmNybDB7BggrBgEFBQcBAQRv
-# MG0wRgYIKwYBBQUHMAKGOmh0dHA6Ly9jcnQuc2VjdGlnby5jb20vU2VjdGlnb1B1
-# YmxpY0NvZGVTaWduaW5nUm9vdFI0Ni5wN2MwIwYIKwYBBQUHMAGGF2h0dHA6Ly9v
-# Y3NwLnNlY3RpZ28uY29tMA0GCSqGSIb3DQEBDAUAA4ICAQAG/4Lhd2M2bnuhFSCb
-# E/8E/ph1RGHDVpVx0ZE/haHrQECxyNbgcv2FymQ5PPmNS6Dah66dtgCjBsULYAor
-# 5wxxcgEPRl05pZOzI3IEGwwsepp+8iGsLKaVpL3z5CmgELIqmk/Q5zFgR1TSGmxq
-# oEEhk60FqONzDn7D8p4W89h8sX+V1imaUb693TGqWp3T32IKGfIgy9jkd7GM7YCa
-# 2xulWfQ6E1xZtYNEX/ewGnp9ZeHPsNwwviJMBZL4xVd40uPWUnOJUoSiugaz0yWL
-# ODRtQxs5qU6E58KKmfHwJotl5WZ7nIQuDT0mWjwEx7zSM7fs9Tx6N+Q/3+49qTtU
-# vAQsrEAxwmzOTJ6Jp6uWmHCgrHW4dHM3ITpvG5Ipy62KyqYovk5O6cC+040Si15K
-# JpuQ9VJnbPvqYqfMB9nEKX/d2rd1Q3DiuDexMKCCQdJGpOqUsxLuCOuFOoGbO7Uv
-# 3RjUpY39jkkp0a+yls6tN85fJe+Y8voTnbPU1knpy24wUFBkfenBa+pRFHwCBB1Q
-# tS+vGNRhsceP3kSPNrrfN2sRzFYsNfrFaWz8YOdU254qNZQfd9O/VjxZ2Gjr3xgA
-# NHtM3HxfzPYF6/pKK8EE4dj66qKKtm2DTL1KFCg/OYJyfrdLJq1q2/HXntgr2GVw
-# +ZWhrWgMTn8v1SjZsLlrgIfZHDGCG58wghubAgEBMGkwVDELMAkGA1UEBhMCR0Ix
-# GDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDErMCkGA1UEAxMiU2VjdGlnbyBQdWJs
-# aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
-# AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
-# AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQDJwArww5wT8fwJJqykh5mqRDNEfIi57zuAWQHcq2Xcglj9XZZwIQBfe
-# VqoioMNHWeZhuP/77sTN1WG5ecN+l0gwDQYJKoZIhvcNAQEBBQAEggGAlGL6g37W
-# 5G7jqwMvuhXj2x8yETEel3zj8thCVc9legpyAnW8D8tntYPfhlW/vwl9z6tVebh7
-# 33sD4kdXiocX4IorusSPlkzYFdcjYNsP1dfEBOPIwVdHlg9BCmnnsMfM1Qr5IemU
-# 5vlGom928CAq6UZtecbYjCseT6yk33y2vk1lzqVojoRQCVzsssinYdshAz0ELwTT
-# dYNGV0dt6kxJ7ZCxpSMkx1aYD+XXv8L4RCFSrMVfuUkHBnoFcNBYtIS2Wqm9jL/E
-# uz5nO7wVvl8ir2yMx1x57iKuGRa6jnvHCa15AlnV0yNu5NfoKJLX67GZEN89nbIf
-# 9OXPl4yGtDa95S7oVmnE60WWCHYwDzkdtxey9cpoCo3LMCp2uy1RABHPjFVZ8jux
-# Pm7XrBiTC/3c64vETzYl5zo6kTyy6L6xdeeXy6awJ8GKye816zVQ6s2PbxTQNyi6
-# gvqwdGoiWm2i93/FvJv9TeM63sJwNwYjIeisaCjHFKlkW3d7lB45F1YLoYIY6DCC
-# GOQGCisGAQQBgjcDAwExghjUMIIY0AYJKoZIhvcNAQcCoIIYwTCCGL0CAQMxDzAN
-# BglghkgBZQMEAgIFADCCAQcGCyqGSIb3DQEJEAEEoIH3BIH0MIHxAgEBBgorBgEE
-# AbIxAgEBMEEwDQYJYIZIAWUDBAICBQAEMCVVoMWXi9MU3BzOBcWGPZ+SU4GD4Yku
-# kXtN0fsfv83XoNp+MCiBma6GhO6u+KzRXQIUG9O28D/dte+qegaVx/S+bqfL8BkY
-# DzIwMjUwNTE1MDIyNjAzWqB2pHQwcjELMAkGA1UEBhMCR0IxFzAVBgNVBAgTDldl
-# c3QgWW9ya3NoaXJlMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxMDAuBgNVBAMT
-# J1NlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgU2lnbmVyIFIzNqCCEwQwggZi
-# MIIEyqADAgECAhEApCk7bh7d16c0CIetek63JDANBgkqhkiG9w0BAQwFADBVMQsw
-# CQYDVQQGEwJHQjEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMSwwKgYDVQQDEyNT
-# ZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIENBIFIzNjAeFw0yNTAzMjcwMDAw
-# MDBaFw0zNjAzMjEyMzU5NTlaMHIxCzAJBgNVBAYTAkdCMRcwFQYDVQQIEw5XZXN0
-# IFlvcmtzaGlyZTEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMTAwLgYDVQQDEydT
-# ZWN0aWdvIFB1YmxpYyBUaW1lIFN0YW1waW5nIFNpZ25lciBSMzYwggIiMA0GCSqG
-# SIb3DQEBAQUAA4ICDwAwggIKAoICAQDThJX0bqRTePI9EEt4Egc83JSBU2dhrJ+w
-# Y7JgReuff5KQNhMuzVytzD+iXazATVPMHZpH/kkiMo1/vlAGFrYN2P7g0Q8oPEcR
-# 3h0SftFNYxxMh+bj3ZNbbYjwt8f4DsSHPT+xp9zoFuw0HOMdO3sWeA1+F8mhg6uS
-# 6BJpPwXQjNSHpVTCgd1gOmKWf12HSfSbnjl3kDm0kP3aIUAhsodBYZsJA1imWqkA
-# VqwcGfvs6pbfs/0GE4BJ2aOnciKNiIV1wDRZAh7rS/O+uTQcb6JVzBVmPP63k5xc
-# ZNzGo4DOTV+sM1nVrDycWEYS8bSS0lCSeclkTcPjQah9Xs7xbOBoCdmahSfg8Km8
-# ffq8PhdoAXYKOI+wlaJj+PbEuwm6rHcm24jhqQfQyYbOUFTKWFe901VdyMC4gRwR
-# Aq04FH2VTjBdCkhKts5Py7H73obMGrxN1uGgVyZho4FkqXA8/uk6nkzPH9QyHIED
-# 3c9CGIJ098hU4Ig2xRjhTbengoncXUeo/cfpKXDeUcAKcuKUYRNdGDlf8WnwbyqU
-# blj4zj1kQZSnZud5EtmjIdPLKce8UhKl5+EEJXQp1Fkc9y5Ivk4AZacGMCVG0e+w
-# wGsjcAADRO7Wga89r/jJ56IDK773LdIsL3yANVvJKdeeS6OOEiH6hpq2yT+jJ/lH
-# a9zEdqFqMwIDAQABo4IBjjCCAYowHwYDVR0jBBgwFoAUX1jtTDF6omFCjVKAurNh
-# lxmiMpswHQYDVR0OBBYEFIhhjKEqN2SBKGChmzHQjP0sAs5PMA4GA1UdDwEB/wQE
-# AwIGwDAMBgNVHRMBAf8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMEoGA1Ud
-# IARDMEEwNQYMKwYBBAGyMQECAQMIMCUwIwYIKwYBBQUHAgEWF2h0dHBzOi8vc2Vj
-# dGlnby5jb20vQ1BTMAgGBmeBDAEEAjBKBgNVHR8EQzBBMD+gPaA7hjlodHRwOi8v
-# Y3JsLnNlY3RpZ28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5j
-# cmwwegYIKwYBBQUHAQEEbjBsMEUGCCsGAQUFBzAChjlodHRwOi8vY3J0LnNlY3Rp
-# Z28uY29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdDQVIzNi5jcnQwIwYIKwYB
-# BQUHMAGGF2h0dHA6Ly9vY3NwLnNlY3RpZ28uY29tMA0GCSqGSIb3DQEBDAUAA4IB
-# gQACgT6khnJRIfllqS49Uorh5ZvMSxNEk4SNsi7qvu+bNdcuknHgXIaZyqcVmhrV
-# 3PHcmtQKt0blv/8t8DE4bL0+H0m2tgKElpUeu6wOH02BjCIYM6HLInbNHLf6R2qH
-# C1SUsJ02MWNqRNIT6GQL0Xm3LW7E6hDZmR8jlYzhZcDdkdw0cHhXjbOLsmTeS0Se
-# RJ1WJXEzqt25dbSOaaK7vVmkEVkOHsp16ez49Bc+Ayq/Oh2BAkSTFog43ldEKgHE
-# DBbCIyba2E8O5lPNan+BQXOLuLMKYS3ikTcp/Qw63dxyDCfgqXYUhxBpXnmeSO/W
-# A4NwdwP35lWNhmjIpNVZvhWoxDL+PxDdpph3+M5DroWGTc1ZuDa1iXmOFAK4iwTn
-# lWDg3QNRsRa9cnG3FBBpVHnHOEQj4GMkrOHdNDTbonEeGvZ+4nSZXrwCW4Wv2qyG
-# DBLlKk3kUW1pIScDCpm/chL6aUbnSsrtbepdtbCLiGanKVR/KC1gsR0tC6Q0RfWO
-# I4owggYUMIID/KADAgECAhB6I67aU2mWD5HIPlz0x+M/MA0GCSqGSIb3DQEBDAUA
-# MFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAsBgNV
-# BAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwHhcNMjEw
-# MzIyMDAwMDAwWhcNMzYwMzIxMjM1OTU5WjBVMQswCQYDVQQGEwJHQjEYMBYGA1UE
-# ChMPU2VjdGlnbyBMaW1pdGVkMSwwKgYDVQQDEyNTZWN0aWdvIFB1YmxpYyBUaW1l
-# IFN0YW1waW5nIENBIFIzNjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGB
-# AM2Y2ENBq26CK+z2M34mNOSJjNPvIhKAVD7vJq+MDoGD46IiM+b83+3ecLvBhStS
-# VjeYXIjfa3ajoW3cS3ElcJzkyZlBnwDEJuHlzpbN4kMH2qRBVrjrGJgSlzzUqcGQ
-# BaCxpectRGhhnOSwcjPMI3G0hedv2eNmGiUbD12OeORN0ADzdpsQ4dDi6M4YhoGE
-# 9cbY11XxM2AVZn0GiOUC9+XE0wI7CQKfOUfigLDn7i/WeyxZ43XLj5GVo7LDBExS
-# Lnh+va8WxTlA+uBvq1KO8RSHUQLgzb1gbL9Ihgzxmkdp2ZWNuLc+XyEmJNbD2OII
-# q/fWlwBp6KNL19zpHsODLIsgZ+WZ1AzCs1HEK6VWrxmnKyJJg2Lv23DlEdZlQSGd
-# F+z+Gyn9/CRezKe7WNyxRf4e4bwUtrYE2F5Q+05yDD68clwnweckKtxRaF0VzN/w
-# 76kOLIaFVhf5sMM/caEZLtOYqYadtn034ykSFaZuIBU9uCSrKRKTPJhWvXk4Cllg
-# rwIDAQABo4IBXDCCAVgwHwYDVR0jBBgwFoAU9ndq3T/9ARP/FqFsggIv0Ao9FCUw
-# HQYDVR0OBBYEFF9Y7UwxeqJhQo1SgLqzYZcZojKbMA4GA1UdDwEB/wQEAwIBhjAS
-# BgNVHRMBAf8ECDAGAQH/AgEAMBMGA1UdJQQMMAoGCCsGAQUFBwMIMBEGA1UdIAQK
-# MAgwBgYEVR0gADBMBgNVHR8ERTBDMEGgP6A9hjtodHRwOi8vY3JsLnNlY3RpZ28u
-# Y29tL1NlY3RpZ29QdWJsaWNUaW1lU3RhbXBpbmdSb290UjQ2LmNybDB8BggrBgEF
-# BQcBAQRwMG4wRwYIKwYBBQUHMAKGO2h0dHA6Ly9jcnQuc2VjdGlnby5jb20vU2Vj
-# dGlnb1B1YmxpY1RpbWVTdGFtcGluZ1Jvb3RSNDYucDdjMCMGCCsGAQUFBzABhhdo
-# dHRwOi8vb2NzcC5zZWN0aWdvLmNvbTANBgkqhkiG9w0BAQwFAAOCAgEAEtd7IK0O
-# NVgMnoEdJVj9TC1ndK/HYiYh9lVUacahRoZ2W2hfiEOyQExnHk1jkvpIJzAMxmEc
-# 6ZvIyHI5UkPCbXKspioYMdbOnBWQUn733qMooBfIghpR/klUqNxx6/fDXqY0hSU1
-# OSkkSivt51UlmJElUICZYBodzD3M/SFjeCP59anwxs6hwj1mfvzG+b1coYGnqsSz
-# 2wSKr+nDO+Db8qNcTbJZRAiSazr7KyUJGo1c+MScGfG5QHV+bps8BX5Oyv9Ct36Y
-# 4Il6ajTqV2ifikkVtB3RNBUgwu/mSiSUice/Jp/q8BMk/gN8+0rNIE+QqU63JoVM
-# CMPY2752LmESsRVVoypJVt8/N3qQ1c6FibbcRabo3azZkcIdWGVSAdoLgAIxEKBe
-# Nh9AQO1gQrnh1TA8ldXuJzPSuALOz1Ujb0PCyNVkWk7hkhVHfcvBfI8NtgWQupia
-# AeNHe0pWSGH2opXZYKYG4Lbukg7HpNi/KqJhue2Keak6qH9A8CeEOB7Eob0Zf+fU
-# +CCQaL0cJqlmnx9HCDxF+3BLbUufrV64EbTI40zqegPZdA+sXCmbcZy6okx/Sjws
-# usWRItFA3DE8MORZeFb6BmzBtqKJ7l939bbKBy2jvxcJI98Va95Q5JnlKor3m0E7
-# xpMeYRriWklUPsetMSf2NvUQa/E5vVyefQIwggaCMIIEaqADAgECAhA2wrC9fBs6
-# 56Oz3TbLyXVoMA0GCSqGSIb3DQEBDAUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UE
-# CBMKTmV3IEplcnNleTEUMBIGA1UEBxMLSmVyc2V5IENpdHkxHjAcBgNVBAoTFVRo
-# ZSBVU0VSVFJVU1QgTmV0d29yazEuMCwGA1UEAxMlVVNFUlRydXN0IFJTQSBDZXJ0
-# aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0yMTAzMjIwMDAwMDBaFw0zODAxMTgyMzU5
-# NTlaMFcxCzAJBgNVBAYTAkdCMRgwFgYDVQQKEw9TZWN0aWdvIExpbWl0ZWQxLjAs
-# BgNVBAMTJVNlY3RpZ28gUHVibGljIFRpbWUgU3RhbXBpbmcgUm9vdCBSNDYwggIi
-# MA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCIndi5RWedHd3ouSaBmlRUwHxJ
-# BZvMWhUP2ZQQRLRBQIF3FJmp1OR2LMgIU14g0JIlL6VXWKmdbmKGRDILRxEtZdQn
-# Oh2qmcxGzjqemIk8et8sE6J+N+Gl1cnZocew8eCAawKLu4TRrCoqCAT8uRjDeypo
-# GJrruH/drCio28aqIVEn45NZiZQI7YYBex48eL78lQ0BrHeSmqy1uXe9xN04aG0p
-# KG9ki+PC6VEfzutu6Q3IcZZfm00r9YAEp/4aeiLhyaKxLuhKKaAdQjRaf/h6U13j
-# QEV1JnUTCm511n5avv4N+jSVwd+Wb8UMOs4netapq5Q/yGyiQOgjsP/JRUj0MAT9
-# YrcmXcLgsrAimfWY3MzKm1HCxcquinTqbs1Q0d2VMMQyi9cAgMYC9jKc+3mW62/y
-# Vl4jnDcw6ULJsBkOkrcPLUwqj7poS0T2+2JMzPP+jZ1h90/QpZnBkhdtixMiWDVg
-# h60KmLmzXiqJc6lGwqoUqpq/1HVHm+Pc2B6+wCy/GwCcjw5rmzajLbmqGygEgaj/
-# OLoanEWP6Y52Hflef3XLvYnhEY4kSirMQhtberRvaI+5YsD3XVxHGBjlIli5u+Nr
-# LedIxsE88WzKXqZjj9Zi5ybJL2WjeXuOTbswB7XjkZbErg7ebeAQUQiS/uRGZ58N
-# Hs57ZPUfECcgJC+v2wIDAQABo4IBFjCCARIwHwYDVR0jBBgwFoAUU3m/WqorSs9U
-# gOHYm8Cd8rIDZsswHQYDVR0OBBYEFPZ3at0//QET/xahbIICL9AKPRQlMA4GA1Ud
-# DwEB/wQEAwIBhjAPBgNVHRMBAf8EBTADAQH/MBMGA1UdJQQMMAoGCCsGAQUFBwMI
-# MBEGA1UdIAQKMAgwBgYEVR0gADBQBgNVHR8ESTBHMEWgQ6BBhj9odHRwOi8vY3Js
-# LnVzZXJ0cnVzdC5jb20vVVNFUlRydXN0UlNBQ2VydGlmaWNhdGlvbkF1dGhvcml0
-# eS5jcmwwNQYIKwYBBQUHAQEEKTAnMCUGCCsGAQUFBzABhhlodHRwOi8vb2NzcC51
-# c2VydHJ1c3QuY29tMA0GCSqGSIb3DQEBDAUAA4ICAQAOvmVB7WhEuOWhxdQRh+S3
-# OyWM637ayBeR7djxQ8SihTnLf2sABFoB0DFR6JfWS0snf6WDG2gtCGflwVvcYXZJ
-# JlFfym1Doi+4PfDP8s0cqlDmdfyGOwMtGGzJ4iImyaz3IBae91g50QyrVbrUoT0m
-# UGQHbRcF57olpfHhQEStz5i6hJvVLFV/ueQ21SM99zG4W2tB1ExGL98idX8ChsTw
-# bD/zIExAopoe3l6JrzJtPxj8V9rocAnLP2C8Q5wXVVZcbw4x4ztXLsGzqZIiRh5i
-# 111TW7HV1AtsQa6vXy633vCAbAOIaKcLAo/IU7sClyZUk62XD0VUnHD+YvVNvIGe
-# zjM6CRpcWed/ODiptK+evDKPU2K6synimYBaNH49v9Ih24+eYXNtI38byt5kIvh+
-# 8aW88WThRpv8lUJKaPn37+YHYafob9Rg7LyTrSYpyZoBmwRWSE4W6iPjB7wJjJpH
-# 29308ZkpKKdpkiS9WNsf/eeUtvRrtIEiSJHN899L1P4l6zKVsdrUu1FX1T/ubSrs
-# xrYJD+3f3aKg6yxdbugot06YwGXXiy5UUGZvOu3lXlxA+fC13dQ5OlL2gIb5lmF6
-# Ii8+CQOYDwXM+yd9dbmocQsHjcRPsccUd5E9FiswEqORvz8g3s+jR3SFCgXhN4wz
-# 7NgAnOgpCdUo4uDyllU9PzGCBJIwggSOAgEBMGowVTELMAkGA1UEBhMCR0IxGDAW
-# BgNVBAoTD1NlY3RpZ28gTGltaXRlZDEsMCoGA1UEAxMjU2VjdGlnbyBQdWJsaWMg
-# VGltZSBTdGFtcGluZyBDQSBSMzYCEQCkKTtuHt3XpzQIh616TrckMA0GCWCGSAFl
-# AwQCAgUAoIIB+TAaBgkqhkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwHAYJKoZIhvcN
-# AQkFMQ8XDTI1MDUxNTAyMjYwM1owPwYJKoZIhvcNAQkEMTIEMGyWMmQx52N59hma
-# 5RTgHBEKY1B6Uo5y35JR8JP7BpK0l4DvA0T7BGbYlcSEr3TwBjCCAXoGCyqGSIb3
-# DQEJEAIMMYIBaTCCAWUwggFhMBYEFDjJFIEQRLTcZj6T1HRLgUGGqbWxMIGHBBTG
-# rlTkeIbxfD1VEkiMacNKevnC3TBvMFukWTBXMQswCQYDVQQGEwJHQjEYMBYGA1UE
-# ChMPU2VjdGlnbyBMaW1pdGVkMS4wLAYDVQQDEyVTZWN0aWdvIFB1YmxpYyBUaW1l
-# IFN0YW1waW5nIFJvb3QgUjQ2AhB6I67aU2mWD5HIPlz0x+M/MIG8BBSFPWMtk4KC
-# YXzQkDXEkd6SwULaxzCBozCBjqSBizCBiDELMAkGA1UEBhMCVVMxEzARBgNVBAgT
-# Ck5ldyBKZXJzZXkxFDASBgNVBAcTC0plcnNleSBDaXR5MR4wHAYDVQQKExVUaGUg
-# VVNFUlRSVVNUIE5ldHdvcmsxLjAsBgNVBAMTJVVTRVJUcnVzdCBSU0EgQ2VydGlm
-# aWNhdGlvbiBBdXRob3JpdHkCEDbCsL18Gzrno7PdNsvJdWgwDQYJKoZIhvcNAQEB
-# BQAEggIATD8BDJ/Q46zsOkyOCG3XC9q1hIGwZctqoGLk/twp2FEFegM7x5byPP2W
-# PjIfnWFrqwCuMubwE3PZrneFO3ZG68qGpfQyqIJgtmm/NMHSnMhTWbsLNiQJTsho
-# uWbLAOYcSJ/ONToWlQLZIyYq4QwYh4mJgc3/EKVISZUwKRNdHNgsela42qDYWLmt
-# 0szxkahc7OuSjGYsO/ODOuTizd+z21ud5hUvk4M4q5Jpi0ZwPtD7+H+fvAyDfFmf
-# 33noTAFiRj0lNZj/kKItpdLZ9qAp1BgzfUE87acQXGpl9u9Gajw6f0wIEC6FL1D7
-# u6g8yt/8QrtzqOQ46aMGRE4eZh0TMDhhHxwux/Jf1zFNYBwXpn36qMvAielUvEji
-# Sp/md4d2u7yST+jgOiUCQvp7JP1KRQGHyyflIqDLtvZ9iLuVJKdra1hVIRu0SyhM
-# ET7GkLk6J8jJpOin/dR7tybY/haC7FTnizyd0eerV5Z5WaseYr1qwWD8hMvG7epw
-# K66BZg93JVB8aEqjzPhKiIhr7RRtLbo1357D744cfTe83IZIH2vSQAuXhgzGqQuA
-# Fvo7d91RNErGNiOn4DVcKYG30Q9Zb4fOn4FFAgDaoiZLcx1yJWklEhCXlOnxznuZ
-# v+iB84cMequ3bmhqPwCi+YJpYHFVsvw2/k1PwVTf56Lex5h+k7Q=
-# SIG # End signature block

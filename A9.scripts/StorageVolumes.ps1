@@ -9,24 +9,14 @@ Function New-a9Vv
 	Creates a vitual volume
 .DESCRIPTION
 	Creates a vitual volume
-.EXAMPLE    
-	PS:> New-a9Vv -VVName xxx -CpgName xxx -SizeMiB 1
-.EXAMPLE                         
-	PS:> New-A9Vv -VVName xxx -CpgName xxx -SizeMiB 1 -Id 1010
-.EXAMPLE                         
-	PS:> New-A9Vv -VVName xxx -CpgName xxx -SizeMiB 1 -Comment "This is test vv"
-.EXAMPLE                         
-	PS:> New-A9Vv -VVName xxx -CpgName xxx -SizeMiB 1 -OneHost $true
-.EXAMPLE                         
-	PS:> New-A9Vv -VVName xxx -CpgName xxx -SizeMiB 1 -Caching $true
-.EXAMPLE                         
-	PS:> New-A9Vv -VVName xxx -CpgName xxx -SizeMiB 1 -HostDIF NO_HOST_DIF
-.PARAMETER VVName
-	Volume Name.
+.PARAMETER VolumeName
+	Specifies a volume name up to 31 characters in length.
 .PARAMETER CpgName
-	Volume CPG.
+	Specifies the name of the CPG from which the volume user space will be allocated.
 .PARAMETER SizeMiB
-	Volume size.
+	Volume size. Specifies the size for the volume in MiB. Rounds the volume size to the next multiple of 256 MiB. Minimum value of 256
+.PARAMETER SpaceSavings
+	Can either be set to 'Thin-Provisioned' or a thinly 'deduplicated and compressed' volume. This replaces the CLI option called TPVV (thin provision virtual volume) and Reduce (compression+deduplicate).
 .PARAMETER Id
 	Specifies the ID of the volume. If not specified, the next available ID is chosen.
 .PARAMETER Comment
@@ -57,13 +47,6 @@ Function New-a9Vv
 	the indicated percentage of the volume size.
 .PARAMETER SsSpcAllocLimitPct
 	Sets a snapshot space allocation limit. The snapshot space of the volume is prevented from growing beyond the indicated percentage of the volume size.
-.PARAMETER tpvv
-	Create thin volume.
-.PARAMETER tdvv
-	Enables (true) or disables (false) TDVV creation. Defaults to false.
-	With both tpvv and tdvv set to FALSE or unspecified, defaults to FPVV .
-.PARAMETER Reduce
-	Enables (true) or disables (false) a thinly deduplicated and compressed volume.
 .PARAMETER UsrSpcAllocWarningPct
 	Create fully provisionned volume.
 .PARAMETER UsrSpcAllocLimitPct
@@ -74,68 +57,77 @@ Function New-a9Vv
 	Specifies the amount of time relative to the current time that the volume is retained. Value is a positive integer with a range of 1– 43,800 hours (1825 days).
 .PARAMETER Compression   
 	Enables (true) or disables (false) creating thin provisioned volumes with compression. Defaults to false (create volume without compression).
+.EXAMPLE    
+	PS:> New-a9Vv -VolumeName xxx -CpgName xxx -SizeMiB 1024 -SpaceSaving DeduplicateionCompression
+.EXAMPLE                         
+	PS:> New-A9Vv -VolumeName xxx -CpgName xxx -SizeMiB 1024 -SpaceSaving DeduplicateionCompression -Comment "This is test vv"
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]
-								[String]	$VVName,
+Param(	[Parameter(Mandatory)]	[String]	$VolumeName,
 		[Parameter(Mandatory)]	[String]	$CpgName,
-		[Parameter(Mandatory)]	[int]		$SizeMiB,
+		[Parameter(Mandatory)]
+		[ValidateRange(256,[int]::MaxValue)]	
+								[int]		$SizeMiB,
+		[Parameter(Mandatory)]
+		[ValidateSet('ThinProvision','DeduplicateionCompression')]	
+								[String]	$SpaceSaving,
 		[Parameter()]			[int]		$Id,
 		[Parameter()]			[String]	$Comment,
-		[Parameter()]			[Boolean]	$StaleSS ,
+		[Parameter()]			[Boolean]	$StaleSS,
 		[Parameter()]			[Boolean]	$OneHost,
 		[Parameter()]			[Boolean]	$ZeroDetect,
-		[Parameter()]			[Boolean]	$System ,
-		[Parameter()]			[Boolean]	$Caching ,
-		[Parameter()]			[Boolean]	$Fsvc ,
+		[Parameter()]			[Boolean]	$System,
+		[Parameter()]			[Boolean]	$Caching,
+		[Parameter()]			[Boolean]	$Fsvc,
 		[Parameter()]	[ValidateSet('3PAR_HOST_DIF','STD+HOST_DIF','NO_HOST_DIF')]
-								[string]	$HostDIF ,
+								[string]	$HostDIF,
 		[Parameter()]			[String]	$SnapCPG,
-		[Parameter()]			[int]		$SsSpcAllocWarningPct ,
-		[Parameter()]			[int]		$SsSpcAllocLimitPct ,
-		[Parameter()]			[Boolean]	$TPVV,
-		[Parameter()]			[Boolean]	$TDVV,
-		[Parameter()]			[Boolean]	$Reduce,
-		[Parameter()]			[int]		$UsrSpcAllocWarningPct,
-		[Parameter()]			[int]		$UsrSpcAllocLimitPct,
-		[Parameter()]			[int]		$ExpirationHours,
-		[Parameter()]			[int]		$RetentionHours,
-		[Parameter()]			[Boolean]	$Compression
+		[Parameter()]
+		[ValidateRange(0,100)]	[int]		$SsSpcAllocWarningPct,
+		[Parameter()]
+		[ValidateRange(0,100)]	[int]		$SsSpcAllocLimitPct,
+		[Parameter()]			
+		[ValidateRange(0,100)]	[int]		$UsrSpcAllocWarningPct,
+		[Parameter()]
+		[ValidateRange(0,100)]	[int]		$UsrSpcAllocLimitPct,
+		[Parameter()]
+		[ValidateRange(1,43800)][int]		$ExpirationHours,
+		[Parameter()]
+		[ValidateRange(1,43800)][int]		$RetentionHours
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = [ordered]@{}	
-	$body["name"] = "$($VVName)"
-	$body["cpg"] = "$($CpgName)"
-    If ($SizeMiB) 	{	$body["sizeMiB"] = $SizeMiB  }
+	$body["name"] 		= "$($VolumeName)"
+	$body["cpg"] 		= "$($CpgName)"
+    $body["sizeMiB"] 	= $SizeMiB
     If ($Id) 		{	$body["id"] = $Id }
 	$VvPolicies = @{}
 	If ($StaleSS) 	{	$VvPolicies["staleSS"] = $true		}	
 	If ($OneHost) 	{	$VvPolicies["oneHost"] = $true    	} 
-	If ($ZeroDetect){	$VvPolicies["zeroDetect"] = $true   }	
-	If ($System) 	{	$VvPolicies["system"] = $true    	}
+	If ($System) 	{	$VvPolicies["system"]  = $true    	}
 	If ($Caching) 	{	$VvPolicies["caching"] = $true    	}	
-	If ($Fsvc) 		{	$VvPolicies["fsvc"] = $true    		}	
+	If ($Fsvc) 		{	$VvPolicies["fsvc"]    = $true    	}	
+	if($VvPolicies.Count -gt 0){$body["policies"] = $VvPolicies }
 	If ($HostDIF) 	
 		{	if($HostDIF -eq "3PAR_HOST_DIF")	{	$VvPolicies["hostDIF"] = 1	}
 			elseif($HostDIF -eq "STD_HOST_DIF")	{	$VvPolicies["hostDIF"] = 2	}
 			elseif($HostDIF -eq "NO_HOST_DIF")	{	$VvPolicies["hostDIF"] = 3	}
 		} 	
-    If ($Comment) 	{	$body["comment"] = "$($Comment)"}
-	If ($SnapCPG) 	{	$body["snapCPG"] = "$($SnapCPG)" }
-	If ($SsSpcAllocWarningPct) 	{	$body["ssSpcAllocWarningPct"] = $SsSpcAllocWarningPct }
-	If ($SsSpcAllocLimitPct) {	$body["ssSpcAllocLimitPct"] = $SsSpcAllocLimitPct }
-    If ($TPVV) 		{	$body["tpvv"] = $true	}
-	If ($TDVV) 		{	$body["tdvv"] = $true	}
-	If($Reduce) 	{	$body["reduce"] = $true }
-    If ($UsrSpcAllocWarningPct) {	$body["usrSpcAllocWarningPct"] = $UsrSpcAllocWarningPct }
-	If ($UsrSpcAllocLimitPct) 	{	$body["usrSpcAllocLimitPct"] = $UsrSpcAllocLimitPct } 
-	If ($ExpirationHours) 		{ 	$body["expirationHours"] = $ExpirationHours	}
-	If ($RetentionHours) 		{	$body["retentionHours"] = $RetentionHours	}
-	If ($Compression) 			{ 	$body["compression"] = $true }
-	if($VvPolicies.Count -gt 0){$body["policies"] = $VvPolicies }
+    If ($Comment) 				{	$body["comment"] = "$($Comment)"}
+	If ($SnapCPG) 				{	$body["snapCPG"] = "$($SnapCPG)" }
+	If ($SsSpcAllocWarningPct) 	{	$body["ssSpcAllocWarningPct"] 	= $SsSpcAllocWarningPct }
+	If ($SsSpcAllocLimitPct) 	{	$body["ssSpcAllocLimitPct"] 	= $SsSpcAllocLimitPct }
+    if ($SpaceSaving -eq 'ThinProvision') 						
+								{ 	$body["tpvv"] = $true	}
+	elseIf ($SpaceSaving -eq 'DeduplicateionCompression') 	
+								{	$body["reduce"] = $true }
+    If ($UsrSpcAllocWarningPct) {	$body["usrSpcAllocWarningPct"]	= $UsrSpcAllocWarningPct }
+	If ($UsrSpcAllocLimitPct) 	{	$body["usrSpcAllocLimitPct"] 	= $UsrSpcAllocLimitPct } 
+	If ($ExpirationHours) 		{ 	$body["expirationHours"] 		= $ExpirationHours	}
+	If ($RetentionHours) 		{	$body["retentionHours"] 		= $RetentionHours	}
 	$Result = $null
 	# write-verbose "The call will be made to /volumes and contain the body;"
 	#$body | convertto-json
@@ -143,10 +135,10 @@ Process
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
-			return ( Get-A9Vv | where-object { $_.name -like $VVName} ) 
+			return ( Get-A9Vv | where-object { $_.name -like $VolumeName} ) 
 		}
 	else
-		{	Write-Error "Failure:  While creating Volumes: $VVName " 
+		{	Write-Error "Failure:  While creating Volumes: $VolumeName " 
 			return $Result.StatusDescription
 		}
 }
