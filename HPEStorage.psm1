@@ -150,7 +150,7 @@ if ( $PersistArrayType -like 'Nimble' -or $PersistArrayType -like 'Alletra6000' 
     }
 
 if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra9000') -or ($PersistArrayType -like 'AlletraMP-B10000') -or ($PersistArrayType -like '3Par') )
-    {   if ( $LoadA9CLI -or $LoadA9SSH )
+    {   if ( $LoadA9CLI -or $LoadA9API )
         {   # Load the Global scripts (API + CLI)
             write-verbose "--------------Loaded All CLI and Rest function from Global set"
             . $PSScriptRoot\A9.GLOBAL\VS-Functions.ps1
@@ -188,7 +188,7 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             . $PSScriptRoot\A9.CLI\HealthAndAlertManagement.ps1
             Export-ModuleMember -Function Get-A9Alert, Get-A9EventLog_CLI, Get-A9Health, Remove-A9Alerts, Set-A9Alert
             . $PSScriptRoot\A9.CLI\HostManagement.ps1
-            Export-ModuleMember -Function New-A9Host_CLI, Set-A9HostTargetZoneingWWN, Update-A9Host , Remove-A9Host_CLI,  Get-A9HostPersona 
+            Export-ModuleMember -Function New-A9HostSet_CLI, Set-A9Host_CLI
             . $PSScriptRoot\A9.CLI\Internal.ps1
             Export-ModuleMember -Function Get-A9FcPorts, Get-A9FcPortsToCsv, Test-A9CLIObject 
             . $PSScriptRoot\A9.CLI\InventoryManagement.ps1
@@ -239,12 +239,15 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             Export-ModuleMember -Function Get-A9UserConnection, Remove-A9UserConnection
             . $PSScriptRoot\A9.CLI\Vasa.ps1
             Export-ModuleMember -Function Show-A9VVolStorageContainerVM_CLI, Get-A9VolStorageContainer_CLI, Set-A9VVolStorageContainer
+
             . $PSScriptRoot\A9.CLI\VirtualVolumeManagement.ps1
-            Export-ModuleMember -Function Add-A9Vv, Compress-A9LogicalDisk,Confirm-A9LogicalDisk,Get-A9LogicalDisk, Get-A9LogicalDiskChunklet,
-            Get-A9Space,Get-A9VvList_CLI,Import-A9Vv,New-A9Vv_CLI,Remove-A9LogicalDisk,Remove-A9VvLogicalDiskCpgTemplates,
-            Set-A9Template_CLI,Set-A9VvSpace_CLI,Show-A9LdMappingToVvs_CLI,Show-A9VvScsiReservations,Show-A9Template,Show-A9VvMappedToPD,Show-A9VvMapping,
-            Show-A9VvpDistribution, Start-A9LD_CLI,Start-A9Vv_CLI,Test-A9Vv_CLI, Update-A9SnapSpace_CLI,Update-A9VvProperties_CLI,Update-A9VvSetProperties_CLI,
-            Set-A9Host_CLI,Show-A9Peer_CLI,Resize-A9Vv
+            Export-ModuleMember -Function   Add-A9Vv,  Import-A9Vv, Test-A9Vv_CLI,Resize-A9Vv, Start-A9Vv_CLI, Update-A9VvSetProperties_CLI,Update-A9VvProperties_CLI,
+                                            Compress-A9LogicalDisk, Start-A9LD_CLI, Confirm-A9LogicalDisk,  Get-A9LogicalDisk,  Get-A9LogicalDiskChunklet, Remove-A9LogicalDisk, Remove-A9VvLogicalDiskCpgTemplates,
+                                            Get-A9Space_CLI, Set-A9VvSpace_CLI,Show-A9LdMappingToVvs_CLI, Show-A9VvpDistribution, 
+                                            Set-A9Template_CLI,Show-A9Template,
+                                            Show-A9VvScsiReservations,  Show-A9VvMappedToPD,    Show-A9VvMapping,
+                                            Update-A9SnapSpace_CLI,
+                                            Show-A9Peer_CLI
         }
         if ( $LoadA9API )
         {   write-verbose "--------------Loaded All CLI and Rest function from REST set"

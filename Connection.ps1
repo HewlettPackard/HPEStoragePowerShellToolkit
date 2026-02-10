@@ -514,14 +514,24 @@ param(	[Parameter(Mandatory=$true)]	[String]    $ArrayNameOrIPAddress,
 		[Parameter(Mandatory=$true)]	[System.Management.Automation.PSCredential] $Credential
 		)
 Process
-{	$Global:PersistArrayType = $ArrayType
+{	if ( $psversiontable.PSversion -ge 7)
+		{	write-verbose "Powershell recommended version 7+ has been detected"
+		}
+	else{	write-warning 'This Toolkit has been optimized for PowerShell 7+, it should still work effectivly on PowerShell 5.x however 
+						   any issues detected that are fixed by upgrading to PowerShell 7 will automatically be lowered in severity. 
+						   It is recommended that you install PowerShell version 7.x which can be done using the following command;
+							iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI" '
+		}
+	$Global:PersistArrayType = $ArrayType
 	$CurrentModulePath = (Get-Module HPEStorage).path
 	[string]$CurrentModulePath = Split-Path $CurrentModulePath -Parent
 	$ModPath = $CurrentModulePath	
-	
 	$pass = $Credential.GetNetworkCredential().password 
-	$user = $Credential.GetNetworkCredential().username
-					
+	$user = $Credential.GetNetworkCredential().username					
+	$ModPath = $ModPath + '\HPEStorage.psd1'
+	if ($verbose)
+			{	Import-Module $ModPath -force -scope Global -verbose }
+		else{	Import-Module $ModPath -force -scope Global }
 	if ($ArrayType -eq 'Alletra9000' -or $ArrayType -eq 'Primera' -or $ArrayType -eq '3Par' -or $ArrayType -eq 'AlletraMP-B10000')
 			{	write-Verbose "You will be connected to a $ArrayType at the location $ArrayNameOrIPAddress"
 				connect-A9SSH -ArrayNameOrIPAddress $ArrayNameOrIPAddress -SANUserName $user -SANPassword $pass -AcceptKey
@@ -538,10 +548,7 @@ Process
 			{	Connect-MSAGroup -FQDNorIP $ArrayNameOrIPAddress -Username $user -Password $pass
 			}
 	write-host "Reloading the HPEStorage Module with the included Array Type Specific commands"
-	$ModPath = $ModPath + '\HPEStorage.psd1'
-	if ($verbose)
-			{	Import-Module $ModPath -force -scope Global -verbose }
-		else{	Import-Module $ModPath -force -scope Global }
+	
 	$pass = $null; $user = $null		
 	Write-host "To View the list of commands available to you please use 'Get-Command -module HPEStorage'." -ForegroundColor Green
 }
@@ -557,6 +564,8 @@ function Import-HPESANCertificate
 	If the Certificate already exists, it will warn you of this. To run this command you must execute this command with and Administrative PowerShell prompt. 
 .PARAMETER ArrayNameOrIPAddress
 	The IP Address or Array name that will resolve via name service to the IP Address of the target device to connect to.
+.PARAMETER PassThruCert
+	This switch is used for troubleshooting and returns the exact certificate that should be imported.
 .EXAMPLE
 	PS C:\Users\chris\Desktop\PowerShell\HPEStoragePowerShellToolkit> Import-HPESANCertificate -ArrayNameOrIPAddress 192.168.1.50
 	Successfully imported the server certificate
@@ -570,7 +579,8 @@ function Import-HPESANCertificate
 
 	WARNING: The Certificate Already exists, no need to re-import it.
 #>
-param(  [Parameter(Mandatory,Position=0)]   [string]$ArrayNameOrIPAddress
+param(  [Parameter(Mandatory)]   	[string]	$ArrayNameOrIPAddress,
+		[Parameter()]					[switch]	$PassThruCert
 )
 
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -677,6 +687,10 @@ else{   write-verbose "Running Codebase for PowerShell Core."
 					}
 			}
 		else{   Write-Error "Failed to import the server certificate `n`n"  -ErrorAction Stop
+			}
+		if ( $PassThruCert ) 
+			{	write-host "Outputting the Certificate as the return object"	
+				return $cert
 			}
 }
 }

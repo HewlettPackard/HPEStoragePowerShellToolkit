@@ -239,6 +239,69 @@ Function Update-A9Vv
 .DESCRIPTION
 	Update an existing vitual volume. This command incorporates both the API method as well as the CLI method of removing a Vv. If the only argument used is the VVName, the command will attempt to use the API
 	to accomplish the task, if the API is unavalable or other parameters are used, the command will attempt to fail back to a SSH type connection to accomplish the goal.
+.PARAMETER VVName
+	Name of the volume being modified. The VVName is required and used in both the API version and SSH version of this command.
+.PARAMETER Size
+	Specifies the size in MB to be added to the volume user space. The size must be an integer in the range from 1 to 16T. This option uses the API, and no other options do.
+.PARAMETER NewName
+	New Volume Name. 
+.PARAMETER Comment
+	Additional informations about the volume. 
+.PARAMETER WWN
+	Specifies changing the WWN of the virtual volume a new WWN. 
+	If the value of WWN is auto, the system automatically chooses the WWN based on the system serial number, the volume ID, and the wrap counter.
+.PARAMETER UserCPG
+	User CPG Name.
+.PARAMETER StaleSS
+	True—Stale snapshots. If there is no space for a copyon- write operation, the snapshot can go stale but the host write proceeds without an error. 
+	false—No stale snapshots. If there is no space for a copy-on-write operation, the host write fails. 
+.PARAMETER OneHost
+	True—Indicates a volume is constrained to export to one host or one host cluster. 
+	false—Indicates a volume exported to multiple hosts for use by a cluster-aware application, or when port presents VLUNs are used. 
+.PARAMETER ZeroDetect
+	True—Indicates that the storage system scans for zeros in the incoming write data. 
+	false—Indicates that the storage system does not scan for zeros in the incoming write data. 
+.PARAMETER System
+	True— Special volume used by the system. false—Normal user volume. 
+.PARAMETER Caching
+	This is a read-only policy and cannot be set. true—Indicates that the storage system is enabled for write caching, read caching, and read ahead for the volume. 
+	false—Indicates that the storage system is disabled for write caching, read caching, and read ahead for the volume. 
+.PARAMETER Fsvc
+	This is a read-only policy and cannot be set. true —Indicates that File Services uses this volume. false —Indicates that File Services does not use this volume. 
+.PARAMETER HostDIF
+	Type of host-based DIF policy, 3PAR_HOST_DIF is for 3PAR host-based DIF supported, 
+	STD_HOST_DIF is for Standard SCSI host-based DIF supported and NO_HOST_DIF is for Volume does not support host-based DIF. 
+.PARAMETER SnapCPG
+	Specifies the name of the CPG from which the snapshot space will be allocated.
+.PARAMETER SsSpcAllocWarningPct
+	Enables a snapshot space allocation warning. A warning alert is generated when the reserved snapshot space of the volume exceeds 
+	the indicated percentage of the volume size. 
+.PARAMETER SsSpcAllocLimitPct
+	Sets a snapshot space allocation limit. The snapshot space of the volume is prevented from growing beyond the indicated percentage of the volume size.
+.PARAMETER tpvv
+	Create thin volume. 
+.PARAMETER tdvv
+.PARAMETER UsrSpcAllocWarningPct
+	Create fully provisionned volume. 
+.PARAMETER UsrSpcAllocLimitPct
+	Space allocation limit. 
+.PARAMETER ExpirationHours
+	Specifies the relative time (from the current time) that the volume expires. Value is a positive integer with a range of 1–43,800 hours (1825 days). 
+.PARAMETER RetentionHours
+	Specifies the amount of time relative to the current time that the volume is retained. Value is a positive integer with a range of 1– 43,800 hours (1825 days). 
+.PARAMETER Compression   
+	Enables (true) or disables (false) creating thin provisioned volumes with compression. Defaults to false (create volume without compression). 
+.PARAMETER RmSsSpcAllocWarning
+	Enables (false) or disables (true) removing the snapshot space allocation warning. 
+	If false, and warning value is a positive number, then set. 
+.PARAMETER RmUsrSpcAllocWarning
+	Enables (false) or disables (true) removing the user space allocation warning. If false, and warning value is a posi' 
+.PARAMETER RmExpTime
+	Enables (false) or disables (true) resetting the expiration time. If false, and expiration time value is a positive number, then set. 
+.PARAMETER RmSsSpcAllocLimit
+	Enables (false) or disables (true) removing the snapshot space allocation limit. If false, and limit value is 0, setting ignored. If false, and limit value is a positive number, then set. 
+.PARAMETER RmUsrSpcAllocLimit
+	Enables (false) or disables (true)false) the allocation limit. If false, and limit value is a positive number, then set. 
 .EXAMPLE 
 	PS:> Update-A9Vv -VVName xxx -NewName zzz
 .EXAMPLE 
@@ -247,177 +310,94 @@ Function Update-A9Vv
 	PS:> Update-A9Vv -VVName xxx -OneHost $true
 .EXAMPLE 
 	PS:> Update-A9Vv -VVName xxx -SnapCPG xxx
-.PARAMETER VVName
-	Name of the volume being modified. The VVName is required and used in both the API version and SSH version of this command.
-.PARAMETER Size
-	Specifies the size in MB to be added to the volume user space. The size must be an integer in the range from 1 to 16T. This option uses the API, and no other options do.
-.PARAMETER NewName
-	New Volume Name. This parameter requires the use of the SSH type connection.
-.PARAMETER Comment
-	Additional informations about the volume. This parameter requires the use of the SSH type connection.
-.PARAMETER WWN
-	Specifies changing the WWN of the virtual volume a new WWN. This parameter requires the use of the SSH type connection.
-	If the value of WWN is auto, the system automatically chooses the WWN based on the system serial number, the volume ID, and the wrap counter.
-.PARAMETER UserCPG
-	User CPG Name. This parameter requires the use of the SSH type connection.
-.PARAMETER StaleSS
-	True—Stale snapshots. If there is no space for a copyon- write operation, the snapshot can go stale but the host write proceeds without an error. 
-	false—No stale snapshots. If there is no space for a copy-on-write operation, the host write fails. This parameter requires the use of the SSH type connection.
-.PARAMETER OneHost
-	True—Indicates a volume is constrained to export to one host or one host cluster. 
-	false—Indicates a volume exported to multiple hosts for use by a cluster-aware application, or when port presents VLUNs are used. This parameter requires the use of the SSH type connection.
-.PARAMETER ZeroDetect
-	True—Indicates that the storage system scans for zeros in the incoming write data. 
-	false—Indicates that the storage system does not scan for zeros in the incoming write data. This parameter requires the use of the SSH type connection.
-.PARAMETER System
-	True— Special volume used by the system. false—Normal user volume. This parameter requires the use of the SSH type connection.
-.PARAMETER Caching
-	This is a read-only policy and cannot be set. true—Indicates that the storage system is enabled for write caching, read caching, and read ahead for the volume. 
-	false—Indicates that the storage system is disabled for write caching, read caching, and read ahead for the volume. This parameter requires the use of the SSH type connection.
-.PARAMETER Fsvc
-	This is a read-only policy and cannot be set. true —Indicates that File Services uses this volume. false —Indicates that File Services does not use this volume. This parameter requires the use of the SSH type connection.
-.PARAMETER HostDIF
-	Type of host-based DIF policy, 3PAR_HOST_DIF is for 3PAR host-based DIF supported, 
-	STD_HOST_DIF is for Standard SCSI host-based DIF supported and NO_HOST_DIF is for Volume does not support host-based DIF. This parameter requires the use of the SSH type connection.
-.PARAMETER SnapCPG
-	Specifies the name of the CPG from which the snapshot space will be allocated. This parameter requires the use of the SSH type connection.
-.PARAMETER SsSpcAllocWarningPct
-	Enables a snapshot space allocation warning. A warning alert is generated when the reserved snapshot space of the volume exceeds 
-	the indicated percentage of the volume size. This parameter requires the use of the SSH type connection.
-.PARAMETER SsSpcAllocLimitPct
-	Sets a snapshot space allocation limit. The snapshot space of the volume is prevented from growing beyond the indicated percentage of the volume size. This parameter requires the use of the SSH type connection.
-.PARAMETER tpvv
-	Create thin volume. This parameter requires the use of the SSH type connection.
-.PARAMETER tdvv
-.PARAMETER UsrSpcAllocWarningPct
-	Create fully provisionned volume. This parameter requires the use of the SSH type connection.
-.PARAMETER UsrSpcAllocLimitPct
-	Space allocation limit. This parameter requires the use of the SSH type connection.
-.PARAMETER ExpirationHours
-	Specifies the relative time (from the current time) that the volume expires. Value is a positive integer with a range of 1–43,800 hours (1825 days). This parameter requires the use of the SSH type connection.
-.PARAMETER RetentionHours
-	Specifies the amount of time relative to the current time that the volume is retained. Value is a positive integer with a range of 1– 43,800 hours (1825 days). This parameter requires the use of the SSH type connection.
-.PARAMETER Compression   
-	Enables (true) or disables (false) creating thin provisioned volumes with compression. Defaults to false (create volume without compression). This parameter requires the use of the SSH type connection.
-.PARAMETER RmSsSpcAllocWarning
-	Enables (false) or disables (true) removing the snapshot space allocation warning. 
-	If false, and warning value is a positive number, then set. This parameter requires the use of the SSH type connection.
-.PARAMETER RmUsrSpcAllocWarning
-	Enables (false) or disables (true) removing the user space allocation warning. If false, and warning value is a posi' This parameter requires the use of the SSH type connection.
-.PARAMETER RmExpTime
-	Enables (false) or disables (true) resetting the expiration time. If false, and expiration time value is a positive number, then set. This parameter requires the use of the SSH type connection.
-.PARAMETER RmSsSpcAllocLimit
-	Enables (false) or disables (true) removing the snapshot space allocation limit. If false, and limit value is 0, setting ignored. If false, and limit value is a positive number, then set. This parameter requires the use of the SSH type connection. 
-.PARAMETER RmUsrSpcAllocLimit
-	Enables (false) or disables (true)false) the allocation limit. If false, and limit value is a positive number, then set. This parameter requires the use of the SSH type connection.
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
 Param(
-	[Parameter(Mandatory=$true, ParameterSetName='API')]
-	[Parameter(Mandatory=$true, ParameterSetName='SSH')]
-															[String]	$VVname ,		
-	[Parameter(Mandatory=$true, ParameterSetName='API')]		
-										[String]	$Size ,
-	[Parameter(ParameterSetName='SSH')]	[String]	$NewName,
-	[Parameter(ParameterSetName='SSH')]	[String]	$Comment,
-	[Parameter(ParameterSetName='SSH')]	[String]	$WWN,
-	[Parameter(ParameterSetName='SSH')]	[int]		$ExpirationHours,
-	[Parameter(ParameterSetName='SSH')]	[int]		$RetentionHours,
-	[Parameter(ParameterSetName='SSH')]	[boolean]	$StaleSS ,
-	[Parameter(ParameterSetName='SSH')]	[boolean]	$OneHost,
-	[Parameter(ParameterSetName='SSH')]	[boolean]	$ZeroDetect,
-	[Parameter(ParameterSetName='SSH')]	[boolean]	$System ,
-	[Parameter(ParameterSetName='SSH')]	[boolean]	$Caching ,
-	[Parameter(ParameterSetName='SSH')]	[boolean]	$Fsvc ,
-	[Parameter(ParameterSetName='SSH')]	[ValidateSet('3PAR_HOST_DIF','STD_HOST_DIF','NO_HOST_DIF')]
-										[string]	$HostDIF ,
-	[Parameter(ParameterSetName='SSH')]	[String]	$SnapCPG,
-	[Parameter(ParameterSetName='SSH')]	[int]		$SsSpcAllocWarningPct ,
-	[Parameter(ParameterSetName='SSH')]	[int]		$SsSpcAllocLimitPct ,
-	[Parameter(ParameterSetName='SSH')]	[String]	$UserCPG,
-	[Parameter(ParameterSetName='SSH')]	[int]		$UsrSpcAllocWarningPct,
-	[Parameter(ParameterSetName='SSH')]	[int]		$UsrSpcAllocLimitPct,
-	[Parameter(ParameterSetName='SSH')]	[Boolean]	$RmSsSpcAllocWarning ,
-	[Parameter(ParameterSetName='SSH')]	[Boolean]	$RmUsrSpcAllocWarning ,
-	[Parameter(ParameterSetName='SSH')]	[Boolean]	$RmExpTime,
-	[Parameter(ParameterSetName='SSH')]	[Boolean]	$RmSsSpcAllocLimit,
-	[Parameter(ParameterSetName='SSH')]	[Boolean]	$RmUsrSpcAllocLimit
+	[Parameter(Mandatory, ParameterSetName='API')]	
+	[Parameter(Mandatory, ParameterSetName='Grow')]	
+												[String]	$VolumeName ,		
+	[Parameter(ParameterSetName='Grow')]	
+		[ValidateRange(256,[int]::MaxValue)]	[int]		$SizeMiB ,
+	[Parameter(ParameterSetName='API')]			[String]	$NewName,
+	[Parameter(ParameterSetName='API')]			[String]	$Comment,
+	[Parameter(ParameterSetName='API')]			[String]	$WWN,
+	[Parameter(ParameterSetName='API')]
+		[ValidateRange(256,[int]::MaxValue)]	[int]		$ExpirationHours,
+	[Parameter(ParameterSetName='API')]	
+		[ValidateRange(256,[int]::MaxValue)]	[int]		$RetentionHours,
+	[Parameter(ParameterSetName='API')]			[boolean]	$StaleSS ,
+	[Parameter(ParameterSetName='API')]			[boolean]	$OneHost,
+	[Parameter(ParameterSetName='API')]			[boolean]	$ZeroDetect,
+	[Parameter(ParameterSetName='API')]			[boolean]	$System ,
+	[Parameter(ParameterSetName='API')]			[boolean]	$Caching ,
+	[Parameter(ParameterSetName='API')]			[boolean]	$Fsvc ,
+	[Parameter(ParameterSetName='API')]	
+		[ValidateSet('3PAR_HOST_DIF','STD_HOST_DIF','NO_HOST_DIF')]
+												[string]	$HostDIF ,
+	[Parameter(ParameterSetName='API')]			[String]	$SnapCPG,
+	[Parameter(ParameterSetName='API')]
+		[ValidateRange(0,100)]					[int]		$SsSpcAllocWarningPct ,
+	[Parameter(ParameterSetName='API')]
+		[ValidateRange(0,100)]					[int]		$SsSpcAllocLimitPct ,
+	[Parameter(ParameterSetName='API')]			[String]	$UserCPG,
+	[Parameter(ParameterSetName='API')]
+		[ValidateRange(0,100)]					[int]		$UsrSpcAllocWarningPct,
+	[Parameter(ParameterSetName='API')]	
+		[ValidateRange(0,100)]					[int]		$UsrSpcAllocLimitPct,
+	[Parameter(ParameterSetName='API')]			[Boolean]	$RmSsSpcAllocWarning ,
+	[Parameter(ParameterSetName='API')]			[Boolean]	$RmUsrSpcAllocWarning ,
+	[Parameter(ParameterSetName='API')]			[Boolean]	$RmExpTime,
+	[Parameter(ParameterSetName='API')]			[Boolean]	$RmSsSpcAllocLimit,
+	[Parameter(ParameterSetName='API')]			[Boolean]	$RmUsrSpcAllocLimit
 )
 Begin 
-{	if ( $PSCmdlet.ParameterSetName -eq 'API')
-		{	if (	Test-A9Connection -ClientType 'API' -returnBoolean) 
-				{	$PSSetName='API'	}
-			else{	Test-A9COnnection -ClientType 'SshClient'
-					$PSSetName='SSH'	
-				}
-		}
-	else{	Test-A9COnnection -ClientType 'SshClient'
-			$PSSetName = 'SSH'
-		}
+{	Test-A9Connection -ClientType 'API' 
 }
 Process 
-{	Switch($PSSetName)
-	{	'API'	{	$cmd= "growvv -f "
-					if ($VVname)	{	$cmd+=" $VVname "	}
-					if ($Size)		{	$demo=$Size[-1]
-										$de=" g | G | t | T "
-										if($de -match $demo)	{	$cmd+=" $Size "	}
-										else					{	return "Error: -Size $Size is Invalid Try eg: 2G  "	}
-									}
-					$Result = Invoke-A9CLICommand -cmds  $cmd
-					return  $Result
-				}
-		'SSH'	
-				{	$body = @{}
-					If ($NewName) 			{ 	$body["newName"] 	= "$($NewName)" }
-					If ($Comment) 			{  	$body["comment"] 	= "$($Comment)" }
-					If ($WWN) 				{ 	$body["WWN"] 		= "$($WWN)"		}
-					If ($ExpirationHours) 	{ 	$body["expirationHours"] = $ExpirationHours}
-					If ($RetentionHours) 	{	$body["retentionHours"] = $RetentionHours}
-					$VvPolicies = @{}
-					If ($StaleSS) 			{	$VvPolicies["staleSS"] 	= $true		}
-					If ($StaleSS -eq $false){	$VvPolicies["staleSS"] 	= $false    }	
-					If ($OneHost) 			{	$VvPolicies["oneHost"] 	= $true    	}
-					If ($OneHost -eq $false){	$VvPolicies["oneHost"] 	= $false   	}
-					If ($ZeroDetect) 		{	$VvPolicies["zeroDetect"]=$true		}	
-					If ($ZeroDetect -eq $false){$VvPolicies["zeroDetect"]=$false 	}
-					If ($System) 			{	$VvPolicies["system"] 	= $true    	} 
-					If ($System -eq $false) {	$VvPolicies["system"] 	= $false    }
-					If ($Caching) 			{	$VvPolicies["caching"] 	= $true    	}	
-					If ($Caching -eq $false){	$VvPolicies["caching"] 	= $false    }
-					If ($Fsvc) 				{	$VvPolicies["fsvc"] 	= $true    	}
-					If ($Fsvc -eq $false) 	{	$VvPolicies["fsvc"] 	= $false	}
-					If ($HostDIF) 
-						{	if($HostDIF -eq "3PAR_HOST_DIF")	{	$VvPolicies["hostDIF"] = 1	}
-							elseif($HostDIF -eq "STD_HOST_DIF")	{	$VvPolicies["hostDIF"] = 2	}
-							elseif($HostDIF -eq "NO_HOST_DIF")	{	$VvPolicies["hostDIF"] = 3	}
-						} 	   
-					If ($SnapCPG) 				{ 	$body["snapCPG"] 				= "$($SnapCPG)" 		}
-					If ($SsSpcAllocWarningPct) 	{ 	$body["ssSpcAllocWarningPct"] 	= $SsSpcAllocWarningPct }
-					If ($SsSpcAllocLimitPct) 	{  	$body["ssSpcAllocLimitPct"] 	= $SsSpcAllocLimitPct 	}	
-					If ($UserCPG) 				{	$body["userCPG"] 				= "$($UserCPG)"			}
-					If ($UsrSpcAllocWarningPct) {	$body["usrSpcAllocWarningPct"] 	= $UsrSpcAllocWarningPct }
-					If ($UsrSpcAllocLimitPct) 	{	$body["usrSpcAllocLimitPct"] 	= $UsrSpcAllocLimitPct	}	
-					If ($RmSsSpcAllocWarning) 	{	$body["rmSsSpcAllocWarning"] 	= $true    				}
-					If ($RmUsrSpcAllocWarning) 	{	$body["rmUsrSpcAllocWarning"] 	= $true					} 
-					If ($RmExpTime) 			{	$body["rmExpTime"] 				= $true 				} 
-					If ($RmSsSpcAllocLimit) 	{	$body["rmSsSpcAllocLimit"] 		= $true 				}
-					If ($RmUsrSpcAllocLimit) 	{	$body["rmUsrSpcAllocLimit"] 	= $true 				}
-					if($VvPolicies.Count -gt 0)	{	$body["policies"] 				= $VvPolicies 			}
-					$Result = $null
-					$uri = '/volumes/'+$VVName 
-					$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
-					if($Result.StatusCode -eq 200)
-						{	write-host "Cmdlet executed successfully" -foreground green
-							if($NewName)	{	return Get-Vv_WSAPI -VVName $NewName	}
-							else			{	return Get-Vv_WSAPI -VVName $VVName		}
-						}
-					else
-						{	Write-Error "Failure:  While Updating Volumes: $VVName " 
-							return $Result.StatusDescription
-						}
-				}
-	}
+{	$body = @{}
+	if ($SizeMiB)			{	$BodySize = @{ 'action' = 3; 'SizeMiB' = $SizeMiB } }
+	If ($NewName) 			{ 	$body["newName"] 	= "$NewName" 			}
+	If ($Comment) 			{  	$body["comment"] 	= "$Comment" 			}
+	If ($WWN) 				{ 	$body["WWN"] 		= "$WWN"				}
+	If ($ExpirationHours) 	{ 	$body["expirationHours"] = $ExpirationHours	}
+	If ($RetentionHours) 	{	$body["retentionHours"] = $RetentionHours	}
+	$VvPolicies = @{}
+	If (test-path Variable:$StaleSS) 				{	$VvPolicies["staleSS"] 	= $StaleSS		}
+	If (test-path Variable:$OneHost) 				{	$VvPolicies["oneHost"] 	= $OneHost    	}
+	If (test-path Variable:$ZeroDetect) 			{	$VvPolicies["zeroDetect"]=$ZeroDetect	}	
+	If (test-path Variable:$System) 				{	$VvPolicies["system"] 	= $System    	} 
+	If (test-path Variable:$Caching) 				{	$VvPolicies["caching"] 	= $Caching    	}	
+	If (test-path Variable:$Fsvc) 					{	$VvPolicies["fsvc"] 	= $Fsvc    		}
+	If (test-path Variable:$HostDIF) 
+		{	if($HostDIF -eq "3PAR_HOST_DIF")		{	$VvPolicies["hostDIF"] = 1	}
+			elseif($HostDIF -eq "STD_HOST_DIF")		{	$VvPolicies["hostDIF"] = 2	}
+			elseif($HostDIF -eq "NO_HOST_DIF")		{	$VvPolicies["hostDIF"] = 3	}
+		} 	   
+	If (test-path Variable:$SnapCPG) 				{ 	$body["snapCPG"] 				= $SnapCPG 				}
+	If (test-path Variable:$SsSpcAllocWarningPct) 	{ 	$body["ssSpcAllocWarningPct"] 	= $SsSpcAllocWarningPct }
+	If (test-path Variable:$SsSpcAllocLimitPct) 	{  	$body["ssSpcAllocLimitPct"] 	= $SsSpcAllocLimitPct 	}	
+	If (test-path Variable:$UserCPG) 				{	$body["userCPG"] 				= $UserCPG				}
+	If (test-path Variable:$UsrSpcAllocWarningPct) 	{	$body["usrSpcAllocWarningPct"] 	= $UsrSpcAllocWarningPct}
+	If (test-path Variable:$UsrSpcAllocLimitPct) 	{	$body["usrSpcAllocLimitPct"] 	= $UsrSpcAllocLimitPct	}	
+	If (test-path Variable:$RmSsSpcAllocWarning) 	{	$body["rmSsSpcAllocWarning"] 	= $RmSsSpcAllocWarning  }
+	If (test-path Variable:$RmUsrSpcAllocWarning) 	{	$body["rmUsrSpcAllocWarning"] 	= $RmUsrSpcAllocWarning	} 
+	If (test-path Variable:$RmExpTime) 				{	$body["rmExpTime"] 				= $RmExpTime			} 
+	If (test-path Variable:$RmSsSpcAllocLimit) 		{	$body["rmSsSpcAllocLimit"] 		= $RmSsSpcAllocLimit 	}
+	If (test-path Variable:$RmUsrSpcAllocLimit) 	{	$body["rmUsrSpcAllocLimit"] 	= $RmUsrSpcAllocLimit 	}
+	if($VvPolicies.Count -gt 0)						{	$body["policies"] 				= $VvPolicies 			}
+	$Result = $null
+	$uri = '/volumes/'+$VolumeName 
+	if (-not $SizeMB )	{	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $Body		}
+	else 				{	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $BodySize	} 
+	if($Result.StatusCode -eq 200)
+		{	write-host "Cmdlet executed successfully" -foreground green
+			if($NewName)	{	return Get-A9Vv -VVName $NewName	}
+			else			{	return Get-A9Vv -VVName $VolumeName		}
+		}
+	else
+		{	Write-Error "Failure:  While Updating Volumes: $VolumeName " 
+			return $Result.StatusDescription
+		}
 }
 }
 
@@ -693,8 +673,7 @@ Param(	[Parameter(Mandatory, ParameterSetName='APIvvName_NSP')		]
 		[Parameter(           ParameterSetName='APIvvSet_HostName')	]		[String]	$NSP,
 
 		[Parameter()]														[Boolean]	$NoVcn,
-		[Parameter()]														[int]		$LUN,
-		[Parameter()]														[switch]	$Override
+		[Parameter()]														[int]		$LUN
 		)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -703,44 +682,40 @@ Process
 {	write-verbose "Executing New-a9VVLun using $PSetName"
 	if( $HostSet   -match "^set:") 	{ 	$HostSet   = $HostSet.substring(4)}
 	if( $VolumeSet -match "^set:") 	{ 	$VolumeSet = $VolumeSet.substring(4)}
-	switch ( $PSetName)
-	{	
-		'API'	{	write-verbose "API operational State Detected"
-					$body = [ordered]@{}    
-					if ( $VolumeName){	$body["volumeName"] ="$($VolumeName)"}
-					if ( $VolumeSet){	$body["volumeName"] ="set:$($VolumeSet)"} 
-					if ( $LUN ) 	{	$body["lun"] = $LUN 				}
-					if ($HostName)	{ 	$body["hostname"] = "$($HostName)" 	}
-					if ($HostSet)	{ 	$body["hostname"] = "set:$HostSet" 	}
+	write-verbose "API operational State Detected"
+	$body = [ordered]@{}    
+	if ( $VolumeName){	$body["volumeName"] ="$($VolumeName)"}
+	if ( $VolumeSet){	$body["volumeName"] ="set:$($VolumeSet)"} 
+	if ( $LUN ) 	{	$body["lun"] = $LUN 				}
+	if ($HostName)	{ 	$body["hostname"] = "$($HostName)" 	}
+	if ($HostSet)	{ 	$body["hostname"] = "set:$HostSet" 	}
 					
-					If ($NSP)		{	$NSPbody = @{} 
-										$list = $NSP.split(":")
-										$NSPbody["node"] = [int]$list[0]		
-										$NSPbody["slot"] = [int]$list[1]
-										$NSPbody["cardPort"] = [int]$list[2]		
-										$body["portPos"] = $NSPbody		
-									}
-					If ($NoVcn) 	{	$body["noVcn"] = $NoVcn	}
-					if (-not $LUN)	{	$body["lun"] = 0
-										$body['autoLun'] = $true
-										$body['maxAutoLun'] = 0	
-									}
-					$Result = $null
-					$x = $body
-					$x = $x | ConvertTo-Json
-					write-verbose "The Body of the command will be `n $x"
-					$Result = Invoke-A9API -uri '/vluns' -type 'POST' -body $body -verbose
-					$status = $Result.StatusCode	
-					if($status -eq 201)
-						{	write-host "Cmdlet executed successfully" -foreground green
-							return Get-A9vLun -VolumeName $VolumeName -LUNID $LUNID -HostName $HostName
-						}
-					else
-						{	write-error "FAILURE : While Creating a VLUN" 
-							return $Result.StatusDescription
-						}	
-				}
-			}
+	If ($NSP)		{	$NSPbody = @{} 
+						$list = $NSP.split(":")
+						$NSPbody["node"] = [int]$list[0]		
+						$NSPbody["slot"] = [int]$list[1]
+						$NSPbody["cardPort"] = [int]$list[2]		
+						$body["portPos"] = $NSPbody		
+					}
+	If ($NoVcn) 	{	$body["noVcn"] = $NoVcn	}
+	if (-not $LUN)	{	$body["lun"] = 0
+						$body['autoLun'] = $true
+						$body['maxAutoLun'] = 0	
+					}
+	$Result = $null
+	$x = $body
+	$x = $x | ConvertTo-Json
+	write-verbose "The Body of the command will be `n $x"
+	$Result = Invoke-A9API -uri '/vluns' -type 'POST' -body $body -verbose
+	$status = $Result.StatusCode	
+	if($status -eq 201)
+		{	write-host "Cmdlet executed successfully" -foreground green
+			return Get-A9vLun -VolumeName $VolumeName -LUNID $LUNID -HostName $HostName
+		}
+	else
+		{	write-error "FAILURE : While Creating a VLUN" 
+			return $Result.StatusDescription
+		}	
 }
 }
 
