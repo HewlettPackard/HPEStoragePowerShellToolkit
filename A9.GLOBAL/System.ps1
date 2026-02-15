@@ -183,3 +183,122 @@ Process
     }
 }
 
+Function Get-A9WSAPI
+{
+<#
+.SYNOPSIS	
+	Get Getting WSAPI configuration information
+.DESCRIPTION
+	Get Getting WSAPI configuration information. The three types of information you may gather are the running 
+    state (configinfo), the service status (via CLI), and the existing outstanding sessions (sessions via CLI).
+.PARAMETER ServiceStatus
+    Will return all of the service information regarding WSAPI from a CLI interrogation
+.PARAMETER ConfigurationInformation
+    Will return the WSAPI status of the current running WSAPI service.
+.PARAMETER Session
+    Will return the list of all outstanding WSAPI sessions from a CLI interrogation.
+.PARAMETER ShowRaw
+    This outputs the returned data without any formatting. Only available with CLI options of ServiceStatus and Sessions.
+.EXAMPLE
+	PS:> Get-A9WSAPI -ConfigurationInformation
+
+	Get Getting WSAPI configuration information
+.EXAMPLE
+    PS:> Get-A9WsApi -ServiceStatus
+
+    service State                            : Enabled
+    HPE GreenLake for Block Storage UI State : Active
+    server State                             : Active
+    HTTPS Port                               : 443
+    Number of Sessions Created               : 0
+    System Resource Usage                    : 192
+    Number of Sessions Active                : 0
+    Version                                  : 1.14.0
+    Event Stream State                       : Enabled
+    Max Number of SSE Sessions Allowed       : 5
+    Number of SSE Sessions Created           : 0
+    Number of SSE Sessions Active            : 0
+    Session Timeout                          : 15 Minutes
+    Policy                                   : no_per_user_limit
+    API URL                                  : https://192.168.1.12/api/v1
+
+    This command option REQUIREs an SSH type connection
+.EXAMPLE
+    PS:> Get-A9WsApi -Session
+
+    This command option REQUIREs an SSH type connection
+#>
+[CmdletBinding()]
+Param(  [Parameter(Mandatory, ParameterSetName='default')]      [switch]    $ServiceStatus,
+        [Parameter(Mandatory, ParameterSetName='Session')]      [switch]    $Session,
+        [Parameter(Mandatory, ParameterSetName='Config')]       [switch]    $ConfigurationInformation,
+        [Parameter(ParameterSetname='default')]
+        [Parameter(ParameterSetname='Session')]                 [switch]    $ShowRaw
+     )
+
+Process 
+{	$Result = $null	
+	$dataPS = $null	
+    switch($PSCmdlet.ParameterSetName)
+        {   'Config'    {   Test-A9Connection -ClientType 'API'
+                            $Result = Invoke-A9API -uri '/wsapiconfiguration' -type 'GET' 
+                            if($Result.StatusCode -eq 200)
+                                {	$dataPS = $Result.content | ConvertFrom-Json
+                                    write-host "Cmdlet executed successfully" -foreground green
+                                    return $dataPS
+                                }
+                            else
+                                {	Write-Error "Failure:  While Executing Get-WSAPIConfigInfo" 
+                                    return $Result.StatusDescription
+                                }
+                        }
+            'default'   {   Test-A9Connection -ClientType 'SshClient' 
+                            $Cmd = " showwsapi -d "
+                            write-verbose "Executing the following SSH command `n`t $cmd"
+                            $Result = Invoke-A9CLICommand -cmds  $Cmd
+                            if ($ReturnRaw) { return $Result }
+                            $ReturnTable=[ordered]@{}
+                            foreach( $Line in $Result[1..$Result.count])
+                            {   $LabelName = (($Line.split(' : '))[0]).trim(' ')
+                                $DataValue = (($Line.split(' : '))[1]).trim(' ')
+                                $ReturnTable["$LabelName"] = $DataValue
+                            }
+                            $Result = $ReturnTable | convertto-json | convertfrom-json
+                            return $Result
+                        }
+            'Session'   {   Test-A9Connection -ClientType 'SshClient'
+                            $Cmd = " showwsapisession "
+                            write-verbose "Executing the following SSH command `n`t $cmd"
+                            $Result = Invoke-A9CLICommand -cmds  $Cmd
+                            if ($ShowRaw)   {   return $Result }
+                            if($Result.Count -gt 2)
+                                {   $tempFile = [IO.Path]::GetTempFileName()
+                                    $ResultHeader = 'Id,Node,Name,Role,Client_IP_Addr,Connected_since,State,Session_Type'
+                                    Add-Content -Path $tempFile -Value $ResultHeader
+                                    foreach ($s in  $Result[1..($Result.count-1)] )
+                                        {   $s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+                                            if ( -not ( $s.contains('-----') -or $s.contains('total') ) )
+                                                {   Add-Content -Path $tempFile -Value $s
+                                                }
+                                        }
+                                    $returndata = Import-Csv $tempFile
+                                    Remove-Item  $tempFile
+                                    $NewObj = @(    foreach( $Item in $returndata)	
+                                        {   $NewItem=@{PSTypeName = "HPE.A9Storage.APISession"}
+										    $Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+											$DataSetType = "HPE.A9Storage.APISession"
+											$NewItem.PSTypeNames.Insert(0,$DataSetType)
+											$DataSetType = $DataSetType + ".TypeName"
+											$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+											[PSCustomObject]$NewItem
+										}
+						            )
+                                    return $NewObj
+                                }
+                                else
+                                    {	return $Result
+                                    } 
+                        }	
+        }
+}
+}

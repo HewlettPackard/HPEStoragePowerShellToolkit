@@ -10,14 +10,6 @@ Function Get-A9Disk
 	Displays configuration information about the physical disks (PDs) on a system. 
 .DESCRIPTION
 	Displays configuration information about the physical disks (PDs) on a system. 
-.PARAMETER Listcols
-	List the columns available to be shown in the -showcols option
-	described below (see 'clihelp -col showpd' for help on each column).
-.PARAMETER I
-	Show disk inventory (inquiry) data.
-
-	The following columns are shown:
-	Id CagePos State Node_WWN MFR Model Serial FW_Rev Protocol MediaType AdmissionTime.
 .PARAMETER E
 	Show disk environment and error information. Note that reading this information places a significant load on each disk.
 	The following columns are shown:
@@ -29,8 +21,6 @@ Function Get-A9Disk
 	Id CagePos Type State Total_Chunk Nrm_Used_OK Nrm_Used_Fail
 	Nrm_Unused_Free Nrm_Unused_Uninit Nrm_Unused_Unavail Nrm_Unused_Fail
 	Spr_Used_OK Spr_Used_Fail Spr_Unused_Free Spr_Unused_Uninit Spr_Unused_Fail.
-.PARAMETER S
-	Show detailed state information. This option is deprecated and will be removed in a subsequent release.
 .PARAMETER State
 	Show detailed state information. This is the same as -s.
 
@@ -47,38 +37,6 @@ Function Get-A9Disk
 	Specifies that only failed physical disks are displayed.
 .PARAMETER Degraded
 	Specifies that only degraded physical disks are displayed. If both -failed and -degraded are specified, the command shows failed disks and degraded disks.
-.PARAMETER Pattern
-	Physical disks matching the specified pattern are displayed.
-.PARAMETER ND
-	Specifies one or more nodes. Nodes are identified by one or more integers (item). Multiple nodes are separated with a single comma
-	(e.g. 1,2,3). A range of nodes is separated with a hyphen (e.g. 0-7). The primary path of the disks must be on the specified node(s).
-.PARAMETER ST
-	Specifies one or more PCI slots. Slots are identified by one or more integers (item). Multiple slots are separated with a single comma
-	(e.g. 1,2,3). A range of slots is separated with a hyphen (e.g. 0-7). The primary path of the disks must be on the specified PCI slot(s).
-.PARAMETER PT
-	Specifies one or more ports. Ports are identified by one or more integers (item). Multiple ports are separated with a single comma
-	(e.g. 1,2,3). A range of ports is separated with a hyphen (e.g. 0-4). The primary path of the disks must be on the specified port(s).
-.PARAMETER CG
-	Specifies one or more drive cages. Drive cages are identified by one or more integers (item). Multiple drive cages are separated with a
-	single comma (e.g. 1,2,3). A range of drive cages is separated with a hyphen (e.g. 0-3). The specified drive cage(s) must contain disks.
-.PARAMETER MG
-	Specifies one or more drive magazines. The "1." or "0." displayed in the CagePos column of showpd output indicating the side of the cage is omitted when 
-	using the -mg option. Drive magazines are identified by one or more integers (item). Multiple drive magazines are separated with a single comma (e.g. 1,2,3). 
-	A range of drive magazines is separated with a hyphen(e.g. 0-7). The specified drive magazine(s) must contain disks.
-.PARAMETER PN
-	Specifies one or more disk positions within a drive magazine. Disk positions are identified by one or more integers (item). Multiple disk positions 
-	are separated with a single comma(e.g. 1,2,3). A range of disk positions is separated with a hyphen(e.g. 0-3). The specified position(s) must contain disks.
-.PARAMETER DK
-	Specifies one or more physical disks. Disks are identified by one or more integers(item). Multiple disks are separated with a single
-	comma (e.g. 1,2,3). A range of disks is separated with a hyphen(e.g. 0-3).  Disks must match the specified ID(s).
-.PARAMETER Devtype
-	Specifies that physical disks must have the specified device type (FC for Fast Class, NL for Nearline, SSD for Solid State Drive)
-	to be used. Device types can be displayed by issuing the "showpd" command.
-.PARAMETER RPM
-	Drives must be of the specified relative performance metric, as shown in the "RPM" column of the "showpd" command. The number does not represent a rotational 
-	speed for the drives without spinning media (SSD). It is meant as a rough estimation of the performance difference between the drive and the other drives
-	in the system.  For FC and NL drives, the number corresponds to both a performance measure and actual rotational speed. For SSD drives, the number is to be 
-	treated as a relative performance benchmark that takes into account I/O's per second, bandwidth and access time.
 .PARAMETER Node
 	Specifies that the display is limited to specified nodes and physical disks connected to those nodes. The node list is specified as a series
 	of integers separated by commas (e.g. 1,2,3). The list can also consist of a single integer. If the node list is not specified, all disks on all nodes are displayed.
@@ -108,8 +66,6 @@ Function Get-A9Disk
 	This example will display chunklet use information for all disks with the physical disk ID. 
 .EXAMPLE  
 	PS:> Get-A9Disk -Node 0 -PD_ID 5
-.EXAMPLE  
-	PS:> Get-A9Disk -I -Pattern -ND 1 -PD_ID 5
 .EXAMPLE
 	PS:> Get-A9Disk -C -Pattern -Devtype FC  	
 .EXAMPLE  
@@ -117,10 +73,10 @@ Function Get-A9Disk
 
 	TThis example will display all the FC disks in magazine 0 of all cages.
 .NOTES
-	This command requires a SSH type connection.
+	This command requires a SSH type connection if using any arguments.
+    The same data from the API is given as it presented from the option -i (inquery, so -i has been depreciated)
 #>
-param(	[Parameter(ParameterSetName='ssh')]	[switch]	$I,
-		[Parameter(ParameterSetName='ssh')]	[switch]	$E,
+param(	[Parameter(ParameterSetName='ssh')]	[switch]	$E,
 		[Parameter(ParameterSetName='ssh')]	[switch]	$C,
 		[Parameter(ParameterSetName='ssh')]	[switch]	$StateInfo,
 		[Parameter(ParameterSetName='ssh')]	[switch]	$State,
@@ -132,18 +88,7 @@ param(	[Parameter(ParameterSetName='ssh')]	[switch]	$I,
 		[Parameter(ParameterSetName='ssh')]	[String]	$Slots ,
 		[Parameter(ParameterSetName='ssh')]	[String]	$Ports ,
 		[Parameter(ParameterSetName='ssh')]	[String]	$WWN ,
-		[Parameter(ParameterSetName='sshPattern',Mandatory)]	[switch]	$Pattern,
-		[Parameter(ParameterSetName='sshPattern')]	[String]	$ND ,
-		[Parameter(ParameterSetName='sshPattern')]	[String]	$ST ,
-		[Parameter(ParameterSetName='sshPattern')]	[String]	$PT ,
-		[Parameter(ParameterSetName='sshPattern')]	[String]	$CG ,
-		[Parameter(ParameterSetName='sshPattern')]	[String]	$MG ,
-		[Parameter(ParameterSetName='sshPattern')]	[String]	$PN ,
-		[Parameter(ParameterSetName='sshPattern')]	[String]	$DK ,
-		[Parameter(ParameterSetName='sshPattern')]	
-		[Parameter(ParameterSetName='API')]	
-        [ValidateSet('FC','NL','SSD','SCM')]            [String]	$Devtype ,
-		[Parameter(ParameterSetName='sshPattern')]	    [String]	$RPM ,
+
 		[Parameter(ParameterSetName='ssh')]	            [String]	$PD_ID ,
 		[Parameter(ParameterSetName='ssh')]	            [switch]	$Listcols,
         [Parameter(ParameterSetName='ssh')]	            [switch]	$UseSSH
@@ -188,7 +133,48 @@ Process
                         }
                     If($Result.StatusCode -eq 200)
                         {	write-host "Cmdlet executed successfully" -foreground green
-                            return $dataPS
+                            write-verbose "This is how many objects were returned."
+                            $NewObj = @(    foreach( $Item in $DataPS)
+                                                    {   $NewItem=@{PSTypeName = "HPE.A9Storage.Disk"}
+                                                        $Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+                                                        $StateEnum = $Item.State
+                                                            Switch ($StateEnum)
+                                                                {   1   {   $StateDesc = 'Normal'   }
+                                                                    2   {   $StateDesc = 'Degraded' }
+                                                                    3   {   $StateDesc = 'New'      }
+                                                                    4   {   $StateDesc = 'Failed'   }
+                                                                    99  {   $StateDesc = 'Unknown'  }
+                                                                }
+                                                            if ($StateDesc) 
+                                                                {   $NewItem['StateDescription'] = $StateDesc
+                                                                    remove-variable $StateDesc -erroraction SilentlyContinue
+                                                                }
+                                                        $TypeEnum = $Item.'type'
+                                                            Switch ($TypeEnum)
+                                                                {   1   {   $TypeDesc = 'Magnetic' }
+                                                                    2   {   $TypeDesc = 'SLC'      }
+                                                                    3   {   $TypeDesc = 'MLC'      }
+                                                                    4   {   $TypeDesc = 'cMLC'     }
+                                                                    5   {   $TypeDesc = '3DX'      }
+                                                                    6   {   $TypeDesc = 'QLC'      }
+                                                                    99  {   $TypeDesc = 'Unknown'  }
+                                                                }
+                                                            if ($StateDesc) 
+                                                                {   $NewItem['StateDescription'] = $StateDesc
+                                                                    remove-variable $StateDesc -erroraction SilentlyContinue
+                                                                }
+                                                            if ($TypeDesc) 
+                                                                {   $NewItem['TypeDescription'] = $TypeDesc
+                                                                    remove-variable $StateDesc -erroraction SilentlyContinue
+                                                                }
+                                                            $DataSetType = "HPE.A9Storage.Disk"
+                                                            $NewItem.PSTypeNames.Insert(0,$DataSetType)
+                                                            $DataSetType = $DataSetType + ".TypeName"
+                                                            $NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+                                                        [PSCustomObject]$NewItem
+                                                    }
+                                        )
+                            return $NewObj
                         }
                     else
                         {	Write-Error "Failure:  While Executing Get-Host_WSAPI." 
@@ -196,15 +182,8 @@ Process
                         }
                 }
         'SSH'   {   $cmd= "showpd "	
-                    if($Listcols)
-                                {	$cmd+=" -listcols "
-                                    $Result = Invoke-A9CLICommand -cmds  $cmd
-                                    return $Result
-                                }
-                    if($I)		{	$cmd+=" -i "	}
                     if($E)		{	$cmd+=" -e "	}
                     if($C)		{	$cmd+=" -c "	}
-                    if($StateInfo){	$cmd+=" -s "	}
                     if($State)	{	$cmd+=" -state "}
                     if($Path)	{	$cmd+=" -path "	}
                     if($Space)	{	$cmd+=" -space "}
@@ -214,17 +193,6 @@ Process
                     if($Slots)	{	$cmd+=" -slots $Slots "	}
                     if($Ports)	{	$cmd+=" -ports $Ports "	}
                     if($WWN)	{	$cmd+=" -w $WWN "	}
-                    if($Pattern)
-                                {	if($ND)	{	$cmd+=" -p -nd $ND "	}
-                                    if($ST)	{	$cmd+=" -p -st $ST "	}
-                                    if($PT)	{	$cmd+=" -p -pt $PT "	}
-                                    if($CG)	{	$cmd+=" -p -cg $CG "	}
-                                    if($MG)	{	$cmd+=" -p -mg $MG "	}
-                                    if($PN)	{	$cmd+=" -p -pn $PN "	}
-                                    if($DK)	{	$cmd+=" -p -dk $DK "	}
-                                    if($Devtype){	$cmd+=" -p -devtype $Devtype "	}
-                                    if($RPM)	{	$cmd+=" -p -rpm $RPM "}
-                                }		
                     if ($PD_ID) 
                                 {	$PD=$PD_ID		
                                     $pdd="showpd $PD"
@@ -240,7 +208,7 @@ Process
                     if($Result -match "Invalid device type")	{	return $Result	}
                     if($Result.Count -lt 2)						{	return $Result	}
                     
-                    if($I -Or $State -Or $StateInfo)
+                    if($State -Or $StateInfo)
                         {	$flag = "True"
                             $tempFile = [IO.Path]::GetTempFileName()
                             $LastItem = $Result.Count -3  

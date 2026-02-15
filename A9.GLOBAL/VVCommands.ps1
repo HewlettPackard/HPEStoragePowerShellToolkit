@@ -79,10 +79,86 @@ Process
 				}
 			if($dataPS.Count -gt 0)
 				{	write-host "Cmdlet executed successfully" -foreground green
+					# The following code will decorate the returned objects with desciptions for codified enums. 
+					# The following code will also add the formatting information as well.
+					$NewObj = @(    foreach( $Item in $DataPS)	{   $NewItem=@{PSTypeName = "HPE.A9Storage.Volume"}
+																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+																			$Enum = $Item.State
+																				Switch ($Enum)
+																					{   1   {   $Desc = 'Normal'   }
+																						2   {   $Desc = 'Degraded' }
+																						3   {   $Desc = 'New'      }
+																						4   {   $Desc = 'Failed'   }
+																						99  {   $Desc = 'Unknown'  }
+																					}
+																				if ($Desc) 
+																					{   $NewItem['StateDescription'] = $Desc
+																						remove-variable $Desc -erroraction SilentlyContinue
+																						remove-variable $Enum -erroraction SilentlyContinue
+																					}
+																			$Enum = $Item.'compressionState'
+																				Switch ($Enum)
+																					{   1   {   $Desc = 'Yes' }
+																						2   {   $Desc = 'No'  }
+																						3   {   $Desc = 'Off' }
+																						4   {   $Desc = 'NA'  }
+																						5   {   $Desc = 'V1'  }
+																						6   {   $Desc = 'V2'  }
+																					}
+																				if ($Desc) 
+																					{   $NewItem['compressionDescription'] = $Desc
+																						remove-variable $Desc -erroraction SilentlyContinue
+																						remove-variable $Enum -erroraction SilentlyContinue
+																					}
+																			$Enum = $Item.'provisioningType'
+																				Switch ($Enum)
+																					{   1   {   $Desc = 'Full' }
+																						2   {   $Desc = 'TPVV(Thin Provisioned Virtual Volime)'  }
+																						3   {   $Desc = 'SNP(Snapshot)' }
+																						4   {   $Desc = 'PEER'  }
+																						5   {   $Desc = 'UNKNOWN'  }
+																						6   {   $Desc = 'TDVV(Thin Provision And Deduplicated Virtual Volume)'  }
+																						7   {   $Desc = 'DDS(System Maintained Dedupe Volume)'  }
+																					}
+																				if ($Desc) 
+																					{   $NewItem['provisioningDescription'] = $Desc
+																						remove-variable $Desc -erroraction SilentlyContinue
+																						remove-variable $Enum -erroraction SilentlyContinue
+																					}
+																			$Enum = $Item.'deduplicationState'
+																				Switch ($Enum)
+																					{   1   {   $Desc = 'Yes' }
+																						2   {   $Desc = 'No'  }
+																						3   {   $Desc = 'NA'  }
+																						4   {   $Desc = 'OFF' }
+																					}
+																				if ($Desc) 
+																					{   $NewItem['deduplicationStateDescription'] = $Desc
+																						remove-variable $Desc -erroraction SilentlyContinue
+																						remove-variable $Enum -erroraction SilentlyContinue
+																					}
+																			$Enum = $Item.'copyType'
+																				Switch ($Enum)
+																					{   1   {   $Desc = 'BASE' }
+																						2   {   $Desc = 'PHYSICAL_COPY'  }
+																						3   {   $Desc = 'VIRTUAL_COPY'  }
+																					}
+																				if ($Desc) 
+																					{   $NewItem['copyTypeDescription'] = $Desc
+																						remove-variable $Desc -erroraction SilentlyContinue
+																						remove-variable $Enum -erroraction SilentlyContinue
+																					}
+																	$DataSetType = "HPE.A9Storage.Volume"
+																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
+																	$DataSetType = $DataSetType + ".TypeName"
+																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+																	[PSCustomObject]$NewItem
+																}
+															)
 					if ($VolumeName) 
-						{	return ($dataPS | where-object {$_.name -like $VolumeName })
+						{	return ($NewObj | where-object {$_.name -like $VolumeName })
 						}
-					else{ 	return $dataPS
+					else{ 	return $NewObj
 						}
 				}
 			else
@@ -411,52 +487,55 @@ Function Get-A9vLun
 	If the only argument used is the VVName, the command will attempt to use the API to accomplish the task, if the API is unavalable or other parameters 
 	are used, the command will attempt to fail back to a SSH type connection to accomplish the goal. 
 .PARAMETER VolumeName
-	Name of the volume to filter the results. if used with the -UseSSH option, may be prefixed with 'set:', the name is a volume set name. Displays only VLUNs of virtual volumes that match <VV_name> or 
+	Name of the volume to filter the results. may be prefixed with 'set:', the name is a volume set name. Displays only VLUNs of virtual volumes that match <VV_name> or 
 	glob-style patterns, or to the vv sets that match <VV-set> or glob-style patterns (see help on sub,globpat). The VV set name must start with "set:". Multiple volume names, vv sets or patterns can be
 	repeated using a comma-separated list (for example -v <VV_name>, <VV_name>...).
 .PARAMETER LUNID
-	The LUN ID of the volume to filter the results
+	The LUN ID of the volume to filter the results, since a LUN number is seen by a host, you must specify the Hostname parameter also.
 .PARAMETER HostName
-	Name of the host to which the volume is to be exported. If used with the -UseSSH option, Displays only VLUNs exported to hosts that match <hostname> or glob-style patterns, or to the host sets that match <hostset> or
-	glob-style patterns(see help on sub,globpat). The host set name must start with "set:". Multiple host names, host sets or patterns can
-	be repeated using a comma-separated list.
+	Name of the host to which the volume is to be exported.  The host set name must start with "set:". 
 .EXAMPLE	
-	PS:> Show-A9vLun_CLI -volumeName XYZ 
+	PS:> Get-A9vLun_CLI -volumeName XYZ 
 
 	List vlun details for all hosts connected to volumename XYZ
 .EXAMPLE	
-	PS:> Show-A9vLun_CLI -volumeName XYZ -hostname abc
+	PS:> Get-A9vLun_CLI -volumeName XYZ -hostname abc
 
 	List vlun details for the specific host connected to a specific lun
 .EXAMPLE	
-	PS:> Show-A9vLun -volumename MyTestVol | where-object {$.serial -like "123456" }
+	PS:> Get-A9vLun -volumename MyTestVol | where-object {$.serial -like "123456" }
 	
 	This is an example of how to replicate the functionality of the serial cli option. This command will return only vLuns that match that serial number
 .EXAMPLE	
-	PS:> Show-A9vLun -volumename MyTestVol | where-object {$.active -like "True" }
+	PS:> Get-A9vLun -volumename MyTestVol | where-object {$.active -like "True" }
 	
 	This is an example of how to replicate the functionality of the active cli option. This command will return only vLuns that are active
 .EXAMPLE	
-	PS:> Show-A9vLun -volumename MyTestVol | where-object {$.portPos.node -like 3 }
+	PS:> Get-A9vLun -volumename MyTestVol | where-object {$.portPos.node -like 3 }
 	
 	This is an example of how to replicate the functionality of the ports cli option. This command will return all vLuns that match the other parameters as well as match the port posistion of 3
 .EXAMPLE	
-	PS:> Show-A9vLun -volumename MyTestVol | where-object {$.portPos.slot -like 4 }
+	PS:> Get-A9vLun -volumename MyTestVol | where-object {$.portPos.slot -like 4 }
 	
 	This is an example of how to replicate the functionality of the slots cli option. This command will return all vLuns that match the other parameters as well as match the slot posistion of 4
 .EXAMPLE	
-	PS:> Show-A9vLun -volumename MyTestVol | where-object {$.portPos.nodes -like 0 }
+	PS:> Get-A9vLun -volumename MyTestVol | where-object {$.portPos.card -like 0 }
 	
-	This is an example of how to replicate the functionality of the nodes cli option. This command will return all vLuns that match the other parameters as well as match the node value of 0
+	This is an example of how to replicate the functionality of the card cli option. This command will return all vLuns that match the other parameters as well as match the node value of 0
 .NOTES 
 	This command only uses the WSAPI connection method. 
 
 #>
-[CmdletBinding(DefaultParameterSetName='API')]
+[CmdletBinding(DefaultParameterSetName='None')]
 Param(	
-		[Parameter(ParameterSetName='API')]	[String]	$VolumeName,
-		[Parameter(ParameterSetName='API')]	[int]		$LUNID,
-		[Parameter(ParameterSetName='API')]	[String]	$HostName
+		[Parameter(Mandatory, ParameterSetName='ByVolumeName')]
+		[Parameter(Mandatory, ParameterSetName='ByBoth')]			[String]	$VolumeName,
+		
+		[Parameter(ParameterSetName='ByBoth')]	
+		[Parameter(ParameterSetName='ByHostName')]					[int]		$LUNID,
+		
+		[Parameter(Mandatory, ParameterSetName='ByBoth')]	
+		[Parameter(Mandatory, ParameterSetName='ByHostName')]		[String]	$HostName
 	)
 Begin 
 {	Test-A9Connection -CLientType 'API' 
@@ -477,7 +556,55 @@ Process
 			if ( $HostName )	{	$dataPS = $dataPS | where-object {$_.hostname -like $HostName }			}
 			if($dataPS.Count -gt 0)
 				{	write-host "Cmdlet executed successfully" -foreground green
-					return $dataPS
+					# The following code will decorate the returned objects with desciptions for codified enums. 
+					# The following code will also add the formatting information as well.
+					$NewObj = @(    foreach( $Item in $dataPS)	
+																{   $NewItem=@{PSTypeName = "HPE.A9Storage.vLun"}
+																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+																			$Enum = $Item.'type'
+																				Switch ($Enum)
+																					{   1   {   $Desc = 'EMPTY'   }
+																						2   {   $Desc = 'PORT' }
+																						3   {   $Desc = 'HOST'      }
+																						4   {   $Desc = 'MATCHED_SET'   }
+																						99  {   $Desc = 'HOST_SET'  }
+																					}
+																				if ($Desc) 
+																					{   $NewItem['typeDescription'] = $Desc
+																						remove-variable $Desc -erroraction SilentlyContinue
+																						remove-variable $Enum -erroraction SilentlyContinue
+																					}
+																			$Enum = $Item.'multipathing'
+																				Switch ($Enum)
+																					{   1   {   $Desc = 'UNKNOWN' }
+																						2   {   $Desc = 'Round Robin'  }
+																						3   {   $Desc = 'Failover' }
+																					}
+																				if ($Desc) 
+																					{   $NewItem['multipathingDescription'] = $Desc
+																						remove-variable $Desc -erroraction SilentlyContinue
+																						remove-variable $Enum -erroraction SilentlyContinue
+																					}
+																			$Enum = $Item.'failedPathPol'
+																				Switch ($Enum)
+																					{   1   {   $Desc = 'UNKNOWN' }
+																						2   {   $Desc = 'SCSI_TEST_UNIT_READY'  }
+																						3   {   $Desc = 'INQUIRY' }
+																						4   {   $Desc = 'READ_SECTOR0'  }
+																					}
+																				if ($Desc) 
+																					{   $NewItem['failedPathPolDescription'] = $Desc
+																						remove-variable $Desc -erroraction SilentlyContinue
+																						remove-variable $Enum -erroraction SilentlyContinue
+																					}
+																	$DataSetType = "HPE.A9Storage.vLun"
+																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
+																	$DataSetType = $DataSetType + ".TypeName"
+																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+																	[PSCustomObject]$NewItem
+																}
+								)
+					return $NewObj
 				}
 			else
 				{	write-verbose "No data Found."
