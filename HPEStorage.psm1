@@ -166,7 +166,7 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             . $PSScriptRoot\A9.GLOBAL\CPGManagement.ps1
             Export-ModuleMember -Function Remove-A9CPG, Get-A9CPG, New-A9Cpg, Set-A9Cpg , Compress-A9CPG 
             . $PSScriptRoot\A9.GLOBAL\System.ps1
-            Export-ModuleMember -Function Get-A9System
+            Export-ModuleMember -Function Get-A9System, Get-A9WSAPI
         }
         if ( $LoadA9CLI )
         {   # Load the CLI specific Commnands
@@ -176,7 +176,7 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             . $PSScriptRoot\A9.CLI\Certificate.ps1
             Export-ModuleMember -Function Get-A9Cert, Import-A9Cert, New-A9Cert, Remove-A9Cert
             . $PSScriptRoot\A9.CLI\ConfigWebServicesAPI.ps1
-            Export-ModuleMember -Function Get-A9WsApi, Get-A9WsapiSession, Remove-A9WsapiSession, Set-A9Wsapi, Start-A9Wsapi, Stop-A9Wsapi
+            Export-ModuleMember -Function Remove-A9WsapiSession, Set-A9Wsapi
             . $PSScriptRoot\A9.CLI\CimManagement.ps1
             Export-ModuleMember -Function Get-A9CIM, Start-A9CIM, Set-A9CIM, Stop-A9CIM
             . $PSScriptRoot\A9.CLI\Disk.ps1 
@@ -260,11 +260,11 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             . $PSScriptRoot\A9.scripts\FlashCacheOperations.ps1 
             Export-ModuleMember -Function Set-A9FlashCache,New-A9FlashCache,Remove-A9FlashCache,Get-FlashCache,Set-A9VvSetFlashCachePolicy
             . $PSScriptRoot\A9.scripts\HostManagement.ps1
-            Export-ModuleMember -Function New-A9Host,Set-A9HostTargetZoneingWWN,Update-A9Host ,Remove-A9Host,Get-A9HostWithFilter,Get-A9HostPersona, Set-A9Host
+            Export-ModuleMember -Function New-A9Host,Set-A9HostTargetZoneingWWN,Update-A9Host ,Remove-A9Host, Set-A9Host
             . $PSScriptRoot\A9.scripts\HostSetsAndVirtualVolumeSets.ps1 
             Export-ModuleMember -Function New-A9HostSet ,Update-A9HostSet , Remove-A9HostSet,New-A9VvSet,Update-A9VvSet ,Get-A9VvSet 
             . $PSScriptRoot\A9.scripts\PortsAndSwitches.ps1 
-            Export-ModuleMember -Function Get-A9Port ,Get-A9IscsivLans ,Get-A9PortDevices ,Get-A9PortDeviceTDZ ,Get-A9FcSwitches ,Set-A9ISCSIPort ,New-A9IscsivLan ,
+            Export-ModuleMember -Function Get-A9Port ,Get-A9IscsivLans ,Get-A9PortDevice ,Get-A9PortDeviceTDZ ,Get-A9FcSwitches ,Set-A9ISCSIPort ,New-A9IscsivLan ,
                 New-A9IscsivLun ,Set-A9IscsivLan,Reset-A9IscsiPort,Remove-A9IscsivLan
             . $PSScriptRoot\A9.scripts\RemoteCopy.ps1
             Export-ModuleMember -Function New-A9RCopyGroup,Start-A9RCopyGroup ,Stop-A9RCopyGroup,Sync-A9RCopyGroup,Remove-A9RCopyGroup,Update-A9RCopyGroup,Update-A9RCopyGroupTarget,
@@ -275,7 +275,7 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             . $PSScriptRoot\A9.scripts\SystemEvents.ps1
             Export-ModuleMember -Function Open-A9SSE,Get-A9EventLogs
             . $PSScriptRoot\A9.scripts\SystemInformationQueriesAndManagement.ps1 
-            Export-ModuleMember -Function Update-A9System,Get-A9Version,Get-A9WSAPIConfigInfo
+            Export-ModuleMember -Function Update-A9System,Get-A9Version
             . $PSScriptRoot\A9.scripts\SystemReporter.ps1 
             Export-ModuleMember -Function Get-A9CacheMemoryStatisticsDataReports,Get-A9CPGSpaceDataReports,Get-A9CPGStatisticalDataReports,Get-A9CPUStatisticalDataReports,
             Get-A9PDCapacityReports,Get-A9PDStatisticsReports, Get-A9PDSpaceReports,Get-A9PortStatisticsReports, Get-A9QoSStatisticalReports, Get-A9RCopyStatisticalReports,

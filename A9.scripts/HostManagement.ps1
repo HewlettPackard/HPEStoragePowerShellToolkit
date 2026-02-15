@@ -111,12 +111,7 @@ Function Set-A9HostTargetZoneingWWN
 .SYNOPSIS
 	Add or remove a host WWN from target-driven zoning
 .DESCRIPTION    
-	Add a host WWN from target-driven zoning.
-    Any user with Super or Edit role, or any role granted host_create permission, can perform this operation. Requires access to all domains.    
-.EXAMPLE
-	PS:> Add-A9RemoveHostWWN -HostName MyHost -FCWWNs "$wwn" -AddWwnToHost
-.EXAMPLE	
-	PS:> Add-A9RemoveHostWWN -HostName MyHost -FCWWNs "$wwn" -RemoveWwnFromHost
+	Add a host WWN from target-driven zoning. 
 .PARAMETER HostName
 	Host Name.
 .PARAMETER FCWWNs
@@ -132,6 +127,10 @@ Function Set-A9HostTargetZoneingWWN
 	Adds WWN to target driven zone. Creates the target driven zone if it does not exist, and adds the WWN to the host if it does not exist.
 .PARAMETER RemoveWwnFromTZone
 	Removes WWN from the targetzone. Removes the target driven zone unless it is the last WWN. Does not remove the last WWN from the host.
+.EXAMPLE
+	PS:> Add-A9RemoveHostWWN -HostName MyHost -FCWWNs "$wwn" -AddWwnToHost
+.EXAMPLE	
+	PS:> Add-A9RemoveHostWWN -HostName MyHost -FCWWNs "$wwn" -RemoveWwnFromHost
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory=$true)]				[String]	$HostName,
@@ -322,212 +321,6 @@ Process
 		{	Write-Error "Failure:  While Removing Host:$HostName " 
 			return $Result.StatusDescription
 		}    	
-}
-}
-
-Function Get-A9HostWithFilter 
-{
-<#
-.SYNOPSIS
-	Get Single or list of Hotes information with WWN filtering.
-.DESCRIPTION
-	Get Single or list of Hotes information with WWN filtering. specify the FCPaths WWN or the iSCSIPaths name.
-.EXAMPLE
-	Get-A9HostWithFilter -WWN 123 
-
-	Get a host detail with single wwn name
-.EXAMPLE
-	Get-A9HostWithFilter -WWN "123,ABC,000" 
-
-	Get a host detail with multiple wwn name
-.EXAMPLE
-	Get-A9HostWithFilter -ISCSI 123 
-
-	Get a host detail with single ISCSI name
-.EXAMPLE
-	Get-A9HostWithFilter -ISCSI "123,ABC,000" 
-
-	Get a host detail with multiple ISCSI name
-.EXAMPLE	
-	Get-A9HostWithFilter -WWN "xxx,xxx,xxx" -ISCSI "xxx,xxx,xxx" 
-.PARAMETER WWN
-	Specify WWN of the Host.
-.PARAMETER ISCSI
-	Specify ISCSI of the Host.
-#>
-[CmdletBinding()]
-Param(	[Parameter()]	[String]	$WWN,
-		[Parameter()]	[String]	$ISCSI
-)
-
-Begin 
-{	Test-A9Connection -ClientType 'API'	 
-}
-Process 
-{	$Result = $null
-	$dataPS = $null	
-	$Query="?query=""  """	
-	if($WWN)
-		{	$Query = $Query.Insert($Query.Length-3," FCPaths[ ]")
-			$count = 1
-			$lista = $WWN.split(",")
-			foreach($sub in $lista)
-				{	$Query = $Query.Insert($Query.Length-4," wwn EQ $sub")			
-					if($lista.Count -gt 1)
-						{	if($lista.Count -ne $count)
-								{	$Query = $Query.Insert($Query.Length-4," OR ")
-									$count = $count + 1
-								}				
-						}
-				}		
-		}	
-	if($ISCSI)
-		{	$Link
-			if($WWN)
-				{	$Query = $Query.Insert($Query.Length-2," OR iSCSIPaths[ ]")
-					$Link = 3
-				}
-			else
-				{	$Query = $Query.Insert($Query.Length-3," iSCSIPaths[ ]")
-					$Link = 5
-				}		
-			$count = 1
-			$lista = $ISCSI.split(",")
-			foreach($sub in $lista)
-				{	$Query = $Query.Insert($Query.Length-$Link," name EQ $sub")			
-					if($lista.Count -gt 1)
-						{	if($lista.Count -ne $count)
-								{	$Query = $Query.Insert($Query.Length-$Link," OR ")
-									$count = $count + 1
-								}				
-						}
-				}		
-		}
-	if($ISCSI -Or $WWN)
-		{	$uri = '/hosts/'+$Query
-		}
-	else
-		{	return "Please select at list any one from [ISCSI | WWN]"
-		}
-	$Result = Invoke-A9API -uri $uri -type 'GET' 
-	If($Result.StatusCode -eq 200)
-		{	$dataPS = ($Result.content | ConvertFrom-Json).members			
-		}	
-	If($Result.StatusCode -eq 200)
-		{	if($dataPS.Count -gt 0)
-				{	write-host "Cmdlet executed successfully" -foreground green
-					return $dataPS
-				}
-			else
-				{	Write-Error "Failure:  While Executing Get-HostWithFilter_WSAPI. Expected Result Not Found with Given Filter Option : ISCSI/$ISCSI WWN/$WWN." 
-					return 
-				}		
-		}
-	else
-		{	Write-Error "Failure:  While Executing Get-HostWithFilter_WSAPI." 
-			return $Result.StatusDescription
-		}
-}
-}
-
-Function Get-A9HostPersona 
-{
-<#
-.SYNOPSIS
-	Get Single or list of host persona,.
-.DESCRIPTION  
-	Get Single or list of host persona,.
-.EXAMPLE
-	Get-A9HostPersona
-
-	Display a list of host persona.
-.EXAMPLE
-	PS:> Get-A9HostPersona -Id 10
-
-	Display a host persona of given id.
-.EXAMPLE
-	PS:> Get-A9HostPersona -WsapiAssignedId 100
-
-	Display a host persona of given Wsapi Assigned Id.
-.EXAMPLE
-	PS:> Get-A9HostPersona -Id 10
-
-	Get the information of given host persona.
-.EXAMPLE	
-	PS:> Get-A9HostPersona -WsapiAssignedId "1,2,3"
-
-	Multiple Host.
-.PARAMETER Id
-	Specify host persona id you want to query.
-.PARAMETER WsapiAssignedId
-	To filter by wsapi Assigned Id.
-#>
-[CmdletBinding()]
-Param(	[Parameter()]	[int]		$Id,
-		[Parameter()]	[String]	$WsapiAssignedId
-)
-Begin 
-{	Test-A9Connection -ClientType 'API'	 
-}
-Process 
-{	$Result = $null
-	$dataPS = $null		
-	$Query="?query=""  """
-	if($Id)
-		{	$uri = '/hostpersonas/'+$Id
-			$Result = Invoke-A9API -uri $uri -type 'GET' 
-			If($Result.StatusCode -eq 200)
-				{	$dataPS = $Result.content | ConvertFrom-Json
-					write-host "Cmdlet executed successfully" -foreground green
-					return $dataPS
-				}		
-			else
-				{	Write-Error "Failure:  While Executing Get-HostPersona_WSAPI." 
-					return $Result.StatusDescription
-				}
-		}
-	elseif($WsapiAssignedId)
-		{	$count = 1
-			$lista = $WsapiAssignedId.split(",")
-			foreach($sub in $lista)
-				{	$Query = $Query.Insert($Query.Length-3," wsapiAssignedId EQ $sub")			
-					if($lista.Count -gt 1)
-						{	if($lista.Count -ne $count)
-								{	$Query = $Query.Insert($Query.Length-3," OR ")
-									$count = $count + 1
-								}				
-						}
-				}
-			$uri = '/hostpersonas/'+$Query		
-			$Result = Invoke-A9API -uri $uri -type 'GET'
-			If($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members	
-					if($dataPS.Count -gt 0)
-						{	write-host "Cmdlet executed successfully" -foreground green
-							return $dataPS
-						}
-					else
-						{	Write-Error "Failure:  While Executing Get-HostPersona_WSAPI. Expected Result Not Found with Given Filter Option : WsapiAssignedId/$WsapiAssignedId." 
-							return 
-						}
-				}
-			else
-				{	Write-Error "Failure:  While Executing Get-HostPersona_WSAPI." 
-					return $Result.StatusDescription
-				}
-		}
-	else
-		{	$Result = Invoke-A9API -uri '/hostpersonas' -type 'GET' 
-			If($Result.StatusCode -eq 200)
-				{	$dataPS = ($Result.content | ConvertFrom-Json).members	
-					write-host "Cmdlet executed successfully" -foreground green
-					return $dataPS
-				}
-			else
-				{	Write-Error "Failure:  While Executing Get-HostPersona_WSAPI." 
-					return $Result.StatusDescription
-				}
-		}
 }
 }
 

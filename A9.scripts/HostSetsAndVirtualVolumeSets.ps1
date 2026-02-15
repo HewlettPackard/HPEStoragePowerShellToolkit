@@ -7,18 +7,15 @@ Function New-A9HostSet
 .SYNOPSIS
 	Creates a new host Set.
 .DESCRIPTION
-	Creates a new host Set.
-    Any user with the Super or Edit role can create a host set. Any role granted hostset_set permission can add hosts to a host set.
-	You can add hosts to a host set using a glob-style pattern. A glob-style pattern is not supported when removing hosts from sets.
-	For additional information about glob-style patterns, see “Glob-Style Patterns” in the HPE 3PAR Command Line Interface Reference.
+	Creates a new host Set record. This HostSet record will contain properties of the host set as well as the hosts that are its members.   
 .PARAMETER HostSetName
 	Name of the host set to be created.
 .PARAMETER Comment
 	Comment for the host set.
 .PARAMETER Domain
 	The domain in which the host set will be created.
-.PARAMETER SetMembers
-	The host to be added to the set. The existence of the hist will not be checked.
+.PARAMETER Members
+	The host to be added to the set. 
 .EXAMPLE
 	PS:> New-A9HostSet -HostSetName MyHostSet
 
@@ -45,7 +42,7 @@ Function New-A9HostSet
 Param(	[Parameter(Mandatory)]	[String]	$HostSetName,	  
 		[Parameter()]			[String]	$Comment,	
 		[Parameter()]			[String]	$Domain, 
-		[Parameter()]			[String[]]	$SetMembers
+		[Parameter()]			[String[]]	$Members
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -55,7 +52,7 @@ Process
     $body["name"] = "$($HostSetName)"
 	If ($Comment) 	{	$body["comment"] = "$($Comment)"}  
 	If ($Domain) 	{	$body["domain"] = "$($Domain)"    }	
-	If ($SetMembers){	$body["setmembers"] = $SetMembers    }
+	If ($SetMembers){	$body["setmembers"] = $Members    }
     $Result = $null
     $Result = Invoke-A9API -uri '/hostsets' -type 'POST' -body $body 
 	$status = $Result.StatusCode	
@@ -154,7 +151,7 @@ Function Remove-A9HostSet
 	PS:> Remove-A9HostSet -HostSetName MyHostSet
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]$HostSetName
+Param(	[Parameter(Mandatory)]	[String]	$HostSetName
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -183,14 +180,6 @@ Function New-A9VvSet
 .DESCRIPTION
 	Creates a new Volume Set.
 	The Volume set may contain any number of Volumes, but can be create empty as well. 
-.EXAMPLE
-	PS:> New-A9VvSet -VolumeSetName MyVVSet
-
-	Creates a new empty Volume Set with name MyVVSet.
-.EXAMPLE
-	PS:> New-A9VvSet -VolumeSetName MyVVSet -SetMembers vol1,vol2,vol3
-
-	Creates a new Volume Set with name MyVVSet.
 .PARAMETER VolumeSetName
 	Name of the Volume set to be created.
 .PARAMETER SetMembers
@@ -203,6 +192,14 @@ Function New-A9VvSet
 	The appyType for which the volume set will be created.
 .PARAMETER businessUnit
 	The business unit to which the volume iwll be used.
+.EXAMPLE
+	PS:> New-A9VvSet -VolumeSetName MyVVSet
+
+	Creates a new empty Volume Set with name MyVVSet.
+.EXAMPLE
+	PS:> New-A9VvSet -VolumeSetName MyVVSet -SetMembers vol1,vol2,vol3
+
+	Creates a new Volume Set with name MyVVSet.
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory)]	[String]	$VolumeSetName,	  
@@ -218,8 +215,8 @@ Begin
 Process 
 {	$body = [ordered]@{}    
     $body["name"] = "$($VolumeSetName)"
-	If ($Comment) 			{	$body["comment"] 		= "$($Comment)"   	}  
-	If ($Domain)    		{	$body["domain"] 		= "$($Domain)"	 	}
+	If ($Comment) 			{	$body["comment"] 		= $Comment  		}  
+	If ($Domain)    		{	$body["domain"] 		= $Domain	 		}
 	If ($SetMembers)		{	$body["setmembers"] 	= $SetMembers   	}
 	If ($appType)			{	$body["appType"] 		= $appType   		}
 	If ($businessUnit)		{	$body["businessUnit"] 	= $businessUnit   	}
@@ -244,35 +241,21 @@ Function Update-A9VvSet
 	Update an existing virtual volume Set.
 .DESCRIPTION
 	Update an existing virtual volume Set.
-    Any user with the Super or Edit role can modify a host set. Any role granted hostset_set permission can add a host to the host set or remove a host from the host set.   
-.EXAMPLE
-	PS:> Update-A9VvSet -VVSetName xxx -RemoveMember -Members testvv3.0
-.EXAMPLE 
-	PS:> Update-A9VvSet -VVSetName xxx -AddMember -Members testvv3.0
-.EXAMPLE 
-	PS:> Update-A9VvSet -VVSetName xxx -ResyncPhysicalCopy 
-.EXAMPLE 
-	PS:> Update-A9VvSet -VVSetName xxx -StopPhysicalCopy 
-.EXAMPLE 
-	PS:> Update-A9VvSet -VVSetName xxx -PromoteVirtualCopy
-.EXAMPLE 
-	PS:> Update-A9VvSet -VVSetName xxx -StopPromoteVirtualCopy
-.EXAMPLE 
-	PS:> Update-A9VvSet -VVSetName xxx -Priority xyz
-.EXAMPLE 
-	PS:> Update-A9VvSet -VVSetName xxx -ResyncPhysicalCopy -Priority high
-.EXAMPLE 
-	PS:> Update-A9VvSet -VVSetName xxx -ResyncPhysicalCopy -Priority medium
-.EXAMPLE 
-	PS:> Update-A9VvSet -VVSetName xxx -ResyncPhysicalCopy -Priority low
-.EXAMPLE 
-	PS:> Update-A9VvSet -VVSetName xxx -NewName as-vvSet1 -Comment "Updateing new name"
-.PARAMETER VVSetName
-	Existing virtual volume Name
+    You may alter the properties of the Volume set such as the name, the comment, or you may add/remove volumes from the volume set, you may also issue commands to stop/resync/promote a volume set as well.  
+
+.PARAMETER VolumeSetName,
+	Existing virtual volume Set Name
+.PARAMETER NewName
+	New name of the virtual volume set.
+.PARAMETER Comment
+	New comment for the virtual volume set or host set.
+	To remove the comment, use “”.
 .PARAMETER AddMember
-	Adds a member to the virtual volume set.
+	Adds a member to a volume set. You must also specific the members to add.
 .PARAMETER RemoveMember
-	Removes a member from the virtual volume set.
+	Removes a member from a volume set. You must specific the members to remove.
+.PARAMETER Members
+	The volume(s) to be added to or removed from the virtual volume set. 
 .PARAMETER ResyncPhysicalCopy
 	Resynchronize the physical copy to its virtual volume set.
 .PARAMETER StopPhysicalCopy
@@ -281,18 +264,22 @@ Function Update-A9VvSet
 	Promote virtual copies in a virtual volume set.
 .PARAMETER StopPromoteVirtualCopy
 	Stops the promote virtual copy operations in a virtual volume set.
-.PARAMETER NewName
-	New name of the virtual volume set.
-.PARAMETER Comment
-	New comment for the virtual volume set or host set.
-	To remove the comment, use “”.
-.PARAMETER Members
-	The volume to be added to or removed from the virtual volume set.
 .PARAMETER Priority
-	1: high
-	2: medium
-	3: low
-#>
+	May be high, medium or low, and only used when resyncing a volume set. The default value of medium is used if not specified.
+.EXAMPLE
+	PS:> Update-A9VvSet -VolumeSetName, xxx -RemoveMember -Members testvv3.0
+.EXAMPLE 
+	PS:> Update-A9VvSet -VolumeSetName, xxx -AddMember -Members testvv3.0
+.EXAMPLE 
+	PS:> Update-A9VvSet -VolumeSetName, xxx -ResyncPhysicalCopy -Priority high
+.EXAMPLE 
+	PS:> Update-A9VvSet -VolumeSetName, xxx -StopPhysicalCopy 
+.EXAMPLE 
+	PS:> Update-A9VvSet -VolumeSetName, xxx -PromoteVirtualCopy
+.EXAMPLE 
+	PS:> Update-A9VvSet -VolumeSetName, xxx -StopPromoteVirtualCopy
+.EXAMPLE 
+	PS:> Update-A9VvSet -VolumeSetName, xxx -NewName as-vvSet1 -Comment "Updateing new name"#>
 [CmdletBinding(DefaultParameterSetName='Default')]
 Param(
 	[Parameter(Mandatory)]									[String]	$VolumeSetName,
@@ -385,18 +372,29 @@ Process
 {	$Result = $null
 	$dataPS = $null		
 	$uri = '/volumesets/'
-	if($VVSetName)	{	$uri += $VolumeSetName	}	
 	$Result = Invoke-A9API -uri $uri -type 'GET'		 
 	If($Result.StatusCode -eq 200)
 		{	$dataPS = $Result.content | ConvertFrom-Json
+			if ( $dataPS.members ) {	$dataps = $dataPS.members }
 			write-host "Cmdlet executed successfully" -foreground green
+			$NewObj = @(    foreach( $Item in $DataPS)	{   $NewItem=@{PSTypeName = "HPE.A9Storage.VolumeSet"}
+															$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+															$DataSetType = "HPE.A9Storage.VolumeSet"
+															$NewItem.PSTypeNames.Insert(0,$DataSetType)
+															$DataSetType = $DataSetType + ".TypeName"
+															$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+															[PSCustomObject]$NewItem
+														}
+						)
+			
+			
 			if ( $VolumeSetName )
-				{	$MySet = $dataPS.members | where-object {$_.name -like $VolumeSetName }
+				{	$MySet = $NewObj | where-object {$_.name -like $VolumeSetName }
 					return $MySet
 				}
-			return $dataPS.members
+			return $NewObj
 		}
-	else{	Write-Error "Failure:  While Executing Get-VvSet_WSAPI." 
+	else{	Write-Error "Failure:  While Executing Get-VvSet." 
 		return $Result.StatusDescription
 		}
 }

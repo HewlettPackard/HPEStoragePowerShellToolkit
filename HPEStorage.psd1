@@ -7,7 +7,7 @@
     Copyright           = '© 2020,2021,2024 Hewlett Packard Enterprise Development LP'
     Description         = 'HPE Storage Module providing support for the following platforms; Alletra MP B10000, Alletra 9000, Primera, 3PAR, Alletra 6000, and MSA which provides storage administrators the convenience of managing from a PowerShell environment.'
     PowerShellVersion   = '5.0'
-    # FormatsToProcess 	= @('Formatters\HPEA6NS.format.ps1xml')  
+    FormatsToProcess 	= @('Formatters\HPEA6NS.format.ps1xml','Formatters\HPEA9.format.ps1xml')  
     # CmdletsToExport     = '*'
     # VariablesToExport   = '*'
     # AliasesToExport     = '*'
