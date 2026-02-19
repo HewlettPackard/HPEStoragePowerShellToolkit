@@ -736,6 +736,573 @@
                         </TableColumnItems>
                     </TableRowEntry>
                  </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
+        <View> <Name>HPE.A9Storage.Role</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.Role</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>10</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>50</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                    </TableColumnHeader>
+                                            
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>role</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>comments</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>rightsInfo</PropertyName>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
+        <View> <Name>HPE.A9Storage.User</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.User</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>16</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>22</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>22</width>
+                    </TableColumnHeader>
+                                            
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>username</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <scriptblock>($_.privileges).domain</scriptblock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <scriptblock>($_.privileges).role</scriptblock>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
+        <View> <Name>HPE.A9Storage.LogicalDisk</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.LogicalDisk</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>4</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>18</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>4</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>12</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>5</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>5</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>4</width>
+                    </TableColumnHeader>
+                                            
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <PropertyName>id</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Name</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>RAID</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Detailed_State</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Own</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>SizeMB</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>UsedMB</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Use</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>WThru</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>MapV</PropertyName>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
+        <View> <Name>HPE.A9Storage.LogicalDiskCheckLD</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.LogicalDiskCheckLD</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>4</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>18</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>16</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>20</width>
+                    </TableColumnHeader>
+                    
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <PropertyName>id</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Name</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Detailed_State</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Total</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Checked</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Invalid</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Last_Date_Checked</PropertyName>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
+        <View> <Name>HPE.A9Storage.LogicalDiskDetailed</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.LogicalDiskDetailed</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>4</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>18</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>10</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>4</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>5</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>10</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>5</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>10</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>16</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>10</width>
+                    </TableColumnHeader>
+                    
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <PropertyName>id</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Name</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>CPG</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>RAID</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Own</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>SizeMB</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>RSizeMB</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>RowSz</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>StepKB</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>SetSz</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Refcnt</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Avail</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>CAvail</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>CreationDate</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Dev_Type</PropertyName>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
+        <View> <Name>HPE.A9Storage.Alert</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.Alert</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>4</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>16</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>24</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>12</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>20</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>12</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>22</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+            
+                    </TableColumnHeader>
+                    
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <PropertyName>id</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Severity</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Type</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>State</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Tier</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Spare_PN</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Time</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Message</PropertyName>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
+        <View> <Name>HPE.A9Storage.Spare</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.Spare</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>12</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>12</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+
+                    
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <PropertyName>Pdid</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>LdName</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>LdChk</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>State</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Usage</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Media</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Sp</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Cl</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>From</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>To</PropertyName>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
             </TableControl>
         </View>
 
