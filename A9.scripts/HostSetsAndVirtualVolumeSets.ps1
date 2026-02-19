@@ -1,6 +1,5 @@
-﻿####################################################################################
-## 	© 2020,2021 Hewlett Packard Enterprise Development LP
-##
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
+
 Function New-A9HostSet 
 {
 <#

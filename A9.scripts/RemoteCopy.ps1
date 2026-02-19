@@ -1,4 +1,6 @@
-﻿Function New-A9RCopyGroup 
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
+
+Function New-A9RCopyGroup 
 {
 <#      
 .SYNOPSIS	
@@ -154,7 +156,7 @@ Function Stop-A9RCopyGroup
 .DESCRIPTION
 	Stop a Remote Copy group.
 .EXAMPLE
-	Stop-RCopyGroup_WSAPI -GroupName xxx
+	Stop-A9RCopyGroup -GroupName xxx
 	Stop a Remote Copy group.
 .EXAMPLE	
 	PS:> Stop-A9RCopyGroup -GroupName xxx -TargetName xxx 
@@ -833,7 +835,7 @@ Process
 	if($PoliciesBody.Count -gt 0)	{	$body["policies"] = $PoliciesBody 	}
     $Result = $null
 	$uri = '/remotecopytargets/'+ $TargetName
-	Write-Verbose "Request: Request to Update-RCopyTarget_WSAPI (Invoke-A9API)." 
+	Write-Verbose "Request: Request to Update-A9RCopyTarget (Invoke-A9API)." 
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 	{	write-host "Cmdlet executed successfully" -foreground green
@@ -1152,12 +1154,12 @@ Process
 					return $dataPS
 				}
 			else
-				{	Write-Error "Failure:  While executing Get-RCopyGroup_WSAPI. Expected result not found with given filter option ." 
+				{	Write-Error "Failure:  While executing Get-A9RCopyGroup. Expected result not found with given filter option ." 
 					return 
 				}
 		}
 	else
-		{	Write-Error "Failure:  While Executing Get-RCopyGroup_WSAPI." 
+		{	Write-Error "Failure:  While Executing Get-A9RCopyGroup." 
 			return $Result.StatusDescription
 		}
 }	
@@ -1207,7 +1209,7 @@ Process
 			return $dataPS		
 		}
 	else
-		{	Write-Error "Failure:  While Executing Get-RCopyGroupTarget_WSAPI." 
+		{	Write-Error "Failure:  While Executing Get-A9RCopyGroupTarget." 
 			return $Result.StatusDescription
 		}
 }	
@@ -1221,9 +1223,9 @@ Function Get-A9RCopyGroupVv
 .DESCRIPTION
 	Get all or single Remote Copy Group volume
 .EXAMPLE
-	PS:> Get-RCopyGroupVv_WSAPI -GroupName asRCgroup
+	PS:> Get-A9RCopyGroupVv -GroupName asRCgroup
 .EXAMPLE
-	PS:> Get-A9RCopyGroupVv_WSAPI -GroupName asRCgroup -VolumeName Test
+	PS:> Get-A9RCopyGroupVv -GroupName asRCgroup -VolumeName Test
 .PARAMETER GroupName	
     Remote Copy Group Name
 .PARAMETER VolumeName	
@@ -1248,7 +1250,7 @@ Process
 			return $dataPS		
 		}
 	else
-		{	Write-Error "Failure:  While Executing Get-RCopyGroupVv_WSAPI." 
+		{	Write-Error "Failure:  While Executing Get-A9RCopyGroupVv." 
 			return $Result.StatusDescription
 		}
 }	
@@ -1290,7 +1292,7 @@ Process
 		return $dataPS		
 	}
 	else
-	{	Write-Error "Failure:  While Executing Get-RCopyLink_WSAPI." 
+	{	Write-Error "Failure:  While Executing Get-A9RCopyLink." 
 		return $Result.StatusDescription
 	}
 }	

@@ -1,6 +1,4 @@
-####################################################################################
-## 	© 2024 Hewlett Packard Enterprise Development LP
-##
+## 	©2025 Hewlett Packard Enterprise Development LP
 
 Function Get-A9Disk
 {
@@ -177,7 +175,7 @@ Process
                             return $NewObj
                         }
                     else
-                        {	Write-Error "Failure:  While Executing Get-Host_WSAPI." 
+                        {	Write-Error "Failure:  While Executing Get-A9Host." 
                             return $Result.StatusDescription
                         }
                 }

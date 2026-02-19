@@ -1,29 +1,4 @@
-﻿####################################################################################
-## 	© 2019,2020 Hewlett Packard Enterprise Development LP
-##
-##	File Name:		VS-Functions.psm1
-##	Description: 	Common Module functions.
-##		
-##	Pre-requisites: Needs POSH SSH Module for New-PoshSshConnection
-##					WSAPI uses array based HPE WSAPI service.
-##					
-##					Starting the WSAPI server    : The WSAPI server does not start automatically.
-##					Using SSH, enter startwsapi to manually start the WSAPI server.
-## 					Configuring the WSAPI server: To configure WSAPI, enter set-A9wsapi in the SSH command set.
-##
-##	Created:		June 2015
-##	Last Modified:	March 2024
-##
-##	History:		v1.0 - Created
-##					v2.0 - Added support for HP3PAR CLI
-##                     v2.1 - Added support for POSH SSH Module
-##					v2.2 - Added support for WSAPI
-##                  v2.3 - Added Support for all CLI cmdlets
-##                     v2.3.1 - Added support for primara array with wsapi
-##                  v3.0 - Added Support for wsapi 1.7 
-##                  v3.0 - Modularization
-##                  v3.0.1 (07/30/2020) - Fixed the Show-RequestException function to show the actual error message
-##					v3.5.0 (03/17/2024) - Refactored all commands. Removed CLI access. only uses SSH or WSAPI now.
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
 Function Invoke-A9CLICommand 
 {

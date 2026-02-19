@@ -1,7 +1,4 @@
-﻿####################################################################################
-## 	© 2024 Hewlett Packard Enterprise Development LP
-##	Description: 	Common Module functions.
-##		
+﻿## 	©2025 Hewlett Packard Enterprise Development LP	
 
 $global:SANConnection = $null 
 $global:WsapiConnection = $null
@@ -159,7 +156,7 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 		{	Write-error "Stop: No key Generated"
 			return 		
 		}
-	write-verbose "New-Connection: Initiating Get-System_WSAPI call to test the offered key"	
+	write-verbose "New-Connection: Initiating Get-A9System call to test the offered key"	
 	if 		($ArrayType -eq "3par") 		
 			{	$APIurl = 'https://' + $ArrayFQDNorIPAddress + ':8080/api/v1' 
 			}
@@ -183,7 +180,7 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 		{	$dataPS = $Result.content | ConvertFrom-Json
 		}	
 	$Result=$dataPS
-	write-verbose "New-Connection: The result of the Get-System_WSAPI call is as follows"
+	write-verbose "New-Connection: The result of the Get-A9System call is as follows"
 	write-verbose "$result"	
 	$SANX = @{	Id = $Result.id
 				Name = $Result.name

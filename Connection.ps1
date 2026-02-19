@@ -192,7 +192,7 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 		{	$dataPS = $Result.content | ConvertFrom-Json
 		}	
 	$Result=$dataPS
-	write-verbose "New-Connection: The result of the Get-System_WSAPI call is as follows"
+	write-verbose "New-Connection: The result of the Get-A9System call is as follows"
 	write-verbose "$result"	
 	$SANX = @{	Id = $Result.id
 				Name = $Result.name

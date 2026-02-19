@@ -1,6 +1,4 @@
-﻿####################################################################################
-## 	© 2020,2021 Hewlett Packard Enterprise Development LP
-##
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
 Function Add-A9Vv
 {
@@ -56,16 +54,10 @@ Function Compress-A9LogicalDisk
 	Consolidate space in logical disks (LD).
 .DESCRIPTION
 	The command consolidates space on the LDs.
-.PARAMETER Pattern
-	Compacts the LDs that match any of the specified patterns.
 .PARAMETER Consolidate
 	This option consolidates regions into the fewest possible LDs. When this option is not specified, the regions of each LD will be compacted within the same LD.
-.PARAMETER Waittask
-	Waits for any created tasks to complete.
 .PARAMETER Taskname
 	Specifies a name for the task. When not specified, a default name is chosen.
-.PARAMETER DryRun
-	Specifies that the operation is a dry run, and the tasks will not actually be performed.
 .PARAMETER Trimonly
 	Only unused LD space is removed. Regions are not moved.
 .PARAMETER LD_Name
@@ -73,27 +65,23 @@ Function Compress-A9LogicalDisk
 .NOTES
 	This command requires a SSH type connection.
 #>
-[CmdletBinding()]
-param(	[Parameter(ParameterSetName='Pattern')]	[switch]	$Pattern,
-		[Parameter()]	[switch]	$Consolidate,
-		[Parameter()]	[switch]	$Waittask,
-		[Parameter()]	[String]	$Taskname,
-		[Parameter()]	[switch]	$DryRun,
-		[Parameter()]	[switch]	$Trimonly,
-		[Parameter(ParameterSetName='Name',Mandatory)]	[String]	$LD_Name
+[CmdletBinding(DefaultParameterSetName='default')]
+param(	[Parameter(ParameterSetName='con',mandatory)]		[switch]	$Consolidate,
+		[Parameter()]										[String]	$Taskname,
+		[Parameter(parametersetname='trim',mandatory)]		[switch]	$Trimonly,
+		[Parameter(Mandatory)]								[String]	$LD_Name
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 PROCESS
 {	$Cmd = " compactld -f "
-	if($Consolidate) 		{	$Cmd += " -cons " }
-	if($Waittask) 	{	$Cmd += " -waittask "}
-	if($Taskname)	{	$Cmd += " -taskname $Taskname " }	
-	if($DryRun) 	{	$Cmd += " -dr "}
-	if($Trimonly) 	{	$Cmd += " -trimonly " }
-	if($Pattern)	{	$Cmd += " -pat $pat" }
-	if($LD_Name)	{ 	$Cmd += " $LD_Name " }
+	if($Taskname)	{	$Cmd += " -taskname $Taskname " }					
+	switch($PSCmdlet.ParameterSetName)
+		{	'con'	{	$Cmd += " -cons " 		}
+			'trim'	{	$Cmd += " -trimonly " 	}
+		}
+	$Cmd += " $LD_Name "
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 } 
@@ -119,7 +107,6 @@ Function Confirm-A9LogicalDisk
 .PARAMETER LD_Name
 	Requests that the integrity of a specified LD is checked.
 .NOTES
-
 	Usage:
 	- Using the -recover option allows one LD only
 	This command requires a SSH type connection.
@@ -161,9 +148,6 @@ Function Get-A9LogicalDisk
 .PARAMETER Vv	
 	Requests that only LDs mapped to virtual volumes that match and of the specified names or patterns be displayed. Multiple volume names or
 	patterns can be repeated using a comma-separated list .
-.PARAMETER Domain
-	Only shows LDs that are in domains with names that match any of the names or specified patterns. Multiple domain names or patterns can be
-	repeated using a comma separated list .
 .PARAMETER Degraded
 	Only shows LDs with degraded availability.
 .PARAMETER Detailed
@@ -177,62 +161,56 @@ Function Get-A9LogicalDisk
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object.  
 .EXAMPLE
-	PS:> Get-A9LogicalDisk | format-table *
+	PS:> Get-A9LogicalDisk
 
-	Id  Name            RAID Detailed_State Own SizeMB UsedMB Use Lgct LgId WThru MapV
-	--  ----            ---- -------------- --- ------ ------ --- ---- ---- ----- ----
-	4   .mgmtdata.usr.0 6    normal         0/1 264192 262144 V   0         N     Y
-	5   .mgmtdata.usr.1 6    normal         1/0 264192 262144 V   0         N     Y
-	2   .srdata.usr.0   6    normal         0/1 55296  51200  V   0         N     Y
-	3   .srdata.usr.1   6    normal         1/0 55296  51200  V   0         N     Y
-	0   admin.usr.0     1    normal         0/1 5120   5120   V   0         N     Y
-	1   admin.usr.1     1    normal         1/0 5120   5120   V   0         N     Y
-	6   log0.0          1    normal         0/  20480  0      log 0         Y     N
-	7   log1.0          1    normal         1/  20480  0      log 0         Y     N
-	8   pdsld0.0        1    normal         0/1 1024   0      P   F    0          Y
-	9   pdsld0.1        6    normal         0/1 57216  0      P   0         Y     N
-	10  pdsld0.2        6    normal         1/0 53120  0      P   0         Y     N
-	163 tp0sa0.3        1    normal         1/0 5120   4224   C   SA   0          N
-	158 tp0sa0.5        1    normal         0/1 16384  13056  C   SA   0          N
+	id   Name               RAID Detailed_State Own   SizeMB   UsedMB   Use    WThru MapV
+	--   ----               ---- -------------- ---   ------   ------   ---    ----- ----
+	3    .mgmtdata.usr.0    1    normal       1/0   259072   259072   V      Y     Y
+	0    admin.usr.0        1    normal       0/1   10240    10240    V      Y     Y
+	6    tp-0-sa-0.0        1    normal       0/1   16384    11264    C,SA   Y     Y
+	8    tp-0-sa-0.1        1    normal       1/0   5120     5120     C,SA   Y     Y
 .EXAMPLE
-	PS:> (Get-A9logicalDisk -Cpg SSD_r6 ).LDForSD| ft *
+	PS:> Get-A9LogicalDisk -Cpg SSD_r6
 
-	Id  Name          RAID -Detailed_State- Own     SizeMB UsedMB Use  WThru MapV
-	--  ----          ---- ---------------- ---     ------ ------ ---  ----- ----
-	8   tp-0-sd-0.1   6    normal           1/2/3/0 102375 8925   C,SD Y     Y
-	11  tp-0-sd-0.2   6    normal           2/3/0/1 102375 7350   C,SD Y     Y
-	14  tp-0-sd-0.3   6    normal           3/0/1/2 102375 5775   C,SD Y     Y
-	17  tp-0-sd-0.4   6    normal           0/2/1/3 102375 8400   C,SD Y     Y
-	20  tp-0-sd-0.5   6    normal           1/3/2/0 102375 8925   C,SD Y     Y
-	23  tp-0-sd-0.6   6    normal           2/0/3/1 102375 8925   C,SD Y     Y
-	26  tp-0-sd-0.7   6    normal           3/1/0/2 102375 6300   C,SD Y     Y
+	id   Name               RAID Detailed_State Own   SizeMB   UsedMB   Use    WThru MapV
+	--   ----               ---- -------------- ---   ------   ------   ---    ----- ----
+	6    tp-0-sa-0.0        1                 0/1   16384    11264    C,SA   Y     Y
+	10   tp-0-sa-0.2        1                 1/0   12288    7168     C,SA   Y     Y
+	14   tp-0-sa-0.5        1                 1/0   5120     5120     C,SD   Y     Y
 .EXAMPLE
-	PS:> Get-A9logicalDisk -Cpg SSD_r6
+	PS:> Get-A9LogicalDisk -Vv AzureLocalPool2
 
-	Name                           Value
-	----                           -----
-	LDForSA                        {@{Id=5; Name=tp-0-sa-0.0; RAID=1; -Detailed_State-=normal; Own=0/1/2/3; SizeMB=8192; UsedMB=5120; Use=C,SA; WThru=Y; MapV=Y}, @{Id=7; Name=tp-0-sa-0.1; RAID=1; -Detailed_State-=normal; Own=1/2/3/0; SizeMB=5120; UsedMB=5…
-	LDforSD                        {@{Id=8; Name=tp-0-sd-0.1; RAID=6; -Detailed_State-=normal; Own=1/2/3/0; SizeMB=102375; UsedMB=8925; Use=C,SD; WThru=Y; MapV=Y}, @{Id=11; Name=tp-0-sd-0.2; RAID=6; -Detailed_State-=normal; Own=2/3/0/1; SizeMB=102375; Use…
+	id   Name               RAID Detailed_State Own   SizeMB   UsedMB   Use    WThru MapV
+	--   ----               ---- -------------- ---   ------   ------   ---    ----- ----
+	138  tp-0-sa-0.62       1    normal       0/1   12288    8192     C,SA   Y     Y
+	372  tp-0-sd-0.209      6    normal       0/1   245700   188475   C,SD   Y     Y
 .EXAMPLE
-	PS:> Get-A9logicalDisk -LD_Name tp-0-sd-0.97
+	PS:> Get-A9LogicalDisk -CheckLD
 
-	Id             : 490
-	Name           : tp-0-sd-0.97
-	RAID           : 6
-	Detailed_State : normal
-	Own            : 0/1/2/3
-	SizeMB         : 245700
-	UsedMB         : 1575
-	Use            : C,SD
-	WThru          : Y
-	MapV           : Y
+	id   Name               Detailed_State   Total    Checked  Invalid  Last_Date_Checked
+	--   ----               --------------   -----    -------  -------  -----------------
+	3    .mgmtdata.usr.0    normal           253      253      0        2025-01-06
+	1    .srdata.usr.0      normal           84       84       0        2025-01-06
+	0    admin.usr.0        normal           10       10       0        2025-01-06
+	6    tp-0-sa-0.0        normal           16       16       0        2025-01-06
+.EXAMPLE
+	PS:> Get-A9LogicalDisk -Detailed 
+
+	id   Name               CPG        RAID Own   SizeMB   RSizeMB    RowSz StepKB     SetSz  Refcnt Avail  CAvail   CreationDate     Dev_Type
+	--   ----               ---        ---- ---   ------   -------    ----- ------     -----  ------ -----  ------   ------------     --------
+	4    .mgmtdata.usr.1    ---        1    1/0   117760   353280     23    256        3      0      cage   cage     2024-03-28       SSD
+	5    .mgmtdata.usr.2    ---        1    1/0   147456   442368     24    256        3      0      cage   cage     2024-03-28       SSD
+	1    .srdata.usr.0      ---        1    1/0   86016    258048     21    256        3      0      cage   cage     2024-03-28       SSD
+	2    .srdata.usr.1      ---        1    1/0   67584    202752     22    256        3      0      cage   cage     2024-03-28       SSD
+	0    admin.usr.0        ---        1    0/1   10240    30720      10    256        3      0      cage   cage     2024-03-28       SSD
+	6    tp-0-sa-0.0        SSD_r6     1    0/1   16384    49152      4     256        3      0      cage   cage     2024-07-10       SSD
+	8    tp-0-sa-0.1        SSD_r6     1    1/0   5120     15360      5     256        3      0      cage   cage     2024-07-10       SSD
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Cpg,
 		[Parameter()]	[String]	$Vv,
-		[Parameter()]	[String]	$Domain,
 		[Parameter()]	[switch]	$Degraded,
 		[Parameter()]	[switch]	$Detailed,
 		[Parameter()]	[switch]	$CheckLD,
@@ -253,12 +231,11 @@ process
 		if($Detailed){	$Cmd += " -d " }
 		if($CheckLD){	$Cmd += " -ck " }
 		if($Policy)	{	$Cmd += " -p "	}
-		if($State) 	{	$Cmd += " -state " }
 		if($LD_Name){ 	$Cmd += " $LD_Name " }
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
 	}
 end
-	{	if($ShowRaw) {	Return $Result }
+	{	if($ShowRaw -or $Policy) {	Return $Result }
 		if($Result.count -gt 1)
 			{	if ( $Cpg )	
 					{	#	Need to split the dataset into two collections
@@ -283,7 +260,27 @@ end
 						$Result2 = Import-Csv -Delimiter 'Z'  $tempFile 
 						Remove-Item $tempFile
 						$ResultFinal = $( @{LDForSA = $Result1}, @{LDforSD = $Result2} )
-						return $ResultFinal
+						# Now to rejoin the datasets.
+						$NewObj = @(    foreach( $Item in ($ResultFinal).LDforSA)	
+																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
+																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+																	$DataSetType = "HPE.A9Storage.LogicalDisk"
+																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
+																	$DataSetType = $DataSetType + ".TypeName"
+																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+																	[PSCustomObject]$NewItem
+																}
+										foreach( $Item in ($ResultFinal).LDforSD)	
+																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
+																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+																	$DataSetType = "HPE.A9Storage.LogicalDisk"
+																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
+																	$DataSetType = $DataSetType + ".TypeName"
+																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+																	[PSCustomObject]$NewItem
+																}
+								)
+						return $NewObj
 					}
 				if($Detailed)
 					{	$tempFile = [IO.Path]::GetTempFileName()
@@ -295,7 +292,17 @@ end
 							}
 						$Result = Import-Csv -Delimiter 'Z'  $tempFile 
 						Remove-Item $tempFile
-						return $Result
+						$NewObj = @(    foreach( $Item in $Result)	
+																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDiskDetailed"}
+																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+																	$DataSetType = "HPE.A9Storage.LogicalDiskDetailed"
+																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
+																	$DataSetType = $DataSetType + ".TypeName"
+																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+																	[PSCustomObject]$NewItem
+																}
+								)
+						return $NewObj
 					}	
 				if($CheckLD)
 					{	$tempFile = [IO.Path]::GetTempFileName()
@@ -307,7 +314,17 @@ end
 							}
 						$Result = Import-Csv  $tempFile 
 						Remove-Item $tempFile
-						return $Result
+						$NewObj = @(    foreach( $Item in $Result)	
+																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDiskCheckLD"}
+																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+																	$DataSetType = "HPE.A9Storage.LogicalDiskCheckLD"
+																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
+																	$DataSetType = $DataSetType + ".TypeName"
+																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+																	[PSCustomObject]$NewItem
+																}
+								)
+						return $NewObj
 					}	
 				else
 					{	$tempFile = [IO.Path]::GetTempFileName()
@@ -319,7 +336,17 @@ end
 							}
 						$Result = Import-Csv -Delimiter 'Z'  $tempFile 
 						Remove-Item $tempFile
-						return $Result
+						$NewObj = @(    foreach( $Item in $Result)	
+																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
+																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+																	$DataSetType = "HPE.A9Storage.LogicalDisk"
+																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
+																	$DataSetType = $DataSetType + ".TypeName"
+																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+																	[PSCustomObject]$NewItem
+																}
+								)
+						return $NewObj
 					}
 			}
 		Return  $Result
@@ -1377,34 +1404,4 @@ process
 	return $Result
 }
 } 
-
-Function Resize-A9Vv
-{
-<#
-.SYNOPSIS
-	Consolidate space in virtual volumes (VVs). (HIDDEN)
-.PARAMETER VVName
-	Specifies the name of the VV.
-.PARAMETER PAT
-	Compacts VVs that match any of the specified patterns. This option must be used if the pattern specifier is used.
-.EXAMPLE
-	VVName testv
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$VVName,
-		[Parameter()]	[switch]	$Pattern
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient' 
-}
-PROCESS
-	{	$Cmd = " compactvv -f "
-		if($Pattern){	$Cmd += " -pat "	}
-		if($VVName)	{	$Cmd += " $VVName " }
-		$Result = Invoke-A9CLICommand -cmds  $Cmd
-		Return $Result 
-	}
-}
 

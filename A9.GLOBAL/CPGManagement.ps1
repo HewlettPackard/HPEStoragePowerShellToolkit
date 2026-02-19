@@ -1,6 +1,4 @@
-####################################################################################
-## 	© 2025 Hewlett Packard Enterprise Development LP
-##
+## 	©2025 Hewlett Packard Enterprise Development LP
 
 Function Remove-A9CPG
 {
@@ -244,7 +242,7 @@ Process
                             return $dataPS
                         }
                     else
-                        {	write-error "FAILURE : While Executing Get-Cpg_WSAPI CPG:$CPGName "
+                        {	write-error "FAILURE : While Executing Get-A9Cpg CPG:$CPGName "
                             return $Result.StatusDescription
                     }
                 }

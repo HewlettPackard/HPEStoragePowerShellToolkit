@@ -1,149 +1,221 @@
 ﻿## 	©2025 Hewlett Packard Enterprise Development LP
-Function Get-A9Maintenance
+Function Set-A9FlashCache 
 {
 <#
 .SYNOPSIS
-	Show maintenance window records.
+	Setting Flash Cache policy
 .DESCRIPTION
-	The command displays maintenance window records.
-.PARAMETER All
-	Display all maintenance window records, including active and expired ones. If this option is not specified, only active window records will be displayed.
-.PARAMETER Sortcol
-	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
-	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
-		inc: Sort in increasing order (default).
-		dec: Sort in decreasing order.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
+	Setting Flash Cache policy
 .EXAMPLE
-	PS:> Get-A9Maintenance
+	PS:> Set-A9FlashCache -Enable
+
+	Enable Flash Cache policy
 .EXAMPLE
-	PS:> Get-A9Maintenance -All 
-.NOTES
-	This command requires a SSH type connection.
+	PS:> Set-A9FlashCache -Disable
+
+	Disable Flash Cache policy
+.PARAMETER Enable
+	Enable Flash Cache policy
+.PARAMETER Disable
+	Disable Flash Cache policy
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[switch]	$All,
-		[Parameter()]	[String]	$Sortcol,
-		[Parameter()]	[switch]	$ShowRaw
+Param(	[Parameter(ParameterSetName = "Enabled",  Mandatory=$true, ValueFromPipeline=$true)]	[switch]	$Enable,
+		[Parameter(ParameterSetName = "disabled", Mandatory=$true, ValueFromPipeline=$true)]	[switch]	$Disable
 )
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
+Begin 
+{	# Test if connection exist
+    Test-A9Connection -ClientType 'API'
 }
-Process
-{	$Cmd = " showmaint "
-	if($All)	{	$Cmd += " -all " }
-	if($Sortcol){	$Cmd += " -sortcol $Sortcol "}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if ( $ShowRaw) { return $Result}
-	if($Result.count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			foreach ($s in  $Result[0..($Result.Count -2)] )
-				{	$s = ((($Result[$HeaderLine].split(' ')).trim()).trim('-') | where-object { $_ -ne '' } ) -join ','
-					$s = $s -replace 'StartTime','S-Date,S-Time,S-Zone'
-					$s = $s -replace 'EndTime','E-Date,E-Time,E-Zone'
-					Add-Content -Path $tempfile -Value $s				
-				}
-			$Result = Import-Csv $tempFile 
-			Remove-Item  ve-Item  $tempFile	
+Process 
+{	$body = @{}	
+	If ($Enable) 	{	$body["flashCachePolicy"] = 1	}
+	If ($Disable)	{	$body["flashCachePolicy"] = 2	}
+    $Result = $null	
+    $Result = Invoke-A9API -uri '/system' -type 'PUT' -body $body 
+	if($Result.StatusCode -eq 200)
+		{	write-host "Cmdlet executed successfully" -foreground green
+			return $Result		
 		}
-	if($Result.count -gt 1)	
-		{	write-host " Success : Executing Get-Maint"	-ForegroundColor green 
+	else
+		{	write-error "FAILURE : While Setting Flash Cache policy." 
+			return $Result.StatusDescription
 		}
-	return  $Result								
 }
 }
 
-Function New-A9Maintenance
+Function New-A9FlashCache
 {
-<#
-.SYNOPSIS
-	Create a maintenance window record.
-.DESCRIPTION
-	The command creates a maintenance window record with the specified options and maintenance type.
-.PARAMETER Comment
-	Specifies any comment or additional information for the maintenance window record. The comment can be up to 255 characters long. Unprintable
-	characters are not allowed.
-.PARAMETER Duration
-	Sets the duration of the maintenance window record. May be specified in minutes (e.g. 20m) or hours (e.g. 6h). Value is not to exceed 24 hours. The default is 4 hours.
-.PARAMETER MaintType
-	Specify the maintenance type. Maintenance type can be Other, Node, Restart, Disk, Cage, Cabling, Upgrade, DiskFirmware, or CageFirmware.
-.EXAMPLE
-	PS:> New-A9Maintenance -Duration 1m -MaintType Node
-.NOTES
-	This command requires a SSH type connection.
+<#      
+.SYNOPSIS	
+	Creating a Flash Cache.
+.DESCRIPTION	
+    Creating a Flash Cache.
+.EXAMPLE	
+	PS:> New-A9FlashCache -SizeGiB 64 -Mode 1 -RAIDType R1
+.EXAMPLE	
+	PS:> New-A9FlashCache -SizeGiB 64 -Mode 1 -RAIDType R0
+.EXAMPLE	
+	PS:> New-A9FlashCache -NoCheckSCMSize "true"
+.EXAMPLE	
+	PS:> New-A9FlashCache -NoCheckSCMSize "false"
+.PARAMETER SizeGiB
+	Specifies the node pair size of the Flash Cache on the system.
+.PARAMETER Mode
+	Can be set to Simulator or Real (default)
+.PARAMETER RAIDType  
+	Raid Type of the logical disks for flash cache. When unspecified, storage system chooses the default(R0 Level0,R1 Level1).
+.PARAMETER NoCheckSCMSize
+	Overrides the size comparison check to allow Adaptive Flash Cache creation with mismatched SCM device sizes.
 #>
 [CmdletBinding()]
-param(	[Parameter()]				[String]	$Comment,
-		[Parameter()]				[String]	$Duration,
-		[Parameter(Mandatory)]		[String]	$MaintType
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
+Param(	[Parameter()]	[int]		$SizeGiB,
+		[Parameter()]
+		[ValidateSet('Simulator','Real')]		[string]	$Mode='Real',
+		[Parameter()]	
+		[ValidateSet("R0","R1")]				[String]	$RAIDType,
+		[Parameter()]	[boolean]	$NoCheckSCMSize
+	)
+Begin 
+{	Test-A9Connection -ClientType 'API' 
+}
+Process 
+{	$body = @{}
+	$FlashCacheBody = @{} 
+	If($SizeGiB) 				{	$FlashCacheBody["sizeGiB"] = $SizeGiB }
+	If($Mode -eq 'Simulator')	{	$FlashCacheBody["mode"] = 1    }
+	If($Mode -eq 'Real')		{	$FlashCacheBody["mode"] = 2    }
+	if($RAIDType -eq "R0")		{	$FlashCacheBody["RAIDType"] = 1	}
+	if($RAIDType -eq "R1")		{	$FlashCacheBody["RAIDType"] = 2	}		
+	If($NoCheckSCMSize) 		{	$FlashCacheBody["noCheckSCMSize"] = $NoCheckSCMSize }
+	if($FlashCacheBody.Count -gt 0){$body["flashCache"] = $FlashCacheBody }
+    $Result = $null
+    $Result = Invoke-A9API -uri '/' -type 'POST' -body $body 
+	$status = $Result.StatusCode
+	if($status -eq 201)
+	{	write-host "Cmdlet executed successfully" -foreground green
+		return $Result
+	}
+	else
+	{	write-error "FAILURE : While creating a Flash Cache." 
+		return $Result.StatusDescription
+	}
+}
+}
+
+Function Remove-A9FlashCache
+{
+<#      
+.SYNOPSIS	
+	Removing a Flash Cache.
+.DESCRIPTION	
+    Removing a Flash Cache.
+.EXAMPLE	
+	PS:> Remove-A9FlashCache
+#>
+[CmdletBinding()]
+Param()
+Begin 
+{	Test-A9Connection -ClientType 'API'
+}
+Process 
+{	$Result = Invoke-A9API -uri '/flashcache' -type 'DELETE' 
+	$status = $Result.StatusCode
+	if($status -eq 200)
+	{	write-host "Cmdlet executed successfully" -foreground green
+		return $Result
+	}
+	else
+	{	write-Error "FAILURE : While Removing Flash Cache." 
+		return $Result.StatusDescription
+	}
+}
+}
+
+Function Get-FlashCache
+{
+<#
+.SYNOPSIS	
+	Get Flash Cache information.
+.DESCRIPTION
+	Get Flash Cache information.
+.EXAMPLE
+	PS:> Get-A9FlashCache
+
+	Get Flash Cache information.
+#>
+[CmdletBinding()]
+Param()
+Begin 
+{	Test-A9Connection -ClientType 'API'
+}
+Process 
+{	$Result = $null
+	$dataPS = $null
+	$Result = Invoke-A9API -uri '/flashcache' -type 'GET' 
+	if($Result.StatusCode -eq 200)
+		{	$dataPS = $Result.content | ConvertFrom-Json
+		}
+	if($Result.StatusCode -eq 200)
+		{	write-host "Cmdlet executed successfully" -foreground green
+			return $dataPS		
+		}
+	else
+		{	write-error "FAILURE : While Executing Get-A9FlashCache." 
+			return $Result.StatusDescription
+		}
 }	
-Process
-{	$Cmd = " createmaint -f "
-	if($Comment)	{	$Cmd += " -comment $Comment " }
-	if($Duration)	{	$Cmd += " -duration $Duration " }
-	if($MaintType) 	{	$Cmd += " $MaintType " }
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
 }
 
-Function Set-A9Maintenance
+Function Set-A9VvSetFlashCachePolicy
 {
-<#
-.SYNOPSIS
-	Modify a maintenance window record with the specified options for the maintenance type.
-.DESCRIPTION
-	Allows modification of the Maintenance window record with the specified options for the maintenance type.
-.PARAMETER Comment
-	Specifies any comment or additional information for the maintenance window record. The comment can be up to 255 characters long. 
-	Unprintable characters are not allowed.
-.PARAMETER Duration
-	Extends the duration of the maintenance window record by the specified time. May be specified in minutes (e.g. 20m) or hours (e.g. 6h). If
-	unspecified, the window duration is unchanged. This option cannot be specified with the -end option.
-.PARAMETER End
-	Ends the window record for the specified maintenance type. If the maintenance window record has been created more than once with
-	"createmaint", this option reduces its reference count by 1 without ending the window record. This option cannot be specified with the Duration Option.
-.PARAMETER MaintType
-	The maintenance type for the maintenance window record to be modified. Maintenance type can be Other, Node, Restart, Disk, Cage, Cabling,
-	Upgrade, DiskFirmware, CageFirmware, or all. "all" can only be specified with option -end, which ends all maintenance window records,
-	regardless of their reference counts.
-.NOTES
-	This command requires a SSH type connection.
+<#      
+.SYNOPSIS	
+	Setting a VV-set Flash Cache policy.
+.DESCRIPTION	
+    Setting a VV-set Flash Cache policy.
+.EXAMPLE	
+	PS:> Set-A9VvSetFlashCachePolicy
+.PARAMETER VvSet
+	Name Of the VV-set to Set Flash Cache policy.
+.PARAMETER Enable
+	To Enable VV-set Flash Cache policy
+.PARAMETER Disable
+	To Disable VV-set Flash Cache policy
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$Comment,
-		[Parameter()]	[String]	$Duration,
-		[Parameter()]	[switch]	$End,
-		[Parameter(Mandatory)]	[String]	$MaintType
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
+Param(	[Parameter(Mandatory)]	[String]	$VvSet,
+		[Parameter()]					[Switch]	$Enable,
+		[Parameter()]					[Switch]	$Disable
+	)
+Begin 
+{	Test-A9Connection -ClientType 'API'
 }
-Process
-{	$Cmd = " setmaint "
-	if($Comment)	{	$Cmd += " -comment $Comment " }
-	if($Duration)	{	$Cmd += " -duration $Duration " }
-	if($End)		{	$Cmd += " -end " }
-	if($MaintType)	{	$Cmd += " $MaintType " }
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-} 
+Process 
+{	$body = @{}		
+	If($Enable) 		{	$body["flashCachePolicy"] = 1	}		
+	elseIf($Disable) 	{	$body["flashCachePolicy"] = 2 	}
+	else				{	$body["flashCachePolicy"] = 2 	}		
+    $Result = $null
+	$uri = '/volumesets/'+$VvSet
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
+	$status = $Result.StatusCode
+	if($status -eq 200)
+		{	write-host "Cmdlet executed successfully" -foreground green
+			return $Result
+		}
+	else{	Write-Error "Failure:  While Setting Flash Cache policy (1 = enable, 2 = disable) $body to vv-set $VvSet." 
+			return $Result.StatusDescription
+		}
 }
-
+}
 
 # SIG # Begin signature block
 # MIIsVAYJKoZIhvcNAQcCoIIsRTCCLEECAQExDzANBglghkgBZQMEAgMFADCBmwYK
 # KwYBBAGCNwIBBKCBjDCBiTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63
-# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEBEdm8eiXZL
-# dCt9OTHwc/+VInZXuewakprwXrJaafTWNomQ/GvsliezRp9lm2OYGH9N8ZuBjPOg
-# 5Heyp9DbZAvxoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
+# JNLGKX7zUQIBAAIBAAIBAAIBAAIBADBRMA0GCWCGSAFlAwQCAwUABEDsg9zuqRM8
+# T+bzrhbEA0S9aVRHkeiDI0iE9fw/u3IsDAdJIyxy8s7nfLrnwL9hiEeSaZik3d2q
+# 43U4CNqI7nLfoIIRdjCCBW8wggRXoAMCAQICEEj8k7RgVZSNNqfJionWlBYwDQYJ
 # KoZIhvcNAQEMBQAwezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFu
 # Y2hlc3RlcjEQMA4GA1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExp
 # bWl0ZWQxITAfBgNVBAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMTA1
@@ -241,21 +313,21 @@ Process
 # aWMgQ29kZSBTaWduaW5nIENBIFIzNgIRAJlw0Le0wViWOI8F8BKwRLcwDQYJYIZI
 # AWUDBAIDBQCggZwwEAYKKwYBBAGCNwIBDDECMAAwGQYJKoZIhvcNAQkDMQwGCisG
 # AQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwTwYJKoZIhvcN
-# AQkEMUIEQLIs/UQyJf8jAjV/5PpCO0Uh1YFpqbOjP3EwV2Qnfh0q7TW8VtE+Ezri
-# GriNEfj8vaahmO0cxhw+ZT2syuC9kxUwDQYJKoZIhvcNAQEBBQAEggGAUpo7DtEE
-# q2DXC3chOhthONvh4KiTLHDQo3VeSmuIyjDVhrHOKOqOR97dJv1avZP4598u5ida
-# 2Z5/6Aa7GQ7cUP3ds/SL8FfSUaQTqwLiWXYTHviuwFb07xmRCTDjZHWG+UQwm8iS
-# M+FzeaxV7GuM022nQtQvjpZ0Bcc/OaeSEPaqL7oYINQ8ptZHsstACRvng0NOKyQd
-# pBYN3jauvfpMPNeasAoA+Apq8jTExlLtWoKI0C31TusYsamTGaogOgjE5XmCI8Pq
-# 1YTcpMk3KkPzqwdDXceJXY4SbSBFyJXZAVKtNFvMSYxD8du429toTixxiZBl5tRu
-# YwTEwKQGbXEpxbL7rW5THKR3MbTZDuzhWkjO037zJUiOxQdNR/B1cRBLh8aziant
-# uz2Z3QJwb7onX4UOU5riA5icMJFIdSasUbf81l/vD7jZb3Zj8WBCpQ6K8WoDTvY3
-# Hii1IfXG4kpNGBS4bT5qOvuxKhg9ZumHJngxVFX1NGzKV/8wBs+Z0a7VoYIXWjCC
+# AQkEMUIEQLd0cuYrpqYUiXxjaCstW5uPj04BAi3zLqEu8Tv4aVuphydeqntIA7AH
+# Vt90papvULAeTpK6dH7lHHB7MZvvf8MwDQYJKoZIhvcNAQEBBQAEggGAbli6WLXu
+# /ibDnTk+qLbS62HuLbTrd+qXnMf+Yq0eszEG9c8BiZ9vZYeb//uYYAmXcoHkKfAb
+# WtfM9n7DyTM8rZsd5JzL5zrUGh1eZ97DpGCP8/M9Iv+rcX9e50wxmf1DqJJN2zT5
+# UKCTelrawJD6wFtbb5XMS8tDbU0TGCn0PMqvCYOMxvhGnitafDh2eXwh84x6XtCN
+# RJSrJo2maE9OMEienkiUKAyIEKh4nAVZ6PGmwpBpqRoTAfLCF9YQgSQ3m3L6UVei
+# V34RL2YR1K9fxKSt+TnKdYI2mdVJgPhUcPCSQbNFg7LTc0Au9lcujQIaLuW0uHT6
+# GNWLmAbTyPf9pbpmVq6ZrWzbXkWiNEI8ZuxeNrRlyuYp8n7ylNvzIFGJvROoVqhf
+# U3zaPN2TB209LFsqsNrRqE3BQFQcMq+uS2swpt3wObNx83hkAz5qMd0P+xKxkwAd
+# /9Q3+lt7gBCr7Sla/zsh286JTrfsDQJFDm2faSDX3pv0H0YPbTau8TTVoYIXWjCC
 # F1YGCisGAQQBgjcDAwExghdGMIIXQgYJKoZIhvcNAQcCoIIXMzCCFy8CAQMxDzAN
 # BglghkgBZQMEAgIFADCBhwYLKoZIhvcNAQkQAQSgeAR2MHQCAQEGCWCGSAGG/WwH
-# ATBBMA0GCWCGSAFlAwQCAgUABDDZ+3uIpU+gJYDqsepLtccns4r/Ti3ZRyTBa/WY
-# scKMoCNLolLn+cO0WMbB2GrTNfYCEC4z3jTfnvpc55cjC6pC4WgYDzIwMjUwNTE1
-# MDIyMDExWqCCEwMwgga8MIIEpKADAgECAhALrma8Wrp/lYfG+ekE4zMEMA0GCSqG
+# ATBBMA0GCWCGSAFlAwQCAgUABDBHuYyndAuL6mikd3VKqoF0wScRVlT227MSt6Lz
+# aG/sLebk4FfTE4JjVCdZLPlYbsUCEBvyMh4iqYY7nnpTdNZk3YoYDzIwMjUwNTE1
+# MjI1MzE2WqCCEwMwgga8MIIEpKADAgECAhALrma8Wrp/lYfG+ekE4zMEMA0GCSqG
 # SIb3DQEBCwUAMGMxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5j
 # LjE7MDkGA1UEAxMyRGlnaUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBU
 # aW1lU3RhbXBpbmcgQ0EwHhcNMjQwOTI2MDAwMDAwWhcNMzUxMTI1MjM1OTU5WjBC
@@ -360,20 +432,20 @@ Process
 # CQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRp
 # Z2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENB
 # AhALrma8Wrp/lYfG+ekE4zMEMA0GCWCGSAFlAwQCAgUAoIHhMBoGCSqGSIb3DQEJ
-# AzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjUwNTE1MDIyMDExWjAr
+# AzENBgsqhkiG9w0BCRABBDAcBgkqhkiG9w0BCQUxDxcNMjUwNTE1MjI1MzE2WjAr
 # BgsqhkiG9w0BCRACDDEcMBowGDAWBBTb04XuYtvSPnvk9nFIUIck1YZbRTA3Bgsq
 # hkiG9w0BCRACLzEoMCYwJDAiBCB2dp+o8mMvH0MLOiMwrtZWdf7Xc9sF1mW5BZOY
-# Q4+a2zA/BgkqhkiG9w0BCQQxMgQwquIPoSch0HKL58QfA3zJFFbHwtMZo9OqnoYW
-# iYjhkzXyEgxLpRIDmpcoOKg++QaAMA0GCSqGSIb3DQEBAQUABIICALN2H2MjjkBb
-# le5QtIEpnz3ucu29uf8vgPuqrpWq21hSbqT35uOHBkyDDm49PeSna+F3O7mXGIbM
-# i9IVfquDtOGWzl7XkU5I81aGpYql/k2RSNEB/mpTxcICwRzI3x2/OUjQwybrG750
-# S3AJ1p7WlveLtmqE8Xz/ZIUlSRP/Dei4UsuGLv0U3dum5PzWN06dCiHegSH8tOqQ
-# yfS05PpbJaBb9pixrh2E5GWC5Lvn/zVBjg9NetikNwEer4TRzDee14jdXfRTWH8Z
-# tQJJz/HDAr8UPQvGxMzcos5+23QL6INmmPteSKs0aNn+EOIthWy/zGHjLKcmRD2x
-# qeD1AHVESYdyNdxCDFNvy77vf+4KZ/xNXvEcZZqQpSPDxnWrVtMxMpj91Ul5p6cw
-# RQa/PaCuQ6rkhW8VueAWZGNi1onnPd/G81euEnyFjYI83Qkt2fZEkCbIk0zE+d64
-# Z9WeND/m9ADepDMRzu+0aS/Cou/RAweUwsjnvCArRKgfdOJf5dlvVLci9kvpJFt8
-# BO91PoR52K+uyfBTFjkzrKtoOjLzLKx6Sjy0Qz26oMd3tWmmbl/9+J+A6a4U1D5o
-# rddXLMypWzlqU3JnmGJZNIRE8IHiTWmcG6kAL3odCm4tuBhqNFaeh0NAfuMSRHwN
-# BpzwS8eoaUSMptcVle85d94t//2fVbPo
+# Q4+a2zA/BgkqhkiG9w0BCQQxMgQwVdWy1xyO41fbNbnqS/gIVsglYzUR2kKLMjdu
+# K5ReTYNrFRy66R3CaRqQWndVHr32MA0GCSqGSIb3DQEBAQUABIICAJttRIe4yD0C
+# 2irJ//2NsclqPvoa0xVyA09kywGMK5QexghOFaJJBdjpdnFELWm9UHrkug16gsRY
+# 7Lcd5VouoOXlfHiwtHRClpLvRldVHs1mMDBJQM/Z9+JrrayYwLFwmcs4tl0/PFRN
+# +xCyNnuYfUPYrC6z6EpzcHurSBKAX2E/s/Vio74VE1nwXq3j3fw8zydBLvRx8mQN
+# 1oqyzcqbUlsWf3TIPyDxrTA8BWFiJZUllTeUdmvnpiL67fL7CQBXM/6BekctwLsG
+# IqQPTUrdL57/loxuuFRUVtX1VVteeuosetMFVV6C7txExLPL5cCsA3gh8EmdRqD6
+# zUwIoz9186p7yeyNx/gscC3hfnouDmgNUCSl7/TfuraWrlOOCcn86H6uVhgKxqWQ
+# 7hM02Vh93E2MdhMzmm5mHvfz3X6cn/Ae0MpdjhynzloBiLW1xR2eBSuuSEbUezHj
+# GCk1pVnEMG/1QjUjHUaNpGV2H6IN5ygTyZDCqyNckmNpTwfkD5SoEmXdSh55SJdz
+# WdGEa+4fPxVrCFKPRFyQr0WYcJKlBiWndwshJCbOLIgsRR6LyPbTQ8k0f22AC75F
+# wz3ECfXslvnBL22MeLclATBR/CGuJp2wtnScxfPa0pIahXIFgEkGb2pfh6C1ZjAn
+# Bu5vbsQN/hyEdpTCdjXLWXgM0TmZVWUs
 # SIG # End signature block

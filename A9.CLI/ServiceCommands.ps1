@@ -1,6 +1,4 @@
-﻿####################################################################################
-## 	© 2020,2021 Hewlett Packard Enterprise Development LP
-##
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
 Function Add-A9Hardware
 {
 <#
@@ -12,18 +10,11 @@ Function Add-A9Hardware
 	option or setting the AutoAdmitTune system parameter to "no". On systems with more than two nodes, tunesys must always be run manually after disk installation.
 .PARAMETER Checkonly
 	Only performs passive checks; does not make any changes.
-.PARAMETER F
-	If errors are encountered, the Add-Hardware command ignores them and continues. The messages remain displayed.
-.PARAMETER Nopatch
+.PARAMETER SkipDrivePatch
 	Suppresses the check for drive table update packages for new hardware enablement.
-.PARAMETER Tune
-	Always run tunesys to rebalance the system after new disks are discovered.
-.PARAMETER Notune
+.PARAMETER SupressAutotune
 	Do not automatically run tunesys to rebalance the system after new disks are discovered.
 .NOTES
-	Authority:Super, Service
-	Usage: 
-	- Requires access to all domains.
 	- Handles any nodes, disks, or cages added into the system.
 	- Verifies the presence of all expected hardware and handles all checks, including valid states, cabling, and firmware revisions.
 	- Handles creating system logical disks while adding and rebalancing spare chunklets.
@@ -31,28 +22,21 @@ Function Add-A9Hardware
 	- If new disks are discovered, the set size for existing CPGs is recalculated. Changes to the CPG occur prior to any tunesys operation so that the affected LDs are automatically tuned.
 	- Checks for drive table patch updates unless you specify the -nopatch option.
 	- In addition, discovery of new disks in any combination can cause tunesys to start automatically and rebalance the system after the admithw command has completed.
-	- Automatic tunesys occurs under the following conditions:
-		- With admithw -tune, rebalancing occurs on all systems regardless of the number of controller nodes.
-		- On systems with two controller nodes, tunesys runs automatically. To suppress this behavior, use the system variable AutoAdmitTune with the following command structure: cli% setsys AutoAdmitTune no. AutoAdmitTune defaults to yes.
-		- With admithw -notune, rebalancing does not occur after new discovery of new disks. In all circumstances, run tunesys as soon as possible after discovery of new disks.
 #>
-[CmdletBinding(DefaultParameterSetName='default')]
-param(	[Parameter(ParameterSetName='CheckOnly', Mandatory)]	[switch]	$Checkonly,
-		[Parameter()]												[switch]	$F,
-		[Parameter()]												[switch]	$Nopatch,
-		[Parameter(ParameterSetName="Tune", Mandatory)]		[switch]	$Tune,
-		[Parameter(ParameterSetName="NoTune",Mandatory)]		[switch]	$Notune
+[CmdletBinding()]
+param(	[Parameter()]	[switch]	$Checkonly,
+		[Parameter()]	[switch]	$SkipDrivePatch,
+		[Parameter()]	[switch]	$SupressAutotune
 )
 Begin
 {	Test-A9CLIConection
 }
 Process
 {	$Cmd = " admithw "
-	if($Checkonly)	{	$Cmd += " -checkonly " 	}
-	if($F)			{	$Cmd += " -f " 			}
-	if($Nopatch)	{	$Cmd += " -nopatch " 	}
-	if($Tune)		{	$Cmd += " -tune " 		}
-	if($Notune)		{	$Cmd += " -notune " 	}
+	if($Checkonly)			{	$Cmd += " -checkonly " 	}
+	else					{	$Cmd += " -f " 			}
+	if($SkipDrivePatch)		{	$Cmd += " -nopatch " 	}
+	if($SupressAutoTune)	{	$Cmd += " -tune " 		}
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
@@ -106,7 +90,11 @@ Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
-{	$Cmd = " showpatch "
+{	if ( $PersistArrayType -eq 'AlletraMP-B10000' )
+		{	write-warning "This command only works on HPE Alletra9000 and older type arrays."
+			return
+		}
+	$Cmd = " showpatch "
 	if($PSCmdlet.ParameterSetName -eq 'ByPatchId') { $Cmd = $Cmd + $PatchId + ' '}
 	if($Hist)			{	$Cmd += " -hist " }
 	if($Detailed) 		{	$Cmd += " -d " 	}

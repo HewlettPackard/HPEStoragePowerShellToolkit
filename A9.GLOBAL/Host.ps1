@@ -1,6 +1,4 @@
-####################################################################################
-## 	© 2024 Hewlett Packard Enterprise Development LP
-##
+## 	©2025 Hewlett Packard Enterprise Development LP
 
 Function Get-A9HostSet 
 {
@@ -225,7 +223,7 @@ Process
                                         return $NewObj
                                     }
                                 else
-                                    {	Write-Error "Failure:  While Executing Get-HostPersona_WSAPI." 
+                                    {	Write-Error "Failure:  While Executing Get-A9HostPersona." 
                                         return $Result.StatusDescription
                                     }
             

@@ -1,6 +1,4 @@
-﻿####################################################################################
-## 	© 2020,2021 Hewlett Packard Enterprise Development LP
-##
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
 Function New-A9Host
 {
@@ -161,7 +159,7 @@ Process
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
-			Get-Host_WSAPI -HostName $HostName
+			Get-A9Host -HostName $HostName
 		}
 	else
 		{	Write-Error "Failure:  Cmdlet Execution failed with Host : $HostName." 

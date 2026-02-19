@@ -1,6 +1,4 @@
-﻿####################################################################################
-## 	© 2020,2021 Hewlett Packard Enterprise Development LP
-##
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
 Function Get-A9UserConnection
 {

@@ -1,6 +1,4 @@
-﻿####################################################################################
-## 	© 2020,2021 Hewlett Packard Enterprise Development LP
-##
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
 Function Remove-A9Task
 {
@@ -56,48 +54,6 @@ process
   }
 }
 
-Function Wait-A9Task
-{
-<#
-.SYNOPSIS
-  Wait for tasks to complete.
-.DESCRIPTION
-  The Wait Task cmdlet asks the CLI to wait for a task to complete before proceeding. The cmdlet automatically notifies you when the specified task is finished.
-.PARAMETER Detailed
-  Displays the detailed status of the task specified by <TaskID> as it executes. When the task completes, this command exits.
-.PARAMETER TaskID
-  Indicates one or more tasks to wait for using their task IDs. When no task IDs are specified, the command waits for all non-system tasks
-  to complete. To wait for system tasks, <TaskID> must be specified.
-.PARAMETER Quiet
-  Quiet; do not report the end state of the tasks, only wait for them to exit.
-.EXAMPLE
-  The following example shows how to wait for a task using the task ID. When successful, the command returns only after the task completes.
-  
-  PS:> Wait-A9Task 1  
-  Task 1 done      
-.NOTES
-	This command requires a SSH type connection.
-  Authority: Any role in the system
-#>
-[CmdletBinding()]
-param(  [Parameter(parametersetname='Loud',mandatory)]  [Switch]  $Detailed, 
-        [Parameter(parametersetname='Loud',mandatory)] 
-        [Parameter(parametersetname='Quiet',mandatory)] [String]  $TaskID,
-        [Parameter(parametersetname='Quiet',mandatory)] [Switch]  $Quiet
-    )	
-Begin
-  { Test-A9Connection -ClientType 'SshClient'
-  }
-process	
-  { $cmd = "waittask "	
-    if ($Detailed)  {  $cmd += " -v "	    }
-    if ($TaskID)    {  $cmd += "$TaskID"  }
-    if ($Quiet)     {  $cmd += " -q"		  }    	
-    $Result = Invoke-A9CLICommand -cmds  $cmd
-    return $Result
-  }
-} 
-
 Function Set-A9Task
 {
 <#
@@ -109,30 +65,35 @@ Function Set-A9Task
   Specifies the priority of the task.
 .PARAMETER TaskID
   Indicates one or more tasks to modify using their task IDs. 
+.PARAMETER WaitForTaskCompletition
+  This option will query the status of a task, and only return once that task is completed
 .EXAMPLE
   The following example shows how to wait for a task using the task ID. When successful, the command returns only after the task completes.
   
   PS:> Set-A9Task -TaskID 1234 -Priority high 
+.EXAMPLE
+  The following example shows how to wait for a task using the task ID. When successful, the command returns only after the task completes.
+  
+  PS:> Set-A9Task -TaskID 1234 -WaitForTaskCompletion
+  Task 13492 done
+
 .NOTES
 	This command requires a SSH type connection.
-  Authority: Super, Edit
-    Any role granted the task_set right.
-  Usage:
-  - Task priorities can only be set one at a time. If the specified task is not active or valid, attempting to set its priority will result in an error.
 #>
 [CmdletBinding()]
-param(  [Parameter(mandatory)]                    [String]  $TaskID,
-        [Parameter(mandatory)]   
-        [ValidateSet('high','med','low','auto')]  [String]  $Priority
+param(  [Parameter(mandatory,parametersetname='wait')]
+        [Parameter(mandatory,parametersetname='set')]   [String]  $TaskID,
+        [Parameter(mandatory,parametersetname='set')]   
+        [ValidateSet('high','med','low','auto')]        [String]  $Priority,
+        [Parameter(mandatory,parametersetname='wait')]  [Swutcg]  $WaitForTaskCompletion   
     )	
 Begin
   { Test-A9Connection -ClientType 'SshClient'
   }
 process	
-  { $cmd = "settask -f  "	
-    $cmd += " -pri $Priority "
-    $cmd += "$TaskID"  
-    $Result = Invoke-A9CLICommand -cmds $cmd
+  { if ($Priority)              { $cmd = "settask -f -pri $Priority $TaskID"  } 
+    if ($WaitForTaskCompletion) { $cmd = "waittask $TaskID"  }
+    $Result = Invoke-A9CLICommand -cmds  $cmd
     return $Result
   }
 } 

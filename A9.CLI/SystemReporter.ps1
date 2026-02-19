@@ -1,6 +1,4 @@
-﻿####################################################################################
-## 	© 2020,2021 Hewlett Packard Enterprise Development LP
-##
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
 # General System Rerporter Commands
 Function Get-A9SystemReporter
@@ -3524,7 +3522,8 @@ param(	[Parameter()]	[switch]	$Attime,
 		[Parameter()]	[String]	$ETSecs ,
 		[Parameter()][ValidateSet("PORT_N","PORT_S","PORT_P","ISCSI_NAME","TPGT")]	
 						[String]	$Groupby ,
-		[Parameter()]	[String]	$NSP,
+		[Parameter()][ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]	
+						[String]	$NSP,
 		[Parameter()]	[switch]	$ShowRaw
 	)	
 Begin

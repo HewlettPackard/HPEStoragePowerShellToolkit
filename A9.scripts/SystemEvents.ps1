@@ -1,6 +1,5 @@
-﻿####################################################################################
-## 	© 2020,2021 Hewlett Packard Enterprise Development LP
-##
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
+
 Function Open-A9SSE 
 {
 <#   
@@ -28,13 +27,13 @@ Process
 			return $dataPS		
 		}
 	else
-		{	write-error "FAILURE : While Executing Open-SSE_WSAPI."
+		{	write-error "FAILURE : While Executing Open-A9SSE."
 			return $Result.StatusDescription
 		}
 }	
 }
 
-Function Get-A9EventLogs 
+Function Get-A9EventLog
 {
 <#
 .SYNOPSIS	
@@ -155,7 +154,7 @@ Process
 			return $NewObj		
 		}
 	else
-		{	write-error "FAILURE : While Executing Get-EventLogs_WSAPI."
+		{	write-error "FAILURE : While Executing Get-A9EventLog."
 			return $Result.StatusDescription
 		}
 }	

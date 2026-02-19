@@ -1,6 +1,4 @@
-﻿####################################################################################
-## 	© 2020,2021 Hewlett Packard Enterprise Development LP
-##
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
 Function Get-A9Alert
 {
@@ -13,16 +11,45 @@ Function Get-A9Alert
 	Dispays only the eventypes that are specified from the following selections; 'New','Acknowledged','Fixed','All','Service'
 	The Default selection is new, but this allows you to override this default behaviour.
 .EXAMPLE
-	PS:> Get-A9Alert -EventTypes New
+	PS:> get-a9alert
+
+	id   Severity         Type                     State        Tier                 Spare_PN     Time                   Message
+	--   --------         ----                     -----        ----                 --------     ----                   -------
+	146  Informational    Ethernet Monitor Event   New          Hardware check       P60758-001   2025-09-30 14:55:50 M…
+	149  Degraded         Component state change   New          Hardware check       P60775-001   2025-10-04 23:36:46 M… Port 1:4:2 Degraded (Target Mode Port Went Offline)
+	147  Degraded         Component state change   New          Hardware check       P60775-001   2025-10-05 03:19:44 M… Port 1:4:1 Degraded (Target Mode Port Went Offline)
 .EXAMPLE
-	PS:> Get-A9Alert -EventTypes Acknowledged
+	PS:> get-a9alert -EventTypes All | convertto-json
+	
+	{
+		"Time": "2025-04-07 12:14:57 MDT",
+		"Message": "Cage cage41 (0x51402EC018DE6E46) I/O Module 1 firmware is outdated.",
+		"State": "Resolved by System",
+		"Type": "Cage I/O Module firmware outdated",
+		"Component": "hw_cage:41,hw_cage_ifc:1",
+		"Maintenance": "Upgrade",
+		"Severity": "Informational",
+		"Message Code": "0x02d0003",
+		"Id": "120",
+		"Tier": "Software check"
+		"Resolved": {
+			"Severity": "Informational",
+			"Message": "enclmgmt process restarted, clearing any alert previously emitted by it.",
+			"Component": "sw_enclmgmt",
+			"Time": "2025-04-07 12:14:53 MDT",
+			"Tier": "General",
+			"Type": "Enclmgmt restarted"
+	},
+
+	Note that the extra details presented are under a subhash called 'Resolved' to see this you must exposed the alert via either Format-list of Convertto-json
 .NOTES
 	This command requires a SSH type connection. The option is only to request Detailed information. 
 #>
 [CmdletBinding()]
 param(	[Parameter()]							
 			[ValidateSet('New','Acknowledged','Fixed','All','Service')]
-												[string]	$EventTypes
+												[string]	$EventTypes,
+		[Parameter()]							[switch]	$ShowRaw
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -39,9 +66,11 @@ Process
 	$Cmd += " -d " 
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	if ( $ShowRaw ) { return $Result } 
 	$DataPS = @()
 	foreach ( $Line in $Result)
-		{	if ( $Line.contains(']') -and $NewItem ) 
+		{	$sub=$false
+			if ( $Line.contains(']') -and $NewItem ) 
 				{	# we must be at end of file, lets save the current object
 					$DataPS += $NewItem
 				}
@@ -65,12 +94,23 @@ Process
 					$splitline = $line.split(": ")
 					$Keyname = $SplitLine[0]
 					$Keyname = $Keyname.replace(' "','')
+					if ($Keyname[0] -eq ' ')
+						{	$Sub=$true
+						}
 					$KeyName = $Keyname.trim()
 					$ValueName = $SplitLine[1]
 					if ($ValueName)
 						{	$ValueName = $ValueName.replace('",','')
 							$ValueName = $ValueName.trim()
-							$NewItem += @{ $KeyName = $ValueName }
+							if (-not $Sub)
+								{	$NewItem += @{ $KeyName = $ValueName }
+								}
+							else{	if ( -not $NewItem.Resolved )	
+										{	$NewItem += @{ 'Resolved' = @{} } 
+										}
+									$NewItem.Resolved += @{ $KeyName = $ValueName }	
+								}
+
 						}
 				}
 			elseif ( $Line.contains(']') -and -not $NewItem )
@@ -103,137 +143,6 @@ Process
 }
 }
 
-Function Get-A9EventLog_CLI
-{
-<#
-.SYNOPSIS
-	Show the system event log.
-.DESCRIPTION
-	The command displays the current system event log.
-.PARAMETER Minutes
-	Specifies that only events occurring within the specified number of minutes are shown. The <number> is an integer from 1 through 2147483647.
-.PARAMETER Detailed
-	Specifies that detailed information is displayed.
-.PARAMETER StartTime
-	Specifies that only events after a specified time are to be shown. The time argument can be specified as either <timespec>, <datespec>, or
-	both. If you would like to specify both a <timespec> and <datespec>, you must place quotation marks around them; for example, -startt "2012-10-29 00:00".
-		<timespec> Specified as the hour (hh), as interpreted on a 24 hour clock, where minutes (mm) and seconds (ss) can be optionally specified. Acceptable formats are hh:mm:ss or hhmm.
-		<datespec> Specified as the month (mm or month_name) and day (dd), where the year (yy) can be optionally specified. Acceptable formats are
-					mm/dd/yy, month_name dd, dd month_name yy, or yy-mm-dd. If the syntax yy-mm-dd is used, the year must be specified.
-.PARAMETER EndTime
-	Specifies that only events before a specified time are to be shown. The time argument can be specified as either <timespec>, <datespec>, or both.
-	See -startt for descriptions of <timespec> and <datespec>.
-
-	The <pattern> argument in the following options is a regular expression pattern that is used to match against the events each option produces. (See help on sub,regexpat.)
-
-	For each option, the pattern argument can be specified multiple times by repeating the option and <pattern>. For example:
-
-	showeventlog -type Disk.* -type <tpdtcl client> -sev Major
-	The "-sev Major" displays all events of severity Major and with a type that matches either the regular expression Disk.* or <tpdtcl client>.
-.PARAMETER Severity
-	Specifies that only events with severities that match the specified pattern(s) are displayed. The supported severities include Fatal Critical, Major, Minor, Degraded, Informational and Debug
-.PARAMETER NoSevevrity
-	Specifies that only events with severities that do not match the specified pattern(s) are displayed. The supported severities
-	include Fatal, Critical, Major, Minor, Degraded, Informational and Debug.
-.PARAMETER Class
-	Specifies that only events with classes that match the specified pattern(s) are displayed.
-.PARAMETER NoClass
-	Specifies that only events with classes that do not match the specified pattern(s) are displayed.
-.PARAMETER Node
-	Specifies that only events from nodes that match the specified pattern(s) are displayed.
-.PARAMETER NoNode
-	Specifies that only events from nodes that do not match the specified pattern(s) are displayed.
-.PARAMETER Typed
-	Specifies that only events with types that match the specified pattern(s) are displayed.
-.PARAMETER NoTyped
-	Specifies that only events with types that do not match the specified pattern(s) are displayed.
-.PARAMETER Message
-	Specifies that only events, whose messages match the specified pattern(s), are displayed.
-.PARAMETER NoMessage
-	Specifies that only events, whose messages do not match the specified pattern(s), are displayed.
-.PARAMETER Component
-	Specifies that only events, whose components match the specified pattern(s), are displayed.
-.PARAMETER NoComponent
-	Specifies that only events, whose components do not match the specified pattern(s), are displayed.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(
-	[Parameter()]	[String]	$Min,
-	[Parameter()]	[switch]	$Detailed,
-	[Parameter()]	[String]	$StartTime,
-	[Parameter()]	[String]	$EndTime,
-	[Parameter()]
-		[ValidateSet('Fatal','Critical','Major','Minor','Degraded','Informational','Debug')]	
-											[String]	$Severity,
-	[Parameter()]	
-	[ValidateSet('Fatal','Critical','Major','Minor','Degraded','Informational','Debug')]	
-											[String]	$NoSevevrity,
-	[Parameter()]	[String]	$Class,
-	[Parameter()]	[String]	$NoClass,
-	[Parameter()]	[String]	$Node,
-	[Parameter()]	[String]	$NoNode,
-	[Parameter()]	[String]	$Typed,
-	[Parameter()]	[String]	$Notyped,
-	[Parameter()]	[String]	$Message,
-	[Parameter()]	[String]	$NoMessage,
-	[Parameter()]	[String]	$Component,
-	[Parameter()]	[String]	$NoComponent,
-	[Parameter()]	[switch]	$ShowRaw
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$Cmd = " showeventlog "
-	if($Minutes)		{	$Cmd += " -min $Minutes " }
-	if($Detailed)		{	$Cmd += " -d " }
-	if($StartTime)		{	$Cmd += " -startt $Starttime " }
-	if($EndTime)		{	$Cmd += " -endt $Endtime " }
-	if($Sevevrity)		{	$Cmd += " -sev $Severity " }
-	if($NoSevevrity)	{	$Cmd += " -nsev $Noseverity " }
-	if($Class)			{	$Cmd += " -class $Class " }
-	if($NoClass)		{	$Cmd += " -nclass $Nclass " }
-	if($Node)			{	$Cmd += " -node $Node " }
-	if($NoNode)			{	$Cmd += " -nnode $NoNode " }
-	if($Typed)			{	$Cmd += " -type $Typed " }
-	if($NoTyped)		{	$Cmd += " -ntype $NoTyped " }
-	if($Message)		{	$Cmd += " -msg $Message "	}
-	if($NoMessage)		{	$Cmd += " -nmsg $NoMessage " }
-	if($Component)		{	$Cmd += " -comp $Component " }
-	if($NoComponent)	{	$Cmd += " -ncomp $NoComponent " }
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-}
-end
-{	$RunningIndex = 0
-	if ($ShowRaw) { return $Result }
-	$EventList = @()
-	$SingleEvent = @{}
-	write-verbose "The number of lines to process = $($Result.count)"
-	while($RunningIndex -lt $Result.count)
-	{	if( $Result[$RunningIndex].StartsWith('Time:'))
-			{	$result[$RunningIndex]
-				$V = $Result[$RunningIndex].split(":")
-				$SingleEvent[$V[0].trim()] = $V[1] 
-			}
-		elseif( $Result[$RunningIndex].trim() -ne '')
-			{	$V = $Result[$RunningIndex].split(":")
-				$SingleEvent[$V[0].trim()] = $V[1] 
-			}
-		else 
-			{ 	$EventList+=$SingleEvent
-				$SingleEvent=@{}
-				
-			}
-		$RunningIndex += 1
-	}
-	$Result = ( $EventList | Convertto-json | convertfrom-json )
-	Return $Result
-}
-}
-
 Function Get-A9Health
 {
 <#
@@ -241,47 +150,71 @@ Function Get-A9Health
 	Check the current health of the system.
 .DESCRIPTION
 	The command checks the status of system hardware and software components, and reports any issues
-.PARAMETER Component
-	Indicates the component to check. Use -list option to get the list of components.
-.PARAMETER Lite
-	Perform a minimal health check.
-.PARAMETER Service
-	Perform a thorough health check. This is the default option.
-.PARAMETER Full
-	Perform the maximum health check. This option cannot be used with the -lite option.
-.PARAMETER List
-	List all components that will be checked.
-.PARAMETER Quiet
-	Do not display which component is currently being checked. Do not display the footnote with the -list option.
-.PARAMETER Detailed
-	Display detailed information regarding the status of the system.
+.PARAMETER showraw
+	This will output the raw SSH streamed data instead of the processed object that is normally returned.
 .NOTES
+	Since this command returns an object, the default behaviour is to get detailed reports, if you want to filter by component you can more easily use powershell filtering.
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ParameterSetName='Lite')]		[switch]	$Lite,
-		[Parameter(ParameterSetName='Service')]		[switch]	$Service,
-		[Parameter(ParameterSetName='Full')]		[switch]	$Full,
-		[Parameter()]								[switch]	$List,
-		[Parameter()]								[switch]	$Quiet,
-		[Parameter()]								[switch]	$Detailed,
-		[Parameter(ParameterSetName='Component')]	[String]	$Component
+param(	[Parameter()]		[switch]	$ShowRaw
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
-{	$Cmd = " checkhealth "
-	if($Lite) 		{	$Cmd += " -lite " 	}
-	if($Service)	{	$Cmd += " -svc "	}
-	if($Full)		{	$Cmd += " -full " 	}
-	if($List)		{	$Cmd += " -list " 	}
-	if($Quiet)		{	$Cmd += " -quiet " 	}
-	if($Detailed)	{	$Cmd += " -d " 		}
-	if($Component)	{	$Cmd += " $Component "}
+{	$Cmd = " checkhealth -full -quiet -d " 
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
+	if ($ShowRaw)	{return $result }
+	# Need to objectivize it
+	$NewObj=@()
+	$FoundHeaderLine = $false
+	$joinnext=$false
+	foreach( $Line in $Result)
+		{	$StartIndex = 0
+			if ($Line.contains('Component') -and $Line.contains('Identifier') ) 
+				{	$FoundHeaderLine = $true
+					$Headline = $Line.split(' ')
+					$headhash=[ordered]@{}
+					foreach( $split in $Headline )
+					{	if ( $Split )
+							{	# this ignores blanks
+								$headlineTrimmed = $Split.trim('-')
+								$headlineRaw = $split
+								$headlineLength = $HeadlineRaw.length
+								if ( $HeadlineTrimmed -eq 'Detailed' )
+									{	$joinnext = $true
+										$HeadlineTrimmed = 'Detailed Description'
+										$HeadHash['Detailed Description'] = $headlineLength
+									}
+								if ( $HeadlineTrimmed -eq 'Description' )
+									{	$HeadHash['Detailed Description']+=$headlineLength
+									}
+								else 
+									{	$HeadHash[$HeadlineTrimmed]=$HeadlineLength
+									}
+							}
+					}
+				}
+			elseif ( $foundHeaderLine )
+				{	# $HeadHash | convertto-json
+					foreach ($Head in $HeadHash.getenumerator())
+						{	if ( $StartIndex -eq 0 )
+								{	$NewItem = @{}	
+								}
+							$Data = $($Line.Substring($StartIndex, $head.value) ).trim(' ')
+							$data = $Data.trim('-')
+							$data = $data.trim(' ')
+							$NewItem += @{ $Head.key = $data }
+							$StartIndex += $Head.value +1
+						}
+					if ( -not ( $NewItem['Identifier'] -eq '' -or $NewItem['Identifier'] -eq 'total') )
+						{	$NewObj+=$NewItem
+						}
+				}
+		}
+	Return ($NewObj | convertto-json | convertfrom-json)
 }
 }
 
@@ -293,24 +226,18 @@ Function Remove-A9Alerts
 .DESCRIPTION
 	The command removes one or more alerts from the system.
 .PARAMETER  Alert_ID
-	Indicates a specific alert to be removed from the system. This specifier can be repeated to remove multiple alerts. If this specifier is not used, the -a option must be used.
-.PARAMETER All
-	Specifies all alerts from the system and prompts removal for each alert. If this option is not used, then the <alert_ID> specifier must be used.
+	Indicates a specific alert to be removed from the system. If this specifier is not used, the -a option must be used.
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ParameterSetName='All', Mandatory)]	[switch]	$All,
-		[Parameter(ParameterSetName='Id',  Mandatory)]	[String]	$Alert_ID
+param(	[Parameter(ParameterSetName='Id',  Mandatory)]	[String]	$AlertID
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
-{	$Cmd = " removealert "
-	$Cmd += " -f "
-	if($All)		{	$Cmd += " -a "	}
-	if($Alert_ID)	{	$Cmd += " $Alert_ID "}
+{	$Cmd = " removealert -f  $Alert_ID "
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
@@ -324,48 +251,30 @@ Function Set-A9Alert
 	Set the status of system alerts.
 .DESCRIPTION
 	The command sets the status of system alerts.
-.PARAMETER Alert_ID
+.PARAMETER AlertID
 	Specifies that the status of a specific alert be set. This specifier can be repeated to indicate multiple specific alerts. Up to 99 alerts
 	can be specified in one command. If not specified, the -a option must be specified on the command line.
-.PARAMETER All
-	Specifies that the status of all alerts be set. If not specified, the Alert_ID specifier must be specified.
-.PARAMETER New
-	Specifies that the alert(s), as indicated with the <alert_ID> specifier or with option -a, be set as "New"(new), "Acknowledged"(ack), or "Fixed"(fixed).
-.PARAMETER Ack
-	Specifies that the alert(s), as indicated with the <alert_ID> specifier or with option -a, be set as "New"(new), "Acknowledged"(ack), or "Fixed"(fixed).
-.PARAMETER Fixed
-	Specifies that the alert(s), as indicated with the <alert_ID> specifier or with option -a, be set as "New"(new), "Acknowledged"(ack), or "Fixed"(fixed).
+.PARAMETER NewStatus
+	Specifies that the status of all alerts be set as "New"(new), "Acknowledged"(ack), or "Fixed"(fixed).
 .NOTES
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ParameterSetName='NewAll', Mandatory=$true)]
-		[Parameter(ParameterSetName='NewId',  Mandatory=$true)]		[switch]	$New,
-
-		[Parameter(ParameterSetName='AckAll', Mandatory=$true)]
-		[Parameter(ParameterSetName='AckId',  Mandatory=$true)]		[switch]	$Ack,
-
-		[Parameter(ParameterSetName='FixAll', Mandatory=$true)]	
-		[Parameter(ParameterSetName='FixId',  Mandatory=$true)]		[switch]	$Fixed,
-
-		[Parameter(ParameterSetName='NewAll', Mandatory=$true)]
-		[Parameter(ParameterSetName='AckAll', Mandatory=$true)]
-		[Parameter(ParameterSetName='FixAll', Mandatory=$true)]		[switch]	$All,
-
-		[Parameter(ParameterSetName='NewId',  Mandatory=$true)]		
-		[Parameter(ParameterSetName='AckId',  Mandatory=$true)]		
-		[Parameter(ParameterSetName='FixId',  Mandatory=$true)]		[int]		$Alert_ID
+param(	[Parameter(Mandatory)]	
+		[ValidateSet('New','Acknowledged','Fixed')]	[switch]	$NewStatus,
+		[Parameter(Mandatory)]						[int]		$AlertID
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " setalert "
-	if($New) 		{	$Cmd += " new " }
-	if($Ack) 		{	$Cmd += " ack " }
-	if($Fixed)		{	$Cmd += " fixed " }
-	if($All)		{	$Cmd += " -a " }
-	if($Alert_ID){	$Cmd += " $Alert_ID " }
+	Switch($NewStatus)	
+		{	'New'			{	$Cmd += " new " 	}
+			'Acknowledged' 	{	$Cmd += " ack " 	}
+			'Fixed'			{	$Cmd += " fixed " 	}
+		}
+	$Cmd += " $AlertID "
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result

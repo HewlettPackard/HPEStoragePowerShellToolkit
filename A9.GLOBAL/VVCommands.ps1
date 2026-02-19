@@ -1,6 +1,4 @@
-﻿####################################################################################
-## 	© 2024 Hewlett Packard Enterprise Development LP
-##
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
 Function Get-A9Vv 
 {
@@ -113,7 +111,7 @@ Process
 																			$Enum = $Item.'provisioningType'
 																				Switch ($Enum)
 																					{   1   {   $Desc = 'Full' }
-																						2   {   $Desc = 'TPVV(Thin Provisioned Virtual Volime)'  }
+																						2   {   $Desc = 'TPVV(Thin Provisioned Virtual Volume)'  }
 																						3   {   $Desc = 'SNP(Snapshot)' }
 																						4   {   $Desc = 'PEER'  }
 																						5   {   $Desc = 'UNKNOWN'  }
@@ -307,7 +305,7 @@ process
 }
 }
 
-Function Update-A9Vv
+Function Set-A9Vv
 {
 <#
 .SYNOPSIS
@@ -389,10 +387,14 @@ Function Update-A9Vv
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
 Param(
-	[Parameter(Mandatory, ParameterSetName='API')]	
-	[Parameter(Mandatory, ParameterSetName='Grow')]	
+	[Parameter(Mandatory,parameterSetName='API')]	
+	[Parameter(Mandatory,parameterSetName='CompressDECO')]	
+	[Parameter(Mandatory,parameterSetName='CompressTPVV')]
+	[Parameter(Mandatory,parameterSetName='CompressFPVV')]
+	[Parameter(Mandatory,parameterSetName='CompressTDVV')]
+	[Parameter(Mandatory,parameterSetName='Grow')]	
 												[String]	$VolumeName ,		
-	[Parameter(ParameterSetName='Grow')]	
+	[Parameter(ParameterSetName='Grow',mandatory)]	
 		[ValidateRange(256,[int]::MaxValue)]	[int]		$SizeMiB ,
 	[Parameter(ParameterSetName='API')]			[String]	$NewName,
 	[Parameter(ParameterSetName='API')]			[String]	$Comment,
@@ -410,11 +412,20 @@ Param(
 	[Parameter(ParameterSetName='API')]	
 		[ValidateSet('3PAR_HOST_DIF','STD_HOST_DIF','NO_HOST_DIF')]
 												[string]	$HostDIF ,
+	[Parameter(          parameterSetName='CompressDECO')]	
+	[Parameter(			 parameterSetName='CompressTPVV')]
+	[Parameter(			 parameterSetName='CompressFPVV')]
+	[Parameter(	 		 parameterSetName='CompressTDVV')]
 	[Parameter(ParameterSetName='API')]			[String]	$SnapCPG,
 	[Parameter(ParameterSetName='API')]
 		[ValidateRange(0,100)]					[int]		$SsSpcAllocWarningPct ,
 	[Parameter(ParameterSetName='API')]
 		[ValidateRange(0,100)]					[int]		$SsSpcAllocLimitPct ,
+
+	[Parameter(          parameterSetName='CompressDECO')]	
+	[Parameter(Mandatory,parameterSetName='CompressTPVV')]
+	[Parameter(Mandatory,parameterSetName='CompressFPVV')]
+	[Parameter(Mandatory,parameterSetName='CompressTDVV')]	
 	[Parameter(ParameterSetName='API')]			[String]	$UserCPG,
 	[Parameter(ParameterSetName='API')]
 		[ValidateRange(0,100)]					[int]		$UsrSpcAllocWarningPct,
@@ -424,47 +435,74 @@ Param(
 	[Parameter(ParameterSetName='API')]			[Boolean]	$RmUsrSpcAllocWarning ,
 	[Parameter(ParameterSetName='API')]			[Boolean]	$RmExpTime,
 	[Parameter(ParameterSetName='API')]			[Boolean]	$RmSsSpcAllocLimit,
-	[Parameter(ParameterSetName='API')]			[Boolean]	$RmUsrSpcAllocLimit
+	[Parameter(ParameterSetName='API')]			[Boolean]	$RmUsrSpcAllocLimit,
+	[Parameter(ParameterSetName='Grow',mandatory)]	
+												[switch]	$ResizeMB,
+	[Parameter(Mandatory,parameterSetName='CompressTPVV')]	[Switch]	$ThinProvision,
+
+	[Parameter(Mandatory,parameterSetName='CompressFPVV')]	[Switch]	$FullProvision,
+	[Parameter(Mandatory,parameterSetName='CompressTDVV')]	[Switch]	$ThinAndDedupe,
+	[Parameter(Mandatory,parameterSetName='CompressDECO')]	[Switch]	$DeDupeAndCompress,
+		
+	[Parameter(			 parameterSetName='CompressTDVV')]
+	[Parameter(			 parameterSetName='CompressFPVV')]
+	[Parameter(			 ParameterSetName='CompressTPVV')]	[String]	$KeepVV
+	
 )
 Begin 
 {	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$body = @{}
-	if ($SizeMiB)			{	$BodySize = @{ 'action' = 3; 'SizeMiB' = $SizeMiB } }
-	If ($NewName) 			{ 	$body["newName"] 	= "$NewName" 			}
-	If ($Comment) 			{  	$body["comment"] 	= "$Comment" 			}
-	If ($WWN) 				{ 	$body["WWN"] 		= "$WWN"				}
-	If ($ExpirationHours) 	{ 	$body["expirationHours"] = $ExpirationHours	}
-	If ($RetentionHours) 	{	$body["retentionHours"] = $RetentionHours	}
-	$VvPolicies = @{}
-	If (test-path Variable:$StaleSS) 				{	$VvPolicies["staleSS"] 	= $StaleSS		}
-	If (test-path Variable:$OneHost) 				{	$VvPolicies["oneHost"] 	= $OneHost    	}
-	If (test-path Variable:$ZeroDetect) 			{	$VvPolicies["zeroDetect"]=$ZeroDetect	}	
-	If (test-path Variable:$System) 				{	$VvPolicies["system"] 	= $System    	} 
-	If (test-path Variable:$Caching) 				{	$VvPolicies["caching"] 	= $Caching    	}	
-	If (test-path Variable:$Fsvc) 					{	$VvPolicies["fsvc"] 	= $Fsvc    		}
-	If (test-path Variable:$HostDIF) 
-		{	if($HostDIF -eq "3PAR_HOST_DIF")		{	$VvPolicies["hostDIF"] = 1	}
-			elseif($HostDIF -eq "STD_HOST_DIF")		{	$VvPolicies["hostDIF"] = 2	}
-			elseif($HostDIF -eq "NO_HOST_DIF")		{	$VvPolicies["hostDIF"] = 3	}
-		} 	   
-	If (test-path Variable:$SnapCPG) 				{ 	$body["snapCPG"] 				= $SnapCPG 				}
-	If (test-path Variable:$SsSpcAllocWarningPct) 	{ 	$body["ssSpcAllocWarningPct"] 	= $SsSpcAllocWarningPct }
-	If (test-path Variable:$SsSpcAllocLimitPct) 	{  	$body["ssSpcAllocLimitPct"] 	= $SsSpcAllocLimitPct 	}	
-	If (test-path Variable:$UserCPG) 				{	$body["userCPG"] 				= $UserCPG				}
-	If (test-path Variable:$UsrSpcAllocWarningPct) 	{	$body["usrSpcAllocWarningPct"] 	= $UsrSpcAllocWarningPct}
-	If (test-path Variable:$UsrSpcAllocLimitPct) 	{	$body["usrSpcAllocLimitPct"] 	= $UsrSpcAllocLimitPct	}	
-	If (test-path Variable:$RmSsSpcAllocWarning) 	{	$body["rmSsSpcAllocWarning"] 	= $RmSsSpcAllocWarning  }
-	If (test-path Variable:$RmUsrSpcAllocWarning) 	{	$body["rmUsrSpcAllocWarning"] 	= $RmUsrSpcAllocWarning	} 
-	If (test-path Variable:$RmExpTime) 				{	$body["rmExpTime"] 				= $RmExpTime			} 
-	If (test-path Variable:$RmSsSpcAllocLimit) 		{	$body["rmSsSpcAllocLimit"] 		= $RmSsSpcAllocLimit 	}
-	If (test-path Variable:$RmUsrSpcAllocLimit) 	{	$body["rmUsrSpcAllocLimit"] 	= $RmUsrSpcAllocLimit 	}
-	if($VvPolicies.Count -gt 0)						{	$body["policies"] 				= $VvPolicies 			}
+	switch -wildcard ($PSCmdlet.ParameterSetName)
+		{	'Grow'	{	if ($SizeMiB)			{	$Body = @{ 'action' = 3; 'SizeMiB' = $SizeMiB } }
+					}
+			'API'	{	If ($NewName) 			{ 	$body["newName"] 	= "$NewName" 			}
+						If ($Comment) 			{  	$body["comment"] 	= "$Comment" 			}
+						If ($WWN) 				{ 	$body["WWN"] 		= "$WWN"				}
+						If ($ExpirationHours) 	{ 	$body["expirationHours"] = $ExpirationHours	}
+						If ($RetentionHours) 	{	$body["retentionHours"] = $RetentionHours	}
+						$VvPolicies = @{}
+						If (test-path Variable:$StaleSS) 				{	$VvPolicies["staleSS"] 	= $StaleSS		}
+						If (test-path Variable:$OneHost) 				{	$VvPolicies["oneHost"] 	= $OneHost    	}
+						If (test-path Variable:$ZeroDetect) 			{	$VvPolicies["zeroDetect"]=$ZeroDetect	}	
+						If (test-path Variable:$System) 				{	$VvPolicies["system"] 	= $System    	} 
+						If (test-path Variable:$Caching) 				{	$VvPolicies["caching"] 	= $Caching    	}	
+						If (test-path Variable:$Fsvc) 					{	$VvPolicies["fsvc"] 	= $Fsvc    		}
+						If (test-path Variable:$HostDIF) 
+							{	if($HostDIF -eq "3PAR_HOST_DIF")		{	$VvPolicies["hostDIF"] = 1	}
+								elseif($HostDIF -eq "STD_HOST_DIF")		{	$VvPolicies["hostDIF"] = 2	}
+								elseif($HostDIF -eq "NO_HOST_DIF")		{	$VvPolicies["hostDIF"] = 3	}
+							} 	   
+						If (test-path Variable:$SnapCPG) 				{ 	$body["snapCPG"] 				= $SnapCPG 				}
+						If (test-path Variable:$SsSpcAllocWarningPct) 	{ 	$body["ssSpcAllocWarningPct"] 	= $SsSpcAllocWarningPct }
+						If (test-path Variable:$SsSpcAllocLimitPct) 	{  	$body["ssSpcAllocLimitPct"] 	= $SsSpcAllocLimitPct 	}	
+						If (test-path Variable:$UserCPG) 				{	$body["userCPG"] 				= $UserCPG				}
+						If (test-path Variable:$UsrSpcAllocWarningPct) 	{	$body["usrSpcAllocWarningPct"] 	= $UsrSpcAllocWarningPct}
+						If (test-path Variable:$UsrSpcAllocLimitPct) 	{	$body["usrSpcAllocLimitPct"] 	= $UsrSpcAllocLimitPct	}	
+						If (test-path Variable:$RmSsSpcAllocWarning) 	{	$body["rmSsSpcAllocWarning"] 	= $RmSsSpcAllocWarning  }
+						If (test-path Variable:$RmUsrSpcAllocWarning) 	{	$body["rmUsrSpcAllocWarning"] 	= $RmUsrSpcAllocWarning	} 
+						If (test-path Variable:$RmExpTime) 				{	$body["rmExpTime"] 				= $RmExpTime			} 
+						If (test-path Variable:$RmSsSpcAllocLimit) 		{	$body["rmSsSpcAllocLimit"] 		= $RmSsSpcAllocLimit 	}
+						If (test-path Variable:$RmUsrSpcAllocLimit) 	{	$body["rmUsrSpcAllocLimit"] 	= $RmUsrSpcAllocLimit 	}
+						if($VvPolicies.Count -gt 0)						{	$body["policies"] 				= $VvPolicies 			}
+					}
+			"Comp*"	{	$body = @{} 	
+						$body["action"] = 6	
+						if ( $UserCPG )			{	$body['tuneOperation'] = 1
+													$body['userCPG'] = $UserCPG		}
+						else					{	$body['tuneOperation'] = 2		}
+						if ( $SnapCPG)			{	$body['snapCPG'] = $SnapCPG		}	
+						if ( $ThinProvisioning ){	$body['conversionOperation'] = 1}
+						if ( $FullProvisioning ){	$body['conversionOperation'] = 2}
+						if ( $ThinAndDeduupe ) 	{	$body['conversionOperation'] = 3}
+						if ( $DeDupeAndCompress ){	$body['conversionOperation'] = 4}
+						if ( $KeepVV ) 			{	$body['keepVV'] = $KeepVV		}
+					}
+		}	
 	$Result = $null
 	$uri = '/volumes/'+$VolumeName 
-	if (-not $SizeMB )	{	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $Body		}
-	else 				{	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $BodySize	} 
+	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $Body
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			if($NewName)	{	return Get-A9Vv -VVName $NewName	}
@@ -542,7 +580,7 @@ Begin
 }
 Process 
 {	
-	Write-Verbose "Request: Request to Get-vLun_WSAPI [ VolumeName : $VolumeName | LUNID : $LUNID | HostName : $HostName ] (Invoke-A9API)."
+	Write-Verbose "Request: Request to Get-A9vLun [ VolumeName : $VolumeName | LUNID : $LUNID | HostName : $HostName ] (Invoke-A9API)."
 	$Result = $null
 	$dataPS = $null		
 	write-verbose "Making URL call to /vluns"
@@ -675,7 +713,8 @@ Param(	[Parameter(Mandatory, ParameterSetName='APIvh')]
 		[Parameter(ParameterSetName='APIvhs')]
 		[Parameter(ParameterSetName='APIvsh')]
 		[Parameter(ParameterSetName='APIvshs')]
-		[ValidatePattern('\d+\.\d+\.\d+')]					[String]	$NSP,
+		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
+															[String]	$NSP,
 
 		[Parameter(ParameterSetName='APIvh')]
 		[Parameter(ParameterSetName='APIvhs')]
@@ -687,7 +726,7 @@ Begin
 }
 Process 
 {   
-	Write-Verbose "Running: Building uri to Remove-vLun_WSAPI  ."
+	Write-Verbose "Running: Building uri to Remove-A9vLun  ."
 	$uri = "/vluns/"
 	if ($Volume)		{ $uri = $uri + $Volume 			}
 	if ($VolumeSet)		{ $uri = $uri + "set:"+$VolumeSet 	}
@@ -709,7 +748,7 @@ Process
 	if ($NSP)			{ $uri = $uri + ","+$NSP			}	
 	if ($NoVcn)			{ $uri = $uri + "?noVcn=$NoVCN"}
 	$Result = $null
-	Write-verbose "Request: Request to Remove-vLun_WSAPI : $CPGName (Invoke-A9API)." 
+	Write-verbose "Request: Request to Remove-A9vLun : $CPGName (Invoke-A9API)." 
 	$Result = Invoke-A9API -uri $uri -type 'DELETE'
 	$status = $Result.StatusCode
 	if($status -eq 200)
@@ -797,7 +836,9 @@ Param(	[Parameter(Mandatory, ParameterSetName='APIvvName_NSP')		]
 		[Parameter(           ParameterSetName='APIvvName_HostName')]
 		[Parameter(Mandatory, ParameterSetName='APIvvSet_NSP')		]
 		[Parameter(           ParameterSetName='APIvvSet_HostSet')	]
-		[Parameter(           ParameterSetName='APIvvSet_HostName')	]		[String]	$NSP,
+		[Parameter(           ParameterSetName='APIvvSet_HostName')	]	
+		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
+																			[String]	$NSP,
 
 		[Parameter()]														[Boolean]	$NoVcn,
 		[Parameter()]														[int]		$LUN

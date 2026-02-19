@@ -1,6 +1,5 @@
-﻿####################################################################################
-## 	© 2020,2021 Hewlett Packard Enterprise Development LP
-##
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
+
 Function Get-A9Port 
 {
 <#
@@ -18,13 +17,23 @@ Function Get-A9Port
 	PS:> Get-A9Port -NSP 1:1:1
 
 	Single port or given port in the storage system.
+.EXAMPLE
+	The command Get-A9FCPort has been removed, its functionality if replicated here
+	
+	PS:> (Get-A9Port).virtualPorts.portWWN
+.EXAMPLE
+	The command Get-FCPortToCSV has ben remove, its funcitonality if replicated here
+
+	PS:> (Get-A9Port).virtualPorts.portWWN | convertto-CSV | out-file .\Test.csv
 .NOTES
 	Since the default formattter gets all ports on a single screen, and new descriptors have been added, you can easily filter out by the type of
 	connection, thusly a connect type does not need to be a parameterized input. 
 
 #>
 [CmdletBinding(DefaultParameterSetName='Default')]
-Param(	[Parameter(Mandatory,ParameterSetName='NSP')]	[String]	$NSP
+Param(	[Parameter(Mandatory,ParameterSetName='NSP')]	
+		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
+		[String]	$NSP
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -147,40 +156,34 @@ Process
 												)
 			return $NewObj
 		}
-	else{	Write-Error "Failure:  While Executing Get-Port_WSAPI. " 
+	else{	Write-Error "Failure:  While Executing Get-A9Port. " 
 			return 
 		}
 }	
 }
 
-Function Get-A9IscsivLans 
+Function Get-A9IscsivLan
 {
 <#
 .SYNOPSIS	
 	Querying iSCSI VLANs for an iSCSI port
 .DESCRIPTION
 	Querying iSCSI VLANs for an iSCSI port
+.PARAMETER NSP
+	The <n:s:p> variable identifies the node, slot, and port of the device. if not given, the command will attempt to run 
+	the command on all host target ports. 
 .EXAMPLE
 	PS:> Get-A9IscsivLans
 
-	Get the status of all tasks
-.EXAMPLE
-	PS:> Get-A9IscsivLans -Type FS
+	Get the VLANs for all NSP port combinations
 .EXAMPLE
 	PS:> Get-A9IscsivLans -NSP 1:0:1
-.EXAMPLE	
-	PS:> Get-A9IscsivLans -VLANtag xyz -NSP 1:0:1
-.PARAMETER Type
-	Port connection type.
-.PARAMETER NSP
-	The <n:s:p> variable identifies the node, slot, and port of the device.
-.PARAMETER VLANtag
-	VLAN ID.
+
 #>
 [CmdletBinding()]
-Param(	[Parameter()]	[String]	$Type,
-		[Parameter()]	[String]	$NSP,
-		[Parameter()]	[String]	$VLANtag
+Param(	[Parameter()]	
+		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
+		[String]	$NSP
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -189,35 +192,114 @@ Process
 {	$Result = $null
 	$dataPS = $null	
 	$Query="?query=""  """
-	if($Type)
-		{	$count = 1
-			$lista = $Type.split(",")
-			foreach($sub in $lista)
-				{	$Query = $Query.Insert($Query.Length-3," type EQ $sub")			
-					if($lista.Count -gt 1)
-						{	if($lista.Count -ne $count)
-								{	$Query = $Query.Insert($Query.Length-3," OR ")
-									$count = $count + 1
-								}				
-						}
-				}	
-			$uri = '/ports/'+$Query
+	if ( -not $NSP)
+		{	$ValidNSPs = @()
+			foreach ( $PortItem in $( Get-A9Port | where-object {$_.portWWN} | where-object {$_.ModeDescription -like 'TARGET'} ) )
+					{	$Disco= $portitem.portPos 
+						[string]$Nodedisco 		= $($disco).node
+						[string]$Slotdisco 		= $($disco).slot
+						[string]$CardPortdisco 	= $($disco).cardPort
+						[string]$NSPdisco 		= $Nodedisco + ":" + $Slotdisco + ":" + $CardPortdisco
+						$ValidNSPs += $NSPDisco
+					}
+			$NewObjB = $(	foreach ( $NSPCombo in $ValidNSPs )
+								{	Get-A9iSCSIvLan -NSP $NSPCombo 
+								}	
+						)
+			return $NewObjB
 		}
-	else
-		{	if($VLANtag)
-				{	if(-not $NSP)	{	Return "N S P required with VLANtag."	}
-					$uri = '/ports/'+$NSP+'/iSCSIVlans/'+$VLANtag
-				}
-			else{	if(-not $NSP)	{	Return "N S P required with VLANtag."	}
-					$uri = '/ports/'+$NSP+'/iSCSIVlans/'
-				}		
-		}
+	$uri = '/ports/'+$NSP+'/iSCSIVlans/'
 	$Result = Invoke-A9API -uri $uri -type 'GET'
 
 	if($Result.StatusCode -eq 200)
-		{	$dataPS = ($Result.content | ConvertFrom-Json).members
-			write-host "Cmdlet executed successfully" -foreground green
-			return $dataPS
+		{	if ( $dataPS.members ) 	{	$dataPS = ($Result.content | ConvertFrom-Json).members }
+			if ($DataPS -gt 0)
+				{	write-host "Cmdlet executed successfully" -foreground green
+					$NewObj = @(    foreach( $Item in $DataPS)	
+													{   $NewItem=@{PSTypeName = "HPE.A9Storage.iSCSIvLan"}
+														$NewItem['NSP'] = $NSP
+
+														$Enum = $Item.smartSANStatus
+															Switch ($Enum)
+																{   1	{   $desc = 'ENABLED'       }
+																	2	{   $desc = 'DISABLED'  	}
+																	3	{   $desc = 'UNSUPPORTED'	}
+																	4	{   $desc = 'UNLICENSED' 	}
+																	99	{   $desc = 'UNKNOWN'    	}
+																}
+															if ($Desc) 
+																{   $NewItem['SmartSANStatusDescription'] = $Desc
+																	remove-variable Desc -erroraction SilentlyContinue
+																	remove-variable Enum -erroraction SilentlyContinue
+																}
+
+															$Enum = $Item.option
+															Switch ($Enum)
+																{   1	{   $desc = 'ENABLED'   }
+																	2	{   $desc = 'DISABLED'  }
+																	3	{   $desc = 'NA'		}
+																	99	{   $desc = 'UNKNOWN'   }
+																}
+															if ($Desc) 
+																{   $NewItem['OptionDescription'] = $Desc
+																	remove-variable Desc -erroraction SilentlyContinue
+																	remove-variable Enum -erroraction SilentlyContinue
+																}
+
+														$Enum = $Item.class2
+															Switch ($Enum)
+																{   1	{   $desc = 'ACK0'      }
+																	2	{   $desc = 'ACK1'  	}
+																	3	{   $desc = 'DISABLED'	}
+																	99	{   $desc = 'UNKNOWN'   }
+																}
+															if ($Desc) 
+																{   $NewItem['Class2Description'] = $Desc
+																	remove-variable Desc -erroraction SilentlyContinue
+																	remove-variable Enum -erroraction SilentlyContinue
+																}
+
+														$Enum = $Item.connectionType
+															Switch ($Enum)
+																{   1	{   $desc = 'LOOP'      }
+																	2	{   $desc = 'POINT'  	}
+																	3	{   $desc = 'LOOP-POINT'}
+																	99	{   $desc = 'UNKNOWN'   }
+																}
+															if ($Desc) 
+																{   $NewItem['ConnectionTypeDescription'] = $Desc
+																	remove-variable Desc -erroraction SilentlyContinue
+																	remove-variable Enum -erroraction SilentlyContinue
+																}
+
+														$Enum = $Item.ConnectionMode
+															Switch ($Enum)
+																{   1	{   $desc = 'DISK'      }
+																	2	{   $desc = 'HOST'  	}
+																	3	{   $desc = 'RCFC'		}
+																	4	{   $desc = 'PEER'		}
+																	99	{   $desc = 'UNKNOWN'   }
+																}
+															if ($Desc) 
+																{   $NewItem['ConnectionModeDescription'] = $Desc
+																	remove-variable Desc -erroraction SilentlyContinue
+																	remove-variable Enum -erroraction SilentlyContinue
+																}
+
+														$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+														$DataSetType = "HPE.A9Storage.iSCSIvLan"
+														$NewItem.PSTypeNames.Insert(0,$DataSetType)
+														$DataSetType = $DataSetType + ".TypeName"
+														$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+														[PSCustomObject]$NewItem
+													}
+												)
+					return $NewObj
+				}
+			else
+				{	Write-Warning "Cmdlet executed successfully however no iSCSVlans were returned using port $NSP" 
+					return 
+				}
 		}
 	else{	Write-Error "Failure:  While Executing Get-A9IscsivLans." 
 			return $Result.StatusDescription
@@ -243,9 +325,10 @@ Function Get-A9PortDevice
 
 	Multiple Port option Get a list of port devices in the storage system.
 #>
-[CmdletBinding(DefaultParameterSetName='none')]
-Param(	[Parameter(mandatory, ParameterSetName='NSP')]	
-		[ValidatePattern('\d{1}:\d{1}:\d{1}')] 			[String]	$NSP	
+[CmdletBinding()]
+Param(	[Parameter(mandatory)]	
+		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
+									[String]	$NSP	
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -317,7 +400,9 @@ Function Get-A9PortDeviceTDZ
 	The <n:s:p> variable identifies the node, slot, and port of the device.
 #>
 [CmdletBinding()]
-Param(	[Parameter()]	[String] 	$NSP
+Param(	[Parameter()]
+		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]		
+		[String] 	$NSP
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'	 
@@ -334,7 +419,7 @@ Process
 					{	write-host "Cmdlet executed successfully" -foreground green
 						return $dataPS
 					}
-				else{	Write-Error "Failure:  While Executing Get-A9PortDeviceTDZ. " 
+				else{	Write-Warning "The Command executed successfully but returned no items. " 
 						return 
 					}
 		}
@@ -344,22 +429,25 @@ Process
 }
 }
 
-Function Get-A9FcSwitches 
+Function Get-A9FcSwitch
 {
 <#
 .SYNOPSIS
 	Get a list of all FC switches connected to a specified port.
 .DESCRIPTION
 	Get a list of all FC switches connected to a specified port.
+.PARAMETER NSP
+	The <n:s:p> variable identifies the node, slot, and port of the device. 
+	If unset, it will return all the valid NSP combinations
 .EXAMPLE
 	PS:> Get-A9FcSwitches -NSP 0:0:0
 	
 	Get a list of all FC switches connected to a specified port.
-.PARAMETER NSP
-	The <n:s:p> variable identifies the node, slot, and port of the device.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$NSP
+Param(	[Parameter()]	
+		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
+		[String]	$NSP
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'	 
@@ -367,22 +455,49 @@ Begin
 Process 
 {	$Result = $null
 	$dataPS = $null		
-	if($NSP)
-		{	$uri = '/portdevices/fcswitch/'+$NSP
-			$Result = Invoke-A9API -uri $uri -type 'GET'
-		}
-	If($Result.StatusCode -eq 200)
+	if (-not $NSP)
+	{	$ValidNSPs = @()
+		foreach ( $PortItem in $( Get-A9Port | where-object {$_.portWWN} | where-object {$_.ModeDescription -like 'TARGET'} ) )
+					{	$Disco= $portitem.portPos 
+						[string]$Nodedisco 		= $($disco).node
+						[string]$Slotdisco 		= $($disco).slot
+						[string]$CardPortdisco 	= $($disco).cardPort
+						[string]$NSPdisco 		= $Nodedisco + ":" + $Slotdisco + ":" + $CardPortdisco
+						$ValidNSPs += $NSPDisco
+					}
+			$NewObjB = $(	foreach ( $NSPCombo in $ValidNSPs )
+								{	Get-A9FcSwitch -NSP $NSPCombo 
+								}	
+						)
+			return $NewObjB
+	}
+	else
+	{	$uri = '/portdevices/fcswitch/'+$NSP
+		$Result = Invoke-A9API -uri $uri -type 'GET'
+		If($Result.StatusCode -eq 200)
 		{	if($dataPS.Count -gt 0)
 				{	write-host "Cmdlet executed successfully" -foreground green
-					return $dataPS
+					$NewObj = @(    foreach( $Item in $DataPS)	
+													{   $NewItem=@{PSTypeName = "HPE.A9Storage.FCSwitch"}
+														$NewItem['NSP'] = "$NSP"
+														$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+														$DataSetType = "HPE.A9Storage.FCSwitch"
+														$NewItem.PSTypeNames.Insert(0,$DataSetType)
+														$DataSetType = $DataSetType + ".TypeName"
+														$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+														[PSCustomObject]$NewItem
+													}
+												)
+					return $NewObj
 				}
-			else{	Write-Error "Failure:  While Executing Get-A9FcSwitches. " 
+			else{	Write-warning "The command executed successfullu but returned no items using port $NSP. " 
 					return 
 				}
 		}
 	else{	Write-Error "Failure:  While Executing Get-A9FcSwitches." 
 			return $Result.StatusDescription
 		}
+	}
 }
 }
 
@@ -390,13 +505,9 @@ Function Set-A9ISCSIPort
 {
 <#
 .SYNOPSIS
-	Configure iSCSI ports
+	Configure or reset an iSCSI port
 .DESCRIPTION
-	Configure iSCSI ports
-.EXAMPLE    
-	PS:> Set-A9ISCSIPort -NSP 1:2:3 -IPAdr 1.1.1.1 -Netmask xxx -Gateway xxx -MTU xx -ISNSPort xxx -ISNSAddr xxx
-	
-	Configure iSCSI ports for given NSP
+	Configure or reset an iSCSI port
 .PARAMETER NSP 
 	The <n:s:p> parameter identifies the port you want to configure.
 .PARAMETER IPAdr
@@ -411,32 +522,50 @@ Function Set-A9ISCSIPort
 	TCP port number for the iSNS server
 .PARAMETER ISNSAddr
 	iSNS server IP address
+.PARAMETER Reset
+	Will reset the iSCSI Port specified by the NSP value
+.EXAMPLE    
+	PS:> Set-A9ISCSIPort -NSP 1:2:3 -IPAdr 1.1.1.1 -Netmask xxx -Gateway xxx -MTU xx -ISNSPort xxx -ISNSAddr xxx
+	
+	Configure iSCSI ports for given NSP
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$NSP,
-		[Parameter()]					[String]	$IPAdr,
-		[Parameter()]					[String]	$Netmask,
-		[Parameter()]					[String]	$Gateway,
-		[Parameter()]					[Int]		$MTU,
-		[Parameter()]					[Int]		$ISNSPort,
-		[Parameter()]					[String]	$ISNSAddr
+Param(	[Parameter(ParameterSetName='set',Mandatory)]
+		[Parameter(ParameterSetName='reset',Mandatory)]
+		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
+															[String]	$NSP,
+
+		[Parameter(ParameterSetName='set')]					[String]	$IPAdr,
+		[Parameter(ParameterSetName='set')]					[String]	$Netmask,
+		[Parameter(ParameterSetName='set')]					[String]	$Gateway,
+		[Parameter(ParameterSetName='set')]
+		[ValidateRange(1502,9202)]							[Int]		$MTU,
+		[Parameter(ParameterSetName='set')]					[Int]		$ISNSPort,
+		[Parameter(ParameterSetName='set')]					[String]	$ISNSAddr,
+		[Parameter(ParameterSetName='reset',mandatory)]		[switch]	$Reset
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}
-	$iSCSIPortInfobody = @{}
-	If ($IPAdr) 		{ 	$iSCSIPortInfobody["ipAddr"] ="$($IPAdr)" 	}  
-	If ($Netmask) 		{ 	$iSCSIPortInfobody["netmask"] ="$($Netmask)" 	}
-	If ($Gateway) 		{ 	$iSCSIPortInfobody["gateway"] ="$($Gateway)" 	}
-	If ($MTU) 			{ 	$iSCSIPortInfobody["mtu"] = $MTU	}
-	If ($ISNSPort) 		{ 	$iSCSIPortInfobody["iSNSPort"] =$ISNSPort	}
-	If ($ISNSAddr) 		{ 	$iSCSIPortInfobody["iSNSAddr"] ="$($ISNSAddr)" 	}	
-	if($iSCSIPortInfobody.Count -gt 0){	$body["iSCSIPortInfo"] = $iSCSIPortInfobody 	}
-    $Result = $null	
-	$uri = '/ports/'+$NSP 
-    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
+	$Result = $null
+	$uri = '/ports/'+$NSP
+	Switch($PSCmdlet.ParameterSetName)
+		{	'set'	{	$iSCSIPortInfobody = @{}
+						If ($IPAdr) 		{ 	$iSCSIPortInfobody["ipAddr"] ="$($IPAdr)" 	}  
+						If ($Netmask) 		{ 	$iSCSIPortInfobody["netmask"] ="$($Netmask)" 	}
+						If ($Gateway) 		{ 	$iSCSIPortInfobody["gateway"] ="$($Gateway)" 	}
+						If ($MTU) 			{ 	$iSCSIPortInfobody["mtu"] = $MTU	}
+						If ($ISNSPort) 		{ 	$iSCSIPortInfobody["iSNSPort"] =$ISNSPort	}
+						If ($ISNSAddr) 		{ 	$iSCSIPortInfobody["iSNSAddr"] ="$($ISNSAddr)" 	}	
+						if($iSCSIPortInfobody.Count -gt 0){	$body["iSCSIPortInfo"] = $iSCSIPortInfobody 	}
+						$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
+					}
+			'reset'	{	$body["action"] = 2
+						$Result = Invoke-A9API -uri $uri -type 'POST' -body $body	
+					}
+		}
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			return $Result		
@@ -448,54 +577,6 @@ Process
 }
 }
 
-Function New-A9IscsivLan 
-{
-<#
-.SYNOPSIS
-	Creates a VLAN on an iSCSI port.
-.DESCRIPTION
-	Creates a VLAN on an iSCSI port.
-.EXAMPLE
-	PS:> New-A9IscsivLan -NSP 1:1:1 -IPAddress x.x.x.x -Netmask xx -VlanTag xx
-
-	a VLAN on an iSCSI port
-.PARAMETER NSP
-	The <n:s:p> parameter identifies the port you want to configure.
-.PARAMETER IPAddress
-	iSCSI port IPaddress
-.PARAMETER Netmask
-	Netmask for Ethernet
-.PARAMETER VlanTag
-	VLAN tag
-#>
-[CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$NSP,
-		[Parameter(Mandatory)]	[String]	$IPAddress,	  
-		[Parameter(Mandatory)]	[String]	$Netmask,	
-		[Parameter(Mandatory)]	[int]		$VlanTag
-)
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$body = @{}    
-    $body["ipAddr"] = "$($IPAddress)"
-	$body["netmask"] = "$($Netmask)"
-	$body["vlanTag"] = $VlanTag   
-    $Result = $null
-	$uri = "/ports/"+$NSP+"/iSCSIVlans/"
-    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
-	$status = $Result.StatusCode	
-	if($status -eq 201)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	Write-Error "Failure:  While creating VLAN on an iSCSI port : $NSP" 
-			return $Result.StatusDescription
-		}	
-}
-}
 
 Function New-A9IscsivLun 
 {
@@ -518,7 +599,9 @@ Function New-A9IscsivLun
 	VLAN tag
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$NSP,
+Param(	[Parameter(Mandatory)]
+		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]		
+								[String]	$NSP,
 		[Parameter(Mandatory)]	[String]	$IPAddress,	  
 		[Parameter(Mandatory)]	[String]	$Netmask,	
 		[Parameter(Mandatory)]	[int]		$VlanTag
@@ -553,10 +636,6 @@ Function Set-A9IscsivLan
 	Configure VLAN on an iSCSI port
 .DESCRIPTION
 	Configure VLAN on an iSCSI port
-.EXAMPLE    
-	PS:> Set-A9IscsivLan -NSP 1:2:3 -IPAdr 1.1.1.1 -Netmask xxx -Gateway xxx -MTU xx -STGT xx -ISNSPort xxx -ISNSAddr xxx
-
-	Configure VLAN on an iSCSI port
 .PARAMETER NSP 
 	The <n:s:p> parameter identifies the port you want to configure.
 .PARAMETER VlanTag 
@@ -571,34 +650,34 @@ Function Set-A9IscsivLan
 	MTU size in bytes
 .PARAMETER STGT
 	Send targets group tag of the iSCSI target.
-.PARAMETER ISNSPort
-	TCP port number for the iSNS server
-.PARAMETER ISNSAddr
-	iSNS server IP address
+.EXAMPLE    
+	PS:> Set-A9IscsivLan -NSP 1:2:3 -IPAdr 1.1.1.1 -Netmask xxx -Gateway xxx -MTU xx -STGT xx 
+
+	Configure VLAN on an iSCSI port
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$NSP,
+Param(	[Parameter(Mandatory)]	
+		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]	
+								[String]	$NSP,
 		[Parameter(Mandatory)]	[int]		$VlanTag,	  
-		[Parameter()]					[String]	$IPAdr,
-		[Parameter()]					[String]	$Netmask,
-		[Parameter()]					[String]	$Gateway,
-		[Parameter()]					[Int]		$MTU,
-		[Parameter()]					[Int]		$STGT,
-		[Parameter()]					[Int]		$ISNSPort,
-		[Parameter()]					[String]	$ISNSAddr
+		[Parameter()]			[String]	$IPAddr,
+		[Parameter()]			[String]	$Netmask,
+		[Parameter()]			[String]	$Gateway,
+		[Parameter()][ValidateRange(1501,9202)]
+								[Int]		$MTU,
+		[Parameter()]			[Int]		$STGT
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
-	If ($IPAdr) 	{	$body["ipAddr"] ="$($IPAdr)" 	}  
+	If ($IPAddr) 	{	$body["ipAddr"] ="$($IPAddr)" 	}  
 	If ($Netmask) 	{ 	$body["netmask"] ="$($Netmask)" }
 	If ($Gateway) 	{ 	$body["gateway"] ="$($Gateway)" }
 	If ($MTU) 		{ 	$body["mtu"] = $MTU				}
 	If ($MTU) 		{ 	$body["stgt"] = $STGT			}
-	If ($ISNSPort) 	{ 	$body["iSNSPort"] =$ISNSPort	}
-	If ($ISNSAddr) 	{ 	$body["iSNSAddr"] ="$($ISNSAddr)"}
+
     $Result = $null	
 	$uri = "/ports/" + $NSP + "/iSCSIVlans/" + $VlanTag 
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
@@ -610,42 +689,6 @@ Process
 		{	Write-Error "Failure:  While Configuring VLAN on an iSCSI port : $NSP " 
 			return $Result.StatusDescription
 		}
-}
-}
-
-Function Reset-A9IscsiPort 
-{
-<#
-.SYNOPSIS
-	Resetting an iSCSI port configuration
-.DESCRIPTION
-	Resetting an iSCSI port configuration
-.EXAMPLE
-	PS:> Reset-A9IscsiPort -NSP 1:1:1 
-.PARAMETER NSP
-	The <n:s:p> parameter identifies the port you want to configure.
-#>
-[CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$NSP
-	)
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$body = @{}    
-    $body["action"] = 2
-    $Result = $null
-	$uri = '/ports/'+$NSP 
-    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
-	$status = $Result.StatusCode	
-	if($status -eq 200)
-	{	write-host "Cmdlet executed successfully" -foreground green
-		return $Result
-	}
-	else
-	{	Write-Error "Failure:  While Resetting an iSCSI port configuration : $NSP" 
-		return $Result.StatusDescription
-	}	
 }
 }
 
@@ -666,7 +709,9 @@ Function Remove-A9IscsivLan
 	VLAN tag.
 #>
 [CmdletBinding()]
-Param(	[Parameter(omPipeline=$true)]							[String]	$NSP,
+Param(	[Parameter()]	
+		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
+								[String]	$NSP,
 		[Parameter(Mandatory)]	[int]		$VlanTag
 )
 Begin 
