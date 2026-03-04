@@ -197,4 +197,86 @@ Process
 }
 }
 
+Function Get-A9VvStat
+{
+<#
+.SYNOPSIS
+	Get Single or list of virtual volumes.
+.DESCRIPTION
+	Get Single or list of virtual volumes. 
+.PARAMETER VVName
+	Specify name of the volume. This option an be used with either API or SSH connections
+.EXAMPLE
+	PS:> Get-A9Vv 
+
+	Get the list of virtual volumes using a SSH methof
+.EXAMPLE
+	PS:> Get-A9Vv -VolumeName MyVV
+
+	Get the detail of given VV	
+.EXAMPLE
+	PS:> Get-A9Vv | where-object {$_.wwn -like '60002AC00000000000001EBE0007EB2E' }
+
+	Querying volumes and filter the results to a single WWN
+.EXAMPLE
+	PS:> Get-A9Vv | where-object {$_.userCPG -like 'ABC' } 
+
+	Querying volumes with a specific CPG only
+.EXAMPLE
+	PS:> Get-A9Vv | where-object {$_.snapCPG -like 'ABC'} | where-object {$_.userCPG -like 'CDE' }
+	 
+	Querying volumes with multiple filters can be done by chaining more piles
+.EXAMPLE
+	PS:> Get-A9Vv | where-object {$_.copyOf -like 'Test'} 
+
+	Querying volumes with multiple filters
+.NOTES
+	This command only uses the WSAPI mode of communication.
+#>
+[CmdletBinding(DefaultParameterSetName='API')]
+Param(	[Parameter(ParameterSetName='API')]		[String]	$VolumeName
+	)
+Begin 
+	{	Test-A9Connection -CLientType 'API' 
+    }
+Process 
+{	$Result = $null
+	$dataPS = $null	
+	$uri = '/statistics/volumes'
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
+	If($Result.StatusCode -eq 200)
+		{	$dataPS = ($Result.content | ConvertFrom-Json).members
+			if ($ProvisioningType)
+				{	$PT = @{Full=1; TPVV=2; SNP=3; PEER=4; UNKNOWN=5;TDVV=6;DDS=7}
+					$PEnum = $PT."$ProvisioningType"
+					$dataPS = $dataPS | where-object { $_.provisioningType -like $PEnum }
+				}
+			if($dataPS.Count -gt 0)
+				{	write-host "Cmdlet executed successfully" -foreground green
+					$NewObj = @(    foreach( $Item in $DataPS)	{   $NewItem=@{PSTypeName = "HPE.A9Storage.VVStat"}
+																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+																	$DataSetType = "HPE.A9Storage.VVStat"
+																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
+																	$DataSetType = $DataSetType + ".TypeName"
+																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+																	[PSCustomObject]$NewItem
+																}
+															)
+					if ($VolumeName) 
+						{	return ($NewObj | where-object {$_.name -like $VolumeName })
+						}
+					else{ 	return $NewObj
+						}
+				}
+			else
+				{	Write-warning "While Executing Get-A9Vv, No Expected Results Found." 
+					return 
+				}
+		}
+	else
+		{	Write-Error "Failure:  While Executing Get-A9Vv." 
+			return $Result.StatusDescription
+		}
+}
+}
 

@@ -4,28 +4,28 @@ Function New-a9VvSnapshot
 {
 <#      
 .SYNOPSIS	
-	Creating a volume snapshot
+	Creating a volume snapshot, or a group of volume snapshots, or a Volume Set snapshot
 .DESCRIPTION	
-	Creating a volume snapshot
+	Creating a volume snapshot, or a group of volume snapshots, or a Volume Set snapshot
 .PARAMETER VolumeName
-	The <VolumeName> parameter specifies the name of the volume from which you want to copy.
+	The parameter specifies the name of the volume from which you want to create a snapshot for. This must be a single volumename
+.PARAMETER VolumeNames
+	The parameter specifies the name of a group of volume from which you want to create a group of snapshots for that are syncronized, however not neccessarily part of the same volume set.	
+.PARAMETER VolumeSet
+	The parameter specified the name of the volume set to snapshot together. 
 .PARAMETER snpVVName
-	Specifies a snapshot volume name up to 31 characters in length.	For a snapshot of a volume set, use	name patterns that are used to form	the snapshot volume name. 
-	See, VV	Name Patterns in the HPE 3PAR Command Line Interface Reference,available from the HPE Storage Information Library.
-.PARAMETER ID
-	Specifies the ID of the snapshot. If not specified, the system chooses the next available ID.
-	Not applicable for VV-set snapshot creation.
+	Specifies a snapshot volume name up to 31 characters in length.	For a group or set of snapshots the array will select names automatically.
+	For Volume Sets, it the array will prefix or postfix the snpVVName.
 .PARAMETER Comment
 	Specifies any additional information up to 511 characters for the volume.
 .PARAMETER ReadOnly
-	true—Specifies that the copied volume is read-only.
-	false—(default) The volume is read/write.
+	The volume is read/write unless this switch is specifid.
 .PARAMETER ExpirationHours
 	Specifies the relative time from the current time that the volume expires. Value is a positive integer and in the range of 1–43,800 hours, or 1825 days.
 .PARAMETER RetentionHours
 	Specifies the relative time from the current time that the volume will expire. Value is a positive integer and in the range of 1–43,800 hours, or 1825 days.
 .PARAMETER AddToSet
-	The name of the volume set to which the system adds your created snapshots. If the volume set does not exist, it will be created.
+	The name of the volume set to which the system adds your created group of snapshots will be added, if the volume set does not exist, it will be created. 
 .EXAMPLE    
 	ps:> New-a9VvSnapshot -VolumeName $val -snpVVName snpvv1
 
@@ -39,15 +39,15 @@ Function New-a9VvSnapshot
 
 	SUCCESS: volume snapshot:$snpVVName created successfully
 .EXAMPLE	
-	ps:> New-a9VvSnapshot -VolumeName $val -snpVVName snpvv1 -ID 11 -Comment hello -ReadOnly $true
+	ps:> New-a9VvSnapshot -VolumeName $val -snpVVName snpvv1 -ID 11 -Comment hello -ReadOnly
 
 	SUCCESS: volume snapshot:$snpVVName created successfully
 .EXAMPLE	
-	ps:> New-a9VvSnapshot -VolumeName $val -snpVVName snpvv1 -ID 11 -Comment hello -ReadOnly $true -ExpirationHours 10
+	ps:> New-a9VvSnapshot -VolumeName $val -snpVVName snpvv1 -ID 11 -Comment hello -ReadOnly -ExpirationHours 10
 
 	SUCCESS: volume snapshot:$snpVVName created successfully
 .EXAMPLE	
-	ps:> New-a9VvSnapshot -VolumeName $val -snpVVName snpvv1 -ID 11 -Comment hello -ReadOnly $true -ExpirationHours 10 -RetentionHours 10
+	ps:> New-a9VvSnapshot -VolumeName $val -snpVVName snpvv1 -ID 11 -Comment hello -ReadOnly -ExpirationHours 10 -RetentionHours 10
 
 	SUCCESS: volume snapshot:$snpVVName created successfully
 .EXAMPLE	
@@ -55,15 +55,19 @@ Function New-a9VvSnapshot
 
 	SUCCESS: volume snapshot:$snpVVName created successfully
 #>
-[CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$VolumeName,
-		[Parameter(Mandatory)]	[String]	$snpVVName,
-		[Parameter()]					[int]		$ID,
-		[Parameter()]					[String]	$Comment,
-		[Parameter()]					[boolean]	$ReadOnly,
-		[Parameter()]					[int]		$ExpirationHours,
-		[Parameter()]					[int]		$RetentionHours,
-		[Parameter()]					[String]	$AddToSet
+[CmdletBinding(DefaultParameterSetName='SingleVVs')]
+Param(	[Parameter(Mandatory,ParameterSetName='MultipleVVs')]	[String[]]	$VolumeNames,
+		[Parameter(Mandatory,ParameterSetName='SingleVVs')]		[String]	$VolumeName,
+		[Parameter(Mandatory,ParameterSetName='VVSet')]			[String]	$VolumeSet,
+		
+		[Parameter(ParameterSetName='SingleVVs')]
+		[Parameter(ParameterSetName='VVSet')]					[String]	$snpVVName,
+		[Parameter(ParameterSetName='SingleVVs')]
+		[Parameter(ParameterSetName='VVSet')]					[Switch]	$syncSnapRCopy,
+		[Parameter()]											[switch]	$readOnly,
+		[Parameter()][ValidateRange(1,43800)]					[int]		$ExpirationHours,
+		[Parameter()][ValidateRange(1,43800)]					[int]		$RetentionHours,
+		[Parameter(ParameterSetName='MultipleVVs')]				[String]	$AddToSet
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -71,17 +75,30 @@ Begin
 Process 
 {	$body = @{}	
 	$ParameterBody = @{}
-	$body["action"] = "createSnapshot"
-	If($snpVVName) 				{	$ParameterBody["name"] 			= "$($snpVVName)"	}
-    If($ID) 					{	$ParameterBody["id"] 			= $ID				}
-	If($Comment) 				{	$ParameterBody["comment"] 		= "$($Comment)"		}
-    If($ReadOnly) 				{	$ParameterBody["readOnly"] 		= $ReadOnly			}
-	If($ExpirationHours) 		{	$ParameterBody["expirationHours"] = $ExpirationHours}
-	If($RetentionHours) 		{	$ParameterBody["retentionHours"] = $RetentionHours	}
-	If($AddToSet) 				{	$ParameterBody["addToSet"] 		= "$($AddToSet)"	}
-	if($ParameterBody.Count -gt 0){	$body["parameters"] 			= $ParameterBody 	}
-    $Result = $null
-	$uri = '/volumes/'+$VolumeName
+	If ( $VolumeNames ) 
+		{	$uri = '/volumes/'
+			$body["action"] = 8
+			$VGroup = $VolumeNames -split(',')
+			$VolumeGroup=@()
+			foreach ($Vname in $VGroup)
+				{	$VItem = @{	$VItem = @{ 'volumeName' = $Vname}			}
+					$VolumeGroup += $VItem
+				}
+		}
+	iF ( $VolumeName )					{	$uri = '/volumes/'+$VolumeName
+											$body["action"] = "createSnapshot"						}
+	If ( $VolumeSet)					{	$uri = '/volumesets/'+$VolumeSet
+											$body["action"] = "createSnapshot"						}
+	If ( $snpVVName ) 					{	$ParameterBody["name"] 				= "$($snpVVName)"	}
+	If ( $syncSnapRCopy )				{	$ParameterBody["syncSnapCopy"] 		= $true				}
+	If ( $Comment ) 					{	$ParameterBody["comment"] 			= "$($Comment)"		}
+    If ( $ReadOnly ) 					{	$ParameterBody["readOnly"] 			= $true				}
+	If ( $ExpirationHours ) 			{	$ParameterBody["expirationHours"] 	= $ExpirationHours	}
+	If ( $RetentionHours ) 				{	$ParameterBody["retentionHours"]	= $RetentionHours	}
+	If ( $AddToSet ) 					{	$ParameterBody["addToSet"] 			= "$($AddToSet)"	}
+	if ( $ParameterBody.Count -gt 0 )	{	$body["parameters"] 				= $ParameterBody 	}
+	if ( $VolumeNames )					{	$ParameterBody["volumeGroup"] 		= "$($VolumeGroup)"	}    	
+	if ( $ParameterBody.Count -gt 0 )	{	$body["parameters"] = $ParameterBody 					}
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
 	$status = $Result.StatusCode
 	if($status -eq 201)
@@ -89,7 +106,7 @@ Process
 			return $Result
 		}
 	else
-		{	Write-error "FAILURE : While creating volume snapshot: $snpVVName "
+		{	Write-error "FAILURE : While creating volume snapshot "
 			return $Result.StatusDescription
 		}
 }
@@ -518,77 +535,6 @@ Process
 		}
 	else
 		{	write-error "FAILURE : While Promoting a VV-Set virtual copy : $VVSetName " 
-			return $Result.StatusDescription
-		}
-}
-}
-
-Function New-A9VvSetSnapshot 
-{
-<#      
-.SYNOPSIS	
-	Create a VV-set snapshot.
-.DESCRIPTION	
-    Create a VV-set snapshot.
-	Any user with the Super or Edit role or any role granted sv_create permission (for snapshots) can create a VV-set snapshot.
-.PARAMETER VolumeSetName
-	The <VolumeSetName> parameter specifies the name of the VV set to copy.
-.PARAMETER SnpVVName
-	Specifies a snapshot volume name up to 31 characters in length.
-	For a snapshot of a volume set, use name patterns that are used to form the snapshot volume name. See, VV Name Patterns in the HPE 3PAR Command Line Interface Reference,available from the HPE Storage Information Library.
-.PARAMETER ID
-	Specifies the ID of the snapshot. If not specified, the system chooses the next available ID.
-	Not applicable for VV-set snapshot creation.
-.PARAMETER Comment
-	Specifies any additional information up to 511 characters for the volume.
-.PARAMETER readOnly
-	true—Specifies that the copied volume is read-only. false—(default) The volume is read/write.
-.PARAMETER ExpirationHours
-	Specifies the relative time from the current time that the volume expires. Value is a positive integer and in the range of 1–43,800 hours, or 1825 days.
-.PARAMETER RetentionHours
-	Specifies the relative time from the current time that the volume will expire. Value is a positive integer and in the range of 1–43,800 hours, or 1825 days.
-.PARAMETER AddToSet 
-	The name of the volume set to which the system adds your created snapshots. If the volume set does not exist, it will be created.
-.PARAMETER WsapiConnection 
-    WSAPI Connection object created with Connection command
-.EXAMPLE    
-	PS:> New-A9VvSetSnapshot -VolumeSetName Test_delete -SnpVVName PERF_AIX38 -ID 110 -Comment Hello -readOnly -ExpirationHours 1 -RetentionHours 1
-#>
-[CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$VolumeSetName,
-		[Parameter()]					[String]	$SnpVVName,
-		[Parameter()]					[int]		$ID,
-		[Parameter()]					[String]	$Comment,
-		[Parameter()]					[switch]	$readOnly,
-		[Parameter()]					[int]		$ExpirationHours,
-		[Parameter()]					[int]		$RetentionHours,
-		[Parameter()]					[String]	$AddToSet
-	)
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$body = @{}	
-	$ParameterBody = @{}
-	$body["action"] = "createSnapshot"
-    If ($SnpVVName) 				{	$ParameterBody["name"] 				= "$($SnpVVName)"	}    
-	If ($ID) 						{	$ParameterBody["id"] 				= $ID				}	
-    If ($Comment) 					{	$ParameterBody["comment"] 			= "$($Comment)"    	}
-	If ($ReadOnly) 					{	$ParameterBody["readOnly"] 			= $true 			}
-	If ($ExpirationHours) 			{	$ParameterBody["expirationHours"] 	= $ExpirationHours 	}
-	If ($RetentionHours) 			{	$ParameterBody["retentionHours"] 	= "$($RetentionHours)"}
-	If ($AddToSet) 					{	$ParameterBody["addToSet"] 			= "$($AddToSet)" 	}
-	if($ParameterBody.Count -gt 0)	{	$body["parameters"] = $ParameterBody 					}
-    $Result = $null	
-	$uri = '/volumesets/'+$VolumeSetName
-    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
-	$status = $Result.StatusCode
-	if($status -eq 201)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	write-error "FAILURE : While creating VV-set snapshot : $SnpVVName "
 			return $Result.StatusDescription
 		}
 }

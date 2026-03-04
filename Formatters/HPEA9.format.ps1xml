@@ -1306,5 +1306,581 @@
             </TableControl>
         </View>
 
+        <View> <Name>HPE.A9Storage.VVStat</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.VVStat</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>20</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>14</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>18</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>18</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>18</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>22</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>18</width>
+                    </TableColumnHeader>
+                    
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <PropertyName>name</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>totalWrites</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>totalBytesWritten</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>totalReads</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>totalBytesRead</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>tickSinceThisStatBegan</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>queueLength</PropertyName>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
+        <View> <Name>HPE.A9Storage.CPGSnapAdminSpace</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.CPGSnapAdminSpace</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>14</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>4</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>5</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                    
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <PropertyName>Time</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Warn</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Grow</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Dev_Type</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Limit</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Avail</PropertyName>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
+        <View> <Name>HPE.A9Storage.CPGSnapAdminSpace</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.CPGSnapAdminSpace</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>18</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>4</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>5</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                    
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <PropertyName>Time</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Warn</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Grow</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Dev_Type</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Limit</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Avail</PropertyName>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
+        <View> <Name>HPE.A9Storage.CPGSnapDataSpace</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.CPGSnapDataSpace</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>18</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>4</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>5</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                    
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <PropertyName>Time</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Warn</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Grow</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Dev_Type</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>SetSz</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Limit</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Avail</PropertyName>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
+        <View> <Name>HPE.A9Storage.CPGAlert</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.CPGAlert</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>18</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>4</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>5</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                  
+                    <TableColumnHeader>
+                        <width>12</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                    
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <PropertyName>Time</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Warn</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>F</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>W%</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>L</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Limit</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Warn%</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Total</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>W</PropertyName>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
+        <View> <Name>HPE.A9Storage.CPGSSH</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.CPGSSH</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>18</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>12</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>12</width>
+                    </TableColumnHeader>
+                                            
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                  
+                    <TableColumnHeader>
+                        <width>12</width>
+                    </TableColumnHeader>
+                    
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <PropertyName>Time</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>TDVVs</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>TPVVs</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>VVs</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Free</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Used</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Warn%</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Total</PropertyName>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
+        <View> <Name>HPE.A9Storage.Reset</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.Reset</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>24</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>14</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>6</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>10</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>40</width>
+                    </TableColumnHeader>
+                                            
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <PropertyName>Time</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Source</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>ID</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Component</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>Reason</PropertyName>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
+        <View> <Name>HPE.A9Storage.iSCSISession</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.iSCSISession</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <width>40</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>10</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>20</width>
+                    </TableColumnHeader>
+                                            
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+
+                            <TableColumnItem>
+                                <PropertyName>iSCSI_Name</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>VLAN</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>QID</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>State</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>N:S:P</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>IPAddr</PropertyName>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
+
     </ViewDefinitions>
 </Configuration>
