@@ -18,6 +18,7 @@ POWERSHELL CMDLETS HELP
 	Connection Management cmdlets
 	Session Management
 Major Command Changes
+	List of changes from 4.0.0 to 4.2.0
 	SSH Verbose reporting
 	AutoLogging
 	Codebase Refactoring
@@ -28,6 +29,19 @@ Major Command Changes
 ===============================================================================================
 The HPE Alletra 9000 and Primera and 3PAR PowerShell Toolkit provides storage administrators 
 the convenience of managing HPE Alletra 9000 or HPE Primera or HPE 3PAR Storage Systems from a Microsoft PowerShell environment.
+
+New Features in the HPE Toolkit 4.2.0.0
+=======================================
+The following command was added to the toolkit to assist customers in connecting to all array types.
+
+Import-HPESANCertificate : 
+        This command allows you to download the arrays Certificate to the local certificate store to allow SSH and HTTPS connectivity. 
+        The PowerShell window must be an adminstrative window as adding a certificate to the local store requires this authority. This only needs to be done once
+        and your array connection commands will continue to use the localled saved certificate to connect.
+                PS:> import-hpesanCertificate -ArrayNameOrIPAddress 192.168.20.19 
+
+The number of commands has been reduced as commands have been combined, as well as obsolete commands have been removed from arrays that don't support them. 
+Please see the detailed list of all changes later in this document under "Detailed List of Changes"
 
 Features of HPE Alletra 9000 and Primera and 3PAR PowerShell Toolkit
 -----------------------------------------------------------------------------------------------
@@ -187,6 +201,203 @@ To run cmdlets using sessions, follow the below steps:
    PS:> Connect-HPESAN -ArrayNameOrIPAddress '1.2.3.4' -credential (get-Credential) -ArrayType Alletra9000
 
    PS:> Get-A9Version 
+
+
+Changes from the HPEStorage Toolkit version 4.0.0 to 4.2.0
+==========================================================
+The following CLI based commands have changed.
+
+	Set-A9WsAPI command has new options to both Start and Stop the WsAPI servive allowing the remove of the following;
+		Stop-A9WSAPI						--> Set-A9WsAPI
+		Start-A9WsAPI						--> Set-A9WsAPI
+		
+	Get-A9Alert detailed option removed and always recieves detrailed information. Allows the removal of the OneLine and Wide formatting options and instead uses default formatters
+	
+	The Following Host and VV Commands have be deduplicated such that the CLI version have been removed when a API version can accomplish the same processed;
+		New-A9Host_CLI,						--> New-A9Host
+		Remove-A9Host_CLI,					--> Remove-A9Host
+		Remove-A9HostSet_CLI, 				--> Remove-A9HostSet
+		Get-A9VVList,						--> Get-A9VV
+		Get-A9VVSet,						--> Get-A9VVSet
+		New-A9VV_CLI,						--> New-A9VV
+		New-A9VVSet_CLI,					--> New-A9VVSet
+		Update-A9VVProperties_CLI,			--> Set-A9VV
+		Set-A9Host_CLI,						--> Set-A9Host
+		Test-A9CLIObject,					-->	No longer used
+		Get-A9WsAPISession,					--> Get-A9CIM
+		Show-A9UnrecognizedTargetsInfo,		--> Get-A9vLUN
+		Get-A9EventLog, 					--> Get-A9Event
+		Get-A9FCPort,						--> Get-A9Port
+		Get-A9FCPortToCSV,					--> Get-A9Port | ConvertTo-CSV
+		Get-A9Cert							--> Get-A9Certificate
+		Approve-A9Disk						--> Set-A9Disk
+		Switch-A9Disk						--> Set-A9Disk
+		Stop-A9CIM							--> Set-A9CIM
+		Start-A9Cim							--> Set-A9CIM
+		Get-A9Space_CLI 					-->	Get-A9CPGSpaceDataReports 
+		
+	The following command have been renamed
+		Update-A9Host_CLI 	--> Set-A9Host_CLI
+		Get-A9Space 		-->	Get-A9Space_CLI
+		Set-A9NodesDate 	--> Set-A9Date	- And added using local time option
+
+	The Pattern/DryRun options have been removed as a non-interactive SSH session does not allow confirmation from the following commands
+		Set-A9VVSpace_CLI,	Remove-A9WsAPISession,	Compress-A9LogicalDisk,	Remove-A9Alert
+
+	Show-A9Template has more descriptive paramters. i.e. Fit becomes Fit80Comlumns, T becomes TemplateType
+
+	Show-A9VVMappedToPD has all parameters except PD_ID and SUM removed since PowerShell Filtering can replace those parameters
+
+	Move-A9Chunklet has been expanded to support PD->PD, PD->Spare, Ch->Ch, CH->spare making the following commands obsolete
+		Move-A9ChunkletToSpare				--> Move-A9Chunklet
+		Move-A9RelocPhysicalDisk			--> Move-A9Chunklet
+		Move-A9RelocPhysicalDisk			--> Move-A9Chunklet
+		Move-A9ClearPhysicalDisk			--> Move-A9Chunklet
+		Move-A9PhysicalDiskChunkletToSpare	--> Move-A9Chunklet
+
+	Get-A9Alert now uses default formatters and returns proper objects. removed all unneeded options. returns detailed.
+
+	Set-A9Alert has been greatly simplified
+
+	Get-A9Cage have added PCI|CDM options and remove -EXP, and fixed parameter sets to prevent illegal combinations
+	
+	Get-A9Spare now has a progress spinner and uses formatted output.
+
+	The following Federation Commands have be relagated to 3PAR only Arrays, allows removal for Primera/Alletra9K/AlletraMPB10K of the following commands
+		Join-A9Federation
+		New-A9Federation, 
+		Set-A9Federation, 
+		Remove-A9Federation
+		Show-A9Federation
+
+	The following Flashcache Commands have be relagated to 3PAR only Arrays, allows removal for Primera/Alletra9K/AlletraMPB10K of the following commands
+		New-A9Flashcache_cli
+		Set-A9FlashCache_CLI
+		Remove-A9Flashcache_cli
+
+	The Following Remote Copy Commands have be deduplicated such that the CLI version have been removed when a API version can accomplish the same processed;
+		New-A9RemoteCopyTarget_CLI 		-->  	New-A9RCopyTarget
+		Start-A9RCopyGroup_CLI 			--> 	Start-A9RCopyGroup
+		Stop-A9RCopyGroup_CLI			-->		Stop-A9RCopyGroup
+		Sync-A9RCopyGroup_CLI 			-->		Sync-A9RCopyGroup
+		Start-A9RCopy_CLI				-->		Start-A9RCopyGroup
+		Stop-A9RCopy_CLI 				-->		Stop-A9RCopy
+		Sync-A9RCopy_CLI				-->		Sync-A9RCopy
+		Disable-A9RCopyVv_CLI			-->		Remove-A9VvFromRCopyGroup
+		Disable-A9RCopyTarget_CLI		-->		Remove-A9TargetFromRCopyGroup
+		Remove-A9RCopyGroup_CLI			-->		Remove-A9RCopyGroup
+		Remove-A9RCopyTargetFromGroup_CLI->		Remove-A9TargetFromRCopyGroup
+		Remove-A9RCopyTarget_CLI		-->		Remove-A9RCopyGroup
+		Remove-A9RCopyVVFromGroup		-->		Remove-A9VvFromRCopyGroup
+		New-A9RCopyGroup_CLI			-->		New-A9RCopyGroup
+		Add-A9RCopyVv_CLI				-->		Add-A9VvToRCopyGroup
+		Show-A9RCopyTransport_CLI		-->		Get-A9RCopyLink
+		Add-A9RCopyTarget_CLI			-->		Add-A9TargetToRCopyGroup
+		Get-A9RCopy_CLI					-->		Get-A9RCopyInfo
+		Set-A9RCopyGroupPol_CLI			-->		Update-A9RCopyGroup (Rename to Set-A9RCopyGroup)
+		Set-A9RCopyTarget_CLI			-->		Update-A9RCopyTarget
+		Set-A9RCopyTargetName_CLI		-->		Update-A9RCopyTarget (Rename to Set-A9RCopyTarget)
+		Set-A9RCopyTargetWitness_CLI	-->		Set-A9RCopyTarget
+
+	The Following Reports Commands have be deduplicated such that the CLI version have been removed when a API version can accomplish the same processed;
+		Get-A9SystemReportCpgSpace			-->		Get-A9CPGSpaceDataReports (renamed to Get-A9CPGSpaceReport)		
+		Get-A9SystemReporterStatCache		--> 	Get-A9CacheReport
+		Get-A9SystemReporterStatCacheMemoryPages-->	Get-A9CacheReport replaces the functionality of the  so the Get-A9SystemReporterStatCacheMemoryPages can be removed
+		Get-A9SystemReporterStatCPU			--> 	Get-A9CPUReport
+		Get-A9SystemReporterPhysicalDiskSpace->		Get-A9PDCapacityReports,Get-A9PDSpaceReport
+		Get-A9CPGStatisticsDataReports		-->		Get-A9CPGIOPSReport 
+		Get-A9PDStatisticsDataReports		-->		Get-A9PDIOPSReport
+		Get-A9PortStatisticsReport			-->		Get-A9PortIOPSReport
+		Get-A9QoSStatisticsReport			-->		Get-A9QoSIOPSReport
+		Get-A9RCopyStatisticsReports 		-->		Get-A9RCopyIOPsReport
+		Get-A9SystemReporterStatPhysicalDisk-->		Get-A9PDIOPsReport 
+		Get-A9SystemReporterStatLD 			-->		removed 
+		Get-A9SystemReporterVvSpace 		-->		Get-A9VVSpaceReport
+
+	The following were renamed
+		Get-A9PDCapacityReports 			-->		Get-A9PDCapacityReport
+		Get-A9PDSpaceReports				-->		Get-A9PDSpaceReport 
+		Get-A9CPUStatisticalDataReports		-->		Get-A9CPUReport 
+		Get-A9CacheMemoryStatisticsDataReports-->	Get-A9CachStatReport
+		
+	The following commands were consolidated
+		Get-A9HostListPersona			-->		Get-A9Host -ListPersona
+		Get-A9HostWithFilter			--> 	Get-A9Host
+		Show-A9ToCGen					-->		Get-A9ToCGen
+		Show-A9SystemResources			--> 	Get-A9ToCGen
+		New-A9VVGroupSnapshot			-->		New-A9VVSnapshot (now covers Groups)
+		Resize-A9VV						--> 	Set-A9VV -resize
+		Compress-A9VV 					--> 	Set-A9VV -compress
+		Reset-A9iSCSIPort 				--> 	Set-A9iSCSIPort
+
+	The following commands used to have options to run in API and in CLI if available, in the following cases all of the CLI dependancies on parameters have been removed
+		Get-A9Host
+		Get-A9HostSet
+		Get-A9Task
+		Stop-A9Task,		
+		Get-A9VV,	
+		Remove-A9VVSet,	
+		Set-A9VV,	
+		Get-A9Vlun,	
+		Remove-A9Vlun,	 
+		New-A9vLun,	 
+		Set-A9Host,
+		New-A9VVSnapshot,	
+		New-A9VVGroupSnapshot,		
+		Get-A9TocGen
+		Set-A9CPG
+		Compress-A9CPG
+	Get-A9Disk removed the Pattern option and its parameters as these are move easily accomplished using standard powershell filters. If using the API version of the command, will output using default formatters
+	
+	  It also adds more human readable descriptors to cryptic output.
+
+		
+	The Template technology has been removed from the current codebase, and since Powershell can automate, templates are no longer needed. Removing the following commands
+		Show-A9Template	
+		Set-A9Template_CLI
+	The  command gives the same information as the Get-A9TOCGen, the Show-A9TocGen can be deleted
+
+	The  Show-A9Portdevices_CLI command have been changed to prevent invalid parameter sets. 
+
+	ConfigWebServiceAPI.PS1 has been renamed to ConfigCIMandWSAPI.ps1
+
+	Moved the Get-A9Cim and Set-A9CIM to the new ConfigCIMandWSAPI.ps1 allowing the deletions of the CIMManagement.PS1 File.
+	
+	The command Get-A9Inventory is moved from inventory.ps1 to systemmanager.ps1 allows the deletiong of the file Inventory.PS1
+
+	The following files have been renamed
+		Update-A9VV 			-->	Set-A9VV
+		Get-A9Users				--> Get-A9User
+		Get-A9WSAPIConfigInfo 	-->	Get-A9WsAPI
+		Update-A9Domain			--> Set-A9Domain
+		Move-A9Domain			--> Move-A9DomainObject
+
+	The Set-A9Domain command has been removed as it is only usable in an interactive sense which makes it do nothing for a noninteractive command.
+
+	The following Commands have been modified to add more human readable descriptions to returned objects
+		Get-A9VVSet,	Get-A9Port,		Get-A9Role
+
+	SessionKeysAndWSAPISystemAccess.ps1 file has been eliminated
+
+	New-A9VV now has paramter validators to help people select valid parameter options.
+
+	Get-A9Events now returns detailed events, and since it can take time, it provides a progress bar. This also includes descriptions to describe cryptic values as well as default formatters
+
+	WSAPIUserAndRoleInformation.PS1 has been renamed to UserRole.ps1
+
+	SystemInformationQueriesAndManagement.ps1 has been renamed to System.PS1
+	
+
+	Get-A9CapacityInfo was moved to the System.ps1 file allowing the removal of the File AvailableSpace.PS1
+
+	New Command Get-A9VVStats which returns default formmated data.
+
+	The Command Set-A9ServiceCage renamed to Invoke-A9CageService
+
+	the Command Update-A9ServiceCage features of firmware upgrade have been moved to the invoke-A9CageService command
+	
+	The command Set-A9VVSnashot has been expanded to support the creation of single Volume Snapshots, Groups of Snapshots, or complete Volume Sets
+
 
 Known Issues
 ------------------------------------------------------------------------------------------------
