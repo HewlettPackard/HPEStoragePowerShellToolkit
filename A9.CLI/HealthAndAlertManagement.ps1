@@ -43,7 +43,9 @@ Function Get-A9Alert
 
 	Note that the extra details presented are under a subhash called 'Resolved' to see this you must exposed the alert via either Format-list of Convertto-json
 .NOTES
-	This command requires a SSH type connection. The option is only to request Detailed information. 
+	This command utilizes the SSH command 'ShowAlert
+	This command requires a SSH type connection. 
+	The option is only to request Detailed information. 
 #>
 [CmdletBinding()]
 param(	[Parameter()]							
@@ -153,6 +155,7 @@ Function Get-A9Health
 .PARAMETER showraw
 	This will output the raw SSH streamed data instead of the processed object that is normally returned.
 .NOTES
+	This command utilizes the SSH command 'CheckHealth -full'	
 	Since this command returns an object, the default behaviour is to get detailed reports, if you want to filter by component you can more easily use powershell filtering.
 	This command requires a SSH type connection.
 #>
@@ -228,6 +231,7 @@ Function Remove-A9Alerts
 .PARAMETER  Alert_ID
 	Indicates a specific alert to be removed from the system. If this specifier is not used, the -a option must be used.
 .NOTES
+	This command utilizes the SSH command 'RemoveAlert'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -257,6 +261,7 @@ Function Set-A9Alert
 .PARAMETER NewStatus
 	Specifies that the status of all alerts be set as "New"(new), "Acknowledged"(ack), or "Fixed"(fixed).
 .NOTES
+	This command utilizes the SSH command 'SetAlert'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]

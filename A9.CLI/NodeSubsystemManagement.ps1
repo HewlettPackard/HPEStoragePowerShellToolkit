@@ -34,6 +34,7 @@ Function Find-A9Node
 .EXAMPLE
 	PS:> Fine-A9Node -Time 360 -PowerSupply 0
 .NOTES
+	This command utilizes the SSH command 'LocateNode'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -89,6 +90,7 @@ Function Find-A9System
 	
 	PS:> Find-A9System -Time 90
 .NOTES
+	This command utilizes the SSH command 'LocateSys'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -145,6 +147,7 @@ Function Ping-A9RCIPPorts
 .EXAMPLE
 	PS:> Ping-A9RCIPPorts -PF -IP_address 192.168.245.5 -NSP 0:3:1
 .NOTES
+	This command utilizes the SSH command 'ControlPort RcIP Ping'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -206,6 +209,7 @@ Function Set-A9Battery
 	
 	PS:> Set-A9Battery -LogReset -NodeId 2 -PowersupplyId 1 -BatteryId 0	
 .NOTES
+	This command utilizes the SSH command 'SetBattery'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -263,6 +267,7 @@ Function Set-A9FCPorts
 	
 	Configure ports 1:2:1 and 1:2:2 as Fibre Channel connected to a fabric 
 .NOTES
+	This command utilizes the SSH command 'ControlPort'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -345,6 +350,7 @@ Function Set-A9HostPorts
 	
 	For RCFC port  
 .NOTES
+	This command utilizes the SSH command 'ControlPort'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -459,6 +465,7 @@ Function Set-A9NodePowerSupplyId
 .EXAMPLE
 	PS:> Set-A9NodeProperties -PS_ID 1 -S xxx -Node_ID 1
 .NOTES
+	This command utilizes the SSH command 'SetNode'
 	This command requires a SSH type connection, and does not exist on the Alletra B10000
 #>
 [CmdletBinding()]
@@ -508,6 +515,7 @@ Function Set-A9Date
 
 	PS:> Set-A9NodesDate  -Tzlist -TzGroup "Etc/GMT"
 .NOTES
+	This command utilizes the SSH command 'SetDate'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -565,6 +573,7 @@ Function Set-A9SysMgr
 .PARAMETER Toc_gen_number
 	Specifies the table of contents generation number for the system to start with.
 .NOTES
+	This command utilizes the SSH command 'SetSysMgr'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -623,6 +632,7 @@ Function Show-A9Battery
 .PARAMETER Node_ID
 	Displays the battery information for the specified node ID(s). This specifier is not required. Node_ID is an integer from 0 through 7.
 .NOTES
+	This command utilizes the SSH command 'ShowBattery'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -704,6 +714,7 @@ Function Show-A9EEProm
 .EXAMPLE
 	PS:> Show-A9EEProm -Dead -Node_ID 0
 .NOTES
+	This command utilizes the SSH command 'ShowEeprom'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -750,6 +761,7 @@ Function Get-A9SystemInformation
     date	
 	command displays the date and time for each system node
 .NOTES
+	This command utilizes the SSH command 'ShowSys'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -828,6 +840,7 @@ Function Show-A9FCOEStatistics
 .PARAMETER Begin
 	Shows the values from when the system was last initiated.
 .NOTES
+	This command utilizes the SSH command 'StartFCOE'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -883,6 +896,7 @@ Function Show-A9Firmwaredb
 .EXAMPLE
 	PS:> Show-A9Firmwaredb -Load
 .NOTES
+	This command utilizes the SSH command 'ShowFirmwareDB'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -898,29 +912,6 @@ Process
 	if($VendorName)	{	$Cmd += " -n $VendorName "}
 	if($Load)		{	$Cmd += " -l "	}
 	if($All)		{	$Cmd += " -all " }
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Show-A9TOCGen
-{
-<#
-.SYNOPSIS
-	Shows system Table of Contents (TOC) generation number.
-.DESCRIPTION
-	Displays the table of contents generation number.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param()
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$Cmd = " showtocgen "
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
@@ -966,10 +957,11 @@ Function Show-A9iSCSISessionStatistics
 .EXAMPLE
 	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -Prev
 .NOTES
+	This command utilizes the SSH command 'StaticSCSISession'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(mandatory=$true)]	[String]	$Iterations,
+param(	[Parameter()]	[String]	$Iterations,
 		[Parameter()]	[String]	$Delay,		
 		[Parameter()]	[String]	$NodeList,
 		[Parameter()]	[String]	$SlotList,
@@ -1111,25 +1103,25 @@ Function Show-A9iSCSIStatistics
 .EXAMPLE
 	PS:> Show-A9iSCSIStatistics -Iterations 1 -Begin
 .NOTES
+	This command utilizes the SSH command 'StatiSCSI'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$Iterations,
+param(	[Parameter(mandatory)]	[String]	$Iterations,
 		[Parameter()]	[String]	$Delay,		
 		[Parameter()]	[String]	$NodeList,
 		[Parameter()]	[String]	$SlotList,
 		[Parameter()]	[String]	$PortList,
 		[Parameter()]	[Switch]	$Fullcounts,
 		[Parameter()]	[Switch]	$Prev,		
-		[Parameter()]	[Switch]	$Begin
+		[Parameter()]	[Switch]	$Begin,
+		[Parameter()]	[Switch]	$ShowRaw		
 	)
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }		
 process	
-{	$cmd= " statiscsi "	
-	if($Iterations)	{	$cmd+=" -iter $Iterations "	}
-	else			{	return " Iterations is mandatory "	}
+{	$cmd= " statiscsi -dd -iter $Iterations "	
 	if($Delay)		{	$cmd+=" -d $Delay "	}	
 	if($NodeList)	{	$cmd+=" -nodes $NodeList "	}
 	if($SlotList)	{	$cmd+=" -slots $SlotList "	}
@@ -1140,6 +1132,7 @@ process
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	write-verbose "  Executing  Show-iSCSIStatistics command that displays information iSNS table for iSCSI ports in the system  " 	
+	if ( $ShowRaw )	{ return $result }
 	if($Result -match "Total" -or $Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count 
@@ -1197,6 +1190,7 @@ Function Show-A9NetworkDetail
 	The following example displays the status of the system administration network interfaces:
 	PS:> Show-A9NetworkDetail -D
 .NOTES
+	This command utilizes the SSH command 'ShowNet'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -1230,7 +1224,9 @@ Function Show-A9NodeEnvironmentStatus
 
 	PS:> Show-A9NodeEnvironmentStatus
 .NOTES
+	This command utilizes the SSH command 'ShowNodeEV'
 	This command requires a SSH type connection.
+	This command is not valid for HPE Alletra MP B10K type devices
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Node_ID
@@ -1240,6 +1236,10 @@ Begin
 }
 process
 {	$Cmd = " shownodeenv "
+if ( $PersistArrayType -eq 'AlletraMP-B10000')
+		{	write-host "This command is not supported on the HPE Alletra MP B10000 type array"	
+			return
+		}
 	if($Node_ID)	{	$Cmd += " -n $Node_ID "} 
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
@@ -1257,8 +1257,6 @@ Function Show-A9iSCSISession
 .PARAMETER Detailed
     Specifies that more detailed information about the iSCSI session is displayed. If this option is not used, then only summary information
     about the iSCSI session is displayed.
-.PARAMETER ConnectionState
-    Specifies the connection state of current iSCSI sessions. If this option is not used, then only summary information about the iSCSI session is displayed.
 .PARAMETER NSP
 	Requests that information for a specified port is displayed.
 .EXAMPLE
@@ -1268,14 +1266,16 @@ Function Show-A9iSCSISession
 .EXAMPLE
 	PS:> Show-A9iSCSISession -Detailed -NSP 1:2:1
 .NOTES
+	This command utilizes the SSH command 'ShowiSCSISession'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Detailed,
-		[Parameter()]	[switch]	$ConnectionState,
 		[Parameter()]	
 		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
-						[String]	$NSP 
+						[String]	$NSP ,
+		[Parameter()]	[switch]	$ShowRaw
+		
 )	
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -1283,10 +1283,10 @@ Begin
 process	
 {	$cmd= "showiscsisession "
 	if ($Detailed)	{	$cmd+=" -d "	}
-	if ($ConnectionState)	{	$cmd+=" -state "	}
 	if ($NSP)	{	$cmd+=" $NSP "	}
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if ($ShowRaw) {	return $result }
 	if($Result -match "total")
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count -2 		
@@ -1297,12 +1297,22 @@ process
 					$s= $s.Trim() -replace 'StartTime','Date,Time,Zone' 	
 					Add-Content -Path $tempFile -Value $s
 				}			
-			Import-Csv $tempFile 
+			$dataPS = Import-Csv $tempFile 
 			remove-item $tempFile
 		}
+	$NewObj = @(    foreach( $Item in $DataPS)	
+												{   $NewItem=@{PSTypeName = "HPE.A9Storage.iSCSISession"}
+													$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+													$DataSetType = "HPE.A9Storage.iSCSISession"
+													$NewItem.PSTypeNames.Insert(0,$DataSetType)
+													$DataSetType = $DataSetType + ".TypeName"
+													$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+													[PSCustomObject]$NewItem
+												}
+					)
 	if($Result -match "total")	
 		{	write-host " Success : Executing Show-iSCSISession"
-			return 
+			return $NewObj 
 		}
 	else{	return  $Result	}	
 }
@@ -1383,6 +1393,7 @@ Function Show-A9NodeProperties
     
 	The following options are for node summary and inventory information:
 .NOTES
+	This command utilizes the SSH command 'ShowNode'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -1486,26 +1497,19 @@ Function Show-A9Portdevices_CLI
 .PARAMETER Loop
 	Specifies that information is returned for arbitrated loop devices that are attached to the specified port. This subcommand is only
 	for use with Fibre Channel arbitrated loop ports.
-.PARAMETER All
-	Specifies that information for all devices attached to the specified port is returned.
-.PARAMETER NS
-	Specifies that information for the switch name server database is returned. This subcommand is only for use with fabric-attached topologies.
-.PARAMETER Fcf
-	Specifies that information for all Fibre Channel over Ethernet forwarders (FCFs) known to the specified port is returned. This
-	subcommand is for use only with Fibre Channel over Ethernet (FCoE) ports.
-.PARAMETER Sas
-	Specifies that information for all devices in the SAS topology attached to the specified port is returned.  This subcommand is only for use with SAS ports.
-.PARAMETER Fcswitch
-	Specifies that a list of all switches in the Fibre Channel fabric is returned.  This subcommand is only for use with fabric-attached Fibre Channel ports.
-.PARAMETER Fcfabric
-	Specifies that a description of the Fibre Channel fabric is returned.  This subcommand is only for use with fabric-attached Fibre Channel ports.
+.PARAMETER DeviceType 
+	This can be one of thee: Loop, All, FCSwitch, FCFAbric, NS or SAS, and will present different information depending on which device type is selected.
+	All = Specifies that information for all devices attached to the specified port is returned.
+	Loop = Specifies that information is returned for arbitrated loop devices that are attached to the specified port. This subcommand is only for use with Fibre Channel arbitrated loop ports.
+	NS = Specifies that information for the switch name server database is returned. This subcommand is only for use with fabric-attached topologies.
+	SAS = Specifies that information for all devices in the SAS topology attached to the specified port is returned. This subcommand is only for use with SAS ports.
+	FCSwitch = Specifies that a list of all switches in the Fibre Channel fabric is returned. This subcommand is only for use with fabric-attached Fibre Channel ports.
+	FCFabric = Specifies that a description of the Fibre Channel fabric is returned. This subcommand is only for use with fabric-attached Fibre Channel ports.
+
 .PARAMETER Findport
 	Searches the Fibre Channel fabric attached to the specified port for information on the supplied WWN.  Supplying the term "this"
 	in place of a WWN indicates that the port WWN of the specified  Storage System host port should be used.  This subcommand is only for
 	use with fabric-attached Fibre Channel ports.
-.PARAMETER Tzone
-	Without the <node:slot:port>, this command will return a list of all the current target-driven zones for any port. If the <node:slot:port> is provided, 
-	then detailed information about the target-driven zone for this port will be provided. This command is only used with fabric-attached Fibre Channel ports.
 .PARAMETER UNS
 	Specifies that information for all initiators from the switch unzoned name server database is returned. This subcommand is only for use with
 	fabric-attached topologies.
@@ -1517,7 +1521,7 @@ Function Show-A9Portdevices_CLI
 	is provided, then only information for this port will be displayed. This subcommand is only used with iSCSI QLogic 83XX series ports.
 .PARAMETER Pel
 	Includes the SAS Phy Error Log (PEL) data for each phy in the SAS topology.  This option is only valid when using the sas subcommand.
-.PARAMETER D
+.PARAMETER Details
 	Includes detailed initiator information: HBA Manufacturer, HBA Model, HBA Firmware Version, HBA OS Name/Version, the HBA port's supported
 	and current speeds, HBA port's OS device name, hostname, alias name(s), and whether the Smart SAN QoS and Security features are supported. When
 	used with the tzone or uns subcommand. When used with the lldp or dcbx subcommand, this option will return relevant detailed information on the 
@@ -1541,54 +1545,63 @@ Function Show-A9Portdevices_CLI
 .PARAMETER WWN
     Specifies the Fibre Channel worldwide port name of an attached port.
 .NOTES
+	This command utilizes the SSH command 'ShowPortDev'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(
-	[Parameter()]	[switch]	$Loop,
-	[Parameter()]	[switch]	$All,
-	[Parameter()]	[switch]	$NS,
-	[Parameter()]	[switch]	$FCF,
-	[Parameter()]	[switch]	$SAS,
-	[Parameter()]	[switch]	$Fcswitch,
-	[Parameter()]	[switch]	$Fcfabric,
-	[Parameter()]	[switch]	$Findport,
-	[Parameter()]	[switch]	$Tzone,
-	[Parameter()]	[switch]	$UNS,
-	[Parameter()]	[switch]	$Lldp,
-	[Parameter()]	[switch]	$Dcbx,
-	[Parameter()]	[switch]	$PEL,
-	[Parameter()]	[switch]	$Detail,
-	[Parameter()]	[switch]	$App,
-	[Parameter()]	[switch]	$PFC,
-	[Parameter()]	[switch]	$PG,
-	[Parameter()]
+	[Parameter(ParameterSetName='ByDevice')]
+	[ValidateSet('loop','all','ns','sas','fcswitch','fcfabric')]	
+											[string]	$DeviceType,
+	[Parameter(Mandatory,ParameterSetName='FindWWN')]	
+											[switch]	$Findport,
+	[Parameter(ParameterSetName='ByUns')]	[switch]	$UNS,
+	[Parameter(ParameterSetName='LLDP')]	[switch]	$Lldp,
+	[Parameter(ParameterSetName='DCBX')]	[switch]	$Dcbx,
+	[Parameter(ParameterSetName='SAS')]		[switch]	$SAS,
+
+	[Parameter(ParameterSetName='SAS')]		[switch]	$PEL,
+
+	[Parameter(ParameterSetName='ByUns')]
+	[Parameter(ParameterSetName='LLDP')]
+	[Parameter(ParameterSetName='DCBX')]	[switch]	$Detail,
+
+	[Parameter(ParameterSetName='DCBX')]	[switch]	$App,
+
+	[Parameter(ParameterSetName='DCBX')]	[switch]	$PFC,
+	[Parameter(ParameterSetName='DCBX')]	[switch]	$PG,
+
+	[Parameter(ParameterSetName='ByDevice')]
+	[Parameter(ParameterSetName='FindWWN')]
+	[Parameter(ParameterSetName='ByUns')]
+	[Parameter(ParameterSetName='LLDP')]
+	[Parameter(ParameterSetName='DCBX')]
 	[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
 					[String]	$NSP,	
-	[Parameter()]	[String]	$WWN
+	[Parameter(ParameterSetName='FindWWN')]	[String]	$WWN
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
 {	$Cmd = " showportdev "		
-	if($Loop)		{	$Cmd += " loop " }
-	elseif($All)	{	$Cmd += " all " }
-	elseif($NS) 	{	$Cmd += " ns " }
-	elseif($FCF)	{	$Cmd += " fcf " }
-	elseif($SAS)	{ 	$Cmd += " sas " }
-	elseif($Fcswitch){	$Cmd += " fcswitch " }
-	elseif($Fcfabric){	$Cmd += " fcfabric " }
-	elseif($Findport)
-		{	$Cmd += " findprort "
-			if($WWN)	{	$Cmd += " $WWN " 	}
-			else		{	Return "WWN name required with Findprort.."}
-		}	
-	elseif($Tzone)	{	$Cmd += " tzone "}
-	elseif($UNS)	{	$Cmd += " uns " }
-	elseif($Lldp)	{	$Cmd += " lldp " }
-	elseif($Dcbx)	{ 	$Cmd += " dcbx " }
-	else			{ 	Return "Select at list one sub command..." }
+	if ( $DeviceType )	
+		{
+			switch($DeviceType)
+				{	'loop'		{	$Cmd += " loop "	}
+					'all'		{	$Cmd += " all " 	}
+					'fcfabric'	{	$Cmd += " fcfabric "}
+					'ns'		{	$Cmd += " ns "		}
+					'sas'		{ 	$Cmd += " sas " 	}
+					'fcswitch'	{	$Cmd += " fcswitch "}
+				}
+		}
+	if($Findport)	{	if ( $WWN )	{ $Cmd += " findprort $WWN " 	}
+						else 		{ $Cmd += " findprort this "	}
+					}
+	if($UNS)		{	$Cmd += " uns " }
+	if($Lldp)		{	$Cmd += " lldp " }
+	if($Dcbx)		{ 	$Cmd += " dcbx " }
 	if($PEL)		{	$Cmd += " -pel " }
 	if($Detail)		{	$Cmd += " -d " }
 	if($App)		{	$Cmd += " -app " }
@@ -1615,6 +1628,7 @@ Function Show-A9PortISNS
 .EXAMPLE	
 	PS:> Show-PortISNS -NSP 1:2:3
 .NOTES
+	This command utilizes the SSH command 'ShowPortiSNS'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -1697,6 +1711,7 @@ Function Get-A9SystemManager
 	------------------------------------
 		1 Total Count
 .NOTES
+	This command utilizes the SSH command 'showsysmgr'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -1724,6 +1739,7 @@ Function Show-A9SystemResourcesSummary
 .DESCRIPTION
 	The command displays the system table of contents summary that provides a summary of the system's resources.
 .NOTES
+	This command utilizes the SSH command 'ShowTOC'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -1751,6 +1767,7 @@ Function Start-A9NodeRescue
 .PARAMETER Node
 	Specifies the node to be rescued.  This node must be physically present in the system and powered on, but not part of the cluster.
 .NOTES
+	This command utilizes the SSH command 'StartNodeRescue'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -1775,125 +1792,88 @@ Function Get-A9HostPorts_CLI
 	Query to get all ports including targets, disks, and RCIP ports.
 .DESCRIPTION
 	Get information for Ports
-.PARAMETER I
+.PARAMETER Inventory
 	Shows port hardware inventory information.
-.PARAMETER C
+.PARAMETER Connected
 	Displays all devices connected to the port. Such devices include cages (for initiator ports), hosts (for target ports) and ports from other
 	storage system (for RCFC and peer ports).
-.PARAMETER PAR
+.PARAMETER Parameters
 	Displays a parameter listing such as the configured data rate of a port and the maximum data rate that the card supports. Also shown is the
 	type of attachment (Direct Connect or Fabric Attached) and whether the unique_nwwn and VCN capabilities are enabled.
-.PARAMETER RC
-	Displays information that is specific to the Remote Copy ports.
-.PARAMETER RCFC
-	Displays information that is specific to the Fibre Channel Remote Copy ports.
-.PARAMETER PEER
-	Displays information that is specific to the Fibre Channel ports for Data Migration.
-.PARAMETER RCIP
-	Displays information specific to the Ethernet Remote Copy ports.
-.PARAMETER ISCSI
-	Displays information about iSCSI ports.
-.PARAMETER ISCSINAME
-	Displays iSCSI names associated with iSCSI ports.
-.PARAMETER ISCSIVLANS
-	Displays information about VLANs on iSCSI ports.
-.PARAMETER Fcoe
-	Displays information that is specific to Fibre Channel over Ethernet
-	(FCoE) ports.
-.PARAMETER SFP
-	Displays information about the SFPs attached to ports.
-.PARAMETER DDM
-	Displays Digital Diagnostics Monitoring (DDM) readings from the SFPs if they support DDM. This option must be used with the -sfp option.
-.PARAMETER D
-	Displays detailed information about the SFPs attached to ports. This option is used with the -sfp option.
-.PARAMETER FAILED
-	Shows only failed ports.
-.PARAMETER STATE
-	Displays the detailed state information. This is the same as -s.
-.PARAMETER Detailed
-	Displays the detailed state information. This option is deprecated and will be removed in a subsequent release.
-.PARAMETER IDS
+.PARAMETER PortType
+	Can be one of four settings
+	RC = Displays information that is specific to the Remote Copy ports.
+	RCFC = Displays information that is specific to the Fibre Channel Remote Copy ports.
+	PEER = Displays information that is specific to the Fibre Channel ports for Data Migration.
+	RCIP = Displays information specific to the Ethernet Remote Copy ports.
+.PARAMETER ISCSIInfo
+	Can be one of three settings.
+	iSCSI = Displays information about iSCSI ports.
+	ISCSINAME = Displays iSCSI names associated with iSCSI ports.
+	ISCSIVLANS = Displays information about VLANs on iSCSI ports.
+.PARAMETER SFPInfo
+	Can be one of three settings.
+	Basic = Displays information about the SFPs attached to ports.
+	Diagnostics = Displays Digital Diagnostics Monitoring (DDM) readings from the SFPs if they support DDM. This option must be used with the -sfp option.
+	Detailed = More detailed examination of each SFP
+.PARAMETER Identity
 	Displays the identities hosted by each physical port.
-.PARAMETER FS
-	Displays information specific to the Ethernet File Persona ports. To see IP address, netmask and gateway information on File Persona, run "showfs -net".
 .PARAMETER NSP
-	Nede sloat poart
+	Nede slot port
 .EXAMPLE
 	PS:> Get-A9HostPorts_CLI
 		Lists all ports including targets, disks, and RCIP ports
 .EXAMPLE
-	PS:> Get-A9HostPorts_CLI  -I
+	PS:> Get-A9HostPorts_CLI  -Iventory
 .EXAMPLE
-	PS:> Get-A9HostPorts_CLI -I -NSP 0:0:0
+	PS:> Get-A9HostPorts_CLI -Parameters
 .EXAMPLE
-	PS:> Get-A9HostPorts_CLI -PAR
+	PS:> Get-A9HostPorts_CLI -PortType RC
 .EXAMPLE
-	PS:> Get-A9HostPorts_CLI -PAR -NSP 0:0:0
+	PS:> Get-A9HostPorts_CLI | where { $_.State -eq 'offline'}
+
+	The replaces the 'failed'
 .EXAMPLE
-	PS:> Get-A9HostPorts_CLI -RC
-.EXAMPLE
-	PS:> Get-A9HostPorts_CLI -RC -NSP 0:0:0
-.EXAMPLE
-	PS:> Get-A9HostPorts_CLI -RCFC
-.EXAMPLE
-	PS:> Get-A9HostPorts_CLI -RCFC -NSP 0:0:0
-.EXAMPLE
-	PS:> Get-A9HostPorts_CLI -RCIP
+	PS:> Get-A9HostPorts_CLI | format-table N:S:P,state
+
+	This replaces the -state option
 .NOTES
+	This command utilizes the SSH command 'ShowPort'
 	This command requires a SSH type connection.
 #>
-[CmdletBinding()]
-Param(		[Parameter()]	[switch]	$I,
-			[Parameter()]	[switch]	$PAR,
-			[Parameter()]	[switch]	$RC,
-			[Parameter()]	[switch]	$RCFC,
-			[Parameter()]	[switch]	$RCIP,
-			[Parameter()]	[switch]	$PEER,
-			[Parameter()]	[switch]	$ISCSI,
-			[Parameter()]	[switch]	$ISCSINAME,
-			[Parameter()]	[switch]	$ISCSIVLANS,
-			[Parameter()]	[switch]	$FCOE,
-			[Parameter()]	[switch]	$SFP,
-			[Parameter()]	[switch]	$FAILED,
-			[Parameter()]	[switch]	$STATE,
-			[Parameter()]	[switch]	$Detailed,
-			[Parameter()]	[switch]	$IDS,
-			[Parameter()]	[switch]	$FS,
+[CmdletBinding(DefaultParameterSetName='default')]
+Param(		[Parameter(ParameterSetName='inven')]			[switch]	$Inventory,
+			[Parameter(ParameterSetName='Params')]			[switch]	$Parameters,
+			[Parameter(ParameterSetName='Ports')]
+			[ValidateSet('RC','RCFC','RCIP','PEER')]		[string]	$PortType,
+			[Parameter(ParameterSetName='Connected')]		[switch]	$Connected,
+			[Parameter(ParameterSetName='iscsi')]		
+			[ValidateSet('ISCSI','ISCSINAME','ISCSIVLANS')]	[String]	$iSCSIInfo,
+			[Parameter(ParameterSetName='SFP')]
+			[ValidateSet('Basic','Detailed','Diagnostic')]	[String]	$SFPInfo,
+			[Parameter(ParameterSetName='IDS')]				[switch]	$Identity,
 			[Parameter()]	
 			[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
-							[String]	$NSP,
-			[Parameter()]	[switch]	$D
+															[String]	$NSP
 		)
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
 {	$Cmds = "showport"
-	if($I)	{	$Cmds+=" -i "		}
-	if($C)	{	$Cmds+=" -c "		}
-	if($PAR){	$Cmds+=" -par "		}
-	if($RC)		{	$Cmds+=" -rc "	}
-	if($RCFC)	{	$Cmds+=" -rcfc "}
-	if($RCIP)	{	$Cmds+=" -rcip "	}
-	if($PEER)	{	$Cmds+=" -peer "}
-	if($ISCSI)	{	$Cmds+=" -iscsi "}
-	if($ISCSINAME){	$Cmds+=" -iscsiname "	}
-	if($ISCSIVLANS)	{	$Cmds+=" -iscsivlans "	}
-	if($FCOE)		{	$Cmds+=" -fcoe "	}
-	if($SFP)		{	$Cmds+=" -sfp "			}
-	if($FAILED)		{	$Cmds+=" -failed "	}
-	if($STATE)		{	$Cmds+=" -state "	}
-	if($Detailed)	{	$Cmds+=" -s "	}	
-	if($IDS)	{	$Cmds+=" -ids "	}
-	if($FS)		{	$Cmds+=" -fs "	}	
-	if($D)		{	if($SFP)	{	$Cmds+=" -d "	}
-					else		{	return " -d can only be used with -sfp"}
-				}
-	if($NSP)	{	$Cmds+=" $NSP"	}
+	if($Inventory)	{	$Cmds+=" -i "			}
+	if($Connected)	{	$Cmds+=" -c "			}
+	if($Parameters)	{	$Cmds+=" -par "			}
+	if($PortType)	{	$Cmds+=" -$($PortType.toLower() ) "	}
+	if($ISCSIInfo)	{	$Cmds+=" -$($iSCSIInfo.toLower() ) "}
+	if($SFPInfo -eq 'Basic')	{	$Cmds+=" -sfp "		}
+	if($SFPInfo -eq 'Detail')	{	$Cmds+=" -sfp -d "	}
+	if($SFPInfo -eq 'Diagnostic'){	$Cmds+=" -sfp -ddm "}
+	if($Identity)	{	$Cmds+=" -ids "			}
+	if($NSP)		{	$Cmds+=" $NSP"			}
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result=Invoke-A9CLICommand  -cmds $Cmds 	
 	$LastItem = $Result.Count -2  
-	if($SFP -and $D){	return $Result	}
 	if($Result -match "N:S:P")
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			foreach ($s in  $Result[0..$LastItem] )
@@ -1921,127 +1901,37 @@ Function Get-A9Node
 	Show node and its component information.
 .DESCRIPTION
 	The command displays an overview of the node-specific properties
-	and its component information. Various command options can be used to
-	display the properties of PCI cards, CPUs, Physical Memory, IDE drives,
-	and Power Supplies. For the Alletra MP B10000, no options are valid.
-.PARAMETER Listcols
-	List the columns available to be shown with the -showcols option
-	described below (see 'clihelp -col Get-Node' for help on each column).
-	By default (if none of the information selection options below are
-	specified) the following columns are shown:
-	Node Name State Master InCluster LED Control_Mem Data_Mem Available_Cache
-	To display columns pertaining to a specific node component use
-	the -Listcols option in conjunction with one of the following
-	options: -pci, -cpu, -mem, -drive, -fan, -ps, -mcu, -uptime.
-.PARAMETER Showcols
-	Explicitly select the columns to be shown using a comma-separated list
-	of column names.  For this option, the full column names are shown in
-	the header.
-	Run 'shownode -listcols' to list Node component columns.
-	Run 'shownode -listcols <node_component>' to list columns associated
-	with a specific <node_component>.
+	and its component information. 
+.EXAMPLE
+	PS:> Get-A9node
+	Success : Executing Get-Node
 
-	<node_component> can be one of the following options: -pci, -cpu, -mem,
-	-drive, -fan, -ps, -mcu, -uptime.
+	Node      : 0
+	Name      : CZ2410007D0
+	Encl:Bay  : 1:1
+	Master    : Yes
+	InCluster : Yes
+	Mem(MiB)  : 515537
+	Up_Since  : 20250819
 
-	If a specific node component option is not provided, then -showcols expects
-	Node columns as input.
-
-	If a column (Node or specific node component) does not match either the Node
-	columns list or a specific node component columns list, then
-	'shownode -showcols <cols>' request is denied.
-
-	If an invalid column is provided with -showcols, the request is denied.
-
-	The -showcols option can also be used in conjunction with a list of node IDs.
-
-	Run 'clihelp -col shownode' for a description of each column.
-.PARAMETER I
-	Shows node inventory information in table format.
-.PARAMETER D
-	Shows node and its component information in table format.
-	The following options are for node component information. These options
-	cannot be used together with options, -i and -d:
-.PARAMETER Verbose_D
-	Displays detailed information in verbose format. It can be used together
-	with the following component options.
-.PARAMETER Fan
-	Displays the node fan information.
-.PARAMETER Pci
-	Displays PCI card information
-.PARAMETER Cpu
-	Displays CPU information
-.PARAMETER Mem
-	Displays physical memory information.
-.PARAMETER Drive
-	Displays the disk drive information.
-.PARAMETER Ps
-	Displays power supply information.
-.PARAMETER Mcu
-	Displays MicroController Unit information.
-.PARAMETER State
-	Displays the detailed state information for node or power supply (-ps).
-	This is the same as -s.
-.PARAMETER S_State
-	Displays the detailed state information for node or power supply (-ps).
-	This option is deprecated and will be removed in a subsequent release.
-.PARAMETER Uptime
-	Show the amount of time each node has been running since the last shutdown.
-.PARAMETER Svc
-	Displays inventory information with HPE serial number, spare part etc.
-	This option must be used with -i option and it is not supported on
-	HPE 3PAR 10000 systems
-.PARAMETER NodeID
-	Displays the node information for the specified node ID(s). This
-	specifier is not required. Node_ID is an integer from 0 through 7.
+	Node      : 1
+	Name      : CZ2410007D1
+	Encl:Bay  : 1:2
+	Master    : No
+	InCluster : Yes
+	Mem(MiB)  : 515537
+	Up_Since  : 20250819
 .NOTES
+	This command utilizes the SSH command 'ShowNode'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[switch]	$Listcols,
-		[Parameter()]	[String]	$Showcols,
-		[Parameter()]	[switch]	$I,
-		[Parameter()]	[switch]	$D,
-		[Parameter()]	[switch]	$Verbose_D,
-		[Parameter()]	[switch]	$Fan,
-		[Parameter()]	[switch]	$Pci,
-		[Parameter()]	[switch]	$Cpu,
-		[Parameter()]	[switch]	$Mem,
-		[Parameter()]	[switch]	$Drive,
-		[Parameter()]	[switch]	$Ps,
-		[Parameter()]	[switch]	$Mcu,
-		[Parameter()]	[switch]	$State,
-		[Parameter()]	[switch]	$S_State,
-		[Parameter()]	[switch]	$Uptime,
-		[Parameter()]	[switch]	$Svc,	
-		[Parameter()]	[String]	$NodeID
-)
+param(	)
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
 {	$Cmd = " shownode "
-	if($Listcols)
-		{	$Cmd += " -listcols "
-			$Result = Invoke-A9CLICommand -cmds  $Cmd
-			return $Result
-		}
-	if($Showcols){	$Cmd += " -showcols $Showcols " }
-	if($I)		{	$Cmd += " -i "		}
-	if($D)		{	$Cmd += " -d " 		}
-	if($Verbose_D){	$Cmd += " -verbose " }
-	if($Fan)	{	$Cmd += " -fan " 	}
-	if($Pci)	{	$Cmd += " -pci " 	}
-	if($Cpu)	{	$Cmd += " -cpu " 	}
-	if($Mem)	{	$Cmd += " -mem " 	}
-	if($Drive) 	{	$Cmd += " -drive " 	}
-	if($Ps) 	{	$Cmd += " -ps " 	}
-	if($Mcu)	{	$Cmd += " -mcu " 	}
-	if($State)	{	$Cmd += " -state " 	}
-	if($S_State){	$Cmd += " -s " 		}
-	if($Uptime)	{	$Cmd += " -uptime " }
-	if($Svc) 	{	$Cmd += " -svc " 	}
-	if($NodeID)	{ 	$Cmd += " $NodeID " }
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	if($Result.count -gt 1)
@@ -2058,8 +1948,6 @@ process
 					if($incre -eq "True")
 						{	$sTemp1=$s				
 							$sTemp = $sTemp1.Split(',')							
-							# $sTemp[6] = "Control-Mem(MB)"
-							# $sTemp[7] = "Data-Mem(MB)"
 							$newTemp= [regex]::Replace($sTemp,"^ ","")			
 							$newTemp= [regex]::Replace($sTemp," ",",")				
 							$newTemp= $newTemp.Trim()
@@ -2070,7 +1958,6 @@ process
 				}
 			$Result = Import-Csv $tempFile 
 			remove-item $tempFile	
-
 		}
 	if($Result.count -gt 1)	{	write-host " Success : Executing Get-Node" -ForegroundColor green }
 	return  $Result
@@ -2092,6 +1979,7 @@ Function Show-A9PortARP
 .EXAMPLE
 	PS:> Show-A9PortARP -NSP 1:2:3
 .NOTES
+	This command utilizes the SSH command 'ShowPortArp'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -2147,44 +2035,32 @@ Function Get-A9Target
 	If this option is not specified, the default <num> is 0.
 .PARAMETER Detailed
 	Display the detail information of SCSI inquiry or mode page information.
-.PARAMETER Force
-	Specifies that the rescan is forced. If this option is not used, the rescan will be suppressed if the peer ports have already
-	been rescanned within the last 10 seconds.
-.PARAMETER VerboseErrors
-	Display any errors during rescan over the peer ports.
 .PARAMETER Rescan
-	Rescan the peer ports to find the unknown targets.
-.PARAMETER Sortcol
-	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
-	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
-	inc
-		Sort in increasing order (default).
-	dec
-		Sort in decreasing order.	
-	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+	Rescan the peer ports to find the unknown targets. This defaults to force mode as well as verbose mode.
 .PARAMETER Node_WWN
 	Indicates the World Wide Name (WWN) of the node.
 .PARAMETER LUN_WWN
 	Indicates the World Wide Name (WWN) of a LUN exported from an unknown target.
 .NOTES
+	This command utilizes the SSH command 'ShowTarget'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding(DefaultParameterSetName='none')]
-param(	[Parameter()]									[string]	$Lun,
+param(	[Parameter(ParameterSetName='iscsi')]			[string]	$Lun,
 		[Parameter(ParameterSetName='Inq',mandatory)]	[switch]	$SCSIIquiryPageInfo,
 		[Parameter(ParameterSetName='mode',mandatory)]	[switch]	$SCSIModePageInfo,
 		[Parameter(ParameterSetName='Inq')]
 		[Parameter(ParameterSetName='mode')]
 		[ValidateSet('0','80','83','c0')]				[String]	$SpecificSCSIModePage,
-		[Parameter()]	[switch]	$iSCSI,
-		[Parameter()]	[switch]	$Detailed,
-		[Parameter()]	[switch]	$Force,
-		[Parameter()]	[switch]	$VerboseErrors,
-		[Parameter()]	[switch]	$Rescan,
-		[Parameter()][ValidateSet('inc','dec')]	
-						[String]	$Sortcol,
-		[Parameter()]	[String]	$Node_WWN,
-		[Parameter()]	[String]	$LUN_WWN
+		[Parameter(ParameterSetName='iscsi',Mandatory)]	[switch]	$iSCSI,
+		[Parameter(ParameterSetName='Inq')]				
+		[Parameter(ParameterSetName='Mode')]			[switch]	$Detailed,
+		[Parameter(mandatory,ParameterSetName='rescan')][switch]	$Rescan,
+
+		[Parameter(ParameterSetName='inq')]				
+		[Parameter(ParameterSetName='mode')]			[String]	$LUN_WWN,		
+		[Parameter(ParameterSetName='iscsi')]			[String]	$Node_WWN,
+		[Parameter(ParameterSetName='iscsi')]			[String]	$iSCSIQualifiedName
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -2197,12 +2073,10 @@ Process
 	if($Page)		{	$Cmd += " -page $Page "	}
 	if($Page)		{	$Cmd += " -iscsi "	}
 	if($Detailed)	{	$Cmd += " -d "}
-	if($Force) 		{	$Cmd += " -force " }
-	if($VerboseErrors)	{	$Cmd += " -verbose "}
-	if($Rescan)		{	$Cmd += " -rescan "}
-	if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "}
+	if($Rescan)		{	$Cmd += " -rescan -force -verbose "}
 	if($Node_WWN)	{	$Cmd += " $Node_WWN "}
 	if($LUN_WWN)	{	$Cmd += " $LUN_WWN "}
+	if($ISCSIQualifiedName){	$Cmd += " $ISCSIQualifiedName "}
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
@@ -2216,18 +2090,15 @@ Function Test-A9FCLoopback
     Perform loopback tests on Fibre Channel ports.
 .DESCRIPTION
     The checkport command performs loopback tests on Fibre Channel ports.
+    When both the -time and -iter options are specified, the first limit reached terminates the program. If neither are specified, the default is
+    1,000 iterations. The total run time is always limited to 300 seconds even when not specified.
+    The default loopback is an ELS-ECHO sent to the HBA itself.
 .PARAMETER Time <seconds_to_run>
     Specifies the number of seconds for the test to run using an integer from 0 to 300.
 .PARAMETER Iter <iterations_to_run>
     Specifies the number of times for the test to run using an integer from 1 to 1000000.     
 .PARAMETER PortNSP
     Specifies the port to be tested.
-.PARAMETER Node
-    Specifies the node using a number from 0 through 7.
-.PARAMETER Slot
-    Specifies the PCI slot in the specified node. Valid range is 0 - 9.
-.PARAMETER Port
-    Specifies the port using a number from 1 through 4.
 .EXAMPLE
     Test-Port test is performed on port 0:0:1 a total of five times:
 
@@ -2236,22 +2107,16 @@ Function Test-A9FCLoopback
     Starting loopback test on port 0:0:1
     Port 0:0:1 completed 5 loopback frames in 0 seconds Passed
 .NOTES
+	This command utilizes the SSH command 'CheckPort'
 	This command requires a SSH type connection.
-    Access to all domains is required to run this command.
-
-    When both the -time and -iter options are specified, the first limit reached terminates the program. If neither are specified, the default is
-    1,000 iterations. The total run time is always limited to 300 seconds even when not specified.
-    The default loopback is an ELS-ECHO sent to the HBA itself.
 #>
 [CmdletBinding()]
 param(
         [Parameter()]	[ValidateRange(0,300)]    		[int]    	$TimeInSeconds,		
         [Parameter()]   [ValidateRange(1,100000)]		[int]    	$Iter,
-        [Parameter()]	[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
-														[String]    $PortNSP,
-        [Parameter()]	[ValidateRange(0,7)]    		[int]    	$Node,		
-        [Parameter()]   [ValidateRange(0,9)]			[int]    	$Slot,		
-        [Parameter()]   [ValidateRange(1,4)]    		[int]    	$Port
+        [Parameter(Mandatory)]	
+						[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
+														[String]    $PortNSP
     )	
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -2261,8 +2126,6 @@ Process
     if ($TimeInSeconds) {    $cmd += " -time $TimeInSeconds"    }
     if ($Iter) 			{    $cmd += " -iter $Iter"	    }
     if ($PortNSP) 		{    $cmd += "$PortNSP"		   }
-    elseif (($Node) -and ($Slot) -and ($Port)) {    $cmd += "$($Node):$($Slot):$($Port)"    }
-    else 				{           Return "Node, slot and plot details are required" }
     write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
     return 	$Result	

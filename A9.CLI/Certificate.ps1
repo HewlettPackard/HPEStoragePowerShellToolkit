@@ -35,6 +35,7 @@ Function New-A9Cert
 .EXAMPLE
 	PS:> New-A9Cert -SSL_service wsapi -Selfsigned -Keysize 2048 -Days 365
 .NOTES
+	This command utilizes the SSH command 'CreateCert' 
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -95,6 +96,7 @@ Function Remove-A9Cert
 .EXAMPLE
 	PS:> Remove-A9Cert -SSL_Service_Name "all" -Type "intca"
 .NOTES
+	This command utilizes the SSH command 'RemoveCert'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]

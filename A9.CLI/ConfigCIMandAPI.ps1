@@ -18,6 +18,7 @@ Function Remove-A9WsapiSession
 .EXAMPLE
 	PS:> Remove-A9WsapiSession -Id "1537246327049685" -User_name 3parxyz -IP_address "10.10.10.10"
 .NOTES
+  This command utilizes the SSH command 'RemoveWSAPISession'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -72,7 +73,8 @@ Function Set-A9Wsapi
 .EXAMPLE
   PS:> Stop-A9Wsapi
 .NOTES
-	This command requires a SSH type connection.
+	This command utilizes the SSH commands 'SetWSAPI, StartWSAPI, and StopWSAPI'
+  This command requires a SSH type connection.
   Usage:
   - Access to all domains is required to run this command.
   - When the Web Services API server is active, a warning message showing the current status of the Web Services API server is displayed and 
@@ -139,7 +141,8 @@ Function Get-A9CIM
         HTTPSPort : 5989
         State     : Inactive
 .NOTES
-	This command requires a SSH type connection.
+	This command utilizes the SSH command 'ShowCIM'
+  This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(  [Parameter()]   [Switch]    $Policy,
@@ -185,7 +188,8 @@ Function Set-A9CIM
     Set the CIM server properties
 .DESCRIPTION
     The cmdlet sets properties of the CIM server, including options to enable/disable the HTTP and HTTPS ports for the CIM server. setcim allows
-    a user to enable/disable the SLP port. The command also sets the CIM server policy.
+    a user to enable/disable the SLP port. The command also sets the CIM server policy. You cannot disable both of the HTTP and HTTPS ports.
+
 .PARAMETER Slp
     Enables or disables the SLP port 427.
 .PARAMETER Http
@@ -232,11 +236,8 @@ Function Set-A9CIM
 
     PS:> Set-A9CIM -Pol replica_entity
 .NOTES
-    This command requires a SSH type connection.
-    Access to all domains is required to run this command.    You cannot disable both of the HTTP and HTTPS ports.
-
-    When the CIM server is active, a warning message will be prompted to inform you of the current status of the CIM server and asks for the confirmation to
-    continue or not. The -F option forces the action without a warning message.
+  This command utilizes the SSH command 'SetCIM'    
+  This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(  [Parameter(parametersetname='SLP',mandatory)]       

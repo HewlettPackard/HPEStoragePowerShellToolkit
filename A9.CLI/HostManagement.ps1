@@ -53,6 +53,7 @@ Function New-A9HostSet_CLI
 			(or)
 	Adds host "MyHost" to hostset "HV01C-HostSet" if hostset already exists
 .NOTES
+	This command utilizes the SSH command 'CreateHostSet'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -130,6 +131,7 @@ Function Set-A9Host_CLI
 .EXAMPLE
     PS:> Set-A9Host_CLI -hostName HV01A  -Add
 .NOTES
+	This command utilizes the SSH command 'CreateHost'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]

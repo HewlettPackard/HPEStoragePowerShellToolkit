@@ -7,6 +7,7 @@ Function Remove-A9Disk
 	Remove a physical disk (PD) from system use.
 .DESCRIPTION
 	The command removes PD definitions from system use.
+	- A PD that is in use cannot be removed.
 .PARAMETER PDID
 	Specifies the physical disk ID, identified by integers, to be removed from system use.
 .EXAMPLE
@@ -14,8 +15,8 @@ Function Remove-A9Disk
 
 	PS:> Remove-A9Disk -PDID 1
 .NOTES
+	This command utilizes the SSH command 'DismissPD' 
 	This command requires a SSH type connection.
-	- A PD that is in use cannot be removed.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory)]	[String]	$PDID
@@ -76,6 +77,7 @@ Function Set-A9Disk
 
 	displays PD 25 marked as allocatable for LDs.
 .NOTES
+	This command utilizes the SSH command 'AdmitPD, SetPD or ControlPD'	
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -172,6 +174,7 @@ Function Test-A9Disk
 
 	This example Limits diagnostic to range 5m [mb] physical disk 3 is scanned for media defects.
 .NOTES
+	This command utilizes the SSH command 'CheckPD'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -182,10 +185,11 @@ param(	[Parameter(ParameterSetName='diag', Mandatory)]	[switch]	$Diag,
 		[Parameter(ParameterSetName='diag')]
 		[ValidateSet('a','b','system','both')]			[String]	$path,		
 		[Parameter(ParameterSetName='diag')]
-		[ValidateSet('read','write','validate')]		[String]	$test,	
+		[ValidateSet('read','write','verify')]			[String]	$test,	
 		[Parameter(ParameterSetName='diag')]			[String]	$iosize,	
 		[Parameter(ParameterSetName='diag')]			[String]	$range,		
-		[Parameter(ParameterSetName='diag')]			[String]	$threads,	
+		[Parameter(ParameterSetName='diag')]
+		[ValidateRange(1,4)]							[int]		$threads,	
 		[Parameter(ParameterSetName='diag')]			[String]	$time,		
 		[Parameter(ParameterSetName='diag')]			[String]	$total,		
 		[Parameter(ParameterSetName='diag')]			[String]	$retry,		

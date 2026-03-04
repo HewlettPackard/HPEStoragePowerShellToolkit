@@ -50,6 +50,7 @@ Function Find-A9Cage
 
 	This example causes the Fibre Channel LEDs on the drive CageName cage1 to blink, Indicates the drive magazine by number 2.	
 .NOTES
+	This command utilizes the SSH command 'LocateCage'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding(DefaultParameterSetName='A9')]
@@ -112,11 +113,8 @@ Function Get-A9Cage
 .PARAMETER SFP  
 	Specifies information about the SFP(s) attached to a cage. Currently, additional SFP information
 	can only be displayed for DC2 and DC4 cages.
-.PARAMETER I	
-	Specifies that inventory information about the drive cage is displayed. If this option is not used,
-	then only summary information about the drive cages is displayed.
-.PARAMETER SVC
-	Displays inventory information with HPE serial number, spare part number, and so on. it is supported only on HPE 3PAR Storage 7000 Storagesystems and  HPE 3PAR 8000 series systems"
+.PARAMETER ServiceInfo
+	Displays inventory information for all items in raw mode, commonly requested by service."
 .PARAMETER All
 	Displays all the components status information.
 .PARAMETER Connector
@@ -125,7 +123,7 @@ Function Get-A9Cage
 	Displays the cooling status information, e.g., speed, cooling LEDs, status.
 .PARAMETER Enclosure
 	Displays the enclosure status information, e.g., enclosure LEDs, status.
-.PARAMETER Env
+.PARAMETER Enviornmental
 	Displays the temperature, current, and voltage sensors information.
 .PARAMETER Expander
 	Displays the expander status information, e.g., address, status.
@@ -276,6 +274,7 @@ Function Get-A9Cage
 	41 cage41 24     31-45 DCF2  SFF        normal
 	42 cage42 24     36-45 DCF2  SFF        normal
 .NOTES
+	This command utilizes the SSH command 'ShowCage'
 	This command requires a SSH type connection.
 	Parameter cagename was removed as a powershell filter can gather the same output (get-a9cage | where {$_.name -eq 'cage1' } )
 #>
@@ -283,13 +282,12 @@ Function Get-A9Cage
 param(	[Parameter(parametersetname='A9Errror')]		[Switch]	$ErrorInformation,
 		[Parameter(parametersetname='A9State')]			[Switch]	$State,
 		[Parameter(ParameterSetName='A9SFP')]			[Switch]	$SFP,
-		[Parameter(ParameterSetName='A9inventory')]		[Switch]	$I,
-		[Parameter(ParameterSetName='A9SVC')]			[Switch]	$SVC,
+		[Parameter(ParameterSetName='A9SVC')]			[Switch]	$ServiceInfo,
 		[Parameter(ParameterSetName='A9All')]			[Switch]	$All,
 		[Parameter(ParameterSetName='A9Connector')]		[Switch]	$Connector,
 		[Parameter(ParameterSetName='A9Cool')]			[Switch]	$Cooling,
 		[Parameter(ParameterSetName='A9Enclosure')]		[Switch]	$Enclosure,
-		[Parameter(ParameterSetName='A9End')]			[Switch]	$Env,
+		[Parameter(ParameterSetName='A9End')]			[Switch]	$Enviornmental,
 		[Parameter(ParameterSetName='A9Expander')]		[Switch]	$Expander,
 		[Parameter(ParameterSetName='A9Iom')]			[Switch]	$IOM,
 		[Parameter(ParameterSetName='A9ILO')]			[Switch]	$ILO,
@@ -313,47 +311,50 @@ Begin
 	}
 Process
 	{	$cmd= "showcage "
-		if($ErrorInformation )	
+		if ( $ErrorInformation )	
 			{	if ( ($arraytype.ToLower() -eq '3Par') ) 	
 					{ 	$cmd +=" -e "}
 				else{	$cmd +=" -error " }
 			}
-		if($CachedData 			-and ($arraytype.ToLower() -eq '3Par') ) 	{ 	$cmd +=" -c "}
-		if($State 				-and ($arraytype.ToLower() -eq '3Par') ) 	{ 	$cmd +=" -state "}
-		if($SFP)		{ 	$cmd +=" -sfp " }
-		if($SVC)		{ 	$cmd +=" -svc -i"}
-		elseif($I) 		{ 	$cmd +=" -i " }
-		if($All)		{ 	$cmd +=" -all " }
-		if($Connector)	{ 	$cmd +=" -con " }
-		if($Cool)		{ 	$cmd +=" -cooling " }
-		if($Enclosure)	{	$cmd +=" -enc " }
-		if($Env)		{ 	$cmd +=" -env " }
-		if($Expander)	{ 	$cmd +=" -exp " }
-		if($IOM)		{ 	$cmd +=" -iom " }
-		if($Mag)		{ 	$cmd +=" -mag " }
-		if($Power)		{ 	$cmd +=" -power " }
-		if($sep)		{ 	$cmd +=" -sep " }
-		if($temperature){ 	$cmd +=" -temp " }
-		if($temperature){ 	$cmd +=" -pci " }
-		if($temperature){ 	$cmd +=" -ubm " }
-		if($temperature){ 	$cmd +=" -ilo " }
-		if($temperature){ 	$cmd +=" -cdm " }
+		if ( $CachedData -and ($arraytype.ToLower() -eq '3Par') ) 	{ 	$cmd +=" -c "}
+		if ( $State 	 -and ($arraytype.ToLower() -eq '3Par') ) 	{ 	$cmd +=" -state "}
+		if ( $SFP )			{ 	$cmd +=" -sfp " }
+		if ( $ServiceInfo )	{ 	$cmd +=" -svc -i"}
+		if ( $All )			{ 	$cmd +=" -all " }
+		if ( $Connector )	{ 	$cmd +=" -con " }
+		if ( $Cooling )		{ 	$cmd +=" -cooling " }
+		if ( $Enclosure )	{	$cmd +=" -enc " }
+		if ( $Enviornmental ){ 	$cmd +=" -env " }
+		if ( $Expander )	{ 	$cmd +=" -exp " }
+		if ( $IOM )			{ 	$cmd +=" -iom " }
+		if ( $Mag )			{ 	$cmd +=" -mag " }
+		if ( $Power )		{ 	$cmd +=" -power " }
+		if ( $sep )			{ 	$cmd +=" -sep " }
+		if ( $temperature )	{	$cmd +=" -temp " }
+		if ( $PCI )			{ 	$cmd +=" -pci " }
+		if ( $UBM )			{ 	$cmd +=" -ubm " }
+		if ( $ilo )			{ 	$cmd +=" -ilo " }
+		if ( $cdm )			{ 	$cmd +=" -cdm " }
 		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds $cmd
-
-		if ( $ShowRaw -or $i -or $svc -or $all -or $ErrorInformation ) { return $Result }
+		if ( $ShowRaw -or $ServiceInfo -or $all -or $ErrorInformation -or $sfp -or $Enviornmental) { return $Result }
 		if ( $Result.Count -gt 1 )
-			{	if ( ($PSBoundParameters.count -eq 0) -or $Cooling -or $state -or $pci -or $ilo -or $ubm -or $cdm)
+			{	if ( ($PSBoundParameters.count -eq 0) -or $state -or $pci )
 					{ 	$HeaderLine = 0
 						$StartIndex=1
 						$EndIndex=$Result.count-1
+					}
+				if ( ($PSBoundParameters.count -eq 0) -or $ubm -or $cdm -or $Cooling-or $ilo  )
+					{ 	$HeaderLine = 0
+						$StartIndex=1
+						$EndIndex=$Result.count-3
 					}
 				elseif ($Connector -or $IOM -or $mag -or $Power -or $Sep -or $Enclosure )
 					{	$HeaderLine = 0
 						$StartIndex=1
 						$EndIndex=$Result.count-3
 					}
-				elseif ($Env -or $Temperature -or $sfp)
+				elseif ($Temperature)
 					{	$HeaderLine = 1
 						$StartIndex=2
 						$EndIndex=$Result.count-3
@@ -371,9 +372,27 @@ Process
 			}	
 		$returndata = Import-Csv $tempFile
 		Remove-Item $tempFile
-		return $returndata
+		$dataPS = $returndata
+		if($dataPS.Count -gt 0)
+				{	write-host "Cmdlet executed successfully" -foreground green
+					# The following code will decorate the returned objects with desciptions for codified enums. 
+					# The following code will also add the formatting information as well.
+					$NewObj = @(    foreach( $Item in $DataPS)	{   $NewItem=@{PSTypeName = "HPE.A9Storage.Cage"}
+																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+																	$DataSetType = "HPE.A9Storage.Cage"
+																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
+																	$DataSetType = $DataSetType + ".TypeName"
+																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+																	[PSCustomObject]$NewItem
+																}
+															)
+					return $NewObj	
+				}
+			else
+				{	Write-warning "While Executing Get-A9Vv, No Expected Results Found." 
+					return 
+				}
 	}
-
 }
 
 Function Set-A9Cage
@@ -398,6 +417,7 @@ Function Set-A9Cage
 
 	This  example demonstrates how to assign model names to the power supplies in cage1. Inthisexample, cage1 hastwopowersupplies(0 and 1).
 .NOTES
+	This command utilizes the SSH command 'SetCage'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]

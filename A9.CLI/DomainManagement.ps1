@@ -12,6 +12,7 @@ Function Get-A9Domain
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
+	This command utilizes the SSH command 'ShowDomain'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -63,6 +64,7 @@ Function Get-A9DomainSet
 .EXAMPLE
 	PS:> Get-A9DomainSet -Detailed
 .NOTES
+	This command utilizes the SSH command 'ShowDomainSet'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -85,7 +87,7 @@ Process
 }
 }
 
-Function Move-A9Domain
+Function Move-A9DomainObject
 {
 <#
 .SYNOPSIS
@@ -104,14 +106,15 @@ Function Move-A9Domain
 .PARAMETER Hosts
 	Specifies that the object is a host.
 .NOTES
+	This command utilizes the SSH command 'MoveToDomain'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]				[switch]	$vv,
-		[Parameter()]				[switch]	$Cpg,
-		[Parameter()]				[switch]	$Hosts,
-		[Parameter(Mandatory)]		[String]	$ObjName,
-		[Parameter(Mandatory)]		[String]	$DomainName
+param(	[Parameter(Mandatory, ParameterSetName='VV')]				[switch]	$vv,
+		[Parameter(Mandatory, ParameterSetName='CPG')]				[switch]	$Cpg,
+		[Parameter(Mandatory, ParameterSetName='HOST')]				[switch]	$Hosts,
+		[Parameter(Mandatory)]										[String]	$ObjName,
+		[Parameter(Mandatory)]										[String]	$DomainName
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient' 
@@ -121,9 +124,7 @@ Process
 	if($Vv) 	{	$Cmd += " -vv " }
 	if($Cpg)	{	$Cmd += " -cpg " }
 	if($Hosts)	{	$Cmd += " -host " }
-	$Cmd += " -f "
-	if($ObjName){	$Cmd += " $ObjName " }
-	if($DomainName){$Cmd += " $DomainName " }
+	$Cmd += " -f $ObjName $DomainName " 
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 }	
@@ -163,6 +164,7 @@ Function New-A9Domain
 .EXAMPLE
 	PS:> New-A9Domain -Domain_name xxx -Comment "Hello"
 .NOTES
+	This command utilizes the SSH command 'CreateDomain'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -203,6 +205,7 @@ Function New-A9DomainSet
 .EXAMPLE
 	New-A9DomainSet -SetName xyz 
 .NOTES
+	This command utilizes the SSH command 'CreateDomainSet'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -232,25 +235,21 @@ Function Remove-A9Domain
 .DESCRIPTION
 	The command removes an existing domain from the system.
 .PARAMETER DomainName
-	Specifies the domain that is removed. If the -pat option is specified the DomainName will be treated as a glob-style pattern, and multiple domains will be considered.
-.PARAMETER Pattern
-	Specifies that names will be treated as glob-style patterns and that all domains matching the specified pattern are removed.
+	Specifies the domain that is removed. 
 .EXAMPLE
 	Remove-A9Domain -DomainName xyz
 .NOTES
+	This command utilizes the SSH command 'RemoveDomain'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]				[switch]	$Pattern,
-		[Parameter(Mandatory)]		[String]	$DomainName
+param(	[Parameter(Mandatory)]		[String]	$DomainName
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
-{	$Cmd = " removedomain -f "
-	if($Pattern)	{	$Cmd += " -pat " }
-	if($DomainName)	{	$Cmd += " $DomainName " }
+{	$Cmd = " removedomain -f  $DomainName " 
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
@@ -269,16 +268,14 @@ Function Remove-A9DomainSet
 .PARAMETER Domain
 	Optional list of domain names that are members of the set. If no <Domain>s are specified, the domain set is removed, otherwise the specified <Domain>s are removed from the domain set. 
 	If the -pat option is specified the domain will be treated as a glob-style pattern, and multiple domains will be considered.
-.PARAMETER Pattern
-	Specifies that both the set name and domains will be treated as glob-style patterns.
 .EXAMPLE
 	PS:> Remove-A9DomainSet -SetName xyz
 .NOTES
+	This command utilizes the SSH command 'RemoveDomainSet'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]			[switch]	$Pattern,
-		[Parameter(Mandatory)]	[String]	$SetName,
+param(	[Parameter(Mandatory)]	[String]	$SetName,
 		[Parameter()]			[String]	$Domain
 )
 Begin
@@ -286,9 +283,7 @@ Begin
 }
 Process
 {	$Cmd = " removedomainset "
-	$Cmd += " -f "
-	if($Pattern){	$Cmd += " -pat " }
-	if($SetName){	$Cmd += " $SetName " }
+	$Cmd += " -f $SetName "
 	if($Domain)	{	$Cmd += " $Domain " }
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
@@ -297,43 +292,6 @@ Process
 }
 
 Function Set-A9Domain
-{
-<#
-.SYNOPSIS
-	Change current domain CLI environment parameter.
-.DESCRIPTION
-	The command changes the current domain CLI environment parameter.
-.EXAMPLE
-	PS:> Set-A9Domain
-.PARAMETER Domain
-	Name of the domain to be set as the working domain for the current CLI session. If the <domain> parameter is not present or is equal to -unset then the working domain is set to no current domain.
-.EXAMPLE
-	PS:> Set-A9Domain -Domain "XXX"
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$Domain
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$Cmd = " changedomain "
-	if($Domain)	{	$Cmd += " $Domain " }
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if([String]::IsNullOrEmpty($Domain))
-		{	$Result = "Working domain is unset to current domain."
-		}
-	elseif([String]::IsNullOrEmpty($Result))
-		{	$Result = "Domain : $Domain to be set as the working domain for the current CLI session."
-		}
-	return $Result
-}
-}
-
-Function Update-A9Domain
 {
 <#
 .SYNOPSIS
@@ -355,6 +313,7 @@ Function Update-A9Domain
 .EXAMPLE
 	Update-A9Domain -DomainName xyz
 .NOTES
+	This command utilizes the SSH command 'SetDomain'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -371,13 +330,13 @@ Process
 	if($NewName)			{	$Cmd += " -name $NewName " }
 	if($Comment)			{	$Cmd += " -comment " + '" ' + $Comment +' "'}
 	if($Vvretentiontimemax)	{	$Cmd += " -vvretentiontimemax $Vvretentiontimemax "	}
-	if($DomainName)			{	$Cmd += " $DomainName "}
+	$Cmd += " $DomainName "
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
 }
 }
 
-Function Update-A9DomainSet
+Function Set-A9DomainSet
 {
 <#
 .SYNOPSIS
@@ -391,23 +350,28 @@ Function Update-A9DomainSet
 .PARAMETER NewName
 	Specifies a new name for the domain set, using up to 27 characters in length.
 .EXAMPLE
-	Update-A9DomainSet -DomainSetName xyz
+	PS:> Set-A9DomainSet -comment "adding a comment" -DomainSetName xyz
 .NOTES
+	This command utilizes the SSH command 'SetDomainSet'
 	This command requires a SSH type connection.
 #>
-[CmdletBinding()]
-param(	[Parameter()]			[String]	$Comment,
-		[Parameter()]			[String]	$NewName,
-		[Parameter(Mandatory)]	[String]	$DomainSetName
+[CmdletBinding(DefaultParameterSetName='Comment')]
+param(	[Parameter(Mandatory, ParameterSetName='Comment')]
+		[Parameter(Mandatory, ParameterSetName='Both')]				[String]	$Comment,
+
+		[Parameter(Mandatory, ParameterSetName='NewName')]
+		[Parameter(Mandatory, ParameterSetName='Both')]				[String]	$NewName,
+
+		[Parameter(Mandatory)]										[String]	$DomainSetName
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$Cmd = " setdomainset "
-	if($Comment)	{	$Cmd += " -comment " + '" ' + $Comment +' "' }
+	if($Comment)	{	$Cmd += ' -comment "' + $Comment +' "' }
 	if($NewName)	{  	$Cmd += " -name $NewName " }
-	if($DomainSetName){	$Cmd += " $DomainSetName " }
+	$Cmd += " $DomainSetName "
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result
