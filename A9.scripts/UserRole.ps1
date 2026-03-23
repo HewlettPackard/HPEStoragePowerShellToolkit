@@ -37,22 +37,19 @@ Begin
 {	Test-A9Connection -ClientType 'API' 
 }
 Process 
-{	$Result = $null
-	$dataPS = $null
-	$uri = '/users'	
+{	$uri = '/users'	
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
-	
-	if($Result.StatusCode -ne 200)
+	if ( $Result.StatusCode -ne 200 )
 		{	write-error "FAILURE : While Executing Get-A9Users." 
 			return $Result.StatusDescription
 		}
-	$dataPS = ($Result.content | ConvertFrom-Json)
-	if ($dataPS.members ) 	{	$DataPS = $DataPS.members	} 
-	if ($dataPS.Count -eq 0 )
+	$dataPS = ( $Result.content | ConvertFrom-Json )
+	if ( $dataPS.members ) 	{	$DataPS = $DataPS.members	} 
+	if ( $dataPS.Count -eq 0 )
 		{	write-warning "Cmdlet executed successfully however No Data was returned."
 			return
 		}
-	$NewObj = @(    foreach( $Item in $DataPS)	
+	$NewObj = @(    foreach( $Item in $DataPS )	
 						{   $NewItem=@{PSTypeName = "HPE.A9Storage.User"}
 							$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
 							$DataSetType = "HPE.A9Storage.User"
@@ -109,24 +106,22 @@ Begin
 {	Test-A9Connection -ClientType 'API' 
 }
 Process 
-{	$Result = $null
-	$dataPS = $null
-	$uri = '/roles'
+{	$uri = '/roles'
 	if($RoleName)	{	$uri = '/roles/'+$RoleName	}	
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -ne 200)
 		{	write-error "FAILURE : While Executing Get-A9Roles."
 			return $Result.StatusDescription
 		}
-	$dataPS = ($Result.content | ConvertFrom-Json)
-	if ( $dataPS.members )	{ $DataPS = $DataPS.members}
-	if ($dataPS.Count -eq 0)
+	$dataPS = ( $Result.content | ConvertFrom-Json )
+	if ( $dataPS.members )	{ $DataPS = $DataPS.members }
+	if ( $dataPS.Count -eq 0 )
 		{	write-warning "Cmdlet executed successfully however No data was returned."
 			return 
 		}
 	write-host "Cmdlet executed successfully" -foreground green
-	$NewObj = @(    foreach( $Item in $DataPS)	
-						{   $NewItem=@{PSTypeName = "HPE.A9Storage.Role"}
+	$NewObj = @(    foreach( $Item in $DataPS )	
+						{   $NewItem=@{ PSTypeName = "HPE.A9Storage.Role" }
 							$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
 							$DataSetType = "HPE.A9Storage.Role"
 							$NewItem.PSTypeNames.Insert(0,$DataSetType)

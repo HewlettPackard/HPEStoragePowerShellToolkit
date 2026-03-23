@@ -608,19 +608,25 @@ process
 }
 }
 
-Function Show-A9Battery
+
+Function Get-A9SystemInfo
 {
 <#
 .SYNOPSIS
-	Show battery status information.
+    Command displays the Storage system information, Battery information, or Firmware Database Information, or Enviornmental inforation, Network info, or system Table of Contents (TOC) summary or Node info.
+.DESCRIPTION
+    Without options the Command displays the Storage system information.
+	The ShowBatteryInfo option displays battery status information such as serial number, expiration date and battery life, which could be helpful in determining battery maintenance schedules.
+	The ShowFirmwareDBInfo parameter Displays the current database of firmware levels if issued without any options, the firmware for all vendors is displayed.
+	The ShowEnviornmentalInfo parameter displays the node operating environment status, including voltages and temperatures.
+	The ShowNetworkInfo parameter displays the configuration and status of the administration network interfaces, including the configured gateway and network time protocol (NTP) server.
+	The ShowResourceInfo will return the system Table of Contents (TOC) summary.
+	The Node info will return details about the nodes.
+.PARAMETER Option
+	Can be any of the following; "d","param","fan","space","vvspace","domainspace","desc","devtype","date"
 .DESCRIPTION
 	Displays battery status information such as serial number, expiration date and battery life, 
 	which could be helpful in determining battery maintenance schedules.
-.PARAMETER Listcols
-	List the columns available to be shown with the -showcols option described below .
-.PARAMETER Showcols
-	Explicitly select the columns to be shown using a comma-separated list of column names.  
-	For this option, the full column names are shown in the header.
 .PARAMETER Detailed
 	Specifies that detailed battery information, including battery test information, serial numbers, and expiration dates, is displayed.
 .PARAMETER Log
@@ -631,122 +637,27 @@ Function Show-A9Battery
 	Displays inventory information with HPE serial number, spare part etc. This option must be used with -i option and it is not supported on HPE 3PAR 10000 systems.
 .PARAMETER Node_ID
 	Displays the battery information for the specified node ID(s). This specifier is not required. Node_ID is an integer from 0 through 7.
-.NOTES
-	This command utilizes the SSH command 'ShowBattery'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(
-	[Parameter()]	[switch]	$Listcols,
-	[Parameter()]	[String]	$Showcols,
-	[Parameter()]	[switch]	$Detailed,
-	[Parameter()]	[switch]	$Log,
-	[Parameter()]	[switch]	$Inventory,
-	[Parameter()]	[switch]	$Svc,
-	[Parameter()]	[String]	$Node_ID
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$Cmd = " showbattery "
-	if($Listcols)
-		{	$Cmd += " -listcols "
-			$Result = Invoke-A9CLICommand -cmds  $Cmd
-			return $Result
-		}
-	if($Showcols)	{	$Cmd += " -showcols $Showcols "}
-	if($Detailed)	{	$Cmd += " -d " 		}
-	if($Log)		{	$Cmd += " -log "	}
-	if($Inventory)	{	$Cmd += " -i "		}
-	if($Svc)		{	$Cmd += " -svc "	}
-	if($Node_ID)	{	$Cmd += " $Node_ID "}
-	$Cmd
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-}
-End
-{	if($Result.count -gt 1)
-		{	if($Detailed)	
-					{	Return  $Result		}
-			else	{	$tempFile = [IO.Path]::GetTempFileName()
-						$LastItem = $Result.Count   
-						foreach ($S in  $Result[0..$LastItem] )
-							{	$s= [regex]::Replace($s,"^ ","")			
-								$s= [regex]::Replace($s,"^ ","")
-								$s= [regex]::Replace($s,"^ ","")			
-								$s= [regex]::Replace($s,"^ ","")		
-								$s= [regex]::Replace($s," +",",")			
-								$s= [regex]::Replace($s,"-","")			
-								$s= $s.Trim()
-								if($Log)	{	$temp1 = $s -replace 'Time','Date,Time,Zone'			
-												$s = $temp1
-											}
-								Add-Content -Path $tempfile -Value $s				
-							}
-						$Result = Import-Csv $tempFile 
-						Remove-Item $tempFile
-					}
-		}
-	Return  $Result
-}
-}
-
-Function Show-A9EEProm
-{
-<#
-.SYNOPSIS
-	Show node EEPROM information.
-.DESCRIPTION
-	The command displays node EEPROM log information.
-.PARAMETER Dead
-	Specifies that an EEPROM log for a node that has not started or successfully joined the cluster be displayed. If this option is used, it must be followed by a non empty list of nodes.
-.PARAMETER Node_ID
-	Specifies the node ID for which EEPROM log information is retrieved. Multiple node IDs are separated with a single space (0 1 2). 
-	If no specifiers are used, the EEPROM log for all nodes is displayed.
-.EXAMPLE
-	The following example displays the EEPROM log for all nodes:
-	PS:> Show-A9EEProm
-.EXAMPLE
-	PS:> Show-A9EEProm -Node_ID 0
-.EXAMPLE
-	PS:> Show-A9EEProm -Dead 
-.EXAMPLE
-	PS:> Show-A9EEProm -Dead -Node_ID 0
-.NOTES
-	This command utilizes the SSH command 'ShowEeprom'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Dead,
-		[Parameter()]	[String]	$Node_ID
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$Cmd = " showeeprom "
-	if($Dead)	{	$Cmd += " -dead "}
-	if($Node_ID)	{	$Cmd += " $Node_ID "}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Get-A9SystemInformation
-{
-<#
-.SYNOPSIS
-    Command displays the Storage system information. 
-.DESCRIPTION
-    Command displays the Storage system information.
+.PARAMETER ShowBatteryInfo
+	Show Battery specific information
+.PARAMETER ShowFirmwareDBInfo
+	Show Firmware Database specific information
+.PARAMETER ShowEnviornmentalInfo
+	The ShowEnviornmentalInfo parameter displays the node operating environment status, including voltages and temperatures.
+.PARAMETER ShowSysMgrInfo
+	Show System Manager Information, specifically Locks
+.PARAMETER ShowSystemResourceInfo
+	Show the effects of the System Resource info
+.PARAMETER ShowNetworkInfo
+	The ShowNetworkInfo parameter displays the configuration and status of the administration network interfaces, including the configured gateway and network time protocol (NTP) server.
+.PARAMETER ShowResourceInfo
+	The ShowResourceInfo will return the system Table of Contents (TOC) summary.
+.PARAMETER ShowNodeInfo
 .EXAMPLE
     PS:> Get-A9SystemInformation 
 
 	Command displays the Storage system information.such as system name, model, serial number, and system capacity information.
 .EXAMPLE
-    PS:> Get-A9SystemInformation -Option space
+    PS:> Get-A9SystemInfo -Option space
 
 	Lists Storage system space information in MB(1024^2 bytes).PARAMETER Option
 	space 
@@ -760,53 +671,176 @@ Function Get-A9SystemInformation
 	
     date	
 	command displays the date and time for each system node
+.EXAMPLE
+	PS:> Get-A9SystemInfo -showFirmwareDBInfo
+.EXAMPLE
+	PS:> Get-A9SystemInfo -showBatteryInfo
 .NOTES
 	This command utilizes the SSH command 'ShowSys'
+	This command utilizes the SSH command 'ShowBattery'
+	This command utilizes the SSH command 'ShowFirmwareDB'
+	This command utilizes the SSH command 'ShowNodeEV'
+	This command utilizes the SSH command 'ShowNet'
+	This command utilizes the SSH command 'ShowToC'
+	This command utilizes the SSH command 'ShowNode'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	
+param(	[Parameter(Mandatory, ParameterSetName='Battery')]		[Switch]	$ShowBatteryInfo,
+		[Parameter(Mandatory, ParameterSetName='Firmware')]		[switch]	$ShowFirmwareDBInfo,
+		[Parameter(Mandatory, ParameterSetName='Enviromental')]	[Switch]	$ShowEnviornmentalInfo,
+		[Parameter(Mandatory, ParameterSetName='Locks')]		[Switch]	$ShowSysMgrInfo,
+		[Parameter(Mandatory, ParameterSetName='Network')]		[Switch]	$ShowNetworkInfo,
+		[Parameter(Mandatory, ParameterSetName='Resource')]		[Switch]	$ShowResourceInfo,
+		[Parameter(Mandatory, ParameterSetName='Node')]			[Switch]	$ShowNodeInfo,
+		[Parameter(ParameterSetName='Info')]	
 		[ValidateSet("d","param","fan","space","vvspace","domainspace","desc","devtype","date")]
-						[String]	$Option
+																[String]	$Option,
+		[Parameter(ParameterSetName='Network')]											
+		[Parameter(ParameterSetName='Battery')]					[switch]	$Detailed,
+		[Parameter(ParameterSetName='Battery')]					[switch]	$Log,
+		[Parameter(ParameterSetName='Battery')]					[switch]	$Inventory,
+		[Parameter(ParameterSetName='Battery')]					[switch]	$Svc,
+		[Parameter(ParameterSetName='Enviromental')]
+		[Parameter(ParameterSetName='Battery')]					[String]	$Node_ID,
+		[Parameter(ParameterSetName='Firmware')]				[String]	$VendorName,
+		[Parameter(ParameterSetName='Firmware')]				[switch]	$All
+		
 	)	
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }	
 process
-{	$sysinfocmd = "showsys "
-	$Option = $Option.toLower()
-	if ($Option)
-		{	$sysinfocmd+=" -$option "
-			if($Option -eq "date")
-				{	write-verbose "Executing the following SSH command `n`t $cmd"
-					$Result = Invoke-A9CLICommand -cmds  "showdate"
-					write-verbose "Get system date information " 
-					write-verbose "Get system fan information cmd -> showdate " 
-					$tempFile = [IO.Path]::GetTempFileName()
-					Add-Content -Path $tempFile -Value "Node,Date"
-					foreach ($s in  $Result[1..$Result.Count] )
-						{	$splits = $s.split(" ")
-							$var1 = $splits[0].trim()
-							$var2 = ""
-							foreach ($t in $splits[1..$splits.Count])
-								{	if(-not $t)	{	continue	}	
-									$var2 += $t+" "	
-								}
-							$var3 = $var1+","+$var2
-							Add-Content -Path $tempFile -Value $var3
-						}
-					$Result = Import-Csv $tempFile
-					Remove-Item $tempFile
-				}	
-			else
-				{	write-verbose "Executing the following SSH command `n`t $cmd"
-					$Result = Invoke-A9CLICommand -cmds  $sysinfocmd
-				}
+{	switch($PSCmdlet.ParameterSetName)
+		{	"Info"	
+					{	$sysinfocmd = "showsys "
+						if ($Option)
+							{	$sysinfocmd+=" -$option "
+								if($Option -eq "date")
+									{	$Result = Invoke-A9CLICommand -cmds "showdate"
+										write-verbose "Get system date information " 
+										write-verbose "Get system fan information cmd -> showdate " 
+										$tempFile = [IO.Path]::GetTempFileName()
+										Add-Content -Path $tempFile -Value "Node,Date"
+										foreach ($s in  $Result[1..$Result.Count] )
+											{	$splits = $s.split(" ")
+												$var1 = $splits[0].trim()
+												$var2 = ""
+												foreach ($t in $splits[1..$splits.Count])
+													{	if(-not $t)	{	continue	}	
+														$var2 += $t+" "	
+													}
+												$var3 = $var1+","+$var2
+												Add-Content -Path $tempFile -Value $var3
+											}
+										$Result = Import-Csv $tempFile
+										Remove-Item $tempFile
+									}	
+								else{	$Result = Invoke-A9CLICommand -cmds  $sysinfocmd
+									}
+							}
+						else{	$Result = Invoke-A9CLICommand -cmds  $sysinfocmd 
+							}	
+					}
+			"Battery"
+					{	$Cmd = " showbattery "
+						if ( $Detailed )	{	$Cmd += " -d "		}
+						if ( $log )			{	$Cmd += " -log " 	}
+						if ( $inventory )	{	$Cmd += " -i " 		}
+						if ( $svc )			{	$Cmd += " -svc " 	}
+						write-verbose "Executing the following SSH command `n`t $cmd"
+						$Result = Invoke-A9CLICommand -cmds  $Cmd
+						if($Result.count -gt 1)
+							{	if($Detailed)	
+										{	Return  $Result		}
+								else	{	$tempFile = [IO.Path]::GetTempFileName()
+											$LastItem = $Result.Count   
+											foreach ($S in  $Result[0..$LastItem] )
+												{	$s= [regex]::Replace($s,"^ ","")			
+													$s= [regex]::Replace($s,"^ ","")
+													$s= [regex]::Replace($s,"^ ","")			
+													$s= [regex]::Replace($s,"^ ","")		
+													$s= [regex]::Replace($s," +",",")			
+													$s= [regex]::Replace($s,"-","")			
+													$s= $s.Trim()
+													if($Log)	{	$temp1 = $s -replace 'Time','Date,Time,Zone'			
+																	$s = $temp1
+																}
+													Add-Content -Path $tempfile -Value $s				
+												}
+											$Result = Import-Csv $tempFile 
+											Remove-Item $tempFile
+										}
+							}
+					}
+			"Firmware"
+					{	$Cmd = " showfirmwaredb "
+						if($VendorName)	{	$Cmd += " -n $VendorName "}
+						if($All)		{	$Cmd += " -all " }
+						write-verbose "Executing the following SSH command `n`t $cmd"
+						$Result = Invoke-A9CLICommand -cmds  $Cmd
+					}
+			'Enviormental'
+					{	$Cmd = " shownodeenv "
+						if ( $PersistArrayType -eq 'AlletraMP-B10000')
+							{	write-host "This command is not supported on the HPE Alletra MP B10000 type array"	
+								return
+							}
+						if($Node_ID)	{	$Cmd += " -n $Node_ID "} 
+						$Result = Invoke-A9CLICommand -cmds  $Cmd	
+					}
+			'Locks'	
+					{	$Cmd = " showsysmgr "
+						$Cmd1 += " -d "	
+						$Cmd2 += " -l "
+						$Cmd = $Cmd1 + ' ; ' + $Cmd2
+						$Result1 = Invoke-A9CLICommand -cmds  $Cmd1
+						$Result2 = Invoke-A9CLICommand -cmds  $Cmd2
+						$Result=$Result1 + $Result2
+						Return $Result
+					}
+			'Network'
+					{	$Cmd = " shownet "
+						if($Detailed)	{	$Cmd += " -d "}
+						$Result = Invoke-A9CLICommand -cmds  $Cmd
+					}
+			'Resource'
+					{	$Cmd = " showtoc "
+						$Result = Invoke-A9CLICommand -cmds  $Cmd
+					}
+			'Node'	
+					{	$Cmd = " shownode "
+						write-verbose "Executing the following SSH command `n`t $cmd"
+						$Result = Invoke-A9CLICommand -cmds  $Cmd
+						if($Result.count -gt 1)
+							{	$tempFile = [IO.Path]::GetTempFileName()
+								$LastItem = $Result.Count -1  
+								$incre = "True"
+								foreach ($s in  $Result[0..$LastItem] )
+									{	$s= [regex]::Replace($s,"^ ","")
+										$s= [regex]::Replace($s,"^ ","")
+										$s= [regex]::Replace($s,"^ ","")		
+										$s= [regex]::Replace($s," +",",")		
+										$s= [regex]::Replace($s,"-","")		
+										$s= $s.Trim()		
+										if($incre -eq "True")
+											{	$sTemp1=$s				
+												$sTemp = $sTemp1.Split(',')							
+												$newTemp= [regex]::Replace($sTemp,"^ ","")			
+												$newTemp= [regex]::Replace($sTemp," ",",")				
+												$newTemp= $newTemp.Trim()
+												$s=$newTemp
+											}
+										Add-Content -Path $tempfile -Value $s
+										$incre = "False"		
+									}
+								$Result = Import-Csv $tempFile 
+								remove-item $tempFile	
+							}
+						if($Result.count -gt 1)	{	write-host " Success : Executing Get-Node" -ForegroundColor green }
+					}
 		}
-	else
-		{	write-verbose "Executing the following SSH command `n`t $cmd"
-			$Result = Invoke-A9CLICommand -cmds  $sysinfocmd 
-		}
+	write-verbose "Executing the following SSH command `n`t $cmd"
 	return $Result		
 }
 }
@@ -874,185 +908,8 @@ Process
 }
 }
 
-Function Show-A9Firmwaredb
-{
-<#
-.SYNOPSIS
-	Show database of current firmware levels.
-.DESCRIPTION
-	Displays the current database of firmware levels for possible upgrade. If issued without any options, the firmware for all vendors is displayed.
-.PARAMETER VendorName
-	Specifies that the firmware vendor from the SCSI database file is displayed.
-.PARAMETER Load
-	Reloads the SCSI database file into the system.
-.PARAMETER All
-	Specifies current and past firmware entries are displayed. If not specified, only current entries are displayed.
-.EXAMPLE
-	PS:> Show-A9Firmwaredb
-.EXAMPLE
-	PS:> Show-A9Firmwaredb -VendorName xxx
-.EXAMPLE
-	PS:> Show-A9Firmwaredb -All
-.EXAMPLE
-	PS:> Show-A9Firmwaredb -Load
-.NOTES
-	This command utilizes the SSH command 'ShowFirmwareDB'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$VendorName,
-		[Parameter()]	[switch]	$Load,
-		[Parameter()]	[switch]	$All	
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$Cmd = " showfirmwaredb "
-	if($VendorName)	{	$Cmd += " -n $VendorName "}
-	if($Load)		{	$Cmd += " -l "	}
-	if($All)		{	$Cmd += " -all " }
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
 
-Function Show-A9iSCSISessionStatistics
-{
-<#
-.SYNOPSIS  
-	The Show-iSCSISessionStatistics command displays the iSCSI session statistics.
-.DESCRIPTION  
-	The Show-iSCSISessionStatistics command displays the iSCSI session statistics.
-.PARAMETER Iterations 
-	The command stops after a user-defined <number> of iterations.
-.PARAMETER Delay
-	Looping delay in seconds <secs>. The default is 2.
-.PARAMETER NodeList
-	List of nodes for which the ports are included.
-.PARAMETER SlotList
-	List of PCI slots for which the ports are included.
-.PARAMETER PortList
-	List of ports for which the ports are included. Lists are specified
-	in a comma-separated manner such as: -ports 1,2 or -ports 1.
-.PARAMETER Previous
-	Shows the differences from the previous sample.
-.PARAMETER Begin
-	Shows the values from when the system was last initiated.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -Delay 2
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -NodeList 1
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -SlotList 1
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -PortList 1
-.EXAMPLE
-	PS:> Show-A9iSCSISessionStatistics -Iterations 1 -Prev
-.NOTES
-	This command utilizes the SSH command 'StaticSCSISession'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$Iterations,
-		[Parameter()]	[String]	$Delay,		
-		[Parameter()]	[String]	$NodeList,
-		[Parameter()]	[String]	$SlotList,
-		[Parameter()]	[String]	$PortList,		
-		[Parameter()]	[Switch]	$Previous,	
-		[Parameter()]	[Switch]	$Begin,
-		[parameter()]	[switch]	$ShowRaw
-)	
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}	
-process
-{	$cmd= "statiscsisession "	
-	if($Iterations)	{	$cmd+=" -iter $Iterations "	}
-	if($Delay)		{	$cmd+=" -d $Delay "	}	
-	if($NodeList)	{	$cmd+=" -nodes $NodeList "	}
-	if($SlotList)	{	$cmd+=" -slots $SlotList "	}
-	if($PortList)	{	$cmd+=" -ports $PortList "	}	
-	if($Previous)	{	$cmd+=" -prev "	}
-	if($Begin)		{	$cmd+=" -begin "	}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	if ($ShowRaw) { return $Result }
-	if($Result -match "Total" -and $Result.Count -gt 5)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count - 3 
-			$Flag = "False"
-			$Loop_Cnt = 2	
-			foreach ($s in  $Result[$Loop_Cnt..$LastItem] )
-				{	if($Flag -eq "true")
-						{	if(($s -match "statiscsisession") -or ($s -match "----PDUs/s---- --KBytes/s--- ----Errs/s----") -or ($s -match " port -------------iSCSI_Name-------------- TPGT Cmd Resp Total  Tx  Rx Total Digest TimeOut VLAN") -or ($s -match " port -iSCSI_Name- TPGT Cmd Resp Total  Tx  Rx Total Digest TimeOut VLAN"))
-								{	if(($s -match " port -------------iSCSI_Name-------------- TPGT Cmd Resp Total  Tx  Rx Total Digest TimeOut VLAN") -or ($s -match " port -iSCSI_Name- TPGT Cmd Resp Total  Tx  Rx Total Digest TimeOut VLAN"))
-										{	$temp="=============================="
-											Add-Content -Path $tempFile -Value $temp
-										}
-								}
-							else
-								{	$s= [regex]::Replace($s,"^ ","")			
-									$s= [regex]::Replace($s," +",",")	
-									$s= [regex]::Replace($s,"-","")
-									$s= $s.Trim()					
-									if($s.length -ne 0)
-										{	$sTemp1=$s				
-											$sTemp = $sTemp1.Split(',')							
-											$cnt = $sTemp.count			
-											if($cnt -gt 8)
-											{	$sTemp[5]="Total(PDUs/s)"				
-												$sTemp[8]="Total(KBytes/s)"
-											}
-											$newTemp= [regex]::Replace($sTemp,"^ ","")			
-											$newTemp= [regex]::Replace($sTemp," ",",")				
-											$newTemp= $newTemp.Trim()
-											$s=$newTemp
-										}					
-									Add-Content -Path $tempFile -Value $s	
-								}
-						}
-					else
-						{	$s= [regex]::Replace($s,"^ ","")			
-							$s= [regex]::Replace($s," +",",")	
-							$s= [regex]::Replace($s,"-","")
-							$s= $s.Trim()				
-							$sTemp1=$s				
-							$sTemp = $sTemp1.Split(',')							
-							$cnt = $sTemp.count			
-							if($cnt -gt 8)
-								{	$sTemp[5]="Total(PDUs/s)"				
-									$sTemp[8]="Total(KBytes/s)"
-								}
-							$newTemp= [regex]::Replace($sTemp,"^ ","")			
-							$newTemp= [regex]::Replace($sTemp," ",",")				
-							$newTemp= $newTemp.Trim()
-							$s=$newTemp							
-							Add-Content -Path $tempFile -Value $s	
-						}
-					$Flag = "true"			
-				}
-			Import-Csv $tempFile 
-			remove-item $tempFile
-		}
-	if($Result -match "Total" -and $Result.Count -gt 5)
-		{	return  " Success : Executing Show-iSCSISessionStatistics"
-		}
-	else
-	{	if($Result.Count -lt 5)		{	return  $Result	}
-		else						{	return  "No Data Found while Executing Show-iSCSISessionStatistics"	}
-	}	
-}
-}
-
-Function Show-A9iSCSIStatistics
+Function Get-A9iSCSIStats
 {
 <#
 .SYNOPSIS  
@@ -1064,50 +921,46 @@ Function Show-A9iSCSIStatistics
 .PARAMETER Delay
 	Looping delay in seconds <secs>. The default is 2.
 .PARAMETER NodeList
-	List of nodes for which the ports are included.
+	List of nodes for which the stats are included.
 .PARAMETER SlotList
-		List of PCI slots for which the ports are included.
+	List of PCI slots for which the stats are included.
 .PARAMETER PortList
-		List of ports for which the ports are included. Lists are specified
-        in a comma-separated manner such as: -ports 1,2 or -ports 1.
+	List of ports for which the stats are included. Lists are specified in a comma-separated manner such as: -ports 1,2 or -ports 1.
 .PARAMETER Fullcounts
-		Shows the values for the full list of counters instead of the default
-        packets and KBytes for the specified protocols. The values are shown in
-        three columns:
+	Shows the values for the full list of counters instead of the default packets and KBytes for the specified protocols. 
+	The values are shown in three columns:
 		o Current   - Counts since the last sample.
         o CmdStart  - Counts since the start of the command.
         o Begin     - Counts since the port was reset.
-        This option cannot be used with the -prot option. If the -fullcounts
-        option is not specified, the metrics from the start of the command are
-        displayed.
+	This option cannot be used with the -prot option. If the -fullcounts option is not specified, the metrics from the start of the command are displayed.
 .PARAMETER Prev
 	Shows the differences from the previous sample.
 .PARAMETER Begin
 	Shows the values from when the system was last initiated.
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics
+	PS:> Get-A9iSCSIStats
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1
+	PS:> Get-A9iSCSIStats -Iterations 1
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -Delay 2
+	PS:> Get-A9iSCSIStats -Iterations 1 -Delay 2
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -NodeList 1
+	PS:> Get-A9iSCSIStats -Iterations 1 -NodeList 1
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -SlotList 1
+	PS:> Get-A9iSCSIStats -Iterations 1 -SlotList 1
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -PortList 1
+	PS:> Get-A9iSCSIStats -Iterations 1 -PortList 1
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -Fullcounts
+	PS:> Get-A9iSCSIStats -Iterations 1 -Fullcounts
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -Prev
+	PS:> Get-A9iSCSIStats -Iterations 1 -Prev
 .EXAMPLE
-	PS:> Show-A9iSCSIStatistics -Iterations 1 -Begin
+	PS:> Get-A9iSCSIStats -Iterations 1 -Begin
 .NOTES
 	This command utilizes the SSH command 'StatiSCSI'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(mandatory)]	[String]	$Iterations,
+param(	[Parameter()]	[String]	$Iterations,
 		[Parameter()]	[String]	$Delay,		
 		[Parameter()]	[String]	$NodeList,
 		[Parameter()]	[String]	$SlotList,
@@ -1121,7 +974,8 @@ Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }		
 process	
-{	$cmd= " statiscsi -dd -iter $Iterations "	
+{	if ($Iterations){	$cmd= " statiscsi -dd -iter $Iterations "	}
+	else 			{	$cmd= " statiscsi -dd -iter 1 "	}
 	if($Delay)		{	$cmd+=" -d $Delay "	}	
 	if($NodeList)	{	$cmd+=" -nodes $NodeList "	}
 	if($SlotList)	{	$cmd+=" -slots $SlotList "	}
@@ -1131,7 +985,7 @@ process
 	if($Begin)		{	$cmd+=" -begin "	}	
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $cmd
-	write-verbose "  Executing  Show-iSCSIStatistics command that displays information iSNS table for iSCSI ports in the system  " 	
+	write-verbose "  Executing Get-A9iSCSIStats command that displays information iSNS table for iSCSI ports in the system  " 	
 	if ( $ShowRaw )	{ return $result }
 	if($Result -match "Total" -or $Result.Count -gt 1)
 		{	$tempFile = [IO.Path]::GetTempFileName()
@@ -1170,82 +1024,13 @@ process
 						}
 					$Flag = "true"			
 				}
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			remove-item $tempFile
 		}
-	else	{	return  $Result	}
+	return  $Result	
 } 
 }
 
-Function Show-A9NetworkDetail
-{
-<#
-.SYNOPSIS
-	Show the network configuration and status
-.DESCRIPTION
-	The command displays the configuration and status of the administration network interfaces, including the configured gateway and network time protocol (NTP) server.
-.PARAMETER Detailed
-	Show detailed information.
-.EXAMPLE 
-	The following example displays the status of the system administration network interfaces:
-	PS:> Show-A9NetworkDetail -D
-.NOTES
-	This command utilizes the SSH command 'ShowNet'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Detailed
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$Cmd = " shownet "
-	if($Detailed)	{	$Cmd += " -d "}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Show-A9NodeEnvironmentStatus
-{
-<#
-.SYNOPSIS
-	Show node environmental status (voltages, temperatures).
-.DESCRIPTION
-	The command displays the node operating environment status, including voltages and temperatures.
-.PARAMETER Node_ID
-	Specifies the ID of the node whose environment status is displayed. Multiple node IDs can be specified as a series of integers separated by
-	a space (1 2 3). If no option is used, then the environment status of all nodes is displayed.
-.EXAMPLE
-	The following example displays the operating environment status for all nodes
-	in the system:
-
-	PS:> Show-A9NodeEnvironmentStatus
-.NOTES
-	This command utilizes the SSH command 'ShowNodeEV'
-	This command requires a SSH type connection.
-	This command is not valid for HPE Alletra MP B10K type devices
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$Node_ID
-	)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$Cmd = " shownodeenv "
-if ( $PersistArrayType -eq 'AlletraMP-B10000')
-		{	write-host "This command is not supported on the HPE Alletra MP B10000 type array"	
-			return
-		}
-	if($Node_ID)	{	$Cmd += " -n $Node_ID "} 
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
 
 Function Show-A9iSCSISession
 {
@@ -1316,175 +1101,6 @@ process
 		}
 	else{	return  $Result	}	
 }
-}
-
-Function Show-A9NodeProperties
-{
-<#
-.SYNOPSIS
-	Show node and its component information.
-.DESCRIPTION
-	The command displays an overview of the node-specific properties and its component information. Various command options can be used to
-	display the properties of PCI cards, CPUs, Physical Memory, IDE drives, and Power Supplies.
-.PARAMETER Listcols
-	List the columns available to be shown with the -showcols option described below (see 'clihelp -col Show-NodeProperties' for help on each column).
-	By default (if none of the information selection options below are specified) the following columns are shown:
-	Node Name State Master InCluster LED Control_Mem Data_Mem Available_Cache To display columns pertaining to a specific node component use
-	the -listcols option in conjunction with one of the following options: -pci, -cpu, -mem, -drive, -fan, -ps, -mcu, -uptime.
-.PARAMETER Showcols
-	Explicitly select the columns to be shown using a comma-separated list of column names.  For this option, the full column names are shown in the header.
-	Run 'shownode -listcols' to list Node component columns.
-	Run 'shownode -listcols <node_component>' to list columns associated with a specific <node_component>.
-
-	<node_component> can be one of the following options: -pci, -cpu, -mem, -drive, -fan, -ps, -mcu, -uptime.
-
-	If a specific node component option is not provided, then -showcols expects Node columns as input.
-
-	If a column (Node or specific node component) does not match either the Node columns list or a specific node component columns list, then
-	'shownode -showcols <cols>' request is denied.
-
-	If an invalid column is provided with -showcols, the request is denied.
-
-	The -showcols option can also be used in conjunction with a list of node IDs.
-
-	Run 'clihelp -col shownode' for a description of each column.
-.PARAMETER I
-	Shows node inventory information in table format.
-.PARAMETER D
-	Shows node and its component information in table format.
-	The following options are for node component information. These options cannot be used together with options, -i and -d:
-.PARAMETER VerboseD
-	Displays detailed information in verbose format. It can be used together with the following component options.
-.PARAMETER Fan
-	Displays the node fan information.
-.PARAMETER Pci
-	Displays PCI card information
-.PARAMETER Cpu
-	Displays CPU information
-.PARAMETER Mem
-	Displays physical memory information.
-.PARAMETER Drive
-	Displays the disk drive information.
-.PARAMETER Ps
-	Displays power supply information.
-.PARAMETER Mcu
-	Displays MicroController Unit information.
-.PARAMETER State
-	Displays the detailed state information for node or power supply (-ps). This is the same as -s.
-.PARAMETER S
-	Displays the detailed state information for node or power supply (-ps). This option is deprecated and will be removed in a subsequent release.
-.PARAMETER Uptime
-	Show the amount of time each node has been running since the last shutdown.
-.PARAMETER Svc
-	Displays inventory information with HPE serial number, spare part etc. This option must be used with -i option and it is not supported on HPE 3PAR 10000 systems
-.PARAMETER Node_ID
-	Displays the node information for the specified node ID(s). This specifier is not required. Node_ID is an integer from 0 through 7.
-.EXAMPLE
-	The following example displays the operating environment status for all
-	nodes in the system:
-	
-	PS:> Show-A9NodeProperties
-.EXAMPLE
-	The following examples display detailed information (-d option) for the nodes including their components in a table format. The shownode -d command
-	can be used to display the tail information of the nodes including their components in name and value pairs.
-
-	PS:> Show-A9NodeProperties - Mem
-	PS:> Show-A9NodeProperties - Mem -Node_ID 1	
-    
-	The following options are for node summary and inventory information:
-.NOTES
-	This command utilizes the SSH command 'ShowNode'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Listcols,
-		[Parameter()]	[String]	$Showcols,
-		[Parameter()]	[switch]	$I,
-		[Parameter()]	[switch]	$D,
-		[Parameter()]	[switch]	$VerboseD,
-		[Parameter()]	[switch]	$Fan,
-		[Parameter()]	[switch]	$Pci,
-		[Parameter()]	[switch]	$Cpu,
-		[Parameter()]	[switch]	$Mem,
-		[Parameter()]	[switch]	$Drive,
-		[Parameter()]	[switch]	$Ps,
-		[Parameter()]	[switch]	$Mcu,
-		[Parameter()]	[switch]	$State,
-		[Parameter()]	[switch]	$Uptime,
-		[Parameter()]	[switch]	$Svc,
-		[Parameter()]	[String]	$Node_ID
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{ 	$Cmd = " shownode "
-	if($Listcols)
-		{	$Cmd += " -listcols "
-			write-verbose "Executing the following SSH command `n`t $cmd"
-			$Result = Invoke-A9CLICommand -cmds  $Cmd
-			return $Result
-		}
-	if($Showcols)	{	$Cmd += " -showcols $Showcols " }
-	if($I)			{	$Cmd += " -i " }
-	if($D) 			{	$Cmd += " -d " }
-	if($VerboseD)	{	$Cmd += " -verbose " }
-	if($Fan) 		{	$Cmd += " -fan " }
-	if($Pci)		{	$Cmd += " -pci " }
-	if($Cpu) 		{	$Cmd += " -cpu " }
-	if($Mem)		{	$Cmd += " -mem " }
-	if($Drive)		{	$Cmd += " -drive " }
-	if($Ps)			{	$Cmd += " -ps " }
-	if($Mcu)		{	$Cmd += " -mcu " }
-	if($State)		{	$Cmd += " -state " }
-	if($Uptime)		{	$Cmd += " -uptime " }
-	if($Svc) 		{	$Cmd += " -svc " }
-	if($Node_ID)	{	$Cmd += " $Node_ID " }
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1)
-		{	if($I -Or $D -Or $VerboseD)	{	Return  $Result	}
-			else{	$tempFile = [IO.Path]::GetTempFileName()
-					$LastItem = $Result.Count
-					$FirstCount = 0
-					$oneTimeOnly = "True"
-					if($Cmd -eq " shownode " -Or $Node_ID)	{	$FirstCount = 1	}
-					if($Node_ID -and $Showcols)				{	$FirstCount = 0	}
-					if($Showcols -or $Fan -or $Pci -or $Cpu -Or $Drive -Or $Mem -Or $Mcu -Or $Ps -Or $State -Or $Uptime -Or $Svc)
-						{	$FirstCount = 0
-						}
-					foreach ($S in  $Result[$FirstCount..$LastItem] )
-						{	$s= [regex]::Replace($s,"^ ","")			
-							$s= [regex]::Replace($s,"^ ","")
-							$s= [regex]::Replace($s,"^ ","")			
-							$s= [regex]::Replace($s,"^ ","")		
-							$s= [regex]::Replace($s," +",",")			
-							$s= [regex]::Replace($s,"-","")			
-							$s= $s.Trim()
-							if($Cmd -eq " shownode "  -Or $Node_ID)
-								{	if(-not ($Showcols -or $Fan -or $Pci -or $Cpu -Or $Drive -Or $Mem -Or $Mcu -Or $Ps -Or $State -Or $Uptime -Or $Svc) )
-										{	if($oneTimeOnly -eq "True")
-												{	$sTemp1=$s				
-													$sTemp = $sTemp1.Split(',')							
-													$sTemp[6] = "Control_Mem(MB)"
-													$sTemp[7] = "Data_Mem(MB)"
-													$sTemp[8] = "Cache_Available(%)"			
-													$newTemp= [regex]::Replace($sTemp,"^ ","")			
-													$newTemp= [regex]::Replace($sTemp," ",",")				
-													$newTemp= $newTemp.Trim()
-													$s=$newTemp			
-												}
-										}
-								}
-							Add-Content -Path $tempfile -Value $s
-							$oneTimeOnly = "False"				
-						}
-					Import-Csv $tempFile 
-					remove-item $tempFile
-				}	
-		}
-	else{	Return  $Result	}
-} 
 }
 
 Function Show-A9Portdevices_CLI
@@ -1659,102 +1275,6 @@ process
 }	
 } 
 
-Function Get-A9SystemManager
-{
-<#
-.SYNOPSIS
-	Show system manager startup state.
-.DESCRIPTION
-	The displays startup state information about the system manager.
-.PARAMETER Detailed
-	Shows additional detailed information if available.
-.PARAMETER Locks
-	Shows field service diagnostics for System Manager specific Config Locks and MCALLs, and system-wide ioctl system calls.
-.EXAMPLE 
-	PS:> Show-A9SystemManager -Detailed
-
-	System is up and running from 2024-10-28 13:57:01 MDT
-.EXAMPLE
-	PS:> Show-A9SystemManager -Locks
-
-	Config lock hold PID:        0
-	Config lock hold seconds:    0
-	System Manager ioctl count:  7
-	System ioctl count:          10
-	System ioctl detail counts:
-		-All ioctl Count- ------------------Barrier ioctl Counts-------------------
-	Node             Total Not Defined System Manager TOC Server PD Scrub DAR Server
-		0                 3           0              0          0        0          0
-		1                 1           0              0          0        0          0
-		2                 3           0              0          0        0          0
-		3                 3           0              0          0        0          0
-	----------------------------------------------------------------------------------
-	Totals                10           0              0          0        0          0
-	System ioctl detail:
-	Node Sec Outstanding     PID Source PID Source Node Type      Number Name
-	0               0 8401245         na          na NA      c056141d VVCMD_GET_NEXT_DDS_REQ
-	0               0 8399248         na          na NA      c056141e VVCMD_GET_NEXT_DDS_REP
-	0               0 8401453       7627           1 Sys Mgr c0561462 SCCMD_GETINFO_IOCTL
-	1               0 8390406       7627           1 Sys Mgr c0561462 SCCMD_GETINFO_IOCTL
-	2               0 8399235         na          na NA      c056141e VVCMD_GET_NEXT_DDS_REP
-	2               0 8389784         na          na NA      c056141d VVCMD_GET_NEXT_DDS_REQ
-	2               0 8389780       7627           1 Sys Mgr c0561462 SCCMD_GETINFO_IOCTL
-	3               0 8389846         na          na NA      c056141d VVCMD_GET_NEXT_DDS_REQ
-	3               0 8401202         na          na NA      c056141e VVCMD_GET_NEXT_DDS_REP
-	3               0 8401403       7627           1 Sys Mgr c0561462 SCCMD_GETINFO_IOCTL
-	-------------------------------------------------------------------------------------------
-	10 Total Count
-	System Manager mcall count:  2
-	System Manager mcall detail:
-		PID mSec Outstanding Name
-	2533668                0 MC_LOCKINFO
-	------------------------------------
-		1 Total Count
-.NOTES
-	This command utilizes the SSH command 'showsysmgr'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Detailed,
-		[Parameter()]	[switch]	$Locks
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$Cmd = " showsysmgr "
-	if($Detailed)	{	$Cmd += " -d "	}
-	if($Locks)		{	$Cmd += " -l "}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Show-A9SystemResourcesSummary
-{
-<#
-.SYNOPSIS
-	Show system Table of Contents (TOC) summary.
-.DESCRIPTION
-	The command displays the system table of contents summary that provides a summary of the system's resources.
-.NOTES
-	This command utilizes the SSH command 'ShowTOC'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param()
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$Cmd = " showtoc "
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-} 
-
 Function Start-A9NodeRescue
 {
 <#
@@ -1893,77 +1413,6 @@ process
 	return $Result	
 }
 }
-
-Function Get-A9Node
-{
-<#
-.SYNOPSIS
-	Show node and its component information.
-.DESCRIPTION
-	The command displays an overview of the node-specific properties
-	and its component information. 
-.EXAMPLE
-	PS:> Get-A9node
-	Success : Executing Get-Node
-
-	Node      : 0
-	Name      : CZ2410007D0
-	Encl:Bay  : 1:1
-	Master    : Yes
-	InCluster : Yes
-	Mem(MiB)  : 515537
-	Up_Since  : 20250819
-
-	Node      : 1
-	Name      : CZ2410007D1
-	Encl:Bay  : 1:2
-	Master    : No
-	InCluster : Yes
-	Mem(MiB)  : 515537
-	Up_Since  : 20250819
-.NOTES
-	This command utilizes the SSH command 'ShowNode'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$Cmd = " shownode "
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count -1  
-			$incre = "True"
-			foreach ($s in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")
-					$s= [regex]::Replace($s,"^ ","")
-					$s= [regex]::Replace($s,"^ ","")		
-					$s= [regex]::Replace($s," +",",")		
-					$s= [regex]::Replace($s,"-","")		
-					$s= $s.Trim()		
-					if($incre -eq "True")
-						{	$sTemp1=$s				
-							$sTemp = $sTemp1.Split(',')							
-							$newTemp= [regex]::Replace($sTemp,"^ ","")			
-							$newTemp= [regex]::Replace($sTemp," ",",")				
-							$newTemp= $newTemp.Trim()
-							$s=$newTemp
-						}
-					Add-Content -Path $tempfile -Value $s
-					$incre = "False"		
-				}
-			$Result = Import-Csv $tempFile 
-			remove-item $tempFile	
-		}
-	if($Result.count -gt 1)	{	write-host " Success : Executing Get-Node" -ForegroundColor green }
-	return  $Result
-}
-}
-
 
 Function Show-A9PortARP
 {

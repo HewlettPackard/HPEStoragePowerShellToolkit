@@ -364,193 +364,12 @@ Process
 }
 }
 
-Function Start-A9RCopyGroup 
-{
-<#
-.SYNOPSIS
-	Starting a Remote Copy group.
-.DESCRIPTION
-	Starting a Remote Copy group.
-.EXAMPLE
-	PS:> Start-A9RCopyGroup -GroupName xxx
-
-	Starting a Remote Copy group.
-.EXAMPLE	
-	PS:> Start-A9RCopyGroup -GroupName xxx -TargetName xxx
-.EXAMPLE	
-	PS:> Start-A9RCopyGroup -GroupName xxx -SkipInitialSync
-.PARAMETER GroupName
-	Group Name.
-.PARAMETER SkipInitialSync
-	If true, the volume should skip the initial synchronization and sets the volumes to a synchronized state.
-	The default setting is false.
-.PARAMETER TargetName
-	The target name associated with this group.
-.PARAMETER VolumeName
-	volume name.
-.PARAMETER SnapshotName
-	Snapshot name.	
-	Note : When used, you must specify all the volumes in the group. While specifying the pair, the starting snapshot is optional.
-	When not used, the system performs a full resynchronization of the volume.
-#>
-[CmdletBinding()]
-Param(
-		[Parameter(Mandatory)]	[String]	$GroupName,	  
-		[Parameter()]			[switch]	$SkipInitialSync,
-		[Parameter()]			[String]	$TargetName,
-		[Parameter()]			[String]	$VolumeName,
-		[Parameter()]			[String]	$SnapshotName
-)
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$body = @{}
-	$ObjStartingSnapshots=@{}
-	$body["action"] = 3		
-	If ($SkipInitialSync){	$body["skipInitialSync"] = $true	    }	
-	If ($TargetName) 	{	$body["targetName"] = "$($TargetName)"}	
-	If ($VolumeName)	{	$Obj=@{}
-							$Obj["volumeName"] = "$($VolumeName)"
-							$ObjStartingSnapshots += $Obj				
-						}
-	If ($SnapshotName)	{	$Obj=@{}
-							$Obj["snapshotName"] = "$($SnapshotName)"
-							$ObjStartingSnapshots += $Obj				
-						}
-	if($ObjStartingSnapshots.Count -gt 0)	{	$body["startingSnapshots"] = $ObjStartingSnapshots 	}
-    $Result = $null	
-	$uri = "/remotecopygroups/" + $GroupName
-    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
-	if($Result.StatusCode -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result		
-		}
-	else
-		{	Write-Error "Failure:  While Starting a Remote Copy group." 
-			return $Result.StatusDescription
-		}
-}
-}
-
-Function Stop-A9RCopyGroup
-{
-<#
-.SYNOPSIS
-	Stop a Remote Copy group.
-.DESCRIPTION
-	Stop a Remote Copy group.
-.EXAMPLE
-	Stop-A9RCopyGroup -GroupName xxx
-	Stop a Remote Copy group.
-.EXAMPLE	
-	PS:> Stop-A9RCopyGroup -GroupName xxx -TargetName xxx 
-.EXAMPLE	
-	Stop-A9RCopyGroup -GroupName xxx -NoSnapshot
-.PARAMETER GroupName
-	Group Name.
-.PARAMETER NoSnapshot
-	If true, this option turns off creation of snapshots in synchronous and periodic modes, and deletes the current synchronization snapshots.
-	The default setting is false.
-.PARAMETER TargetName
-	The target name associated with this group.
-#>
-[CmdletBinding()]
-Param(
-		[Parameter(Mandatory)]	[String]	$GroupName,	  
-		[Parameter()]			[switch]	$NoSnapshot,
-		[Parameter()]			[String]	$TargetName
-)
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$body = @{}
-	$body["action"] = 4			
-	If ($NoSnapshot) 	{	$body["noSnapshot"] = $true	    }	
-	If ($TargetName) 	{	$body["targetName"] = "$($TargetName)"    }		
-    $Result = $null	
-	$uri = "/remotecopygroups/" + $GroupName
-    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
-	if($Result.StatusCode -eq 200)
-	{	write-host "Cmdlet executed successfully" -foreground green
-		return $Result				
-	}
-	else
-	{	Write-Error "Failure:  While Stopping a Remote Copy group." 
-		return $Result.StatusDescription
-	}
-}
-}
-
-Function Sync-A9RCopyGroup 
-{
-<#
-.SYNOPSIS
-	Synchronize a Remote Copy group.
-.DESCRIPTION
-	Synchronize a Remote Copy group.
-.EXAMPLE
-	PS:> Sync-A9RCopyGroup -GroupName xxx
-	
-	Synchronize a Remote Copy group.
-.EXAMPLE	
-	PS:> Sync-A9RCopyGroup -GroupName xxx -NoResyncSnapshot
-.EXAMPLE
-	PS:> Sync-A9RCopyGroup -GroupName xxx -TargetName xxx
-.EXAMPLE
-	PS:> Sync-A9RCopyGroup -GroupName xxx -TargetName xxx -NoResyncSnapshot
-.EXAMPLE
-	PS:> Sync-A9RCopyGroup -GroupName xxx -FullSync
-.EXAMPLE
-	PS:> Sync-A9RCopyGroup -GroupName xxx -TargetName xxx -NoResyncSnapshot -FullSync
-.PARAMETER GroupName
-	Group Name.
-.PARAMETER NoResyncSnapshot
-	Enables (true) or disables (false) saving the resynchronization snapshot. Applicable only to Remote Copy groups in asynchronous periodic mode.
-	Defaults to false.
-.PARAMETER TargetName
-	The target name associated with this group.
-.PARAMETER FullSync
-	Enables (true) or disables (false)forcing a full synchronization of the Remote Copy group, even if the volumes are already synchronized.
-	Applies only to volume groups in synchronous mode, and can be used to resynchronize volumes that have become inconsistent.
-	Defaults to false.
-#>
-[CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$GroupName,	  
-		[Parameter()]			[switch]	$NoResyncSnapshot,
-		[Parameter()]			[String]	$TargetName,
-		[Parameter()]			[switch]	$FullSync
-)
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$body = @{}
-	$body["action"] = 5		
-	If ($NoResyncSnapshot) 	{	$body["noResyncSnapshot"] = $true    }	
-	If ($TargetName) 		{	$body["targetName"] = "$($TargetName)" }
-	If ($FullSync) 			{	$body["fullSync"] = $true    }	
-	$Result = $null	
-	$uri = "/remotecopygroups/" + $GroupName
-	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
-	if($Result.StatusCode -eq 200)
-	{	write-host "Cmdlet executed successfully" -foreground green
-		return $Result		
-	}
-	else
-	{	Write-Error "Failure:  While Synchronizing a Remote Copy group." 
-		return $Result.StatusDescription
-	}
-}
-}
-
 ######### Update Commands
 Function Set-A9RCopyGroup
 {
 <#
 .SYNOPSIS
-	Modify a Remote Copy group
+	Modify a Remote Copy group properties, or issue commands to sync or start a copy group
 .DESCRIPTION
 	Modify a Remote Copy group.
 .PARAMETER GroupName
@@ -591,22 +410,105 @@ Function Set-A9RCopyGroup
 				 'over_per_alert','no_over_per_alert','path_management','no_path_management','mt_pp'
 .PARAMETER RemoveCPG
 	You can choose to unset the Local/Remote UserCPG or the Local/Remote SnapCPG.
+.PARAMETER NoResyncSnapshot
+	Enables (true) or disables (false) saving the resynchronization snapshot. Applicable only to Remote Copy groups in asynchronous periodic mode.
+	Defaults to false.
+.PARAMETER TargetName
+	The target name associated with this group.
+.PARAMETER FullSync
+	Enables (true) or disables (false)forcing a full synchronization of the Remote Copy group, even if the volumes are already synchronized.
+	Applies only to volume groups in synchronous mode, and can be used to resynchronize volumes that have become inconsistent.
+	Defaults to false.
+.PARAMETER NoResyncSnapshot
+	Enables (true) or disables (false) saving the resynchronization snapshot. Applicable only to Remote Copy groups in asynchronous periodic mode.
+	Defaults to false.
+.PARAMETER TargetName
+	The target name associated with this group.
+.PARAMETER FullSync
+	Enables (true) or disables (false)forcing a full synchronization of the Remote Copy group, even if the volumes are already synchronized.
+	Applies only to volume groups in synchronous mode, and can be used to resynchronize volumes that have become inconsistent.
+	Defaults to false.
+.PARAMETER NoSnapshot
+	If true, this option turns off creation of snapshots in synchronous and periodic modes, and deletes the current synchronization snapshots.
+	The default setting is false.
+.PARAMETER GroupName
+	Group Name.
+.PARAMETER SkipInitialSync
+	If true, the volume should skip the initial synchronization and sets the volumes to a synchronized state.
+	The default setting is false.
+.PARAMETER VolumeName
+	volume name.
+.PARAMETER SnapshotName
+	Snapshot name.	
+	Note : When used, you must specify all the volumes in the group. While specifying the pair, the starting snapshot is optional.
+	When not used, the system performs a full resynchronization of the volume.
+.PARAMETER SkipStart
+	If true, groups are not started after role reversal is completed. Valid for only FAILOVER, RECOVER, and RESTORE operations.
+	The default is false.
+.PARAMETER SkipSync
+	If true, the groups are not synchronized after role reversal is completed. Valid for FAILOVER, RECOVER, and RESTORE operations only.
+	The default setting is false.
+.PARAMETER DiscardNewData
+	If true and the group has multiple targets, don’t check other targets of the group to see if newer data should be pushed from them. Valid for FAILOVER operation only.
+	The default setting is false.
+.PARAMETER SkipPromote
+	If true, the snapshots of the groups that are switched from secondary to primary are not promoted to the base volume. Valid for FAILOVER and REVERSE operations only.
+	The default setting is false.
+.PARAMETER NoSnapshot
+	If true, the snapshots are not taken of the groups that are switched from secondary to primary. Valid for FAILOVER, REVERSE, and RESTOREoperations.
+	The default setting is false.
+.PARAMETER StopGroups
+	If true, the groups are stopped before performing the reverse operation. Valid for REVERSE operation only. 
+	The default setting is false.
+.PARAMETER LocalGroupsDirection
+	If true, the group’s direction is changed only on the system where the operation is run. Valid for REVERSE operation only.
+	The default setting is false.
+.PARAMETER Sync
+	Synchronize a Remote Copy group.
+.PARAMETER Stop
+	Stop a Remote Copy group.
+.PARAMETER Start
+	Start a Remote Copy group.
+.PARAMETER Restart
+
 #>
 [CmdletBinding()]
-Param(
-	[Parameter(Mandatory)]							[String]	$GroupName,
-	[Parameter(Mandatory,ParameterSetName='CPGs')]	[String]	$LocalUserCPG,
-	[Parameter(Mandatory,ParameterSetName='CPGs')]	[String]	$LocalSnapCPG,	  
-	[Parameter(Mandatory,ParameterSetName='CPGs')]	[String]	$RemoteUserCPG,
-	[Parameter(Mandatory,ParameterSetName='CPGs')]	[String]	$RemoteSnapCPG,
-	[Parameter(Mandatory,ParameterSetName='Mode')]
-	[ValidateSet('SYNC','ASYNC','PERIODIC')]		[String]	$Mode,
-	[Parameter(Mandatory,ParameterSetName='policies')]
-	[ValidateSet('active_active','no_active_active','auto_failover','no_auto_failover','auto_recover','no_auto_recover','auto_synchronize','no_auto_synchronize','mirror_config',
-				 'over_per_alert','no_over_per_alert','path_management','no_path_management','mt_pp')]
-				 									[String]	$Policies,
-	[Parameter(Mandatory,ParameterSetName='UnCPG')]	
-	[ValidateSet('unsetUserCPG','unsetSnapCPG')]	[String]	$RemoveCPG
+Param(	[Parameter(Mandatory)]							[String]	$GroupName,
+		[Parameter(Mandatory,ParameterSetName='CPGs')]	[String]	$LocalUserCPG,
+		[Parameter(Mandatory,ParameterSetName='CPGs')]	[String]	$LocalSnapCPG,	  
+		[Parameter(Mandatory,ParameterSetName='CPGs')]	[String]	$RemoteUserCPG,
+		[Parameter(Mandatory,ParameterSetName='CPGs')]	[String]	$RemoteSnapCPG,
+		[Parameter(Mandatory,ParameterSetName='Mode')]
+		[ValidateSet('SYNC','ASYNC','PERIODIC')]		[String]	$Mode,
+		[Parameter(Mandatory,ParameterSetName='policies')]
+		[ValidateSet('active_active','no_active_active','auto_failover','no_auto_failover','auto_recover','no_auto_recover','auto_synchronize','no_auto_synchronize','mirror_config',
+					'over_per_alert','no_over_per_alert','path_management','no_path_management','mt_pp')]
+														[String]	$Policies,
+		[Parameter(Mandatory,ParameterSetName='UnCPG')]	
+		[ValidateSet('unsetUserCPG','unsetSnapCPG')]	[String]	$RemoveCPG,
+		[Parameter(ParameterSetName='Sync')]			[switch]	$NoResyncSnapshot,
+		[Parameter(ParameterSetName='Sync')]
+		[Parameter(ParameterSetName='Stop')]
+		[Parameter(ParameterSetName='Start')]
+		[Parameter(ParameterSetName='Restore')]			[String]	$TargetName,
+		[Parameter(ParameterSetName='Sync')]			[switch]	$FullSync,
+		[Parameter(ParameterSetName='Restore')]	
+		[Parameter(ParameterSetName='Stop')]			[switch]	$NoSnapshot,
+		[Parameter(ParameterSetName='Start')]			[switch]	$SkipInitialSync,
+		[Parameter(ParameterSetName='Start')]			[String]	$VolumeName,
+		[Parameter(ParameterSetName='Start')]			[String]	$SnapshotName,
+
+		[Parameter(ParameterSetName='Restore')]			[Switch]	$SkipStart,
+		[Parameter(ParameterSetName='Restore')]			[Switch]	$SkipSync,
+		[Parameter(ParameterSetName='Restore')]			[Switch]	$DiscardNewData,
+		[Parameter(ParameterSetName='Restore')]			[Switch]	$SkipPromote,
+		[Parameter(ParameterSetName='Restore')]			[Switch]	$StopGroups,
+		[Parameter(ParameterSetName='Restore')]			[Switch]	$LocalGroupsDirection,
+
+		[Parameter(Mandatory,ParameterSetName='Sync')]	[switch]	$Sync,
+		[Parameter(Mandatory,ParameterSetName='Stop')]	[switch]	$Stop,
+		[Parameter(Mandatory,ParameterSetName='Start')]	[switch]	$Start,
+		[Parameter(Mandatory,Parametersetname='Restore')][switch]	$restore
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -616,23 +518,47 @@ Process
 	$TargetsBody=@()
 	$PoliciesBody=@{}
 	switch($PSCmdlet.ParameterSetName)
-	{	'CPGs'	{	$body["localUserCPG"] = "$($LocalUserCPG)"
-					$body["localSnapCPG"] = "$($LocalSnapCPG)"
-					$Obj=@{}
-					$Obj["remoteUserCPG"] = "$($RemoteUserCPG)"
-					$Obj["remoteSnapCPG"] = "$($RemoteSnapCPG)"
-					$TargetsBody += $Obj
-					$Obj["targets"] = $TargetBody
-				}
-		'Mode'	{	$body["mode"] = "$Mode"
-				}
-		'policies'{	$body["policies"] = "$Policies"
-				}
-		'UnCPG'	{	if ($RemoveCPG -eq 'unsetUserCPG')	{ $body['unsetUserCPG'] = $true}
-					if ($RemoveCPG -eq 'unsetSnapCPG')	{ $body['unsetSnapCPG'] = $true}	
-				}
-	}
-    $Result = $null
+		{	'CPGs'	{	$body["localUserCPG"] = "$($LocalUserCPG)"
+						$body["localSnapCPG"] = "$($LocalSnapCPG)"
+						$Obj=@{}
+						$Obj["remoteUserCPG"] = "$($RemoteUserCPG)"
+						$Obj["remoteSnapCPG"] = "$($RemoteSnapCPG)"
+						$TargetsBody += $Obj
+						$Obj["targets"] = $TargetBody
+					}
+			'Mode'	{	$body["mode"] = "$Mode"
+					}
+			'policies'{	$body["policies"] = "$Policies"
+					}
+			'UnCPG'	{	if ($RemoveCPG -eq 'unsetUserCPG')	{ $body['unsetUserCPG'] = $true}
+						if ($RemoveCPG -eq 'unsetSnapCPG')	{ $body['unsetSnapCPG'] = $true}	
+					}
+			'Sync'	{	$body["action"] = 5		
+						If ($NoResyncSnapshot) 	{	$body["noResyncSnapshot"] = $true    }	
+						If ($TargetName) 		{	$body["targetName"] = "$($TargetName)" }
+						If ($FullSync) 			{	$body["fullSync"] = $true    }	
+					}
+			'Stop'	{
+						$body = @{}
+						$body["action"] = 4			
+						If ($NoSnapshot) 	{	$body["noSnapshot"] = $true	    }	
+						If ($TargetName) 	{	$body["targetName"] = "$($TargetName)"    }		
+					}
+			'Start'	{	$ObjStartingSnapshots=@{}
+						$body["action"] = 3		
+						If ($SkipInitialSync){	$body["skipInitialSync"] = $true	    }	
+						If ($TargetName) 	{	$body["targetName"] = "$($TargetName)"}	
+						If ($VolumeName)	{	$Obj=@{}
+												$Obj["volumeName"] = "$($VolumeName)"
+												$ObjStartingSnapshots += $Obj				
+											}
+						If ($SnapshotName)	{	$Obj=@{}
+												$Obj["snapshotName"] = "$($SnapshotName)"
+												$ObjStartingSnapshots += $Obj				
+											}
+						if($ObjStartingSnapshots.Count -gt 0)	{	$body["startingSnapshots"] = $ObjStartingSnapshots 	}
+					}
+		}
 	$uri = '/remotecopygroups/'+ $GroupName
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
@@ -828,91 +754,23 @@ Process
 }
 }
 
-Function Restore-A9RCopyGroup 
-{
-<#      
-.SYNOPSIS	
-	Recovering a Remote Copy group
-.DESCRIPTION	
-    Recovering a Remote Copy group
-.EXAMPLE
-	Recovering a Remote Copy group
-.PARAMETER GroupName
-	Remote Copy group Name.
-.PARAMETER TargetName
-	The target name associated with this group on which you want to perform the disaster recovery operation. If the group has multiple targets, the target must be specified.
-.PARAMETER SkipStart
-	If true, groups are not started after role reversal is completed. Valid for only FAILOVER, RECOVER, and RESTORE operations.
-	The default is false.
-.PARAMETER SkipSync
-	If true, the groups are not synchronized after role reversal is completed. Valid for FAILOVER, RECOVER, and RESTORE operations only.
-	The default setting is false.
-.PARAMETER DiscardNewData
-	If true and the group has multiple targets, don’t check other targets of the group to see if newer data should be pushed from them. Valid for FAILOVER operation only.
-	The default setting is false.
-.PARAMETER SkipPromote
-	If true, the snapshots of the groups that are switched from secondary to primary are not promoted to the base volume. Valid for FAILOVER and REVERSE operations only.
-	The default setting is false.
-.PARAMETER NoSnapshot
-	If true, the snapshots are not taken of the groups that are switched from secondary to primary. Valid for FAILOVER, REVERSE, and RESTOREoperations.
-	The default setting is false.
-.PARAMETER StopGroups
-	If true, the groups are stopped before performing the reverse operation. Valid for REVERSE operation only. 
-	The default setting is false.
-.PARAMETER LocalGroupsDirection
-	If true, the group’s direction is changed only on the system where the operation is run. Valid for REVERSE operation only.
-	The default setting is false.
-#>
-[CmdletBinding()]
-Param(
-	[Parameter(Mandatory)]			[String]	$GroupName,
-	[Parameter()]					[String]	$TargetName,
-	[Parameter()]					[Switch]	$SkipStart,
-	[Parameter()]					[Switch]	$SkipSync,
-	[Parameter()]					[Switch]	$DiscardNewData,
-	[Parameter()]					[Switch]	$SkipPromote,
-	[Parameter()]					[Switch]	$NoSnapshot,
-	[Parameter()]					[Switch]	$StopGroups,
-	[Parameter()]					[Switch]	$LocalGroupsDirection
-	)
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$body = @{}	
-	$body["action"] = 6   
-	If ($TargetName) 	{	$body["targetName"] = "$($TargetName)"    }
-	If ($SkipStart) 	{	$body["skipStart"] = $true    }
-	If ($SkipSync) 		{	$body["skipSync"] = $true    }
-	If ($DiscardNewData){	$body["discardNewData"] = $true    }
-	If ($SkipPromote) 	{	$body["skipPromote"] = $true    }
-	If ($NoSnapshot) 	{	$body["noSnapshot"] = $true    }
-	If ($StopGroups) 	{	$body["stopGroups"] = $true    }
-	If ($LocalGroupsDirection) 	{	$body["localGroupsDirection"] = $true    }		
-    $Result = $null
-	$uri = "/remotecopygroups/"+$GroupName
-    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
-	$status = $Result.StatusCode
-	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
-		{	Write-Error "Failure:  While Recovering a Remote Copy group : $GroupName " 
-			return $Result.StatusDescription
-		}
-}
-}
-
 
 ##### Get Commands
 Function Get-A9RCopyInfo 
 {
 <#
 .SYNOPSIS	
-	Get overall Remote Copy information
+	Get overall Remote Copy information unless a LINKname or returnlinks is specified.
 .DESCRIPTION
-	Get overall Remote Copy information
+	Get overall Remote Copy information unless a LINKname or returnlinks is specified.
+.PARAMETER LinkName
+	if Specified, the command will return only the Link name given
+.PARAMETER ReturnLinks
+	If specified, the command will return all links.
+.EXAMPLE
+	PS:> Get-A9RCopyLink -LinkName xxx
+	
+	Get Single Remote Copy Link
 .EXAMPLE
 	PS:> Get-A9RCopyInfo
 
@@ -922,24 +780,35 @@ Function Get-A9RCopyInfo
 
 	Get overall Remote Copy information
 #>
-[CmdletBinding()]
-Param()
+[CmdletBinding(DefaultParameterSetName='Info')]
+Param(
+	[Parameter(ParameterSetName='Link')]	[String]	$LinkName,
+	[Parameter(ParameterSetName='Link')]	[switch]	$ReturnLinks
+)
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
 	$dataPS = $null
-	$Result = Invoke-A9API -uri '/remotecopy' -type 'GET'
+	$uri = '/remotecopy'
+	Switch($PSCmdlet.ParameterSetName)
+		{	'Info'	{	write-verbose "Running RemoteCopy Info"
+					}
+			'Link'	{	$uri = $uri + 'links'	
+						if($LinkName)	{	$uri = $uri+'/'+$LinkName	}
+					}
+		}
+	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
-	{	$dataPS = $Result.content | ConvertFrom-Json
-		write-host "Cmdlet executed successfully" -foreground green
-		return $dataPS
-	}
+		{	$dataPS = $Result.content | ConvertFrom-Json
+			write-host "Cmdlet executed successfully" -foreground green
+			return $dataPS
+		}
 	else
-	{	Write-Error "Failure:  While Executing Get-A9RCopyInfo." 
-		return $Result.StatusDescription
-	}
+		{	Write-Error "Failure:  While Executing Get-A9RCopyInfo." 
+			return $Result.StatusDescription
+		}
 }	
 }
 
@@ -985,9 +854,20 @@ Function Get-A9RCopyGroup
 {
 <#
 .SYNOPSIS	
-	Get all or single Remote Copy Group
+	Get all or single Remote Copy Group, or Remote Copy Group Targets, or Remote Copy Group Volumes
 .DESCRIPTION
-	Get all or single Remote Copy Group
+	Get all or single Remote Copy Group, or Remote Copy Group Targets, or Remote Copy Group Volumes
+	If used without any parameters, it will return all the Copy Groups.
+.PARAMETER GroupName	
+    Remote Copy Group Name
+.PARAMETER TargetName	
+    Target Name
+.PARAMETER VolumeName	
+    Remote Copy Volume Name
+.PARAMETER ReturnTargets
+	A Switch to return all Targets
+.PARAMETER ReturnVolumes
+	A Switch to return all Volumes	
 .EXAMPLE
 	PS:> Get-A9RCopyGroup
 
@@ -997,18 +877,31 @@ Function Get-A9RCopyGroup
 
 	Get a single Groups of given name
 .EXAMPLE
-	PS:> Get-A9RCopyGroup -GroupName XXX*
+	PS:> Get-A9RCopyGroup -TargetName XXX
 
-	Get a single or list of Groups of given name like or match the words
+	Get a single Target name from the complete list of target names
 .EXAMPLE
-	PS:> Get-A9RCopyGroup -GroupName "XXX,YYY,ZZZ"
+	PS:> Get-A9RCopyGroup -ReturnTargetNames
 
-	For multiple Group name 
-.PARAMETER GroupName	
-    Remote Copy Group Name
+	Return all Target names 
+.EXAMPLE
+	PS:> Get-A9RCopyGroup -VolumeName XXX
+
+	Get a single Volume from the complete list of Volumes
+.EXAMPLE
+	PS:> Get-A9RCopyGroup -ReturnVolumeNames
+
+	Get All Volume 
 #>
-[CmdletBinding()]
-Param(	[Parameter()]	[String]	$GroupName
+[CmdletBinding(DefaultParameterSetName='ByGroupName')]
+Param(	[Parameter(ParameterSetName='ByGroupName')]		
+		[Parameter(Mandatory,ParameterSetName='ByTargetName')]	
+		[Parameter(Mandatory,ParameterSetName='ByVolumeName')]	[String]	$GroupName,
+
+		[Parameter(ParameterSetName='ByTargetName')]			[String]	$TargetName,
+		[Parameter(ParameterSetName='ByVolumeName')]			[String]	$VolumeName,
+		[Parameter(parameterSetname='ByTargetName')]			[Switch]	$ReturnTargets,
+		[Parameter(parameterSetname='ByVolumeName')]			[Switch]	$ReturnVolumes
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -1016,22 +909,17 @@ Begin
 Process 
 {	$Result = $null
 	$dataPS = $null	
-	$Query="?query=""  """
-	$uri = '/remotecopygroups'
-	if($GroupName)
-		{	$lista = $GroupName.split(",")
-			$count = 1
-			foreach($sub in $lista)
-				{	$Query = $Query.Insert($Query.Length-3," name LIKE $sub")			
-					if($lista.Count -gt 1)
-						{	if($lista.Count -ne $count)
-								{	$Query = $Query.Insert($Query.Length-3," OR ")
-									$count = $count + 1
-								}				
-						}				
-				}
-			$uri = $uri+'/'+$Query
-		}
+	$uri = '/remotecopygroups'						
+	Switch($PSCmdlet.ParameterSetName)
+	{	'ByGroupName'	{	if ($GroupName) { $uri = $uri + '/' + $GroupName } 
+						}
+		'ByTargetName'	{	$uri = $uri + '/' + $GroupName + '/targets'
+							if($TargetName)		{	$uri = $uri + '/' + $TargetName	}
+						}
+		'ByVolumeName'	{	$uri = $uri + '/' + $GroupName + '/volumes'	
+							if($VolumeName)		{	$uri = $uri+'/'+$VolumeName	}
+						}
+	}
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
@@ -1042,145 +930,12 @@ Process
 			else
 				{	Write-Error "Failure:  While executing Get-A9RCopyGroup. Expected result not found with given filter option ." 
 					return 
-				}
-		}
-	else
-		{	Write-Error "Failure:  While Executing Get-A9RCopyGroup." 
-			return $Result.StatusDescription
-		}
-}	
-}
-
-Function Get-A9RCopyGroupTarget 
-{
-<#
-.SYNOPSIS	
-	Get all or single Remote Copy Group target
-.DESCRIPTION
-	Get all or single Remote Copy Group target
-.EXAMPLE
-	PS:> Get-A9RCopyGroupTarget
-
-	Get List of Groups target
-.EXAMPLE
-	PS:> Get-A9RCopyGroupTarget -TargetName xxx	
-
-	Get Single Target
-.PARAMETER GroupName	
-    Remote Copy Group Name
-.PARAMETER TargetName	
-    Target Name
-#>
-[CmdletBinding()]
-Param(	[Parameter(Mandatory)]
-		[String]	$GroupName,
-		
-		[Parameter()]
-		[String]	$TargetName
-	)
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$Result = $null
-	$dataPS = $null	
-	$uri = '/remotecopygroups/'+$GroupName+'/targets'
-	if($TargetName)
-		{	$uri = $uri+'/'+$TargetName
-		}
-	$Result = Invoke-A9API -uri $uri -type 'GET' 
-	if($Result.StatusCode -eq 200)
-		{	$dataPS = ($Result.content | ConvertFrom-Json).members
-			write-host "Cmdlet executed successfully" -foreground green
-			return $dataPS		
+				}	
 		}
 	else
 		{	Write-Error "Failure:  While Executing Get-A9RCopyGroupTarget." 
 			return $Result.StatusDescription
-		}
-}	
-}
-
-Function Get-A9RCopyGroupVv 
-{
-<#
-.SYNOPSIS	
-	Get all or single Remote Copy Group volume
-.DESCRIPTION
-	Get all or single Remote Copy Group volume
-.EXAMPLE
-	PS:> Get-A9RCopyGroupVv -GroupName asRCgroup
-.EXAMPLE
-	PS:> Get-A9RCopyGroupVv -GroupName asRCgroup -VolumeName Test
-.PARAMETER GroupName	
-    Remote Copy Group Name
-.PARAMETER VolumeName	
-    Remote Copy Volume Name
-#>
-[CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$GroupName,
-		[Parameter()]					[String]	$VolumeName
-	)
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$Result = $null
-	$dataPS = $null
-	$uri = '/remotecopygroups/'+$GroupName+'/volumes'	
-	if($VolumeName)		{	$uri = $uri+'/'+$VolumeName	}
-	$Result = Invoke-A9API -uri $uri -type 'GET'	
-	if($Result.StatusCode -eq 200)
-		{	$dataPS = $Result.content | ConvertFrom-Json
-			write-host "Cmdlet executed successfully" -foreground green
-			return $dataPS		
-		}
-	else
-		{	Write-Error "Failure:  While Executing Get-A9RCopyGroupVv." 
-			return $Result.StatusDescription
-		}
-}	
-}
-
-Function Get-A9RCopyLink 
-{
-<#
-.SYNOPSIS	
-	Get all or single Remote Copy Link
-.DESCRIPTION
-	Get all or single Remote Copy Link
-.EXAMPLE
-	PS:> Get-A9RCopyLink
-
-	Get List Remote Copy Link
-.EXAMPLE
-	PS:> Get-A9RCopyLink -LinkName xxx
-	
-	Get Single Remote Copy Link
-.PARAMETER LinkName	
-    Remote Copy Link Name
-#>
-[CmdletBinding()]
-Param(	[Parameter()]	[String]	$LinkName
-	)
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$Result = $null
-	$dataPS = $null
-	$uri = '/remotecopylinks'	
-	if($LinkName)	{	$uri = $uri+'/'+$LinkName	}
-	$Result = Invoke-A9API -uri $uri -type 'GET' 
-	if($Result.StatusCode -eq 200)
-	{	$dataPS = $Result.content | ConvertFrom-Json
-		write-host "Cmdlet executed successfully" -foreground green
-		return $dataPS		
-	}
-	else
-	{	Write-Error "Failure:  While Executing Get-A9RCopyLink." 
-		return $Result.StatusDescription
-	}
+		}	
 }	
 }
 

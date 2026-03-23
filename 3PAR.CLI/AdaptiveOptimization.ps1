@@ -547,3 +547,80 @@ end
     }
 }
 
+Function Get-A9SystemReporterRegionIODensity
+{
+<#
+.SYNOPSIS
+	Get-3parSRrgiodensit - System reporter region IO density reports.
+.DESCRIPTION
+	The Get-A9SYstemReporterRegionIOdensity command shows the distribution of IOP/s intensity for Logical Disk (LD) regions for a common provisioning group (CPG) or Adaptive Optimization (AO) configuration. 
+	For a single CPG, this can be used to see whether AO can be effectively used.  For an AO configuration the command shows how AO has moved regions between tiers.
+.PARAMETER BeginTimeSecs
+	Select the begin time in seconds for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the time at which the report begins is 12 hours ago. If -btsecs 0 is specified then the report begins at the earliest sample.
+.PARAMETER EndTimeSecs
+	Select the end time in seconds for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the report ends with the most recent sample.
+.PARAMETER Cmult
+	Select the step between histogram columns of the report.  By default each column's IO density is 4 times the previous column, but a step of 2 or 8 can also be specified.
+.PARAMETER Cpg
+	Treat the specifiers as CPG names or glob-style patterns.
+.PARAMETER Volume
+	Limit the analysis to VVs with names that match one or more of the specified names or glob-style patterns. VV set names must be prefixed by "set:". 
+	Note that snapshot VVs will not be considered since only base VVs have region space.
+.PARAMETER Cumulative
+	Show data as cumulative including all the columns to the right.
+.PARAMETER Pct
+	Show data as a percentage per row.
+.PARAMETER WithVolume
+	Show the data for each VV.
+.PARAMETER Rw
+	Specifies that the display includes separate read and write data. If not specified, the total is displayed.
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[String]	$BeginTimeSecs,
+		[Parameter()]	[String]	$EndTimeSecs,
+		[Parameter()]	[String]	$Cmult,
+		[Parameter()]	[String]	$Cpg,
+		[Parameter()]	[String]	$Volume,
+		[Parameter()]	[switch]	$Cumulative,
+		[Parameter()]	[switch]	$Pct,
+		[Parameter()]	[switch]	$WithVolume,
+		[Parameter()]	[switch]	$Rw
+)
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process
+{	$Cmd = " srrgiodensity "
+	if ( $BeginTimeSecs ){	$Cmd += " -btsecs $BeginTimeSecs " 	}
+	if ( $EndTimeSecs )	{	$Cmd += " -etsecs $EndTimeSecs "	}
+	if ( $Cmult )		{	$Cmd += " -cmult $Cmult "	}
+	if ( $Cpg )			{	$Cmd += " -cpg $Cpg" 		}
+	if ( $Volume )		{	$Cmd += " -vv $Volume " 	}
+	if ( $Cumulative )	{	$Cmd += " -cumul " 			}
+	if ( $Pct )			{	$Cmd += " -pct " 			}
+	if ( $WithVolume )	{	$Cmd += " -withvv " 		}
+	if ( $Rw )			{	$Cmd += " -rw " 			}
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	Return $Result
+}
+}

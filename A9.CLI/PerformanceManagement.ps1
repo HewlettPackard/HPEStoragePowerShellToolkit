@@ -115,855 +115,7 @@ Process
 }
 }
 
-Function Get-A9HistogramChunklet
-{
-<#
-.SYNOPSIS
-    The Get-HistChunklet command displays a histogram of service times in a timed loop for individual chunklets
-.DESCRIPTION
-	The Get-HistChunklet command displays a histogram of service times in a timed loop for individual chunklets
-.PARAMETER Chunklet_num
-	Specifies that statistics are limited to only the specified chunklet, identified
-	by number.
-.PARAMETER Metric both|time|size
-	Selects which metric to display. Metrics can be one of the following:
-		both - (Default)Display both I/O time and I/O size histograms
-		time - Display only the I/O time histogram
-		size - Display only the I/O size histogram
-.PARAMETER Percentage
-	Shows the access count in each bucket as a percentage. If this option is not specified, the histogram shows the access counts.
-.PARAMETER Previous
-	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). If no option is specified, the
-	histogram shows data from the beginning of the command's execution.
-.PARAMETER Beginning
-	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). If no option is specified, the
-	histogram shows data from the beginning of the command's execution.
-.PARAMETER RW
-	Specifies that the display includes separate read and write data. If not specified, the total is displayed.
-.PARAMETER Interval
-	Specifies the interval in seconds that statistics are sampled from using an integer from 1 through 2147483. If no count is specified, the
-	command defaults to 2 seconds.
-.PARAMETER Iteration
-	Specifies that the histogram is to stop after the indicated number of iterations using an integer from 1 through 2147483647.
-.PARAMETER NI
-	Specifies that histograms for only non-idle devices are displayed. This option is shorthand for the option -filt t,0,0.
-.PARAMETER LDname 
-    Specifies the Logical Disk (LD), identified by name, from which chunklet statistics are sampled.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-    PS:> Get-A9HistogramChunklet -Iteration 1 
-
-	This example displays one iteration of a histogram of service
-.EXAMPLE
-    PS:> Get-A9HistogramChunklet –LDname dildil -Iteration 1 
-
-	identified by name, from which chunklet statistics are sampled.
-.EXAMPLE
-	PS:> Get-A9HistogramChunklet -Iteration 1 -Previous
-.NOTES
-	This command utilizes the SSH command 'histch'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$LDname,
-		[Parameter()]	[String]	$Chunklet_num,
-		[Parameter()]	[String]	$Metric,
-		[Parameter(Mandatory)]	[String]	$Iteration,
-		[Parameter()]	[switch]	$Percentage,
-		[Parameter()]	[switch]	$Previous,
-		[Parameter()]	[switch]	$Beginning,
-		[Parameter()]	[switch]	$RW,
-		[Parameter()]	[String]	$Interval,
-		[Parameter()]	[switch]	$NI,
-		[Parameter()]	[switch]	$ShowRaw
-)		
-begin	
-{	Test-A9Connection -ClientType 'SshClient' 
-}
-Process
-{	$histchCMD = "histch"
-	$histchCMD+=" -iter $iteration"
-	if($LDname)		{	$histchCMD +=" -ld $LDname "	}
-	if($Chunklet_num){	$histchCMD +=" -ch $Chunklet_num "	} 
-	if($Metric)		{	$histchCMD +=" -metric $Metric "	}
-	if($Percentage)	{	$histchCMD +=" -pct "	}
-	if($Previous)	{	$histchCMD +=" -prev "	}
-	if($Beginning)	{	$histchCMD +=" -begin "	}
-	if($RW)			{	$histchCMD +=" -rw "	}
-	if($Interval)	{	$histchCMD +=" -d $Interval "	}
-	if($NI)			{	$histchCMD +=" -ni "	}	
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $histchCMD	
-	$range1 = $Result.count
-	if($range1 -le "5")	{	return "No data available Please try with valid input."	}
-	if ($ShowRaw) { return $Result }
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count		
-			if($RW)	{	$LastItem = $LastItem - 4	}		
-			Add-Content -Path $tempFile -Value 'Ldid,Ldname,logical_Disk_CH,Pdid,PdCh,0.5,1.0,2.0,4.0,8.0,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'
-			foreach ($s in  $Result[0..$LastItem] )
-				{	if ($s -match "millisec")
-						{	$s= [regex]::Replace($s,"^ +","")
-							$s= [regex]::Replace($s," +"," ")
-							$s= [regex]::Replace($s," ",",")
-							$split1=$s.split(",")
-							$global:time1 = $split1[0]
-							$global:date1 = $split1[1]
-							continue
-						}
-					if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Ldname"))	{	continue	}
-					$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +"," ")
-					$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
-					$aa=$s.split(",").length
-					if ($aa -eq "20")	{	continue	}
-					$s +=",$global:time1,$global:date1"
-					Add-Content -Path $tempFile -Value $s
-				}
-			Import-Csv $tempFile
-			Remove-Item $tempFile
-		}	
-}
-}
-
-Function Get-A9HistogramLogicalDisk
-{
-<#
-.SYNOPSIS
-    The Get-HistLD command displays a histogram of service times for Logical Disks (LDs) in a timed loop.
-.DESCRIPTION
-	The Get-HistLD command displays a histogram of service times for Logical Disks (LDs) in a timed loop.
-.PARAMETER Timecols
-	For the I/O time histogram, shows the columns from the first column <fcol> through last column <lcol>. The available columns range from 0 through 31.
-
-	The first column (<fcol>) must be a value greater than or equal to 0, but less than the value of the last column (<lcol>).
-
-	The last column (<lcol>) must be less than or equal to 31.
-
-	The first column includes all data accumulated for columns less than the first column and the last column includes accumulated data for all columns greater than the last column.
-
-	The default value of <fcol> is 6.
-	The default value of <lcol> is 15.
-.PARAMETER Sizecols
-	For the I/O size histogram, shows the columns from the first column (<fcol>) through the last column (<lcol>). Available columns range from 0 through 15.
-
-	The first column (<fcol>) must be a value greater than or equal to 0, but less than the value of the last column (<lcol>) (default value of 3). 
-	The last column (<lcol>) must be less than or equal to 15 (default value of 11).
-
-	The default value of <fcol> is 3.
-	The default value of <lcol> is 11.
-.PARAMETER Percentage
-	Shows the access count in each bucket as a percentage. If this option is not specified, the histogram shows the access counts.
-.PARAMETER Secs
-	Specifies the interval in seconds that statistics are sampled from using an integer from 1 through 2147483. If no count is specified, the command defaults to 2 seconds.
-.PARAMETER NI
-	Specifies that histograms for only non-idle devices are displayed. This option is shorthand for the option -filt t,0,0.	
-.PARAMETER Iteration 
-    displays a histogram of service Iteration number of times
-.PARAMETER LdName 
-    displays a histogram of service linked with LD_NAME
-.PARAMETER VV_Name
-	Shows only logical disks that are mapped to virtual volumes with names matching any of the names or patterns specified. Multiple volumes or patterns can be repeated using a comma separated list.
-.PARAMETER Domain
-	Shows only logical disks that are in domains with names matching any of the names or patterns specified. Multiple domain names or patterns can be repeated using a comma separated list.
-.PARAMETER Metric
-	Selects which metric to display. Metrics can be one of the following:
-		both - (Default)Display both I/O time and I/O size histograms
-		time - Display only the I/O time histogram
-		size - Display only the I/O size histogram
-.PARAMETER Previous 
-	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). If no option is specified, the histogram shows data from the beginning of the command's execution.
-.PARAMETER Beginning
-	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). If no option is specified, the histogram shows data from the beginning of the command's execution.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-    PS:> Get-A9HistogramLogicalDisk -Iteration 1
-
-	displays a histogram of service Iteration number of times
-.EXAMPLE
-	PS:> Get-A9HistogramLogicalDisk -LdName abcd -Iteration 1
-
-	displays a histogram of service linked with LD_NAME on  Iteration number of times
-.EXAMPLE
-	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -VV_Name ZXZX
-
-	Shows only logical disks that are mapped to virtual volumes with names matching any of the names or patterns specified.
-.EXAMPLE
-	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -Domain ZXZX
-
-	Shows only logical disks that are in domains with names matching any of the names or patterns specified.
-.EXAMPLE
-	PS:> Get-A9HistogramLogicalDisk -Iteration 1 -Percentage Shows the access count in each bucket as a percentage.
-.NOTES
-	This command utilizes the SSH command 'HistLd'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	
-		[Parameter(Mandatory)]	[String]	$Iteration,	
-		[Parameter()][ValidateSet('both','time','size')]
-						[String]	$Metric,
-		[Parameter()]	[String]	$VV_Name,
-		[Parameter()]	[String]	$Domain,
-		[Parameter()]	[String]	$Timecols,
-		[Parameter()]	[String]	$Sizecols, 
-		[Parameter()]	[Switch]	$Percentage,
-		[Parameter()]	[Switch]	$Previous,
-		[Parameter()]	[Switch]	$Beginning,
-		[Parameter()]	[Switch]	$NI,
-		[Parameter()]	[String]	$Secs,
-		[Parameter()]	[String]	$LdName,
-		[Parameter()] 	[switch]	$ShowRaw
-)		
-Begin	
-{	Test-A9Connection -ClientType 'SshClient' 
-}
-Process	
-{	$histldCmd = "histld -iter $Iteration "
-	if ($Metric)	{	$histldCmd+=" -metric $Metric "				}
-	if($VV_Name)	{	$histldCmd+=" -vv $VV_Name"	} 
-	if($Domain)		{	$histldCmd+=" -domain $Domain"	}
-	if($Timecols)	{	$histldCmd+=" -timecols $Timecols "	}
-	if($Sizecols)	{	$histldCmd+=" -sizecols $Sizecols"	}	
-	if ($Percentage){	$histldCmd += " -pct "	}
-	if ($Previous)	{	$histldCmd += " -prev "	}	
-	if ($Beginning)	{	$histldCmd += " -begin "	}
-	if($Secs)		{	$histldCmd+=" -d $Secs"	}
-	if ($NI)		{	$histldCmd += " -ni "	}
-	if ($LdName)	{	$histldCmd += "  $LdName"	}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $histldCmd
-	if ($ShowRaw) { $ShowRaw }
-	$range1 = $Result.count
-	#write-host "count = $range1"
-	if($range1 -lt "5")		{	return "No data available Please Try With Valid Data. `n"	}	
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			if ($Metric -eq "time")		{	Add-Content -Path $tempFile -Value  'Logical_Disk_Name,0.50,1,2,4,8,16,32,64,128,256,time,date'	}
-			if ($Metric -eq "size")		{	Add-Content -Path $tempFile -Value  'Logical_Disk_Name,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date' 	}
-			else						{	Add-Content -Path $tempFile -Value  'Logical_Disk_Name,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date' 	}
-			foreach ($s in  $Result[0..$LastItem] )
-				{	if ($s -match "millisec")
-					{	$s= [regex]::Replace($s,"^ +","")
-						$s= [regex]::Replace($s," +"," ")
-						$s= [regex]::Replace($s," ",",")
-						$split1=$s.split(",")
-						$global:time1 = $split1[0]
-						$global:date1 = $split1[1]
-						continue
-					}
-					if (($s -match "-------") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Ldname"))	{	continue	}
-					#write-host "s = $s"
-					$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +"," ")
-					$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
-					$s +=",$global:time1,$global:date1"
-					Add-Content -Path $tempFile -Value $s
-				}
-			Import-Csv $tempFile
-			Remove-Item $tempFile
-		}
-	else{	return $Result	}
-} 
-}
-
-Function Get-A9HistogramPhysicalDisk
-{
-<#
-.SYNOPSIS
-    The Get-HistPD command displays a histogram of service times for Physical Disks (PDs).
-.DESCRIPTION
-    The Get-HistPD command displays a histogram of service times for Physical Disks (PDs).
-.PARAMETER WWN
-	Specifies the world wide name of the PD for which service times are displayed.
-.PARAMETER Nodes
-	Specifies that the display is limited to specified nodes and physical disks connected to those nodes. The node list is specified as a series
-	of integers separated by commas (e.g. 1,2,3). The list can also consist of a single integer. If the node list is not specified, all disks on all nodes are displayed.
-.PARAMETER Slots
-	Specifies that the display is limited to specified PCI slots and physical disks connected to those PCI slots. The slot list is specified
-	as a series of integers separated by commas (e.g. 1,2,3). The list can also consist of a single integer. If the slot list is not specified, all disks on all slots are displayed.
-.PARAMETER Ports
-	Specifies that the display is limited to specified ports and physical disks connected to those ports. The port list is specified as a series of integers separated 
-	by commas (e.g. 1,2,3). The list can also consist of a single integer. If the port list is not specified, all disks on all ports are displayed.
-.PARAMETER Percentage
-	Shows the access count in each bucket as a percentage. If this option is not specified, the histogram shows the access counts.
-.PARAMETER Previous 
-	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). 
-	If no option is specified, the histogram shows data from the beginning of the command's execution.
-.PARAMETER Beginning
-	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). 
-	If no option is specified, the histogram shows data from the beginning of the command's execution.
-.PARAMETER Devinfo
-	Indicates the device disk type and speed.
-.PARAMETER Metric both|time|size
-	Selects which metric to display. Metrics can be one of the following:
-		both - (Default)Display both I/O time and I/O size histograms
-		time - Display only the I/O time histogram
-		size - Display only the I/O size histogram
-.PARAMETER Iteration 
-    Specifies that the histogram is to stop after the indicated number of iterations using an integer from 1 up-to 2147483647.
-.PARAMETER FSpec
-	Specifies that histograms below the threshold specified by the <fspec> argument are not displayed. The <fspec> argument is specified in the syntax of <op>,<val_ms>, <count>.
-	<op>
-		The <op> argument can be specified as one of the following:
-			r - Specifies read statistics.
-			w - Specifies write statistics.
-			t - Specifies total statistics.
-			rw - Specifies total read and write statistics.
-	<val_ms>
-		Specifies the threshold service time in milliseconds.
-	<count>: Specifies the minimum number of access above the threshold service time. When filtering is done, the <count> is compared with the sum of all columns 
-			starting with the one which corresponds to the threshold service time. For example, -t,8,100 means to only display the rows where the 8ms column
-			and all columns to the right adds up to more than 100.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-    PS:> Get-A9HistogramPhysicalDisk -iteration 1 -WWN abcd
-
-	Specifies the world wide name of the PD for which service times are displayed.
-.EXAMPLE
-	PS:> Get-A9HistogramPhysicalDisk -iteration 1
-
-	The Get-HistPD displays a histogram of service iteration number of times Histogram displays data from when the system was last started (–begin).
-.EXAMPLE	
-	PS:> Get-A9HistogramPhysicalDisk -iteration 1 -Devinfo
-
-	Indicates the device disk type and speed.
-.EXAMPLE	
-	PS:> Get-A9HistogramPhysicalDisk -iteration 1 -Metric both
-
-	(Default)Display both I/O time and I/O size histograms
-.NOTES
-	This command utilizes the SSH command 'HistPD'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$Iteration,
-		[Parameter()]	[String]	$WWN,
-		[Parameter()]	[String]	$Nodes,
-		[Parameter()]	[String]	$Slots,
-		[Parameter()]	[String]	$Ports,
-		[Parameter()]	[Switch]	$Devinfo,
-		[Parameter()]	[ValidateSet('both','time','size')]
-						[String]	$Metric,
-		[Parameter()]	[Switch]	$Percentage,
-		[Parameter()]	[Switch]	$Previous,
-		[Parameter()]	[Switch]	$Beginning,	
-		[Parameter()]	[String]	$FSpec,
-		[Parameter()]	[switch]	$ShowRaw
-)		
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$Cmd = "histpd "
-	if($Iteration)	{	$Cmd += "-iter $Iteration"	}
-	else			{	return "Error :  -Iteration is mandatory. "}	
-	if ($WWN)		{	$Cmd += " -w $WWN"}
-	if ($Nodes)		{	$Cmd += " -nodes $Nodes"	}
-	if ($Slots)		{	$Cmd += " -slots $Slots"	}
-	if ($Ports)		{	$Cmd += " -ports $Ports"	}
-	if ($Devinfo)	{	$Cmd += " -devinfo "	}
-	if($Metric)		{	$Met = $Metric
-						$c = "both","time","size"
-						$Metric = $metric.toLower()
-						if($c -eq $Met)		{	$Cmd += " -metric $Metric "}
-						else	{	return "FAILURE: -Metric $Metric is Invalid. Use only [ both | time | size ]."	}
-					}
-	if ($Previous)		{	$Cmd += " -prev "}
-	if ($Beginning)		{	$Cmd += " -begin "}
-	if ($Percentage)	{	$Cmd += " -pct "	}	
-	if ($FSpec)			{	$Cmd += " -filt $FSpec"	}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd 
-	if ($ShowRaw) {$ShowRaw }
-	$range1 = $Result.count
-	if($range1 -lt "5")	{	return "No data available"	}		
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			if("time" -eq $Metric.trim().tolower())
-				{	Add-Content -Path $tempFile -Value 'ID,Port,0.50,1,2,4,8,16,32,64,128,256,time,date'
-					$LastItem = $Result.Count - 3
-				}
-			elseif("size" -eq $Metric.trim().tolower())
-				{	Add-Content -Path $tempFile -Value 'ID,Port,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	
-					$LastItem = $Result.Count - 3
-				}
-			elseif ($Devinfo)	{	Add-Content -Path $tempFile -Value  'ID,Port,Type,K_RPM,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	}
-			else				{	Add-Content -Path $tempFile -Value  'ID,Port,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'				}
-			foreach ($s in  $Result[0..$LastItem] )
-				{	if ($s -match "millisec")
-						{	$s= [regex]::Replace($s,"^ +","")
-							$s= [regex]::Replace($s," +"," ")
-							$s= [regex]::Replace($s," ",",")
-							$split1=$s.split(",")
-							$global:time1 = $split1[0]
-							$global:date1 = $split1[1]
-							continue
-						}
-					if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "ID"))	{	continue	}
-					$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s,"-+","-")
-					$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line			
-					$aa=$s.split(",").length
-					if ($aa -eq "20") 	{	continue	}
-					$s +=",$global:time1,$global:date1"
-					Add-Content -Path $tempFile -Value $s
-				}
-			Import-Csv $tempFile
-			Remove-Item $tempFile
-		}
-	else{	return $Result	}
-}
-}
-
-Function Get-A9HistogramPort
-{
-<#
-.SYNOPSIS
-    The command displays a histogram of service times for ports within the system.
-.DESCRIPTION
-	The command displays a histogram of service times for ports within the system.
-.PARAMETER Both 
-	Specifies that both control and data transfers are displayed(-both), only control transfers are displayed (-ctl), or only data transfers are
-	displayed (-data). If this option is not specified, only data transfers are displayed.
-.PARAMETER CTL 
-	Specifies that both control and data transfers are displayed(-both), only control transfers are displayed (-ctl), or only data transfers are
-	displayed (-data). If this option is not specified, only data transfers are displayed.
-.PARAMETER Data
-	Specifies that both control and data transfers are displayed(-both), only control transfers are displayed (-ctl), or only data transfers are 
-	displayed (-data). If this option is not specified, only data transfers are displayed.
-.PARAMETER Nodes
-	Specifies that the display is limited to specified nodes and physical disks connected to those nodes. The node list is specified as a series
-	of integers separated by commas (e.g. 1,2,3). The list can also consist of a single integer. If the node list is not specified, all disks on all nodes are displayed.
-.PARAMETER Slots
-	Specifies that the display is limited to specified PCI slots and physical disks connected to those PCI slots. The slot list is specified as a series of integers 
-	separated by commas (e.g. 1,2,3). The list can also consist of a single integer. If the slot list is not specified, all disks on all slots are displayed.
-.PARAMETER Ports
-	Specifies that the display is limited to specified ports and physical disks connected to those ports. The port list is specified as a series of integers separated 
-	by commas (e.g. 1,2,3). The list can also consist of a single integer. If the port list is not specified, all disks on all ports are displayed.
-.PARAMETER HostE
-	Specifies to display only host ports (target ports), only disk ports (initiator ports), only Fibre Channel Remote Copy configured ports, or
-	only Fibre Channel ports for Data Migration. If no option is specified, all ports are displayed.
-.PARAMETER Disk 
-	Specifies to display only host ports (target ports), only disk ports (initiator ports), only Fibre Channel Remote Copy configured ports, or
-	only Fibre Channel ports for Data Migration. If no option is specified, all ports are displayed.
-.PARAMETER RCFC 
-	Specifies to display only host ports (target ports), only disk ports (initiator ports), only Fibre Channel Remote Copy configured ports, or
-	only Fibre Channel ports for Data Migration. If no option is specified, all ports are displayed.
-.PARAMETER PEER
-	Specifies to display only host ports (target ports), only disk ports (initiator ports), only Fibre Channel Remote Copy configured ports, or
-	only Fibre Channel ports for Data Migration. If no option is specified, all ports are displayed.
-.PARAMETER Metric
-	Selects which metric to display. Metrics can be one of the following:
-		both - (Default)Display both I/O time and I/O size histograms
-		time - Display only the I/O time histogram
-		size - Display only the I/O size histogram
-.PARAMETER Iteration 
-    Specifies that the histogram is to stop after the indicated number of iterations using an integer from 1 up-to 2147483647.
-.PARAMETER Percentage
-	Shows the access count in each bucket as a percentage. If this option is not specified, the histogram shows the access counts.
-.PARAMETER Previous 
-	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). If no option is specified, the
-	histogram shows data from the beginning of the command's execution.
-.PARAMETER Beginning
-	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). If no option is specified, the
-	histogram shows data from the beginning of the command's execution.
-.PARAMETER RW	
-	Specifies that the display includes separate read and write data. If not specified, the total is displayed.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-    PS:> Get-A9HistogramPort -iteration 1
-
-	displays a histogram of service times with option it can be one of these [both|ctrl|data].
-.EXAMPLE
-	PS:> Get-A9HistogramPort -iteration 1 -Both
-
-	Specifies that both control and data transfers are displayed(-both)
-.EXAMPLE
-	PS:> Get-A9HistogramPort -iteration 1 -Nodes nodesxyz
-
-	Specifies that the display is limited to specified nodes and physical disks connected to those nodes.
-.EXAMPLE	
-	PS:> Get-A9HistogramPort –Metric both -iteration 1
-
-	displays a histogram of service times with -metric option. metric can be one of these –metric [both|time|size]
-.NOTES
-	This command utilizes the SSH command 'HistPort'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory)]	[String]	$Iteration,	
-		[Parameter()]	[Switch]	$Both,
-		[Parameter()]	[Switch]	$CTL,
-		[Parameter()]	[Switch]	$Data,
-		[Parameter()]	[String]	$Nodes,
-		[Parameter()]	[String]	$Slots,
-		[Parameter()]	[String]	$Ports,
-		[Parameter()]	[Switch]	$HostE,
-		[Parameter()]	[Switch]	$PEER,
-		[Parameter()]	[Switch]	$Disk,
-		[Parameter()]	[Switch]	$RCFC,
-		[Parameter()][VAlidateSet('both','time','size')]	[String]	$Metric,		
-		[Parameter()]	[Switch]	$Percentage,
-		[Parameter()]	[Switch]	$Previous,
-		[Parameter()]	[Switch]	$Beginning,
-		[Parameter()]	[Switch]	$RW
-)	
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$Cmd = "histport "
-	$Cmd +=" -iter $Iteration"	
-	if ($Both)	{	$Cmd +=" -both "	}
-	if ($CTL)	{	$Cmd +=" -ctl "		}
-	if ($Data)	{	$Cmd +=" -data "	}
-	if ($Nodes)	{	$Cmd += " -nodes $Nodes"	}
-	if ($Slots)	{	$Cmd += " -slots $Slots"	}
-	if ($Ports)	{	$Cmd += " -ports $Ports"	}
-	if ($HostE)	{	$Cmd +=" -host "	}
-	if ($Disk)	{	$Cmd +=" -disk "	}
-	if ($RCFC)	{	$Cmd +=" -rcfc "	}
-	if ($PEER)	{	$Cmd +=" -peer "	}
-	if ($Metric){	$Cmd += " -metric $Metric"	}	
-	if ($Previous)	{	$Cmd += " -prev "	}
-	if ($Beginning)	{	$Cmd += " -begin "	}
-	if ($Percentage){	$Cmd += " -pct "	}
-	if ($RW)		{	$Cmd += " -rw "		}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd 	
-	if ($ShowRaw) { return $Result }
-	$range1 = $Result.count
-	if ($range1 -lt "5")	{	return "No data available"	}		
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			if("time" -eq $Metric.trim().tolower())		{	Add-Content -Path $tempFile -Value 'Port,Data/Ctrl,0.50,1,2,4,8,16,32,64,128,256,time,date'	}
-			elseif("size" -eq $Metric.trim().tolower())	{	Add-Content -Path $tempFile -Value 'Port,Data/Ctrl,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	}
-			elseif($RW)									{	Add-Content -Path $tempFile -Value 'Port,Data/Ctrl,R/W,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	}
-			else										{	Add-Content -Path $tempFile -Value 'Port,Data/Ctrl,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	}
-			foreach ($s in  $Result[0..$LastItem] )
-				{	if ($s -match "millisec")
-						{	$s= [regex]::Replace($s,"^ +","")
-							$s= [regex]::Replace($s," +"," ")
-							$s= [regex]::Replace($s," ",",")
-							$split1=$s.split(",")
-							$global:time1 = $split1[0]
-							$global:date1 = $split1[1]
-							continue
-						}
-					if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Ldname"))	{	continue	}
-					$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s,"-+","-")
-					$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
-					$s +=",$global:time1,$global:date1"	
-					Add-Content -Path $tempFile -Value $s
-				}
-			Import-Csv $tempFile
-			Remove-Item $tempFile
-		}
-	else{	return $Result	}
-}
-}
-
-Function Get-A9HistogramRemoteCopyVv
-{
-<#
-.SYNOPSIS
-	The command shows a histogram of total remote-copy service times and backup system remote-copy service times in a timed loop.
-.DESCRIPTION
-	Thecommand shows a histogram of total remote-copy service times and backup system 	remote-copy service times in a timed loop        
-.PARAMETER Async
-	Show only volumes which are being copied in asynchronous mode.
-.PARAMETER sync
-	Show only volumes that are being copied in synchronous mode.
-.PARAMETER periodic
-	Show only volumes which are being copied in asynchronous periodic mode.
-.PARAMETER primary
-	Show only virtual volumes in the primary role.
-.PARAMETER secondary
-	Show only virtual volumes in the secondary role.
-.PARAMETER targetsum
-	Displays the sums for all volumes of a target.
-.PARAMETER portsum
-	Displays the sums for all volumes on a port.
-.PARAMETER groupsum
-	Displays the sums for all volumes of a volume group.
-.PARAMETER vvsum
-	Displays the sums for all targets and links of a virtual volume.
-.PARAMETER domainsum
-	Displays the sums for all volumes of a domain.
-.PARAMETER VV_Name
-	Displays statistics only for the specified virtual volume or volume name pattern. Multiple volumes or patterns can be repeated (for example,
-    <VV_name> <VV_name>). If not specified, all virtual volumes that are configured for remote copy are listed.
-.PARAMETER interval 
-    <secs>  Specifies the interval in seconds that statistics are sampled from using an integer from 1 through 2147483. If no count is specified, the  command defaults to 2 seconds. 
-.PARAMETER Pct
-	Shows the access count in each bucket as a percentage. If this option is not specified, the histogram shows the access counts.
-.PARAMETER Prev
-	Specifies that the histogram displays data from a previous sample. If no option is specified, the histogram shows data from the beginning of the command's execution.
-.PARAMETER domain
-	Shows only the virtual volumes that are in domains with names that match the specified domain name(s) or pattern(s).
-.PARAMETER target
-	Shows only volumes whose group is copied to the specified target name or pattern. Multiple target names or patterns may be specified using a comma-separated list.
-.PARAMETER group
-    Shows only volumes whose volume group matches the specified group name or pattern of names. Multiple group names or patterns may be specified using a comma-separated list..PARAMETER iteration
-    Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-	PS:> Get-A9HistogramRemoteCopyVv -iteration 1
-
-	The command shows a histogram of total remote-copy service iteration number of times
-.EXAMPLE
-    PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -Sync
-
-	The command shows a histogram of total remote-copy service iteration number of times with option sync
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -group groupvv_1 -iteration
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -Periodic
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -iteration 1 -PortSum
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -target name_vv1 -iteration 1
-
-	The command shows a histogram of total remote-copy service with specified target name.
-.EXAMPLE	
-	PS:> Get-A9HistogramRemoteCopyVv -group groupvv_1 -iteration   
-
-	The command shows a histogram of total remote-copy service with specified Group name.
-.NOTES
-	This command utilizes the SSH command 'HistRCVv'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$ASync,
-		[Parameter()]	[switch]	$Sync,
-		[Parameter()]	[switch]	$Periodic,
-		[Parameter()]	[switch]	$Primary,
-		[Parameter()]	[switch]	$Secondary,
-		[Parameter()]	[switch]	$TargetSum,
-		[Parameter()]	[switch]	$PortSum,
-		[Parameter()]	[switch]	$GroupSum,
-		[Parameter()]	[switch]	$VVSum,
-		[Parameter()]	[switch]	$DomainSum,
-		[Parameter()]	[switch]	$Pct,
-		[Parameter()]	[switch]	$Prev,
-		[Parameter()]	[String]	$VV_Name,
-		[Parameter()]	[String]	$interval,	
-		[Parameter()]	[String]	$domain,
-		[Parameter()]	[String]	$group,
-		[Parameter()]	[String]	$target,
-		[Parameter()]	[String]	$iteration	
-	)
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$Cmd = "histrcvv "
-	if($ASync)		{	$Cmd += " -async "			}
-	if($Sync)		{	$Cmd += " -sync "			}
-	if($Periodic)	{	$Cmd += " -periodic "		}
-	if($Primary)	{	$Cmd += " -primary "		}
-	if($Secondary)	{	$Cmd += " -secondary "		}
-	if($TargetSum)	{	$Cmd += " -targetsum "		}
-	if($PortSum)	{	$Cmd += " -portsum "		}
-	if($GroupSum)	{	$Cmd += " -groupsum "		}
-	if($VVSum)		{	$Cmd += " -vvsum "			}
-	if($DomainSum)	{	$Cmd += " -domainsum "		}
-	if($Pct)		{	$Cmd += " -pct "			}
-	if($Prev)		{	$Cmd += " -prev "			}	
-	if($interval)	{	$Cmd += " -d $interval"		}
-	if ($domain)	{ 	$Cmd += " -domain  $domain"	}
-	if ($group)		{ 	$Cmd += " -g $group"		}
-	if ($target)	{ 	$Cmd += " -t $target"		}
-	if ($VV_Name)	{ 	$Cmd += " $VV_Name"			}
-	if ($iteration)	{ 	$Cmd += " -iter $iteration "}	
-	else			{	return "Error :  -Iteration is mandatory. "	}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if ($ShowRaw) { return $ShowRaw }
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count - 2
-			if($VVSum)			{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date" }
-			elseif($PortSum) 	{	Add-Content -Path $tempFile -Value "Link,Target,Type,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date"}
-			elseif($GroupSum) 	{	Add-Content -Path $tempFile -Value "Group,Target,Mode,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date"	}
-			elseif($TargetSum)	{	Add-Content -Path $tempFile -Value "Target,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date"}
-			elseif($DomainSum)	{	Add-Content -Path $tempFile -Value "Domain,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date"	}
-			else 				{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,Port,Type,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date"	}
-			foreach($s in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +"," ")
-					$s= [regex]::Replace($s," ",",")
-					if($s -match "millisec")
-						{	$split1=$s.split(",")
-							$global:time1 = $split1[0]
-							$global:date1 = $split1[1]
-							continue
-						}
-					$lent=$s.split(",").length
-					$var2 = $lent[0]
-					if( "total" -eq $var2)	{	continue	}	
-					if(($s -match "-------") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "RCGroup"))	{	continue	}	
-					$s +=",$global:time1,$global:date1"	
-					Add-Content -Path $tempFile -Value $s
-				}
-			Import-Csv $tempFile
-			Remove-Item $tempFile
-		}
-	elseif($Result -match "No virtual volume")	{ 	Return "No data available : $Result"}
-	else{	return $Result	}
-}
-}
-
-Function Get-A9HistogramVLun
-{
-<#
-.SYNOPSIS
-	The command displays Virtual Volume Logical Unit Number (VLUN) service time histograms.
-.DESCRIPTION
-    The command displays Virtual Volume Logical Unit Number (VLUN) service time histograms.
-
-.PARAMETER domain
-	Shows only VLUNs whose Virtual Volumes (VVs) are in domains with names that match one or more of the specified domain names or patterns. Multiple domain names or patterns can be
-	repeated using a comma-separated list.
-.PARAMETER hostE
-	Shows only VLUNs exported to the specified host(s) or pattern(s). Multiple host names or patterns can be repeated using a comma-separated list.
-.PARAMETER vvname
-	Requests that only LDs mapped to VVs that match and of the specified names or patterns be displayed. Multiple volume names or patterns can be repeated using a comma-separated list.
-.PARAMETER Nodes
-	Specifies that the display is limited to specified nodes and physical disks connected to those nodes. The node list is specified as a series
-	of integers separated by commas (e.g. 1,2,3). The list can also consist of a single integer. If the node list is not specified, all disks on all nodes are displayed.
-.PARAMETER Slots
-	Specifies that the display is limited to specified PCI slots and physical disks connected to those PCI slots. The slot list is specified as a series of integers separated 
-	by commas (e.g. 1,2,3). The list can also consist of a single integer. If the slot list is not specified, all disks on all slots are displayed.
-.PARAMETER Ports
-	Specifies that the display is limited to specified ports and physical disks connected to those ports. The port list is specified as a series of integers separated 
-	by commas (e.g. 1,2,3). The list can also consist of a single integer. If the port list is not specified, all disks on all ports are displayed.
-.PARAMETER Metric
-	Selects which metric to display. Metrics can be one of the following:
-		both - (Default)Display both I/O time and I/O size histograms
-		time - Display only the I/O time histogram
-		size - Display only the I/O size histogram
-.PARAMETER Percentage
-	Shows the access count in each bucket as a percentage. If this option is not specified, the histogram shows the access counts.
-.PARAMETER Previous
-	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). 
-	If no option is specified, the histogram shows data from the beginning of the command's execution.
-.PARAMETER Beginning
-	Histogram displays data either from a previous sample(-prev) or from when the system was last started(-begin). If no option is specified, the histogram shows data from the beginning of the command's execution.
-.PARAMETER Lun      
-	Specifies that VLUNs with LUNs matching the specified LUN(s) or pattern(s) are displayed. Multiple LUNs or patterns can be repeated using a comma-separated list.
-.PARAMETER iteration
-	Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-	PS:> Get-A9HistogramVLun -iteration 1
-
-	This example displays two iterations of a histogram of service times for all VLUNs.	
-.EXAMPLE	
-	PS:> Get-A9HistogramVLun -iteration 1 -nodes 1
-
-	This example displays two iterations of a histogram only exports from the specified nodes.	
-.EXAMPLE	
-	PS:> Get-A9HistogramVLun -iteration 1 -domain DomainName
-	Shows only VLUNs whose Virtual Volumes (VVs) are in domains with names that match one or more of the specified domain names or patterns.
-.EXAMPLE	
-	PS:> Get-A9HistogramVLun -iteration 1 -Percentage
-
-	Shows the access count in each bucket as a percentage.	 
-.NOTES
-	This command utilizes the SSH command 'HistvLun'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$iteration,
-		[Parameter()]	[String]	$domain,
-		[Parameter()]	[String]	$hostE,
-		[Parameter()]	[String]	$vvname,
-		[Parameter()]	[String]	$lun,
-		[Parameter()]	[String]	$Nodes,
-		[Parameter()]	[String]	$Slots,
-		[Parameter()]	[String]	$Ports,
-		[Parameter()]	[Switch]	$Percentage,
-		[Parameter()]	[Switch]	$Previous,
-		[Parameter()]	[Switch]	$Beginning,
-		[Parameter()][ValidateSet("both","time","size")]	[String]	$Metric,
-		[Parameter()]	[switch]	$ShowRaw		
-)		
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$Cmd = "histvlun "
-	if ($iteration)	{ 	$Cmd += " -iter $iteration"	}	
-	else			{	return "Error : -Iteration is mandatory. "	}
-	if ($domain)	{ 	$Cmd += " -domain $domain"	}	
-	if($hostE)		{	$Cmd += " -host $host "		}
-	if ($vvname)	{	$Cmd += " -v $vvname"		}
-	if ($lun)		{	$Cmd += " -l $lun"	}
-	if ($Nodes)		{	$Cmd += " -nodes $Nodes"	}
-	if ($Slots)		{	$Cmd += " -slots $Slots"	}
-	if ($Ports)		{	$Cmd += " -ports $Ports"	}	
-	if($Metric)		{	$Cmd += " -metric $Metric "	}
-	if ($Previous)	{	$Cmd += " -prev "	}
-	if ($Beginning)	{	$Cmd += " -begin "	}
-	if ($Percentage){	$Cmd += " -pct "	}		
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	write-verbose " histograms The Get-HistVLun command displays Virtual Volume Logical Unit Number (VLUN)  " 
-	if ($ShowRaw) { return $ShowRaw }
-	$range1 = $Result.Count
-	if($range1 -le "5" ){	return "No Data Available"	}	
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count 
-			if("time" -eq $Metric.trim().tolower())
-				{	Add-Content -Path $tempFile -Value 'Lun,VVname,Host,Port,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),time,date'
-					$LastItem = $Result.Count -3
-				}
-			elseif("size" -eq $Metric.trim().tolower())
-				{	Add-Content -Path $tempFile -Value 'Lun,VVname,Host,Port,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes),time,date'
-					$LastItem = $Result.Count -3
-				}
-			else	{	Add-Content -Path $tempFile -Value 'Lun,VVname,Host,Port,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes),time,date'	}
-			foreach ($s in  $Result[0..$LastItem] )
-				{	if ($s -match "millisec")
-						{	$s= [regex]::Replace($s,"^ +","")
-							$s= [regex]::Replace($s," +"," ")
-							$s= [regex]::Replace($s," ",",")
-							$split1=$s.split(",")
-							$global:time1 = $split1[0]
-							$global:date1 = $split1[1]
-							continue
-						}
-					if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "VVname"))	{	continue	}
-					$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s,"-+","-")
-					$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
-					$aa=$s.split(",").length
-					if ($aa -eq "20")	{	continue	}
-					$s +=",$global:time1,$global:date1"
-					Add-Content -Path $tempFile -Value $s
-				}
-			Import-Csv $tempFile
-			Remove-Item $tempFile
-		}	
-	else{	return $Result	}
-}
-}
-
-Function Get-A9HistogramVv
+Function Get-A9Histogram
 {
 <#
 .SYNOPSIS
@@ -1025,9 +177,70 @@ Function Get-A9HistogramVv
 	of all columns starting with the one which corresponds to the threshold service time. For example, -t,8,100 means to only display
 	the rows where the 8ms column and all columns to the right adds up to more than 100.
 .PARAMETER VVName
-	Virtual Volume name
+	Requests that only LDs mapped to VVs that match and of the specified names or patterns be displayed. Multiple volume names or patterns can be repeated using a comma-separated list.
 .PARAMETER iteration
 	Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
+.PARAMETER hostE
+	Shows only VLUNs exported to the specified host(s) or pattern(s). Multiple host names or patterns can be repeated using a comma-separated list.
+.PARAMETER Nodes
+	Specifies that the display is limited to specified nodes and physical disks connected to those nodes. The node list is specified as a series
+	of integers separated by commas (e.g. 1,2,3). The list can also consist of a single integer. If the node list is not specified, all disks on all nodes are displayed.
+.PARAMETER Slots
+	Specifies that the display is limited to specified PCI slots and physical disks connected to those PCI slots. The slot list is specified as a series of integers separated 
+	by commas (e.g. 1,2,3). The list can also consist of a single integer. If the slot list is not specified, all disks on all slots are displayed.
+.PARAMETER Ports
+	Specifies that the display is limited to specified ports and physical disks connected to those ports. The port list is specified as a series of integers separated 
+	by commas (e.g. 1,2,3). The list can also consist of a single integer. If the port list is not specified, all disks on all ports are displayed.
+.PARAMETER Lun      
+	Specifies that VLUNs with LUNs matching the specified LUN(s) or pattern(s) are displayed. Multiple LUNs or patterns can be repeated using a comma-separated list.
+.PARAMETER Both 
+	Specifies that both control and data transfers are displayed(-both), only control transfers are displayed (-ctl), or only data transfers are
+	displayed (-data). If this option is not specified, only data transfers are displayed.
+.PARAMETER CTL 
+	Specifies that both control and data transfers are displayed(-both), only control transfers are displayed (-ctl), or only data transfers are
+	displayed (-data). If this option is not specified, only data transfers are displayed.
+.PARAMETER Data
+	Specifies that both control and data transfers are displayed(-both), only control transfers are displayed (-ctl), or only data transfers are 
+	displayed (-data). If this option is not specified, only data transfers are displayed.
+.PARAMETER Disk 
+	Specifies to display only host ports (target ports), only disk ports (initiator ports), only Fibre Channel Remote Copy configured ports, or
+	only Fibre Channel ports for Data Migration. If no option is specified, all ports are displayed.
+.PARAMETER RCFC 
+	Specifies to display only host ports (target ports), only disk ports (initiator ports), only Fibre Channel Remote Copy configured ports, or
+	only Fibre Channel ports for Data Migration. If no option is specified, all ports are displayed.
+.PARAMETER PEER
+	Specifies to display only host ports (target ports), only disk ports (initiator ports), only Fibre Channel Remote Copy configured ports, or
+	only Fibre Channel ports for Data Migration. If no option is specified, all ports are displayed.
+.PARAMETER Async
+	Show only volumes which are being copied in asynchronous mode.
+.PARAMETER sync
+	Show only volumes that are being copied in synchronous mode.
+.PARAMETER periodic
+	Show only volumes which are being copied in asynchronous periodic mode.
+.PARAMETER primary
+	Show only virtual volumes in the primary role.
+.PARAMETER secondary
+	Show only virtual volumes in the secondary role.
+.PARAMETER sum
+	Displays the sums for items of a target, or a Port, or of a Volume, or of a group, or of a domain.
+.PARAMETER interval 
+    <secs>  Specifies the interval in seconds that statistics are sampled from using an integer from 1 through 2147483. If no count is specified, the  command defaults to 2 seconds. 
+.PARAMETER Percentage
+	Shows the access count in each bucket as a percentage. If this option is not specified, the histogram shows the access counts.
+.PARAMETER Prev
+	Specifies that the histogram displays data from a previous sample. If no option is specified, the histogram shows data from the beginning of the command's execution.
+.PARAMETER domain
+	Shows only the virtual volumes that are in domains with names that match the specified domain name(s) or pattern(s).
+.PARAMETER target
+	Shows only volumes whose group is copied to the specified target name or pattern. Multiple target names or patterns may be specified using a comma-separated list.
+.PARAMETER group
+    Shows only volumes whose volume group matches the specified group name or pattern of names. Multiple group names or patterns may be specified using a comma-separated list..PARAMETER iteration
+    Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
+.PARAMETER Chunklet_num
+	Specifies that statistics are limited to only the specified chunklet, identified
+	by number.
+.PARAMETER NoIdle
+	Specifies that histograms for only non-idle devices are displayed. This option is shorthand for the option -filt t,0,0.
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
@@ -1049,83 +262,477 @@ Function Get-A9HistogramVv
 
 	This Example Selects which Metric to display. associated with Virtual Volume name.
 .NOTES
-	This command utilizes the SSH command 'Histvv'
+	This command utilizes the SSH command 'HistCh'
+	This command utilizes the SSH command 'HistLD'
+	This command utilizes the SSH command 'HistPD'
+	This command utilizes the SSH command 'HistPort'
+	This command utilizes the SSH command 'HistQOS'
+	This command utilizes the SSH command 'HistVLUN'
+	This command utilizes the SSH command 'HistVV'
+	
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[String]	$iteration,
-		[Parameter()]	[String]	$domain,
-		[Parameter()]	[String]	$Metric,
-		[Parameter()]	[String]	$Timecols,
-		[Parameter()]	[String]	$Sizecols,
-		[Parameter()]	[String]	$VVname,		
-		[Parameter()]	[Switch]	$Percentage,
-		[Parameter()]	[Switch]	$Previous,	
-		[Parameter()]	[Switch]	$RW,
-		[Parameter()]	[String]	$IntervalInSeconds,
-		[Parameter()]	[String]	$FSpace,
-		[Parameter()]	[switch]	$ShowRaw
+param(	# Common
+		[Parameter()]										[String]	$iteration,
+		[Parameter()]										[String]	$domain,
+		[Parameter()]										[Switch]	$Percentage,
+		[Parameter()]										[Switch]	$Previous,	
+		[Parameter()][ValidateSet("both","time","size")]	[String]	$Metric,
+		# VV 
+		[Parameter(ParameterSetName='Volume')]
+		[Parameter(ParameterSetName='LogicalDisk')]			[String]	$Timecols,
+		[Parameter(ParameterSetName='Volume')]
+		[Parameter(ParameterSetName='LogicalDisk')]			[String]	$Sizecols,	
+		[Parameter(ParameterSetName='Port')]
+		[Parameter(ParameterSetName='Chunklet')]
+		[Parameter(ParameterSetName='Volume')]				[Switch]	$RW,
+		[Parameter(ParameterSetName='Volume')]	
+		[Parameter(ParameterSetName='LogicalDisk')]	
+		[Parameter(ParameterSetName='Chunklet')]
+		[Parameter(ParameterSetName='RCVV')]				[String]	$IntervalInSeconds,
+		[Parameter(ParameterSetName='Volume')]				[String]	$FSpace,
+		[Parameter(ParameterSetName='Port')]
+		[Parameter(ParameterSetName='RCVV')]
+		[Parameter(ParameterSetName='LogicalDisk')]
+		[Parameter(ParameterSetName='Volume')]				[String]	$vvname,
+		[Parameter(Mandatory, ParameterSetName='Volume')]	[Switch]	$VolumeHistogram,
+		# VLUN
+		[Parameter(ParameterSetName='Port')]
+		[Parameter(ParameterSetName='VLUN')]				[String]	$hostE,
+		[Parameter(ParameterSetName='VLUN')]				[String]	$lun,
+		[Parameter(ParameterSetName='Port')]
+		[Parameter(ParameterSetName='PhysicalDisk')]
+		[Parameter(ParameterSetName='VLUN')]				[String]	$Nodes,
+		[Parameter(ParameterSetName='Port')]
+		[Parameter(ParameterSetName='PhysicalDisk')]
+		[Parameter(ParameterSetName='VLUN')]				[String]	$Slots,
+		[Parameter(ParameterSetName='Port')]
+		[Parameter(ParameterSetName='PhysicalDisk')]
+		[Parameter(ParameterSetName='VLUN')]				[String]	$Ports,
+		[Parameter(ParameterSetName='Port')]
+		[Parameter(ParameterSetName='PhysicalDisk')]
+		[Parameter(ParameterSetName='LogicalDisk')]	
+		[Parameter(ParameterSetName='Chunklet')]
+		[Parameter(ParameterSetName='VLUN')]				[Switch]	$Beginning,
+		[Parameter(Mandatory, ParameterSetName='VLUN')]		[Switch]	$VLunHistogram,
+		#Port
+		[Parameter(ParameterSetName='Port')]				[Switch]	$Both,
+		[Parameter(ParameterSetName='Port')]				[Switch]	$CTL,
+		[Parameter(ParameterSetName='Port')]				[Switch]	$Data,
+		[Parameter(ParameterSetName='Port')]				[Switch]	$PEER,
+		[Parameter(ParameterSetName='Port')]				[Switch]	$Disk,
+		[Parameter(ParameterSetName='Port')]				[Switch]	$RCFC,
+		[Parameter(Mandatory, ParameterSetName='Port')]		[Switch]	$PortHistogram,
+		# RCVV
+		[Parameter(ParameterSetName='RCVV')]				[switch]	$Sync,
+		[Parameter(ParameterSetName='RCVV')]				[switch]	$Periodic,
+		[Parameter(ParameterSetName='RCVV')]				[switch]	$Primary,
+		[Parameter(ParameterSetName='RCVV')]				[switch]	$Secondary,
+		[Parameter(ParameterSetName='RCVV')]	
+		[ValidateSet('Target','Port','Group','Volume','Domain')]
+															[switch]	$Sum,
+		[Parameter(ParameterSetName='RCVV')]				[switch]	$Prev,
+		[Parameter(ParameterSetName='RCVV')]				[String]	$group,
+		[Parameter(ParameterSetName='RCVV')]				[String]	$target,
+		[Parameter(Mandatory, ParameterSetName='RCVV')]		[Switch]	$RemoteCopyHistogram,
+		# Physical Disk
+		[Parameter(ParameterSetName='PhysicalDisk')]		[String]	$WWN,
+		[Parameter(ParameterSetName='PhysicalDisk')]		[Switch]	$Devinfo,
+		[Parameter(ParameterSetName='PhysicalDisk')]		[String]	$FSpec,
+		[Parameter(Mandatory,ParameterSetName='PhysicalDisk')][String]	$PhysicalDiskHistogram,
+		# Logical Disk
+		[Parameter(ParameterSetName='LogicalDisk')]	
+		[Parameter(ParameterSetName='Chunklet')]			[Switch]	$NonIdle,
+		[Parameter(ParameterSetName='Chunklet')]
+		[Parameter(ParameterSetName='LogicalDisk')]			[String]	$LdName,
+		[Parameter(Mandatory,ParameterSetName='LogicalDisk')][String]	$LogicalDiskHistogram,
+		# Chunklet
+		[Parameter(ParameterSetName='Chunklet')]			[String]	$Chunklet_num,
+		[Parameter(Mandatory,ParameterSetName='Chunklet')]	[String]	$ChunkletHistogram,
+
+		[Parameter()]										[switch]	$ShowRaw
 	)
 Begin
 {	Test-A9Connection -ClientType SshClient
 }
 Process	
-{	$Cmd = "histvv "
-	if ($iteration)	{ 	$Cmd += " -iter $iteration "		}
-	else			{	return "Error :  -Iteration is mandatory. "	}
-	if ($domain)	{ 	$Cmd += " -domain $domain "	}
-	if ($Metric)	{	$opt="both","time","size"
-						$Metric = $Metric.toLower()
-						if ($opt -eq $Metric)	{	$Cmd += " -metric $Metric"						}
-						else 					{	return " metrics $Metric not found only [ both | time | size ] can be passed one at a time "	}
+{	switch($PSCmdlet.ParameterSetName)
+		{	'Volume'
+					{	$Cmd = "histvv "
+						if ( $iteration )	{ 	$Cmd += " -iter $iteration "}	
+						else				{	$Cmd += " -iter 1 "			}
+						if ( $domain )		{ 	$Cmd += " -domain $domain "	}
+						if ( $Metric )		{	$opt="both","time","size"
+												$Metric = $Metric.toLower()
+												if ($opt -eq $Metric)	{	$Cmd += " -metric $Metric"						}
+												else 					{	return " metrics $Metric not found only [ both | time | size ] can be passed one at a time "	}
+											}
+						if ( $Timecols )	{ 	$Cmd += " -timecols $Timecols "			}
+						if ( $Sizecols )	{ 	$Cmd += " -sizecols $Sizecols "			}
+						if ( $Previous )	{	$Cmd += " -prev "	}	
+						if ( $Percentage )	{	$Cmd += " -pct "	}
+						if ( $RW )			{	$Cmd += " -rw "	}
+						if ( $IntervalInSeconds )	{ 	$Cmd += " -d $IntervalInSeconds "	}
+						if ( $FSpace )		{ 	$Cmd += " -filt $FSpace "			}
+						if ( $VVname )		{	$vv=$VVname
+												$Cmd1 ="showvv"
+												$Result1 = Invoke-A9CLICommand -cmds  $Cmd1
+												if($Result1 -match $vv)	{	$cmd += " $vv "	}
+												else					{	Return "Error: -VVname $VVname is not available `n Try Using Get-VvList to list all the VV's Available  "	}
+											}		
+						write-verbose "Executing the following SSH command `n`t $cmd"
+						$Result = Invoke-A9CLICommand -cmds  $Cmd
+						write-verbose " Get-HistVv command displays Virtual Volume Logical Unit Number (VLUN)  "
+						if ($ShowRaw) { return $Result } 
+						$range1 = $Result.count
+						if($range1 -le "5")	{	return "No data available"	}	
+						if ( $Result.Count -gt 1)
+							{	$tempFile = [IO.Path]::GetTempFileName()
+								$LastItem = $Result.Count
+								if("time" -eq $Metric.trim().tolower())		{	Add-Content -Path $tempFile -Value 'VVname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),time,date'	}
+								elseif("size" -eq $Metric.trim().tolower())	{	Add-Content -Path $tempFile -Value 'VVname,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes),time,date'	}
+								else										{	Add-Content -Path $tempFile -Value 'VVname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes),time,date'	}
+								foreach ($s in  $Result[0..$LastItem] )
+									{	if ($s -match "millisec")
+											{	$s= [regex]::Replace($s,"^ +","")
+												$s= [regex]::Replace($s," +"," ")
+												$s= [regex]::Replace($s," ",",")
+												$split1=$s.split(",")
+												$global:time1 = $split1[0]
+												$global:date1 = $split1[1]
+												continue
+											}
+										if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "VVname"))	{	continue	}			
+										$s= [regex]::Replace($s,"^ +","")
+										$s= [regex]::Replace($s,"-+","-")
+										$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line			
+										$s +=",$global:time1,$global:date1"	
+										Add-Content -Path $tempFile -Value $s
+									}
+								$Result = Import-Csv $tempFile
+								Remove-Item $tempFile
+							}
 					}
-	if ($Timecols)	{ 	$Cmd += " -timecols $Timecols "			}
-	if ($Sizecols)	{ 	$Cmd += " -sizecols $Sizecols "			}
-	if ($Previous)	{	$Cmd += " -prev "	}	
-	if ($Percentage){	$Cmd += " -pct "	}
-	if ($RW)		{	$Cmd += " -rw "	}
-	if ($IntervalInSeconds)	{ 	$Cmd += " -d $IntervalInSeconds "	}
-	if ($FSpace)	{ 	$Cmd += " -filt $FSpace "			}
-	if ($VVname)
-		{	$vv=$VVname
-			$Cmd1 ="showvv"
-			$Result1 = Invoke-A9CLICommand -cmds  $Cmd1
-			if($Result1 -match $vv)	{	$cmd += " $vv "	}
-			else					{	Return "Error: -VVname $VVname is not available `n Try Using Get-VvList to list all the VV's Available  "	}
-		}		
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	write-verbose " Get-HistVv command displays Virtual Volume Logical Unit Number (VLUN)  "
-	if ($ShowRaw) { return $Result } 
-	$range1 = $Result.count
-	if($range1 -le "5")	{	return "No data available"	}	
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			if("time" -eq $Metric.trim().tolower())		{	Add-Content -Path $tempFile -Value 'VVname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),time,date'	}
-			elseif("size" -eq $Metric.trim().tolower())	{	Add-Content -Path $tempFile -Value 'VVname,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes),time,date'	}
-			else										{	Add-Content -Path $tempFile -Value 'VVname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes),time,date'	}
-			foreach ($s in  $Result[0..$LastItem] )
-				{	if ($s -match "millisec")
-						{	$s= [regex]::Replace($s,"^ +","")
-							$s= [regex]::Replace($s," +"," ")
-							$s= [regex]::Replace($s," ",",")
-							$split1=$s.split(",")
-							$global:time1 = $split1[0]
-							$global:date1 = $split1[1]
-							continue
-						}
-					if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "VVname"))	{	continue	}			
-					$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s,"-+","-")
-					$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line			
-					$s +=",$global:time1,$global:date1"	
-					Add-Content -Path $tempFile -Value $s
-				}
-			Import-Csv $tempFile
-			Remove-Item $tempFile
+			'VLUN'	
+					{	$Cmd = "histvlun "
+						if ( $iteration )	{ 	$Cmd += " -iter $iteration "}	
+						else				{	$Cmd += " -iter 1 "			}
+						if ( $domain )		{ 	$Cmd += " -domain $domain "	}	
+						if ( $hostE )		{	$Cmd += " -host $host "		}
+						if ( $vvname )		{	$Cmd += " -v $vvname "		}
+						if ( $lun )			{	$Cmd += " -l $lun "			}
+						if ( $Nodes )		{	$Cmd += " -nodes $Nodes"	}
+						if ( $Slots )		{	$Cmd += " -slots $Slots"	}
+						if ( $Ports )		{	$Cmd += " -ports $Ports"	}	
+						if ( $Metric )		{	$Cmd += " -metric $Metric "	}
+						if ( $Previous )	{	$Cmd += " -prev "			}
+						if ( $Beginning )	{	$Cmd += " -begin "			}
+						if ( $Percentage )	{	$Cmd += " -pct "			}		
+						write-verbose "Executing the following SSH command `n`t $cmd"
+						$Result = Invoke-A9CLICommand -cmds  $Cmd
+						write-verbose " histograms The Get-HistVLun command displays Virtual Volume Logical Unit Number (VLUN)  " 
+						if ($ShowRaw) { return $ShowRaw }
+						$range1 = $Result.Count
+						if($range1 -le "5" ){	return "No Data Available"	}	
+						if ( $Result.Count -gt 1)
+							{	$tempFile = [IO.Path]::GetTempFileName()
+								$LastItem = $Result.Count 
+								if("time" -eq $Metric.trim().tolower())
+									{	Add-Content -Path $tempFile -Value 'Lun,VVname,Host,Port,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),time,date'
+										$LastItem = $Result.Count -3
+									}
+								elseif("size" -eq $Metric.trim().tolower())
+									{	Add-Content -Path $tempFile -Value 'Lun,VVname,Host,Port,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes),time,date'
+										$LastItem = $Result.Count -3
+									}
+								else	{	Add-Content -Path $tempFile -Value 'Lun,VVname,Host,Port,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes),time,date'	}
+								foreach ($s in  $Result[0..$LastItem] )
+									{	if ($s -match "millisec")
+											{	$s= [regex]::Replace($s,"^ +","")
+												$s= [regex]::Replace($s," +"," ")
+												$s= [regex]::Replace($s," ",",")
+												$split1=$s.split(",")
+												$global:time1 = $split1[0]
+												$global:date1 = $split1[1]
+												continue
+											}
+										if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "VVname"))	{	continue	}
+										$s= [regex]::Replace($s,"^ +","")
+										$s= [regex]::Replace($s,"-+","-")
+										$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
+										$aa=$s.split(",").length
+										if ($aa -eq "20")	{	continue	}
+										$s +=",$global:time1,$global:date1"
+										Add-Content -Path $tempFile -Value $s
+									}
+								$Result = Import-Csv $tempFile
+								Remove-Item $tempFile
+							}	
+					}	
+			'Port'	
+					{	$Cmd = "histport "
+						if ( $iteration )		{ 	$Cmd += " -iter $iteration "}	
+						else					{	$Cmd += " -iter 1 "			}
+						if ( $Both )			{	$Cmd +=" -both "	}
+						if ( $CTL )				{	$Cmd +=" -ctl "		}
+						if ( $Data )			{	$Cmd +=" -data "	}
+						if ( $Nodes )			{	$Cmd += " -nodes $Nodes"	}
+						if ( $Slots )			{	$Cmd += " -slots $Slots"	}
+						if ( $Ports )			{	$Cmd += " -ports $Ports"	}
+						if ( $HostE )			{	$Cmd +=" -host "	}
+						if ( $Disk )			{	$Cmd +=" -disk "	}
+						if ( $RCFC )			{	$Cmd +=" -rcfc "	}
+						if ( $PEER )			{	$Cmd +=" -peer "	}
+						if ( $Metric )			{	$Cmd += " -metric $Metric"	}	
+						if ( $Previous )		{	$Cmd += " -prev "	}
+						if ( $Beginning )		{	$Cmd += " -begin "	}
+						if ( $Percentage )		{	$Cmd += " -pct "	}
+						if ( $RW )				{	$Cmd += " -rw "		}
+						write-verbose "Executing the following SSH command `n`t $cmd"
+						$Result = Invoke-A9CLICommand -cmds  $Cmd 	
+						if ($ShowRaw) { return $Result }
+						$range1 = $Result.count
+						if ($range1 -lt "5")	{	return "No data available"	}		
+						if ( $Result.Count -gt 1)
+							{	$tempFile = [IO.Path]::GetTempFileName()
+								$LastItem = $Result.Count
+								if("time" -eq $Metric.trim().tolower())		{	Add-Content -Path $tempFile -Value 'Port,Data/Ctrl,0.50,1,2,4,8,16,32,64,128,256,time,date'	}
+								elseif("size" -eq $Metric.trim().tolower())	{	Add-Content -Path $tempFile -Value 'Port,Data/Ctrl,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	}
+								elseif($RW)									{	Add-Content -Path $tempFile -Value 'Port,Data/Ctrl,R/W,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	}
+								else										{	Add-Content -Path $tempFile -Value 'Port,Data/Ctrl,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	}
+								foreach ($s in  $Result[0..$LastItem] )
+									{	if ($s -match "millisec")
+											{	$s= [regex]::Replace($s,"^ +","")
+												$s= [regex]::Replace($s," +"," ")
+												$s= [regex]::Replace($s," ",",")
+												$split1=$s.split(",")
+												$global:time1 = $split1[0]
+												$global:date1 = $split1[1]
+												continue
+											}
+										if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Ldname"))	{	continue	}
+										$s= [regex]::Replace($s,"^ +","")
+										$s= [regex]::Replace($s,"-+","-")
+										$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
+										$s +=",$global:time1,$global:date1"	
+										Add-Content -Path $tempFile -Value $s
+									}
+								$Result = Import-Csv $tempFile
+								Remove-Item $tempFile
+							}
+					}
+			'RCVV'	
+					{	$Cmd = "histrcvv "
+						if ( $iteration )		{ 	$Cmd += " -iter $iteration "}	
+						else					{	$Cmd += " -iter 1 "			}
+						if ( $Sync )			{	$Cmd += " -sync "			}
+						if ( $Periodic )		{	$Cmd += " -periodic "		}
+						if ( $Primary )			{	$Cmd += " -primary "		}
+						if ( $Secondary )		{	$Cmd += " -secondary "		}
+						if ( $Sum -eq 'Target')	{	$Cmd += " -targetsum "		}
+						if ( $Sum -eq 'Port')	{	$Cmd += " -portsum "		}
+						if ( $Sum -eq 'Group' )	{	$Cmd += " -groupsum "		}
+						if ( $Sum -eq 'Volume' ){	$Cmd += " -vvsum "			}
+						if ( $Sum -eq 'Domain')	{	$Cmd += " -domainsum "		}
+						if ( $Percentage )		{	$Cmd += " -pct "			}
+						if ( $Prev )			{	$Cmd += " -prev "			}	
+						if ( $IntervalInSeconds ){	$Cmd += " -d $IntervalInSeconds "}
+						if ( $domain )			{ 	$Cmd += " -domain  $domain"	}
+						if ( $group )			{ 	$Cmd += " -g $group"		}
+						if ( $target )			{ 	$Cmd += " -t $target"		}
+						if ( $VVName )			{ 	$Cmd += " $VVName"			}
+						write-verbose "Executing the following SSH command `n`t $cmd"
+						$Result = Invoke-A9CLICommand -cmds  $Cmd
+						if ($ShowRaw) { return $ShowRaw }
+						if ( $Result.Count -gt 1)
+							{	$tempFile = [IO.Path]::GetTempFileName()
+								$LastItem = $Result.Count - 2
+								if($VVSum)			{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date" }
+								elseif($PortSum) 	{	Add-Content -Path $tempFile -Value "Link,Target,Type,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date"}
+								elseif($GroupSum) 	{	Add-Content -Path $tempFile -Value "Group,Target,Mode,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date"	}
+								elseif($TargetSum)	{	Add-Content -Path $tempFile -Value "Target,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date"}
+								elseif($DomainSum)	{	Add-Content -Path $tempFile -Value "Domain,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date"	}
+								else 				{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,Port,Type,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date"	}
+								foreach($s in  $Result[0..$LastItem] )
+									{	$s= [regex]::Replace($s,"^ +","")
+										$s= [regex]::Replace($s," +"," ")
+										$s= [regex]::Replace($s," ",",")
+										if($s -match "millisec")
+											{	$split1=$s.split(",")
+												$global:time1 = $split1[0]
+												$global:date1 = $split1[1]
+												continue
+											}
+										$lent=$s.split(",").length
+										$var2 = $lent[0]
+										if( "total" -eq $var2)	{	continue	}	
+										if(($s -match "-------") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "RCGroup"))	{	continue	}	
+										$s +=",$global:time1,$global:date1"	
+										Add-Content -Path $tempFile -Value $s
+									}
+								$Result = Import-Csv $tempFile
+								Remove-Item $tempFile
+							}
+					}
+			'PhyscialDisk'
+					{	$Cmd = "histpd "
+						if ( $Iteration)	{	$Cmd += "-iter $Iteration"	}
+						else				{	$Cmd += "-iter 1 "			}	
+						if ( $WWN )			{	$Cmd += " -w $WWN"			}
+						if ( $Nodes )		{	$Cmd += " -nodes $Nodes"	}
+						if ( $Slots )		{	$Cmd += " -slots $Slots"	}
+						if ( $Ports )		{	$Cmd += " -ports $Ports"	}
+						if ( $Devinfo )		{	$Cmd += " -devinfo "	}
+						if ( $Metric )		{	$Met = $Metric
+												$c = "both","time","size"
+												$Metric = $metric.toLower()
+												if($c -eq $Met)		{	$Cmd += " -metric $Metric "}
+												else	{	return "FAILURE: -Metric $Metric is Invalid. Use only [ both | time | size ]."	}
+											}
+						if ( $Previous )	{	$Cmd += " -prev "		}
+						if ( $Beginning )	{	$Cmd += " -begin "		}
+						if ( $Percentage )	{	$Cmd += " -pct "		}	
+						if ( $FSpec )		{	$Cmd += " -filt $FSpec"	}
+						write-verbose "Executing the following SSH command `n`t $cmd"
+						$Result = Invoke-A9CLICommand -cmds  $Cmd 
+						if ( $ShowRaw ) 	{	$ShowRaw }
+						$range1 = $Result.count
+						if ( $range1 -lt "5" )	{	return "No data available"	}		
+						if ( $Result.Count -gt 1 )
+							{	$tempFile = [IO.Path]::GetTempFileName()
+								$LastItem = $Result.Count
+								if("time" -eq $Metric.trim().tolower())
+									{	Add-Content -Path $tempFile -Value 'ID,Port,0.50,1,2,4,8,16,32,64,128,256,time,date'
+										$LastItem = $Result.Count - 3
+									}
+								elseif("size" -eq $Metric.trim().tolower())
+									{	Add-Content -Path $tempFile -Value 'ID,Port,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	
+										$LastItem = $Result.Count - 3
+									}
+								elseif ($Devinfo)	{	Add-Content -Path $tempFile -Value  'ID,Port,Type,K_RPM,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	}
+								else				{	Add-Content -Path $tempFile -Value  'ID,Port,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'				}
+								foreach ($s in  $Result[0..$LastItem] )
+									{	if ($s -match "millisec")
+											{	$s= [regex]::Replace($s,"^ +","")
+												$s= [regex]::Replace($s," +"," ")
+												$s= [regex]::Replace($s," ",",")
+												$split1=$s.split(",")
+												$global:time1 = $split1[0]
+												$global:date1 = $split1[1]
+												continue
+											}
+										if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "ID"))	{	continue	}
+										$s= [regex]::Replace($s,"^ +","")
+										$s= [regex]::Replace($s,"-+","-")
+										$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line			
+										$aa=$s.split(",").length
+										if ($aa -eq "20") 	{	continue	}
+										$s +=",$global:time1,$global:date1"
+										Add-Content -Path $tempFile -Value $s
+									}
+								$Result = Import-Csv $tempFile
+								Remove-Item $tempFile
+							}
+					}
+			'LogicalDisk'
+					{	$Cmd = "histld -iter $Iteration "
+						if ( $Iteration )		{	$Cmd += " -iter $Iteration "		}
+						else 					{	$Cmd += " -iter 1 "					}
+						if ( $Metric )			{	$Cmd += " -metric $Metric "			}
+						if ( $VVName )			{	$Cmd += " -vv $VVName "				} 
+						if ( $Domain )			{	$Cmd += " -domain $Domain"			}
+						if ( $Timecols )		{	$Cmd += " -timecols $Timecols "		}
+						if ( $Sizecols )		{	$Cmd += " -sizecols $Sizecols "		}	
+						if ( $Percentage )		{	$Cmd += " -pct "					}
+						if ( $Previous )		{	$Cmd += " -prev "					}				
+						if ( $Beginning )		{	$Cmd += " -begin "					}
+						if ( $IntervalInSeconds ){	$Cmd += " -d $IntervalInSeconds "	}
+						if ( $NonIdle )			{	$Cmd += " -ni "						}
+						if ( $LdName )			{	$Cmd += "  $LdName "				}
+						write-verbose "Executing the following SSH command `n`t $cmd"
+						$Result = Invoke-A9CLICommand -cmds  $Cmd
+						if ($ShowRaw) { $ShowRaw }
+						$range1 = $Result.count
+						#write-host "count = $range1"
+						if($range1 -lt "5")		{	return "No data available Please Try With Valid Data. `n"	}	
+						if ( $Result.Count -gt 1)
+							{	$tempFile = [IO.Path]::GetTempFileName()
+								$LastItem = $Result.Count
+								if ($Metric -eq "time")		{	Add-Content -Path $tempFile -Value  'Logical_Disk_Name,0.50,1,2,4,8,16,32,64,128,256,time,date'	}
+								if ($Metric -eq "size")		{	Add-Content -Path $tempFile -Value  'Logical_Disk_Name,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date' 	}
+								else						{	Add-Content -Path $tempFile -Value  'Logical_Disk_Name,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date' 	}
+								foreach ($s in  $Result[0..$LastItem] )
+									{	if ($s -match "millisec")
+										{	$s= [regex]::Replace($s,"^ +","")
+											$s= [regex]::Replace($s," +"," ")
+											$s= [regex]::Replace($s," ",",")
+											$split1=$s.split(",")
+											$global:time1 = $split1[0]
+											$global:date1 = $split1[1]
+											continue
+										}
+										if (($s -match "-------") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Ldname"))	{	continue	}
+										#write-host "s = $s"
+										$s= [regex]::Replace($s,"^ +","")
+										$s= [regex]::Replace($s," +"," ")
+										$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
+										$s +=",$global:time1,$global:date1"
+										Add-Content -Path $tempFile -Value $s
+									}
+								$result = Import-Csv $tempFile
+								Remove-Item $tempFile
+							}
+					}
+			'Chunklet'
+					{	$Cmd = "histch"
+						if ( $Iteration )		{	$Cmd += " -iter $Iteration "	}
+						else 					{	$Cmd += " -iter 1 "				}
+						if ( $LDname )			{	$CMD +=" -ld $LDname "			}
+						if ( $Chunklet_num )	{	$Cmd +=" -ch $Chunklet_num "	} 
+						if ( $Metric )			{	$Cmd +=" -metric $Metric "		}
+						if ( $Percentage )		{	$Cmd +=" -pct "					}
+						if ( $Previous )		{	$Cmd +=" -prev "				}
+						if ( $Beginning )		{	$Cmd +=" -begin "				}
+						if ( $RW )				{	$Cmd +=" -rw "					}
+						if ( $IntervalInSeconds ){	$Cmd +=" -d $IntervalInSeconds "}
+						if ( $NonIdle )			{	$Cmd +=" -ni "					}	
+						write-verbose "Executing the following SSH command `n`t $cmd"
+						$Result = Invoke-A9CLICommand -cmds  $histchCMD	
+						$range1 = $Result.count
+						if ( $range1 -le "5")	{	return "No data available Please try with valid input."	}
+						if ( $ShowRaw ) 		{ 	return $Result }
+						if ( $Result.Count -gt 1)
+							{	$tempFile = [IO.Path]::GetTempFileName()
+								$LastItem = $Result.Count		
+								if($RW)	{	$LastItem = $LastItem - 4	}		
+								Add-Content -Path $tempFile -Value 'Ldid,Ldname,logical_Disk_CH,Pdid,PdCh,0.5,1.0,2.0,4.0,8.0,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'
+								foreach ($s in  $Result[0..$LastItem] )
+									{	if ($s -match "millisec")
+											{	$s= [regex]::Replace($s,"^ +","")
+												$s= [regex]::Replace($s," +"," ")
+												$s= [regex]::Replace($s," ",",")
+												$split1=$s.split(",")
+												$global:time1 = $split1[0]
+												$global:date1 = $split1[1]
+												continue
+											}
+										if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Ldname"))	{	continue	}
+										$s= [regex]::Replace($s,"^ +","")
+										$s= [regex]::Replace($s," +"," ")
+										$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
+										$aa=$s.split(",").length
+										if ($aa -eq "20")	{	continue	}
+										$s +=",$global:time1,$global:date1"
+										Add-Content -Path $tempFile -Value $s
+									}
+								$result = Import-Csv $tempFile
+								Remove-Item $tempFile
+							}	
+						
+					}
 		}
-	else{	return $Result	}
+	return $result
 }
 }
 
@@ -2441,105 +2048,5 @@ Process
 	Return $Result
 }
 }
-Function Optimize-A9PhysicalDisk
-{
-<#
-.SYNOPSIS
-	show physical disks with high service times and optionally perform load balancing.
-.DESCRIPTION
-	The command identifies physical disks with high service times and optionally executes load balancing.
-.PARAMETER MaxSvct
-	Specifies that either the maximum service time threshold (<msecs>) that is used to discover over-utilized physical disks, or the physical disks
-	that have the highest maximum service times (highest). If a threshold is specified, then any disk whose maximum service time exceeds the
-	specified threshold is considered a candidate for load balancing.
-.PARAMETER AvgSvct
-	Specifies that either the average service time threshold (<msecs>) that is used to discover over-utilized physical disks, or the physical disks
-	that have the highest average service time (highest). If a threshold is specified, any disk whose average service time exceeds the specified
-	threshold is considered a candidate for load balancing.
-.PARAMETER Nodes
-	Specifies that the display is limited to specified nodes and physical disks connected to those nodes. The node list is specified as a series
-	of integers separated by commas (e.g. 1,2,3). The list can also consist of a single integer. If the node list is not specified, all disks on all
-	nodes are displayed.
-.PARAMETER Slots
-	Specifies that the display is limited to specified PCI slots and physical disks connected to those PCI slots. The slot list is specified
-	as a series of integers separated by commas (e.g. 1,2,3). The list can also consist of a single integer. If the slot list is not specified, all
-	disks on all slots are displayed.
-.PARAMETER Ports
-	Specifies that the display is limited to specified ports and physical disks connected to those ports. The port list is specified as a series of 
-	integers separated by commas (e.g. 1,2,3). The list can also consist of a single integer. If the port list is not specified, all disks on all ports are displayed.
-.PARAMETER VV_Name
-	Specifies that the physical disks used by the indicated virtual volume name are included for statistic sampling.
-.PARAMETER D
-	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483. If no interval is specified, the option defaults to 30 seconds.
-.PARAMETER Iter
-	Specifies that I/O statistics are sampled a specified number of times as indicated by the number argument using an integer greater than 0. If 0
-	is specified, I/O statistics are looped indefinitely. If this option is not specified, the command defaults to 1 iteration.
-.PARAMETER Freq
-	Specifies the interval, in minutes, that the command enters standby mode between iterations using an integer greater than 0. If this option is
-	not specified, the number of iterations is looped indefinitely.
-.PARAMETER Vvlayout
-	Specifies that the layout of the virtual volume is displayed. If this option is not specified, the layout of the virtual volume is not displayed.
-.PARAMETER Portstat
-	Specifies that statistics for all disk ports in the system are displayed. If this option is not specified, statistics for ports are not displayed.
-.PARAMETER Pdstat
-	Specifies that statistics for all physical disk, rather than only those with high service times, are displayed. If this option is not specified,
-	statistics for all disks are not displayed.
-.PARAMETER Chstat
-	Specifies that chunklet statistics are displayed. If not specified, chunklet statistics are not displayed. If this option is used with the
-.PARAMETER Maxpd
-	Specifies that only the indicated number of physical disks with high service times are displayed. If this option is not specified, 10
-	physical disks are displayed.
-.PARAMETER Movech
-	Specifies that if any disks with unbalanced loads are detected that chunklets are moved from those disks for load balancing.
-	auto: 	Specifies that the system chooses source and destination chunklets. 
-	manual: Specifies that the source and destination chunklets are manually entered.
-	If not specified, you are prompted for selecting the source and destination chunklets.  
-.NOTES
-	This command utilizes the SSH command 'tunePd'
-	This command requires a SSH type connection. 
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$Nodes,
-		[Parameter()]	[String]	$Slots,
-		[Parameter()]	[String]	$Ports,
-		[Parameter()]	[String]	$VV_Name,
-		[Parameter()]	[String]	$D,
-		[Parameter()]	[String]	$Iter,
-		[Parameter()]	[String]	$Freq,
-		[Parameter()]	[switch]	$Vvlayout,
-		[Parameter()]	[switch]	$Portstat,
-		[Parameter()]	[switch]	$Pdstat,
-		[Parameter()]	[switch]	$Chstat,
-		[Parameter()]	[String]	$Maxpd,
-		[Parameter(Mandatory=$true)]
-		[ValidateSet('auto','manual')]	[switch]	$Movech,
-		[Parameter()]	[String]	$MaxSvct,
-		[Parameter()]	[String]	$AvgSvct
-)
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$Cmd = " tunepd "
-	if($Nodes)			{	$Cmd += " -nodes $Nodes "		}
-	if($Slots)			{	$Cmd += " -slots $Slots "		}
-	if($Ports)			{	$Cmd += " -ports $Ports "		}
-	if($VV_Name)		{	$Cmd += " -vv $VV_Name "		} 
-	if($D)				{	$Cmd += " -d $D "				}
-	if($Iter)			{	$Cmd += " -iter $Iter "			} 
-	if($Freq)			{	$Cmd += " -freq $Freq "			}
-	if($Vvlayout)		{	$Cmd += " -vvlayout "			}		
-	if($Portstat)		{	$Cmd += " -portstat"			}
-	if($Pdstat)			{	$Cmd += " -pdstat" 				}
-	if($Chstat)			{	$Cmd += " -chstat" 				}
-	if($Maxpd)			{	$Cmd += " -maxpd $Maxpd " 		}
-	if($Movech)			{	$Cmd += " -movech $Movech " 	}
-	if($MaxSvct)		{	$Cmd += " maxSvct $MaxSvct "	} 
-	elseif($AvgSvct)	{	$Cmd += " avgsvct $AvgSvct "	}
-	else				{	return	"Please select at list one from [ MaxSvct or AvgSvct]."	}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
+
 

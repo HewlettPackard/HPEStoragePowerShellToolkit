@@ -968,3 +968,110 @@ Process
 	}
 }
 
+Function Get-A9SystemReporterStatfssnapshot
+{
+<#
+.SYNOPSIS
+	System reporter performance reports for File Persona snapshots
+.DESCRIPTION
+	The command displays historical performance data reports for File Persona snapshots.
+.PARAMETER Attime
+	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
+	groupby option. Without this option performance is shown versus time, with a row per time interval.
+.PARAMETER Btsecs
+	Select the begin time in seconds for the report. The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):
+		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
+		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
+		- For daily, the default begin time is 90 days ago (-btsecs -90d).
+	If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
+	If -btsecs 0 is specified then the report begins at the earliest sample.
+.PARAMETER Etsecs
+	Select the end time in seconds for the report.  If -attime is specified, select the time for the report.
+	The value can be specified as either
+	- The absolute epoch time (for example 1351263600).
+	- The absolute time as a text string in one of the following formats:
+		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
+		- Full time string excluding time zone: "2012-10-26 11:00:00"
+		- Date string: "2012-10-26" or 2012-10-26
+		- Time string: "11:00:00" or 11:00:00
+	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
+		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
+	If it is not specified then the report ends with the most recent
+	sample.
+.PARAMETER Hires
+	Select high resolution samples (5 minute intervals) for the report. This is the default.
+.PARAMETER Hourly
+	Select hourly samples for the report.
+.PARAMETER Daily
+	Select daily samples for the report.
+.PARAMETER Summary
+	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
+		min   Display the minimum for each metric
+		avg   Display the average for each metric
+		max   Display the maximum for each metric
+		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
+	Other keywords which modify the summary display or computation:
+		detail 	Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
+		per_time	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per time. By default, one summary is computed across all records.
+		per_group	When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per object grouping. By default, one summary is computed across all records.
+		only_compareby	When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries
+				using only that reduced set of object groupings. By default, summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
+.PARAMETER Groupby
+	For -attime reports, generate a separate row for each combination of <groupby> items. Each <groupby> must be different and one of the following:
+	NODE   The controller node
+.PARAMETER Compareby
+	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects can be displayed, up to 32 objects for vstime reports or 128 objects
+	for attime reports.  The field used for comparison can be any of the groupby fields or one of the following: numredirectonwrite
+.PARAMETER Node
+	Limit the data to that corresponding to one of the specified nodes.
+.PARAMETER Sortcol
+	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must
+	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
+		inc		Sort in increasing order (default).
+		dec		Sort in decreasing order.
+	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[switch]	$Attime,
+		[Parameter()]	[String]	$Btsecs,
+		[Parameter()]	[String]	$Etsecs,
+		[Parameter()]	[switch]	$Hires,
+		[Parameter()]	[switch]	$Hourly,
+		[Parameter()]	[switch]	$Daily,
+		[Parameter()]	[String]	$Summary,
+		[Parameter()]	[String]	$Groupby,
+		[Parameter()]	[String]	$Compareby,
+		[Parameter()]	[String]	$Node,
+		[Parameter()]	[String]	$Sortcol
+)
+Begin
+	{	Test-A9Connection -ClientType SshClient
+	}
+Process	
+	{	$Cmd = " srstatfssnapshot "
+		if($Attime)		{	$Cmd += " -attime " 		}
+		if($Btsecs)		{	$Cmd += " -btsecs $Btsecs " }
+		if($Etsecs)		{	$Cmd += " -etsecs $Etsecs "	}
+		if($Hires)		{	$Cmd += " -hires "			}
+		if($Hourly)		{	$Cmd += " -hourly "			}
+		if($Daily)		{	$Cmd += " -daily "			}
+		if($Summary) 	{	$Cmd += " -summary $Summary "}
+		if($Groupby)	{	$Cmd += " -groupby $Groupby " }
+		if($Compareby)	{	$Cmd += " -compareby $Compareby "}
+		if($Node)		{	$Cmd += " -node $Node "		}
+		if($Sortcol)	{	$Cmd += " -sortcol $Sortcol "}
+		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		Return $Result
+	}
+}

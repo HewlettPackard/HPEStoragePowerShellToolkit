@@ -47,311 +47,7 @@ process
 } 
 }
 
-Function Compress-A9LogicalDisk
-{
-<#
-.SYNOPSIS
-	Consolidate space in logical disks (LD).
-.DESCRIPTION
-	The command consolidates space on the LDs.
-.PARAMETER Consolidate
-	This option consolidates regions into the fewest possible LDs. When this option is not specified, the regions of each LD will be compacted within the same LD.
-.PARAMETER Taskname
-	Specifies a name for the task. When not specified, a default name is chosen.
-.PARAMETER Trimonly
-	Only unused LD space is removed. Regions are not moved.
-.PARAMETER LD_Name
-	Specifies the name of the LD to be compacted. Multiple LDs can be specified.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding(DefaultParameterSetName='default')]
-param(	[Parameter(ParameterSetName='con',mandatory)]		[switch]	$Consolidate,
-		[Parameter()]										[String]	$Taskname,
-		[Parameter(parametersetname='trim',mandatory)]		[switch]	$Trimonly,
-		[Parameter(Mandatory)]								[String]	$LD_Name
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-PROCESS
-{	$Cmd = " compactld -f "
-	if($Taskname)	{	$Cmd += " -taskname $Taskname " }					
-	switch($PSCmdlet.ParameterSetName)
-		{	'con'	{	$Cmd += " -cons " 		}
-			'trim'	{	$Cmd += " -trimonly " 	}
-		}
-	$Cmd += " $LD_Name "
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-} 
-}
 
-Function Confirm-A9LogicalDisk
-{
-<#
-.SYNOPSIS
-	Perform validity checks of data on logical disks (LD).
-.DESCRIPTION
-	The command executes consistency checks of data on Logical Disks in the event of an uncontrolled 
-	system shutdown and optionally repairs inconsistent Logical Disks.
-.PARAMETER FixError
-	Specifies that if errors are found they are fixed instead of the default behaviour which is to only report.
-.PARAMETER Progress
-	Poll the system manager to get ldck report.
-.PARAMETER Recover
-	Attempt to recover the chunklet specified by giving physical disk (<pdid>) and the chunklet's position on 
-	that disk (<pdch>). The format will look like PhysicalDiskID:PhysicalDiskChunklet i.e. 1032:10
-.PARAMETER RAIDSet
-	Check only the specified RAID set. You must supply the RAID set number
-.PARAMETER LD_Name
-	Requests that the integrity of a specified LD is checked.
-.NOTES
-	Usage:
-	- Using the -recover option allows one LD only
-	This command requires a SSH type connection.
-#>
-[CmdletBinding(DefaultParameterSetName='default')]
-param(
-	[Parameter(mandatory,parameterset='fix')]		[switch]	$FixError,
-	[Parameter(mandatory,parameterset='report')]	[switch]	$Progress,
-	[Parameter(mandatory,parameterset='recover')]	[String]	$Recover,
-	[Parameter()]						[String]	$RAIDSet,
-	[Parameter(Mandatory)]				[String]	$LD_Name
-)
-Begin
-	{	Test-A9Connection -ClientType 'SshClient'
-	}
-PROCESS
-	{	$Cmd = " checkld "
-		if($FixError) 		{	$Cmd += " -y " }
-		else				{	$Cmd += " -n " }
-		if($Progress)		{	$Cmd += " -progress " }
-		if($Recover)		{	$Cmd += " -y -recover $Recover " }
-		if($RAIDSet)		{	$Cmd += " -rs $Rs " }
-		if($LD_Name)		{	$Cmd += " $LD_Name "}
-		$Result = Invoke-A9CLICommand -cmds  $Cmd
-		Return $Result
-	}
-}
-
-Function Get-A9LogicalDisk
-{
-<#
-.SYNOPSIS
-	Show information about logical disks (LDs) in the system.
-.DESCRIPTION
-	The Get-LD command displays configuration information about the system's LDs.
-.PARAMETER Cpg
-	Requests that only LDs in common provisioning groups (CPGs) that match the specified CPG names or patterns be displayed. Multiple CPG names or
-	patterns can be repeated using a comma-separated list .
-.PARAMETER Vv	
-	Requests that only LDs mapped to virtual volumes that match and of the specified names or patterns be displayed. Multiple volume names or
-	patterns can be repeated using a comma-separated list .
-.PARAMETER Degraded
-	Only shows LDs with degraded availability.
-.PARAMETER Detailed
-	Requests that more detailed layout information is displayed.
-.PARAMETER CheckLD
-	Requests that checkld information is displayed.
-.PARAMETER Policy
-	Requests that policy information about the LD is displayed.
-.PARAMETER State
-	Requests that the detailed state information is displayed.	This is the same as s.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object.  
-.EXAMPLE
-	PS:> Get-A9LogicalDisk
-
-	id   Name               RAID Detailed_State Own   SizeMB   UsedMB   Use    WThru MapV
-	--   ----               ---- -------------- ---   ------   ------   ---    ----- ----
-	3    .mgmtdata.usr.0    1    normal       1/0   259072   259072   V      Y     Y
-	0    admin.usr.0        1    normal       0/1   10240    10240    V      Y     Y
-	6    tp-0-sa-0.0        1    normal       0/1   16384    11264    C,SA   Y     Y
-	8    tp-0-sa-0.1        1    normal       1/0   5120     5120     C,SA   Y     Y
-.EXAMPLE
-	PS:> Get-A9LogicalDisk -Cpg SSD_r6
-
-	id   Name               RAID Detailed_State Own   SizeMB   UsedMB   Use    WThru MapV
-	--   ----               ---- -------------- ---   ------   ------   ---    ----- ----
-	6    tp-0-sa-0.0        1                 0/1   16384    11264    C,SA   Y     Y
-	10   tp-0-sa-0.2        1                 1/0   12288    7168     C,SA   Y     Y
-	14   tp-0-sa-0.5        1                 1/0   5120     5120     C,SD   Y     Y
-.EXAMPLE
-	PS:> Get-A9LogicalDisk -Vv AzureLocalPool2
-
-	id   Name               RAID Detailed_State Own   SizeMB   UsedMB   Use    WThru MapV
-	--   ----               ---- -------------- ---   ------   ------   ---    ----- ----
-	138  tp-0-sa-0.62       1    normal       0/1   12288    8192     C,SA   Y     Y
-	372  tp-0-sd-0.209      6    normal       0/1   245700   188475   C,SD   Y     Y
-.EXAMPLE
-	PS:> Get-A9LogicalDisk -CheckLD
-
-	id   Name               Detailed_State   Total    Checked  Invalid  Last_Date_Checked
-	--   ----               --------------   -----    -------  -------  -----------------
-	3    .mgmtdata.usr.0    normal           253      253      0        2025-01-06
-	1    .srdata.usr.0      normal           84       84       0        2025-01-06
-	0    admin.usr.0        normal           10       10       0        2025-01-06
-	6    tp-0-sa-0.0        normal           16       16       0        2025-01-06
-.EXAMPLE
-	PS:> Get-A9LogicalDisk -Detailed 
-
-	id   Name               CPG        RAID Own   SizeMB   RSizeMB    RowSz StepKB     SetSz  Refcnt Avail  CAvail   CreationDate     Dev_Type
-	--   ----               ---        ---- ---   ------   -------    ----- ------     -----  ------ -----  ------   ------------     --------
-	4    .mgmtdata.usr.1    ---        1    1/0   117760   353280     23    256        3      0      cage   cage     2024-03-28       SSD
-	5    .mgmtdata.usr.2    ---        1    1/0   147456   442368     24    256        3      0      cage   cage     2024-03-28       SSD
-	1    .srdata.usr.0      ---        1    1/0   86016    258048     21    256        3      0      cage   cage     2024-03-28       SSD
-	2    .srdata.usr.1      ---        1    1/0   67584    202752     22    256        3      0      cage   cage     2024-03-28       SSD
-	0    admin.usr.0        ---        1    0/1   10240    30720      10    256        3      0      cage   cage     2024-03-28       SSD
-	6    tp-0-sa-0.0        SSD_r6     1    0/1   16384    49152      4     256        3      0      cage   cage     2024-07-10       SSD
-	8    tp-0-sa-0.1        SSD_r6     1    1/0   5120     15360      5     256        3      0      cage   cage     2024-07-10       SSD
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$Cpg,
-		[Parameter()]	[String]	$Vv,
-		[Parameter()]	[switch]	$Degraded,
-		[Parameter()]	[switch]	$Detailed,
-		[Parameter()]	[switch]	$CheckLD,
-		[Parameter()]	[switch]	$Policy,
-		[Parameter()]	[switch]	$State,
-		[Parameter()]	[String]	$LD_Name,
-		[Parameter()]	[switch]	$ShowRaw
-)
-Begin
-	{	Test-A9Connection -ClientType 'SshClient'
-	}
-process
-	{	$Cmd = " showld "
-		if($Cpg)	{	$Cmd += " -cpg $Cpg "}
-		if($Vv)		{	$Cmd += " -vv $Vv "}
-		if($Domain)	{	$Cmd += " -domain $Domain "}
-		if($Degraded){	$Cmd += " -degraded " }
-		if($Detailed){	$Cmd += " -d " }
-		if($CheckLD){	$Cmd += " -ck " }
-		if($Policy)	{	$Cmd += " -p "	}
-		if($LD_Name){ 	$Cmd += " $LD_Name " }
-		$Result = Invoke-A9CLICommand -cmds  $Cmd
-	}
-end
-	{	if($ShowRaw -or $Policy) {	Return $Result }
-		if($Result.count -gt 1)
-			{	if ( $Cpg )	
-					{	#	Need to split the dataset into two collections
-						$EndOfFirstDataSet = ($Result | Select-String 'total').linenumber[0]
-						$Result1 = $Result[0..$EndOfFirstDataSet]	
-						$Result2 = $Result[($EndOfFirstDataSet+1)..($Result.count-1)]
-						$tempFile = [IO.Path]::GetTempFileName()
-						$ResultHeader = (($Result1[1].split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
-						Add-Content -Path $tempfile -Value $ResultHeader				
-						foreach ($S in  $Result1[2..($Result1.Count - 4)] )
-								{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
-									Add-Content -Path $tempfile -Value $s				
-								}
-						$Result1 = Import-Csv -Delimiter 'Z'  $tempFile 
-						Remove-Item $tempFile
-						$tempFile = [IO.Path]::GetTempFileName()
-						Add-Content -Path $tempfile -Value $ResultHeader				
-						foreach ($S in  $Result2[2..($Result2.Count - 4)] )
-								{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
-									Add-Content -Path $tempfile -Value $s				
-								}
-						$Result2 = Import-Csv -Delimiter 'Z'  $tempFile 
-						Remove-Item $tempFile
-						$ResultFinal = $( @{LDForSA = $Result1}, @{LDforSD = $Result2} )
-						# Now to rejoin the datasets.
-						$NewObj = @(    foreach( $Item in ($ResultFinal).LDforSA)	
-																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
-																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-																	$DataSetType = "HPE.A9Storage.LogicalDisk"
-																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
-																	$DataSetType = $DataSetType + ".TypeName"
-																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-																	[PSCustomObject]$NewItem
-																}
-										foreach( $Item in ($ResultFinal).LDforSD)	
-																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
-																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-																	$DataSetType = "HPE.A9Storage.LogicalDisk"
-																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
-																	$DataSetType = $DataSetType + ".TypeName"
-																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-																	[PSCustomObject]$NewItem
-																}
-								)
-						return $NewObj
-					}
-				if($Detailed)
-					{	$tempFile = [IO.Path]::GetTempFileName()
-						$ResultHeader = 'IdZNameZCPGZRAIDZOwnZSizeMBZRSizeMBZRowSzZStepKBZSetSzZRefcntZAvailZCAvailZCreationDateZCreationTimeZCreationzoneZDev_Type'
-						Add-Content -Path $tempfile -Value $ResultHeader				
-						foreach ($S in  $Result[1..($Result.Count - 3)] )
-							{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
-								Add-Content -Path $tempfile -Value $s				
-							}
-						$Result = Import-Csv -Delimiter 'Z'  $tempFile 
-						Remove-Item $tempFile
-						$NewObj = @(    foreach( $Item in $Result)	
-																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDiskDetailed"}
-																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-																	$DataSetType = "HPE.A9Storage.LogicalDiskDetailed"
-																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
-																	$DataSetType = $DataSetType + ".TypeName"
-																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-																	[PSCustomObject]$NewItem
-																}
-								)
-						return $NewObj
-					}	
-				if($CheckLD)
-					{	$tempFile = [IO.Path]::GetTempFileName()
-						$ResultHeader = 'Id,Name,Detailed_State,Total,Checked,Invalid,Last_Date_Checked,Last_Time_Checked,Last_TimeZone_Checked'
-						Add-Content -Path $tempfile -Value $ResultHeader				
-						foreach ($S in  $Result[1..($Result.Count - 3)] )
-							{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
-								Add-Content -Path $tempfile -Value $s				
-							}
-						$Result = Import-Csv  $tempFile 
-						Remove-Item $tempFile
-						$NewObj = @(    foreach( $Item in $Result)	
-																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDiskCheckLD"}
-																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-																	$DataSetType = "HPE.A9Storage.LogicalDiskCheckLD"
-																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
-																	$DataSetType = $DataSetType + ".TypeName"
-																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-																	[PSCustomObject]$NewItem
-																}
-								)
-						return $NewObj
-					}	
-				else
-					{	$tempFile = [IO.Path]::GetTempFileName()
-						$ResultHeader = ((($Result[0].split(' ')).trim()).trim('-') | where-object { $_ -ne '' } ) -join 'Z'
-						Add-Content -Path $tempfile -Value $ResultHeader				
-						foreach ($S in  $Result[1..($Result.Count - 3)] )
-							{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
-								Add-Content -Path $tempfile -Value $s				
-							}
-						$Result = Import-Csv -Delimiter 'Z'  $tempFile 
-						Remove-Item $tempFile
-						$NewObj = @(    foreach( $Item in $Result)	
-																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
-																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-																	$DataSetType = "HPE.A9Storage.LogicalDisk"
-																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
-																	$DataSetType = $DataSetType + ".TypeName"
-																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-																	[PSCustomObject]$NewItem
-																}
-								)
-						return $NewObj
-					}
-			}
-		Return  $Result
-	}
-} 
 
 Function Get-A9LogicalDiskChunklet
 {
@@ -532,85 +228,6 @@ process
 } 
 
 
-Function Remove-A9LogicalDisk
-{
-<#
-.SYNOPSIS
-	Remove-LD - Remove logical disks (LD).
-.DESCRIPTION
-	The Remove-LD command removes a specified LD from the system service group.
-.PARAMETER Pat
-	Specifies glob-style patterns. All LDs matching the specified pattern are removed. By default, confirmation is required to proceed
-	with the command unless the -f option is specified. This option must be	used if the pattern specifier is used.
-.PARAMETER DryRun
-	Specifies that the operation is a dry run and no LDs are removed.
-.PARAMETER LD_Name
-	Specifies the LD name, using up to 31 characters. Multiple LDs can be specified.
-.PARAMETER Rmsys
-	Specifies that system resource LDs such as logging LDs and preserved data LDs are removed.
-.PARAMETER Unused
-	Specifies the command to remove non-system LDs. This option cannot be used with the  -rmsys option.
-.EXAMPLE
-	PS:> Remove-A9LogicalDisk -LD_Name xxx
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Pat,
-		[Parameter()]	[switch]	$DryRun,
-		[Parameter()]	[switch]	$Rmsys,
-		[Parameter()]	[switch]	$Unused,
-		[Parameter(Mandatory)][String]	$LD_Name
-		)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$Cmd = " removeld -f "
-	if($Pat) 	{	$Cmd += " -pat " }
-	if($DryRun) {	$Cmd += " -dr " }
-	if($Rmsys) 	{	$Cmd += " -rmsys " }
-	if($Unused) {	$Cmd += " -unused " }
-	if($LD_Name){	$Cmd += " $LD_Name " }
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Remove-A9VvLogicalDiskCpgTemplates
-{
-<#
-.SYNOPSIS
-	Remove-Vv_Ld_Cpg_Templates - Remove one or more templates from the system
-.DESCRIPTION
-	The Remove-Vv_Ld_Cpg_Templates command removes one or more virtual volume (VV), logical disk (LD), and common provisioning group (CPG) templates.
-.PARAMETER Template_Name
-	Specifies the name of the template to be deleted, using up to 31 characters. This specifier can be repeated to remove multiple templates
-.PARAMETER Pattern
-	The specified patterns are treated as glob-style patterns and that all templates matching the specified pattern are removed. By default,
-	confirmation is required to proceed with the command unless the -f option is specified. This option must be used if the pattern specifier is used.
-.EXAMPLE
-	PS:> Remove-A9Vv_Ld_Cpg_Templates_CLI -Template_Name xxx
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$Template_Name,
-		[Parameter()]	[switch]	$Pattern
-)
-Begin
-{	Test-A9Connection -Clienttype 'SshClient'
-}
-process
-{	$Cmd = " removetemplate -f "
-	if($Pattern)	{	$Cmd += " -pat "	}
-	if($Template_Name)	{	$Cmd += " $Template_Name "	}
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-
 Function Set-A9VvSpace_CLI
 {
 <#
@@ -749,7 +366,6 @@ process
 }
 }
 
-
 Function Show-A9VvMappedToPD
 {
 <#
@@ -879,136 +495,6 @@ process
 	}
 } 
 
-Function Start-A9LD_CLI
-{	
-<#
-.SYNOPSIS
-	Start a logical disk (LD).  
-.DESCRIPTION
-	The command starts data services on a LD that has not yet been started.
-.PARAMETER LD_Name
-	Specifies the LD name, using up to 31 characters.
-.PARAMETER Override
-	Specifies that the LD is forced to start, even if some underlying data is missing.
-.EXAMPLE
-	Start-A9LD_CLI -LD_Name xxx
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]			[switch]	$Override,
-		[Parameter(Mandatory)]	[String]	$LD_Name
-)
-Begin	
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{ 	$Cmd = " startld "
-	if($Override)	{	$Cmd += " -ovrd " }
-	$Cmd += " $LD_Name "
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Start-A9Vv_CLI
-{
-<#
-.SYNOPSIS
-	Start a virtual volume.
-.DESCRIPTION
-	The command starts data services on a Virtual Volume (VV) that has not yet been started.
-.PARAMETER VV_Name
-	Specifies the VV name, using up to 31 characters.
-.PARAMETER Ovrd
-	Specifies that the logical disk is forced to start, even if some underlying data is missing.
-.EXAMPLE
-	Start-A9Vv_CLI
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]				[switch]	$Override,
-		[Parameter(Mandatory)]		[String]	$VolumeName
-)
-Begin	
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$Cmd = " startvv "
-	if($Override)	{	$Cmd += " -ovrd "	}
-	$Cmd += " $VolumeName "	
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-Function Test-A9Vv_CLI
-{
-<#
-.SYNOPSIS
-	The command executes validity checks of VV administration information in the event of an uncontrolled system shutdown and optionally repairs corrupted virtual volumes.   
-.DESCRIPTION
-	The command executes validity checks of VV administration information in the event of an uncontrolled system shutdown and optionally repairs corrupted virtual volumes.
-.PARAMETER Yes
-	Specifies that if errors are found they are either modified so they are valid (-y) or left unmodified (-n). If not specified, errors are left unmodified (-n).
-.PARAMETER No
-	Specifies that if errors are found they are either modified so they are valid (-y) or left unmodified (-n). If not specified, errors are left unmodified (-n)
-.PARAMETER Offline
-	Specifies that VVs specified by <VV_name> be offlined before validating the VV administration information. The entire VV tree will be offlined if this option is specified.
-.PARAMETER Dedup_Dryrun
-	Launches a dedup ratio calculation task in the background that analyzes the potential space savings with Deduplication technology if the
-	VVs specified were in a same deduplication group. The VVs specified can be TPVVs, compressed VVs and fully provisioned volumes.
-.PARAMETER Compr_Dryrun
-	Launches a compression ratio calculation task in the background that analyzes the potential space savings with Compression technology of specified
-	VVs. Specified volumes can be TPVVs, TDVVs, fully provisioned volumes and snapshots.
-.PARAMETER Fixsd
-	Specifies that VVs specified by <VV_name> be checked for compressed data consistency. The entire tree will not be checked; only those VVs
-	specified in the list will be checked.
-.PARAMETER Dedup_Compr_Dryrun
-	Launches background space estimation task that analyzes the overall savings of converting the specified VVs into a compressed TDVVs.
-	Specified volumes can be TPVVs, TDVVs, compressed TPVVs, fully provisioned volumes, and snapshots.
-
-	This task will display compression and total savings ratios on a per-VV basis, and the dedup ratio will be calculated on a group basis of input VVs. 	
-.PARAMETER VVName       
-	Requests that the integrity of the specified VV is checked. This specifier can be repeated to execute validity checks on multiple VVs. Only base VVs are allowed.
-.EXAMPLE
-	PS:> Test-A9Vv_CLI -VVName XYZ
-.EXAMPLE
-	PS:> Test-A9Vv_CLI -Yes -VVName XYZ
-.EXAMPLE
-	PS:> Test-A9Vv_CLI -Offline -VVName XYZ
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]				[switch]	$Yes,	
-		[Parameter()]				[switch]	$No,
-		[Parameter()]				[switch]	$Offline,
-		[Parameter(Mandatory=$true)][String]	$VVName,
-		[Parameter()]				[switch]	$Fixsd,
-		[Parameter()]				[switch]	$Dedup_Dryrun,
-		[Parameter()]				[switch]	$Compr_Dryrun,
-		[Parameter()]				[switch]	$Dedup_Compr_Dryrun
-	)	
-Begin	
-{	Test-A9Connection -ClientType 'SshClient'
-}	
-process
-{	$cmd = "checkvv -f "	
-	if($Yes)				{	$cmd += " -y "	}
-	if($No)					{	$cmd += " -n "	}
-	if($Offline)			{	$cmd += " -offline "}
-	if($Fixsd)				{	$cmd += " -fixsd "}
-	if($Dedup_Dryrun)		{	$cmd += " -dedup_dryrun "}
-	if($Compr_Dryrun)		{	$cmd += " -compr_dryrun "}
-	if($Dedup_Compr_Dryrun)	{	$cmd += " -dedup_compr_dryrun "}
-	$cmd += " $VVName"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	write-verbose "  Executing Test-Vv Command.-->  " 
-	return  "$Result"
-}
-}
 
 Function Update-A9SnapSpace_CLI
 {
@@ -1037,7 +523,7 @@ process
 }
 }
 
-Function Update-A9VvProperties_CLI
+Function Set-A9Vv_CLI
 {
 <#
 .SYNOPSIS
@@ -1045,7 +531,7 @@ Function Update-A9VvProperties_CLI
 .DESCRIPTION
 	The command changes the properties associated with a virtual volume. Use the Update-VvProperties to modify volume 
 	names, volume policies, allocation warning and limit levels, and the volume's controlling common provisioning group (CPG).
-.PARAMETER Vvname  
+.PARAMETER VolumeName  
 	Specifies the virtual volume name or all virtual volumes that match the pattern specified, using up to 31 characters. The patterns are glob-
 	style patterns (see help on sub, globpat). Valid characters include alphanumeric characters, periods, dashes, and underscores.
 .PARAMETER Wwn
@@ -1065,6 +551,21 @@ Function Update-A9VvProperties_CLI
 .PARAMETER Hpc
 	Allows you to define the virtual volume geometry heads per cylinder value that is reported to the hosts though the SCSI mode pages. 
 	The valid range is between 1 to 255 and the default value is 8.
+.PARAMETER Start
+	The command starts data services on a Virtual Volume (VV) that has not yet been started.
+.PARAMETER Override
+	Specifies that the VV is forced to start, even if some underlying data is missing.
+
+.PARAMETER Modify
+	Only Valid if testing a VV. Specifies that if errors are found they are either modified so they are valid (-y) or left unmodified (-n). If not specified, errors are left unmodified (-n).
+	Valid Options are 'yes' and 'no'
+.PARAMETER Offline
+	Only Valid if testing a VV. Specifies that VVs specified by <VV_name> be offlined before validating the VV administration information. The entire VV tree will be offlined if this option is specified.
+.PARAMETER FixSD
+	Only Valid if testing a VV. Specifies that VVs specified by <VolumeName> be checked for compressed data consistency. The entire tree will not be checked; only those VVs
+	specified in the list will be checked.
+.PARAMETER Test
+	Will Test a VV and its RAID space for consistency, if errors are detected it can either fix or only report those errors based on the value of the modify parameter.
 .EXAMPLE  
 	The following example sets the policy of virtual volume vv1 to no_stale_ss.
 	
@@ -1081,70 +582,55 @@ Function Update-A9VvProperties_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(mandatory)]	[String]	$VolumeName,
-		[Parameter()]	[String]	$Wwn,
-		[Parameter()]	[String]	$Udid,
-		[Parameter()]	[switch]	$Clrrsv,
-		[Parameter()]	[switch]	$Clralua,
-		[Parameter()]	[String]	$Spt,
-		[Parameter()]	[String]	$Hpc,
-		[Parameter(Mandatory=$True)]	[String]	$Vvname
+param(	[Parameter(mandatory, ParameterSetName='Set')]	
+		[Parameter(mandatory, ParameterSetName='Start')]
+		[Parameter(mandatory, ParameterSetName='Test')]	[String]	$VolumeName,
+		[Parameter(ParameterSetName='Set')]				[String]	$Wwn,
+		[Parameter(ParameterSetName='Set')]				[String]	$Udid,
+		[Parameter(ParameterSetName='Set')]				[switch]	$Clrrsv,
+		[Parameter(ParameterSetName='Set')]				[switch]	$Clralua,
+		[Parameter(ParameterSetName='Set')]				[String]	$Spt,
+		[Parameter(ParameterSetName='Set')]				[String]	$Hpc,
+		[Parameter(ParameterSetName='Start')]			[switch] 	$Override,
+		[Parameter(Mandatory, ParameterSetName='Start')][switch]	$Start,
+		[Parameter(ParameterSetName='Test')]
+		[ValidateSet('Yes','No')]						[switch]	$Modify,
+		[Parameter(ParameterSetName='Test')]			[switch]	$No,
+		[Parameter(ParameterSetName='Test')]			[switch]	$Offline,
+		[Parameter(ParameterSetName='Test')]			[switch]	$FixSD,
+		[Parameter(Mandatory,ParameterSetName='Test')]	[Switch]	$Test
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
-{	$Cmd = " setvv -f "
-	if($Wwn)		{	$Cmd += " -wwn $Wwn " 		}
-	if($Udid)		{	$Cmd += " -udid $Udid " 	}
-	if($Clrrsv)		{	$Cmd += " -clrrsv " 		}
-	if($Clralua)	{	$Cmd += " -clralua " 		}
-	if($Spt)		{	$Cmd += " -spt $Spt " 		}
-	if($Hpc)		{	$Cmd += " -hpc $Hpc " 		}
-	if($VolumeName) {	$Cmd += " $VolumeName " 	}
+{	Switch($PSCmdlet.ParameterSetName)
+		{	'Start'	{	$Cmd = " startvv "
+						if($Override)	{	$Cmd += " -ovrd "	}
+						$Cmd += " $VolumeName "	
+					}
+			'Set'	{	$Cmd = " setvv -f "
+						if($Wwn)		{	$Cmd += " -wwn $Wwn " 		}
+						if($Udid)		{	$Cmd += " -udid $Udid " 	}
+						if($Clrrsv)		{	$Cmd += " -clrrsv " 		}
+						if($Clralua)	{	$Cmd += " -clralua " 		}
+						if($Spt)		{	$Cmd += " -spt $Spt " 		}
+						if($Hpc)		{	$Cmd += " -hpc $Hpc " 		}
+						$Cmd += " $VolumeName "
+					}
+			'Test'	{	$cmd = "checkvv -f "	
+						if($Modify -eq 'Yes')	{	$cmd += " -y "	}
+						if($Modify -eq 'No')	{	$cmd += " -n "	}
+						if($Offline)			{	$cmd += " -offline "}
+						if($FixsSD)				{	$cmd += " -fixsd "}
+						$cmd += " $VolumeName"
+					}
+		}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Write-verbose "Executing function : Update-VvProperties command -->"
+	Write-verbose "Executing function : Set-VvProperties command --> $Cmd"
 	Return $Result
 }
 }
-
-Function Update-A9VvSetProperties_CLI
-{
-<#
-.SYNOPSIS
-	Update-VvSetProperties - set parameters for a Virtual Volume set
-.DESCRIPTION
-	The Update-VvSetProperties command sets the parameters and modifies the properties of a Virtual Volume(VV) set.
-.PARAMETER Setname
-	Specifies the name of the vv set to modify.
-.PARAMETER Comment
-	Specifies any comment or additional information for the set. The comment can be up to 255 characters long. Unprintable characters are not allowed.
-
-.PARAMETER Name
-	Specifies a new name for the VV set using up to 27 characters.
-.EXAMPLE
-	Update-VvSetProperties
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]					[String]	$Comment,
-		[Parameter()]					[String]	$Name,
-		[Parameter(Mandatory=$True)]	[String]	$Setname
-)
-Begin	
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$Cmd = " setvvset "
-	if($Comment)	{	$Cmd += " -comment $Comment "}
-	if($Name)		{	$Cmd += " -name $Name "}
-	$Cmd += " Setname " 
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
 
 Function Show-A9Peer_CLI
 {

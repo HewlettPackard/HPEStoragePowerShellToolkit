@@ -28,9 +28,7 @@ Function Remove-A9Task
   With this command, the specified task ID and any information associated with it are removed from the system. However, task IDs are not recycled, so the
   next task started on the system uses the next whole integer that has not already been used. Task IDs roll over at 29999. The system stores
   information for the most recent 2000 tasks.
-  Authority: Super, Edit
-    Any role granted the task_remove right.
-  Usage:
+
   - With this command, the specified task ID and any information associated with it are removed from the system. However, task IDs are not recycled, so the next task started on the system uses the next whole integer that has not already been used. Task IDs roll over at 29999. The system stores information for the most recent 2,000 tasks.
 	This command requires a SSH type connection.
 #>

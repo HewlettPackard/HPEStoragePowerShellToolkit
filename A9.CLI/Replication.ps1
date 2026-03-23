@@ -329,49 +329,6 @@ Process
 }
 }
 
-Function Set-A9RCopyTargetPol_CLI
-{
-<#
-.SYNOPSIS
-	he command Sets the policy for the specified target using the <policy> specifier
-.DESCRIPTION
-	The command Sets the policy for the specified target using the <policy> specifier
-.PARAMETER Mirror_Config
-	Specifies that all configuration commands,involving the specified target are duplicated.
-.PARAMETER No_Mirror_Config
-	If not specified, all configuration commands are duplicated.	
-.PARAMETER Target
-	Specifies the target name for the target definition.
-.EXAMPLE
-	Set-A9RCopyTargetPol_CLI -Mmirror_Config -Target vv3
-
-	This Example sets the policy that all configuration commands,involving the specified target are duplicated for the target named vv3.   	
-.NOTES
-	That the no_mirror_config specifier should only be used to allow recovery from an unusual error condition and only used after consulting your HPE representative.
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(
-		[Parameter(ParameterSetName='Mirror',   Mandatory)]	[switch]	$Mirror_Config,
-		[Parameter(ParameterSetName='NoMirror', Mandatory)]	[switch]	$No_Mirror_Config,
-		[Parameter(Mandatory)]								[String]	$Target
-)	
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$cmd= "setrcopytarget pol "
-	if ($Mirror_Config)			{	$cmd+=" mirror_config "	}
-	elseif($No_Mirror_Config)	{	$cmd+=" no_mirror_config "	}
-	$cmd+="$Target "
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-CLICommand -cmds  $cmd	
-	if([string]::IsNullOrEmpty($Result))	{	write-host  "Success : Executing Command "	-ForegroundColor green}
-	else									{	write-warning  "FAILURE : While Executing "	}
-	return $result 
-}
-}
-
 Function Set-A9AdmitRCopyHost
 {
 <#
@@ -513,105 +470,6 @@ Process
 } 
 }
 
-Function Sync-A9RecoverDRRcopyGroup
-{
-<#
-.SYNOPSIS
-    The command performs the following actions:
-    Performs data synchronization from primary remote copy volume groups to secondary remote copy volume groups.
-    Performs the complete recovery operation (synchronization and storage failover operation which performs role reversal to make secondary volumes as primary which becomes read-write) for the remote copy volume group in both planned migration and disaster scenarios.
-.DESCRIPTION
-    The command performs the following actions:
-    Performs data synchronization from primary remote copy volume groups to secondary remote copy volume groups.
-    Performs the complete recovery operation (synchronization and storage failover operation which performs role reversal to make secondary volumes as primary which becomes read-write) for the remote copy volume group in both planned migration and disaster scenarios.
-.PARAMETER Subcommand
-	sync
-	Performs the data synchronization from primary remote copy volume group to secondary remote copy volume group.
-	
-	recovery
-	Performs complete recovery operation for the remote copy volume group in both planned migration and disaster scenarios.
-.PARAMETER Target_name 
-	Specifies the target for the subcommand. This is optional for single target groups but is required for multi-target groups.
-.PARAMETER Force
-	Does not ask for confirmation for this command.
-.PARAMETER Nowaitonsync
-	Specifies that this command should not wait for data synchronization from primary remote copy volume groups to secondary remote copy
-	volume groups. This option is valid only for the sync subcommand.
-.PARAMETER Nosyncbeforerecovery
-	Specifies that this command should not perform data synchronization before the storage failover operation (performing role reversal to
-	make secondary volumes as primary which becomes read-write). This option can be used if data synchronization is already done outside
-	of this command and it is required to do only storage failover operation (performing role reversal to make secondary volumes as
-	primary which becomes read-write). This option is valid only for the recovery subcommand.
-.PARAMETER Nofailoveronlinkdown
-	Specifies that this command should not perform storage failover operation (performing role reversal to make secondary volumes as
-	primary which becomes read-write) when the remote copy link is down. This option is valid only for the recovery subcommand.
-.PARAMETER Forceasprimary
-	Specifies that this command does the storage failover operation (performing role reversal to make secondary volumes as primary
-	which becomes read-write) and forces secondary role as primary irrespective of whether the data is current or not.
-	This option is valid only for the recovery subcommand. The successful execution of this command must be immediately
-	followed by the execution of the recovery subcommand with forceassecondary option on the other array. The incorrect use
-	of this option can lead to the primary secondary volumes not being consistent. see the notes section for additional details.
-.PARAMETER Forceassecondary
-	This option must be used after successful execution of recovery subcommand with forceasprimary option on the other array.
-	Specifies that this changes the primary volume groups to secondary volume groups. The incorrect use of this option can lead to the
-	primary secondary volumes not being consistent. This option is valid only for the recovery subcommand.
-.PARAMETER Nostart
-	Specifies that this command does not start the group after storage failover operation is complete. This option is valid only for the recovery subcommand.
-.PARAMETER Waittime <timeout_value>
-	Specifies the timeout value for this command. Specify the time in the format <time>{s|S|m|M}. Value is a positive
-	integer with a range of 1 to 720 minutes (12 Hours). Default time is 720 minutes. 
-.PARAMETER Group_name
-	Name of the Group
-.EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand sync -Target_name test -Group_name Grp1
-.EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand recovery -Target_name test -Group_name Grp1
-.EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand sync -Force -Group_name Grp1
-.EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand sync -Nowaitonsync -Group_name Grp1
-.EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand sync -Nosyncbeforerecovery -Group_name Grp1
-.EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand sync -Nofailoveronlinkdown -Group_name Grp1
-.EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand sync -Forceassecondary -Group_name Grp1
-.EXAMPLE
-	PS:> Sync-A9RecoverDRRcopyGroup -Subcommand sync -Waittime 60 -Group_name Grp1
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[ValidateSet('sync','recovery')]	
-						[String]	$Subcommand,
-		[Parameter()]	[String]	$Target_name,
-		[Parameter()]	[Switch]	$Nowaitonsync,
-		[Parameter()]	[Switch]	$Nosyncbeforerecovery,
-		[Parameter()]	[Switch]	$Nofailoveronlinkdown,
-		[Parameter()]	[Switch]	$Forceasprimary,
-		[Parameter()]	[Switch]	$Nostart,
-		[Parameter()]	[String]	$Waittime,
-		[Parameter(Mandatory=$true)]	[String]	$Group_name
-)	
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$cmd= "controldrrcopygroup "
-	if ($Subcommand)		{	$cmd+=" $Subcommand -f"			}	
-	if ($Target_name)		{	$cmd+=" -target $Target_name "	}	
-	if ($Nowaitonsync)		{	$cmd+=" -nowaitonsync "			}
-	if ($Nosyncbeforerecovery){	$cmd+=" -nosyncbeforerecovery "	}
-	if ($Nofailoveronlinkdown){	$cmd+=" -nofailoveronlinkdown "	}
-	if ($Forceasprimary)	{	$cmd+=" -forceasprimary "		}
-	if ($Nostart)			{	$cmd+=" -nostart "				}
-	if ($Waittime)			{	$cmd+=" -waittime $Waittime "	}	
-	if ($Group_name)		{	$cmd+=" $Group_name "			}	
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-CLICommand -cmds  $cmd
-	return 	$Result	
-}
-}
 
 ##### Disable/Remove Commands
 Function Disable-A9RCopylink_CLI
@@ -667,7 +525,7 @@ Function Remove-A9RCopyHost
     Dismiss/Remove hosts from a remote copy group.
 .DESCRIPTION
     The Remove-RCopyHost command removes hosts from a remote copy group
-.PARAMETER F
+.PARAMETER Force
     Specifies that the command is forced. If this option is not used, the command requires confirmation before proceeding with its operation.
 .PARAMETER GroupName
     The group name, as specified with New-RCopyGroup cmdlet.
@@ -683,16 +541,16 @@ Function Remove-A9RCopyHost
     This command is only supported for groups for which the active_active policy is set.
 #>
 [CmdletBinding()]
-param(	[Parameter(ValueFromPipeline = $true)]    [String]	$F,
-        [Parameter(ValueFromPipeline = $true)]    [String]	$GroupName,
-        [Parameter(ValueFromPipeline = $true)]    [String]	$HostName
+param(	[Parameter()]    [String]	$Force,
+        [Parameter()]    [String]	$GroupName,
+        [Parameter()]    [String]	$HostName
 )	
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$cmd = "dismissrcopyhost  "
-    if ($F) 		{	$cmd += " -f "			}
+    if ($Force) 	{	$cmd += " -f "			}
     if ($GroupName) {	$cmd += " $GroupName "	}
     if ($HostName) 	{	$cmd += " $HostName "	}
     write-verbose "Executing the following SSH command `n`t $cmd"
