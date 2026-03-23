@@ -230,16 +230,23 @@ The following CLI based commands have changed.
 		Get-A9FCPort,						--> Get-A9Port
 		Get-A9FCPortToCSV,					--> Get-A9Port | ConvertTo-CSV
 		Get-A9Cert							--> Get-A9Certificate
-		Approve-A9Disk						--> Set-A9Disk
-		Switch-A9Disk						--> Set-A9Disk
+		Approve-A9Disk						--> Set-A9PhysicalDisk
+		Switch-A9Disk						--> Set-A9PhysicalDisk
 		Stop-A9CIM							--> Set-A9CIM
 		Start-A9Cim							--> Set-A9CIM
 		Get-A9Space_CLI 					-->	Get-A9CPGSpaceDataReports 
-		
+		Update-A9VVSetProperties_CLI 		--> Set-A9VVSet
+		Get-A9SystemReporterStatLink		--> Get-A9SystemReport -CacheReport
+		Start-A9LD_CLI						--> Set-A9LogicalDisk -Start
+		Compress-A9LD						--> Set-A9LogicalDisk -consolidate -trimonly
+		Comfirm-A9LD						-->	Set-A9LogicalDisk -fixerror -recover -progress
+
 	The following command have been renamed
-		Update-A9Host_CLI 	--> Set-A9Host_CLI
-		Get-A9Space 		-->	Get-A9Space_CLI
-		Set-A9NodesDate 	--> Set-A9Date	- And added using local time option
+		Update-A9Host_CLI 		--> Set-A9Host_CLI
+		Get-A9Space 			-->	Get-A9Space_CLI
+		Set-A9NodesDate 		--> Set-A9Date	- And added using local time option
+		Show-A9ISCSIStatistics	--> Get-A9iSCSIStats
+		remove-a9disk			--> Remove-A9PhysicalDisk
 
 	The Pattern/DryRun options have been removed as a non-interactive SSH session does not allow confirmation from the following commands
 		Set-A9VVSpace_CLI,	Remove-A9WsAPISession,	Compress-A9LogicalDisk,	Remove-A9Alert
@@ -254,26 +261,38 @@ The following CLI based commands have changed.
 		Move-A9RelocPhysicalDisk			--> Move-A9Chunklet
 		Move-A9ClearPhysicalDisk			--> Move-A9Chunklet
 		Move-A9PhysicalDiskChunkletToSpare	--> Move-A9Chunklet
+		
 
 	Get-A9Alert now uses default formatters and returns proper objects. removed all unneeded options. returns detailed.
 
 	Set-A9Alert has been greatly simplified
 
+	Update-A9VVSetProperties_CLI has been changed 
+		Update-A9VVSetProperties_CLI		--> Set-A9VV_CLI
+	The command Start and Stop have been consolidated
+		Start-A9vv_CLI						--> Set-A9VV_CLI -start
+		Stop-A9VV_CLI						--> Set-A9VV_CLI -stop
+		Test-A9VV_CLI						--> Set-A9VV_CLI -test
 	Get-A9Cage have added PCI|CDM options and remove -EXP, and fixed parameter sets to prevent illegal combinations
 	
 	Get-A9Spare now has a progress spinner and uses formatted output.
 
-	The following Federation Commands have be relagated to 3PAR only Arrays, allows removal for Primera/Alletra9K/AlletraMPB10K of the following commands
+	The Following Commands have been removed / Depricated from the current toolkit and firmware on the arrays.
+		Optimize-A9Node		--> The underlying CLI TuneNodeCh no longer exists, was never a supported CLI command.
+		Optimize-A9LD		--> The underlying CLI TuneLD no longer exists, was never a supported CLI command.
+
+	The following Commands have be relagated to 3PAR only Arrays, allows removal for Primera/Alletra9K/AlletraMPB10K of the following commands
 		Join-A9Federation
 		New-A9Federation, 
 		Set-A9Federation, 
 		Remove-A9Federation
 		Show-A9Federation
-
-	The following Flashcache Commands have be relagated to 3PAR only Arrays, allows removal for Primera/Alletra9K/AlletraMPB10K of the following commands
+		Get-A9SystemReporterStatfssnapshot
 		New-A9Flashcache_cli
 		Set-A9FlashCache_CLI
 		Remove-A9Flashcache_cli
+		Show-A9EEProm
+		Get-A9SystemReporterRegionIODensity
 
 	The Following Remote Copy Commands have be deduplicated such that the CLI version have been removed when a API version can accomplish the same processed;
 		New-A9RemoteCopyTarget_CLI 		-->  	New-A9RCopyTarget
@@ -298,6 +317,7 @@ The following CLI based commands have changed.
 		Set-A9RCopyTarget_CLI			-->		Update-A9RCopyTarget
 		Set-A9RCopyTargetName_CLI		-->		Update-A9RCopyTarget (Rename to Set-A9RCopyTarget)
 		Set-A9RCopyTargetWitness_CLI	-->		Set-A9RCopyTarget
+		Show-A9NodeProperties			-->		Get-A9Node
 
 	The Following Reports Commands have be deduplicated such that the CLI version have been removed when a API version can accomplish the same processed;
 		Get-A9SystemReportCpgSpace			-->		Get-A9CPGSpaceDataReports (renamed to Get-A9CPGSpaceReport)		
@@ -305,21 +325,39 @@ The following CLI based commands have changed.
 		Get-A9SystemReporterStatCacheMemoryPages-->	Get-A9CacheReport replaces the functionality of the  so the Get-A9SystemReporterStatCacheMemoryPages can be removed
 		Get-A9SystemReporterStatCPU			--> 	Get-A9CPUReport
 		Get-A9SystemReporterPhysicalDiskSpace->		Get-A9PDCapacityReports,Get-A9PDSpaceReport
-		Get-A9CPGStatisticsDataReports		-->		Get-A9CPGIOPSReport 
-		Get-A9PDStatisticsDataReports		-->		Get-A9PDIOPSReport
-		Get-A9PortStatisticsReport			-->		Get-A9PortIOPSReport
-		Get-A9QoSStatisticsReport			-->		Get-A9QoSIOPSReport
-		Get-A9RCopyStatisticsReports 		-->		Get-A9RCopyIOPsReport
-		Get-A9SystemReporterStatPhysicalDisk-->		Get-A9PDIOPsReport 
+		Get-A9CPGStatisticsDataReports		-->		Get-A9IOPsReport -CPGIOPsReport
+		Get-A9PDStatisticsDataReports		-->		Get-A9IOPsReport -DiskIOPsReport
+		Get-A9PortStatisticsReport			-->		Get-A9IOPsReport -PortIOPsReport
+		Get-A9QoSStatisticsReport			-->		Get-A9IOPsReport -QoSIOPsReport
+		Get-A9RCopyStatisticsReports 		-->		Get-A9IOPsReport -RCopyIOPsReport
+		Get-A9SystemReporterStatPhysicalDisk-->		Get-A9IOPsReport -DiskIOPsReport
 		Get-A9SystemReporterStatLD 			-->		removed 
 		Get-A9SystemReporterVvSpace 		-->		Get-A9VVSpaceReport
-
+		New-A9VvListGroupSnapshot 			--> 	New-A9VVSnapshot -Volumename vol1,vol2,vol3
+		New-A9VvCopy_CLI					--> 	New-A9VVPhysicalCopy 	--> Change name to New-A9VVCopy
+		New-A9GroupVvCopy_CLI				--> 	New-A9VVSetPhysicalCopy --> Rename to New-A9VVSetCopy
+		Sync-A9RecoverDRRcopyGroup			-->		Set-A9RCopyGroup -Sync
+		Get-A9RCopyGroupTarget				-->		Get-A9RCopyGroup -TargetName
+		Get-A9RCopyGroupVV					-->		Get-A9RCopyGroup -TargetVolumeName
+		Get-A9SystemReporterStatVLun		-->		Get-A9vLunIOPsReport
+		Get-A9SystemReporterStatqos			-->		Get-A9QoSIOPsReport
+		Get-A9SystemReporterStatPort		-->		Get-A9PortIOPsReport
+		Get-A9VV							-->		Get-A9Volume
+		Get-A9VVStats						--> 	Get-A9Volume -Statistics
+		Get-A9VVSpaceDistribution			--> 	Get-A9Volume -SpaceDistribution
+		Remove-A9VV							-->		Remove-A9Volume
+		New-A9VV							-->		New-A9Volume
+		Set-A9VV							-->		Set-A9Volume
 	The following were renamed
 		Get-A9PDCapacityReports 			-->		Get-A9PDCapacityReport
 		Get-A9PDSpaceReports				-->		Get-A9PDSpaceReport 
 		Get-A9CPUStatisticalDataReports		-->		Get-A9CPUReport 
 		Get-A9CacheMemoryStatisticsDataReports-->	Get-A9CachStatReport
-		
+		Update-A9HostSet					--> 	Set-A9HostSet
+		New-A9VVSnapshot					-->		New-A9Snapshot
+		Update-A9System						-->		Set-A9System
+		Set-A9Host_CLI						-->		Set-A9Host
+		New-A9HostSet_CLI					-->		New-A9HostSet
 	The following commands were consolidated
 		Get-A9HostListPersona			-->		Get-A9Host -ListPersona
 		Get-A9HostWithFilter			--> 	Get-A9Host
@@ -329,6 +367,53 @@ The following CLI based commands have changed.
 		Resize-A9VV						--> 	Set-A9VV -resize
 		Compress-A9VV 					--> 	Set-A9VV -compress
 		Reset-A9iSCSIPort 				--> 	Set-A9iSCSIPort
+		Test-A9Disk						--> 	Set-A9Disk -Diag | Set-A9Disk -Scrub
+		Compress-A9CPG					--> 	Set-A9CPG -compress
+		Reset-A9VVSetPhyscialCopy		-->		Set-A9VolumeSetCopy -reset
+		Move-A9VVSetPhyscialCopy		-->		Set-A9VolumeSetCopy -move
+		Stop-A9VVSetPhyscialCopy		-->		Set-A9VolumeSetCopy -Stop
+		Update-A9VVSetPhyscialCopy		-->		Set-A9VolumeSetCopy -Update
+		Stop-A9VVPhysicalCopy			-->		Set-A9VolumeCopy -stop
+		Move-A9VVPhysicalCopy			-->		Set-A9VolumeCopy -Promote
+		Update-A9VVPhysicalcopy			--> 	Set-A9VolumeCopy -StopPromote
+		Resync-A9VVPhysicalCopy			-->		Set-A9VolumeCopy -Resync
+		New-A9VVSetPhysicalCopy			--> 	New-A9VolumeSetCopy
+		New-A9PhyscialCopy				--> 	New-A9VolumeCopy
+		Update-A9Host					--> 	Set-A9Host
+		Start-A9RCopyGroup 				--> 	Set-A9RCopyGroup -Start
+		Stop-A9RCopyGroup 				--> 	Set-A9RCopyGroup -Start
+		Sync-A9RCopyGroup 				--> 	Set-A9RCopyGroup -Sync
+		Restore-A9CopyGroup				--> 	Set-A9RCopyGroup -Restore
+		Get-A9RCopyLink					-->		Get-A9RCopyInfo -LinkName
+		Get-A9SystemReportHistogramPhysicalDisk	--> Get-A9SystemReportHistogram -PhysicalDiskHistogram
+		Get-A9SystemReportHistogramLogicalDisk	--> Get-A9SystemReportHistogram -LogicalDiskHistogram
+		Get-A9SystemReportHistogramPorrt--> 	Get-A9SystemReportHistogram -PortHistogram
+		Get-A9SystemReportHistogramvLun	--> 	Get-A9SystemReportHistogram -vLunHistogram
+		Get-A9CacheReport				-->		Get-A9SystemReport -CacheReport
+		Get-A9CPUReport					-->		Get-A9SystemReport -CPUReport
+		Show-A9Battery					-->		Get-A9SystemInfo -ShowBatteryInfo
+		Show-A9FirmwareDB				-->		Get-A9SystemInfo -ShowFirmwareDBInfo
+		Show-A9NodeEnvironmentStatus	-->		Get-A9SystemInfo -ShowEnviornmentalInfo
+		Get-A9SystemManager				-->		Get-A9SystemInfo -ShowSysMgrInfo
+		Show-A9NetworkDetail			-->		Get-A9SystemInfo -ShowNetworkInfo
+		Show-A9SystemResourcesSummary	-->		Get-A9SystemInfo -ShowResourceInfo
+		Show-A9Node						-->		Get-A9SystemInfo -ShowNodeInfo
+		Get-A9HistogramChunklet			-->		Get-A9Histogram -ChunkletHistogram        
+		Get-A9HistogramLogicalDisk		-->		Get-A9Histogram -LogicalDiskHistogram     
+		Get-A9HistogramPhysicalDisk		-->		Get-A9Histogram -PhysicalDiskHistogram   
+		Get-A9HistogramRemoteCopyVv		-->		Get-A9Histogram -RemoteCopyVVHistogram        
+		Get-A9HistogramPort				-->		Get-A9Histogram -PortHistogram   
+		 Get-A9HistogramVLun			-->		Get-A9Histogram -vLunHistogram  
+		Get-A9HistogramVv				-->		Get-A9Histogram -VolumeHistogram
+		Get-A9PhyscialDiskSpaceReport	-->		Get-A9SpaceReport -PhysicalDiskSpaceReport
+		Get-A9CPGSpaceReport			--> 	Get-A9SpaceReport -CPGSpaceReport
+		Get-A9VVSpaceReport				-->		Get-A9SpaceReport -VolumeSpaceReport
+		Get-A9SystemReportCPGSpace		--> 	Get-A9SpaceReport -CPGSpaceReport
+		Get-A9SystemReportCPGSpace		--> 	Get-A9SpaceReport -LogicalDiskSpaceReport
+
+		Set-A9RCopyTargetPol_CLI		--> 	Target Policies are no longer supported
+	  	Remove-A9VvLogicalDiskCpgTemplates-->	Templates no longer needed/supported
+		Update-A9Host					--> 	Set-A9Host
 
 	The following commands used to have options to run in API and in CLI if available, in the following cases all of the CLI dependancies on parameters have been removed
 		Get-A9Host
@@ -355,6 +440,7 @@ The following CLI based commands have changed.
 	The Template technology has been removed from the current codebase, and since Powershell can automate, templates are no longer needed. Removing the following commands
 		Show-A9Template	
 		Set-A9Template_CLI
+
 	The  command gives the same information as the Get-A9TOCGen, the Show-A9TocGen can be deleted
 
 	The  Show-A9Portdevices_CLI command have been changed to prevent invalid parameter sets. 
@@ -365,13 +451,13 @@ The following CLI based commands have changed.
 	
 	The command Get-A9Inventory is moved from inventory.ps1 to systemmanager.ps1 allows the deletiong of the file Inventory.PS1
 
-	The following files have been renamed
+	The following Commands have been renamed
 		Update-A9VV 			-->	Set-A9VV
 		Get-A9Users				--> Get-A9User
 		Get-A9WSAPIConfigInfo 	-->	Get-A9WsAPI
 		Update-A9Domain			--> Set-A9Domain
 		Move-A9Domain			--> Move-A9DomainObject
-
+		Optimize-A9PhysicalDisk	--> Set-A9Disk -optimize
 	The Set-A9Domain command has been removed as it is only usable in an interactive sense which makes it do nothing for a noninteractive command.
 
 	The following Commands have been modified to add more human readable descriptions to returned objects

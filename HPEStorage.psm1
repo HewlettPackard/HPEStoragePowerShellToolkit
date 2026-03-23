@@ -153,20 +153,47 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
     {   if ( $LoadA9CLI -or $LoadA9API )
         {   # Load the Global scripts (API + CLI)
             write-verbose "--------------Loaded All CLI and Rest function from Global set"
-            . $PSScriptRoot\A9.GLOBAL\VS-Functions.ps1
+            . $PSScriptRoot\A9.scripts\VS-Functions.ps1
             Export-ModuleMember -Function   Invoke-A9CLICommand ,     Invoke-A9API
-            . $PSScriptRoot\A9.GLOBAL\VVCommands.ps1
-            Export-ModuleMember -Function   Get-A9Vv,       Remove-A9Vv,    Remove-A9VvSet,     Set-A9Vv,   Get-A9vLun,     Remove-A9vLun,  New-A9vLun
-            . $PSScriptRoot\A9.GLOBAL\Host.ps1
-            Export-ModuleMember -Function   Get-A9HostSet,  Get-A9Host
-            . $PSScriptRoot\A9.GLOBAL\Task.ps1
-            Export-ModuleMember -Function   Get-A9Task,     Stop-A9Task 
-            . $PSScriptRoot\A9.GLOBAL\Disk.ps1
-            Export-ModuleMember -Function   Get-A9Disk
-            . $PSScriptRoot\A9.GLOBAL\CPGManagement.ps1
-            Export-ModuleMember -Function   Remove-A9CPG,   Get-A9CPG,  New-A9Cpg,  Set-A9Cpg ,     Compress-A9CPG 
-            . $PSScriptRoot\A9.GLOBAL\System.ps1
-            Export-ModuleMember -Function   Get-A9System,   Get-A9WSAPI
+            . $PSScriptRoot\A9.scripts\CPGDisk.ps1
+            Export-ModuleMember -Function   Get-A9CPG,      New-A9Cpg,      Set-A9Cpg,  Remove-A9CPG  ,
+                                            Get-A9PhysicalDisk
+            . $PSScriptRoot\A9.scripts\CopyOperations.ps1 
+            Export-ModuleMember -Function   New-A9Snapshot,         
+                                            New-A9VolumeCopy,       Set-A9VolumeCopy,
+                                            New-A9VolumeSetCopy,    Set-A9VolumeSetCopy
+            . $PSScriptRoot\A9.scripts\Host.ps1
+            Export-ModuleMember -Function   Get-A9Host,             Set-A9Host,         New-A9Host,         Remove-A9Host,      
+                                            Set-A9HostTargetZoneingWWN                             
+            . $PSScriptRoot\A9.scripts\HostSet.ps1
+            Export-ModuleMember -Function   Get-A9HostSet,          New-A9HostSet ,     Set-A9HostSet ,     Remove-A9HostSet 
+            . $PSScriptRoot\A9.scripts\PortSwitch.ps1 
+            Export-ModuleMember -Function   Get-A9Port ,            Get-A9PortDevice ,  Get-A9PortDeviceTDZ ,   Get-A9FcSwitch        
+            . $PSScriptRoot\A9.scripts\iSCSI.ps1 
+            Export-ModuleMember -Function   Get-A9IscsivLan,        Set-A9IscsivLan,    New-A9IscsivLan ,       Remove-A9IscsivLan,    Set-A9ISCSIPort
+            . $PSScriptRoot\A9.scripts\RemoteCopy.ps1
+            Export-ModuleMember -Function   Get-A9RCopyGroup,       New-A9RCopyGroup,   Set-A9RCopyGroup,      Remove-A9RCopyGroup,
+                                            Get-A9RCopyTarget,      New-A9RCopyTarget,  Update-A9RCopyTarget,       
+                                            Get-A9RCopyInfo,
+                                            Update-A9RCopyGroupTarget,  
+                                            Add-A9VvToRCopyGroup,   Remove-A9VvFromRCopyGroup,  Add-A9TargetToRCopyGroup,   Remove-A9TargetFromRCopyGroup,
+                                            New-A9SnapRcGroupVv
+            . $PSScriptRoot\A9.scripts\System.ps1 
+            Export-ModuleMember -Function   Get-A9System,           Set-A9System,           Get-A9WSAPI,          
+                                            Get-A9Version,          Get-A9CapacityInfo,     Open-A9SSE,     Get-A9EventLog,
+                                            Get-A9Certificate,      Import-A9Certificate      
+            . $PSScriptRoot\A9.scripts\SystemReporter.ps1 
+            Export-ModuleMember -Function   Get-A9IOPsReport,       Get-A9SpaceReport,      Get-A9SystemReportStats
+            . $PSScriptRoot\A9.Scripts\Task.ps1
+            Export-ModuleMember -Function   Get-A9Task,     Stop-A9Task      
+            . $PSScriptRoot\A9.scripts\UserRole.ps1
+            Export-ModuleMember -Function   Get-A9User,     Get-A9Role
+            . $PSScriptRoot\A9.scripts\Volume.ps1 
+            Export-ModuleMember -Function   Get-A9Volume,   New-a9Volume,   Set-A9Volume,       Remove-A9Volume          
+            . $PSScriptRoot\A9.scripts\VolumeSet.ps1 
+            Export-ModuleMember -Function   Get-A9VvSet,    New-A9VvSet,    Set-A9VvSet,        Remove-A9VvSet
+            . $PSScriptRoot\A9.scripts\Vlun.ps1
+            Export-ModuleMember -Function   Get-A9vLun,     New-A9vLun,     Remove-A9vLun
         }
         if ( $LoadA9CLI )
         {   # Load the CLI specific Commnands
@@ -178,129 +205,92 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             . $PSScriptRoot\A9.CLI\ConfigCIMandAPI.ps1
             Export-ModuleMember -Function   Set-A9Wsapi,    Get-A9CIM,          Set-A9CIM,              Remove-A9WsapiSession
             . $PSScriptRoot\A9.CLI\Disk.ps1 
-            Export-ModuleMember -Function   Remove-A9Disk,  Set-A9Disk,         Test-A9Disk
+            Export-ModuleMember -Function   Remove-A9PhysicalDisk,      Set-A9PhysicalDisk,     
+                    Get-A9LogicalDisk,      Start-A9LD_CLI,     Set-A9LogicalDisk,     Remove-A9LogicalDisk,                   
+                    Get-A9LogicalDiskChunklet 
             . $PSScriptRoot\A9.CLI\DomainManagement.ps1
-            Export-ModuleMember -Function   Get-A9Domain,   Get-A9DomainSet,    Move-A9DomainObject,    New-A9Domain,   
-                        New-A9DomainSet,    Remove-A9Domain,Set-A9Domain,       Remove-A9DomainSet,     Set-A9DomainSet
+            Export-ModuleMember -Function   Get-A9Domain,       New-A9Domain,       Set-A9Domain,       Remove-A9Domain,  
+                                            Get-A9DomainSet,    New-A9DomainSet,    Set-A9DomainSet,    Remove-A9DomainSet,   
+                                            Move-A9DomainObject      
             . $PSScriptRoot\A9.CLI\HealthAndAlertManagement.ps1
-            Export-ModuleMember -Function   Get-A9Alert,    Get-A9Health,   Remove-A9Alerts, Set-A9Alert
-            . $PSScriptRoot\A9.CLI\HostManagement.ps1
-            Export-ModuleMember -Function   Set-A9Host_CLI, New-A9HostSet_CLI
+            Export-ModuleMember -Function   Get-A9Alert,        Set-A9Alert,        Remove-A9Alerts,  
+                                            Get-A9Health   
             . $PSScriptRoot\A9.CLI\MaintenanceMode.ps1
             Export-ModuleMember -Function   Get-A9Maintenance, New-A9Maintenance, Set-A9Maintenance
             . $PSScriptRoot\A9.CLI\NodeSubsystemManagement.ps1
-            Export-ModuleMember -Function           Find-A9Node,                Find-A9System,              Ping-A9RCIPPorts,           Set-A9Battery,          Set-A9FCPorts,          Show-A9NodeEnvironmentStatus,
-                    Set-A9NodePowerSupplyId,        Set-A9Date,                 Set-A9SysMgr,               Show-A9Battery,             Show-A9EEProm,          Set-A9HostPorts,        Get-A9SystemInformation, 
-                    Show-A9FCOEStatistics,          Show-A9Firmwaredb,          Show-A9iSCSIStatistics,     Show-A9NetworkDetail,       Show-A9iSCSISession,    Get-A9Node,             Show-A9iSCSISessionStatistics,
-                    Show-A9iSCSISessionStatistics,  Show-A9NodeProperties,      Show-A9Portdevices_CLI,     Show-A9PortISNS,            Get-A9SystemManager,    Get-A9Target,           Show-A9SystemResourcesSummary, 
-                    Start-A9NodeRescue,             Get-A9HostPorts_CLI,        Show-A9PortARP,             Test-A9FCLoopback         
+            Export-ModuleMember -Function           Find-A9Node,                Find-A9System,              Ping-A9RCIPPorts,           
+                    Set-A9Battery,                  Set-A9FCPorts,              Set-A9NodePowerSupplyId,    Set-A9Date,                 
+                    Set-A9SysMgr,                   Set-A9HostPorts,            Start-A9NodeRescue,         Test-A9FCLoopback,        
+                    Get-A9SystemInfo, 
+                    Show-A9FCOEStatistics,          Get-A9iSCSIStats,           Show-A9iSCSISession,        Get-A9Node,          
+                    Show-A9Portdevices_CLI,         Show-A9PortISNS,            Get-A9Target,              
+                    Get-A9HostPorts_CLI,            Show-A9PortARP                      
             . $PSScriptRoot\A9.CLI\PerformanceManagement.ps1
-            Export-ModuleMember -Function           Compress-A9VV_CLI,              Get-A9HistogramChunklet,        Get-A9HistogramLogicalDisk,         Get-A9HistogramPhysicalDisk,            Get-A9HistogramRemoteCopyVv,
-                    Get-A9HistogramVLun,            Get-A9HistogramVv,              Get-A9StatisticsChunklet,       Get-A9StatCacheMemoryPages,         Get-A9CPUStatisticalDataReports_CLI,    Get-A9LogicalDiskStatisticsReports_CLI,
-                    Get-A9StatisticLinkUtilization, Optimize-A9PhysicalDisk,        Get-A9PortStatisticsReports_CLI,Get-A9RCopyStatisticalReports_CLI,  Get-A9HistogramPort,                    Get-APhysicalDiskStatisticsReports_CLI,
-                    Get-A9vLunStatisticsReports_CLI, Get-A9VvStatisticsReports,     Set-A9StatisticsInUseChunklets, Measure-A9System,                   Set-A9StatisticsCollectionPhysicalDiskChunklets
+            Export-ModuleMember -Function           Compress-A9VV_CLI,              Get-A9Histogram,        Measure-A9System,
+                    Get-A9StatisticsChunklet,       Get-A9StatCacheMemoryPages,     Get-A9CPUStatisticalDataReports_CLI,    Get-A9LogicalDiskStatisticsReports_CLI,
+                    Get-A9StatisticLinkUtilization, Get-A9PortStatisticsReports_CLI,Get-A9RCopyStatisticalReports_CLI,      Get-APhysicalDiskStatisticsReports_CLI,
+                    Get-A9vLunStatisticsReports_CLI,Get-A9VvStatisticsReports,      Set-A9StatisticsInUseChunklets,         Set-A9StatisticsCollectionPhysicalDiskChunklets
             . $PSScriptRoot\A9.CLI\Replication.ps1
             Export-ModuleMember -Function           New-A9RCopyGroupCPG_CLI,    
                     Add-A9RCopyLink_CLI,            Get-A9StatRCopy_CLI, 
                     Disable-A9RCopylink_CLI,        Disable-A9RCopyVv_CLI,      
                     Remove-A9RCopyHost,         
-                    Set-A9RCopyGroupPeriod_CLI,     Set-A9RCopyTargetName_CLI,  Set-A9AdmitRCopyHost,
-                    Set-A9RCopyTargetPol_CLI,       Sync-A9RecoverDRRcopyGroup,     
+                    Set-A9RCopyGroupPeriod_CLI,     Set-A9RCopyTargetName_CLI,      Set-A9AdmitRCopyHost,
                     Test-A9RCopyLink_CLI      
             . $PSScriptRoot\A9.CLI\ServiceCommands.ps1
             Export-ModuleMember -Function           Add-A9Hardware,             Get-A9SystemPatch,          Get-A9Version ,             Reset-A9SystemNode,     Set-A9Magazines,            
                     Invoke-A9CageService,           Set-A9ServiceNodes,         Get-A9ServiceNodes,         Reset-A9System ,            Update-A9PdFirmware,    Get-A9ResetReason,      
                     Set-A9Security,                 Get-A9SecurityFIPS
             . $PSScriptRoot\A9.CLI\SnapShotManagement.ps1
-            Export-ModuleMember -Function           New-A9GroupVvCopy_CLI,      New-A9SnapVolume_CLI,       New-A9VvCopy_CLI,           Push-A9GroupSnapVolume, Push-A9SnapVolume,          Push-A9VvCopy
+            Export-ModuleMember -Function           New-A9SnapVolume_CLI,       Push-A9GroupSnapVolume,     Push-A9SnapVolume,      Push-A9VvCopy
             . $PSScriptRoot\A9.CLI\Sparing.ps1
             Export-ModuleMember -Function           Get-A9Spare,                New-A9Spare,                Move-A9Chunklet,            Remove-A9Spare,         Restore-A9RelocatedChunklets
             . $PSScriptRoot\A9.CLI\SystemManager.ps1
-            Export-ModuleMember -Function           Get-A9Encryption,       Measure-A9Upgrade,      Optimize-A9LogicalDisk,     Optimize-A9Node,    Get-A9Inventory
+            Export-ModuleMember -Function           Get-A9Encryption,           Measure-A9Upgrade,          Get-A9Inventory
             . $PSScriptRoot\A9.CLI\SystemReporter.ps1
-            Export-ModuleMember -Function           Get-A9SystemReporter,                   Set-A9SSystemReporter,                      Get-A9SystemReportCpgSpace,
-                Get-A9SystemReportAlertCrit,        Get-A9SystemReportHistogramLogicalDisk, Get-A9SystemReportHistogramPhysicalDisk,    Get-A9SystemReportHistogramPort,
-                Get-A9SystemReportHistogramVLun,    Get-A9SystemReportLogicalDiskSpace,     Get-A9SystemReporterRegionIODensity,        Set-A9SystemReporterAlertCrit,
-                Remove-A9SystemReporterAlertCrit,   New-A9SystemReporterAlertCrit,          Get-A9SystemReporterStatPort,               Show-A9SystemReporterStatIscsiSession ,              
-                Get-A9SystemReporterStatfssnapshot, Get-A9SystemReporterStatlink,           Get-A9SystemReporterStatqos,                Show-A9SystemReporterStatIscsi,
-                Get-A9SystemReporterStatrcvv,       Get-A9SystemReporterStatVLun                                      
-                
+            Export-ModuleMember -Function               Get-A9SystemReportDB,                   Set-A9SSystemReport,                        Get-A9SystemReportHistogram,     
+                Get-A9SystemReportAlertCrit,            Set-A9SystemReporterAlertCrit,          Remove-A9SystemReporterAlertCrit,           New-A9SystemReporterAlertCrit ,
+                Show-A9SystemReporterStatIscsiSession , Show-A9SystemReporterStatIscsi,
+                Get-A9SystemReporterStatrcvv                 
             . $PSScriptRoot\A9.CLI\TaskManagement.ps1
             Export-ModuleMember -Function   Remove-A9Task,          Set-A9Task
             . $PSScriptRoot\A9.CLI\UserManagement.ps1
             Export-ModuleMember -Function   Get-A9UserConnection,   Remove-A9UserConnection
             . $PSScriptRoot\A9.CLI\Vasa.ps1
             Export-ModuleMember -Function   Show-A9VVolStorageContainerVM_CLI,                  Get-A9VolStorageContainer_CLI,          Set-A9VVolStorageContainer
-
             . $PSScriptRoot\A9.CLI\VirtualVolumeManagement.ps1
-            Export-ModuleMember -Function   Add-A9Vv,           Update-A9VvSetProperties_CLI,       Update-A9VvProperties_CLI,  Remove-A9LogicalDisk,       Remove-A9VvLogicalDiskCpgTemplates,
-                        Import-A9Vv,        Start-A9LD_CLI,     Compress-A9LogicalDisk,             Confirm-A9LogicalDisk,      Get-A9LogicalDisk,          Get-A9LogicalDiskChunklet ,   
-                        Test-A9Vv_CLI,      Set-A9VvSpace_CLI,  Show-A9LdMappingToVvs_CLI,          Show-A9VvpDistribution,     Show-A9Peer_CLI,            Start-A9Vv_CLI, Show-A9VvScsiReservations,          
+            Export-ModuleMember -Function   Add-A9Vv,           Update-A9VvProperties_CLI,               
+                        Import-A9Vv,           
+                        Set-A9VvSpace_CLI,  Show-A9LdMappingToVvs_CLI,                              Show-A9VvpDistribution,     Show-A9Peer_CLI,            Show-A9VvScsiReservations,          
                         Show-A9VvMappedToPD,Show-A9VvMapping,   Update-A9SnapSpace_CLI
-        }
-        if ( $LoadA9API )
-        {   write-verbose "--------------Loaded All CLI and Rest function from REST set"
-            # Load the API specific Commands
-            . $PSScriptRoot\A9.scripts\CopyOperations.ps1 
-            Export-ModuleMember -Function   New-a9VvSnapshot,       New-A9VvListGroupSnapshot,  New-A9VvPhysicalCopy,       Reset-A9PhysicalCopy,   
-                                            Move-A9VirtualCopy,     Move-A9VvSetVirtualCopy,    New-A9VvSetPhysicalCopy,    Reset-A9VvSetPhysicalCopy ,
-                                            Update-A9VvOrVvSets,    Stop-A9VvSetPhysicalCopy,   Stop-A9PhysicalCopy 
-            . $PSScriptRoot\A9.scripts\HostManagement.ps1
-            Export-ModuleMember -Function   New-A9Host,             Set-A9HostTargetZoneingWWN, Update-A9Host ,             Remove-A9Host,          Set-A9Host
-            . $PSScriptRoot\A9.scripts\HostSetsAndVirtualVolumeSets.ps1 
-            Export-ModuleMember -Function   New-A9HostSet ,         Update-A9HostSet ,          Remove-A9HostSet,           New-A9VvSet,
-                                            Update-A9VvSet ,        Get-A9VvSet 
-            . $PSScriptRoot\A9.scripts\PortsAndSwitches.ps1 
-            Export-ModuleMember -Function   Get-A9Port ,            Get-A9IscsivLan,            Get-A9PortDevice ,          Get-A9PortDeviceTDZ ,   Get-A9FcSwitch ,
-                                            Set-A9ISCSIPort ,       New-A9IscsivLan ,           New-A9IscsivLun ,           Set-A9IscsivLan,        Remove-A9IscsivLan
-            . $PSScriptRoot\A9.scripts\RemoteCopy.ps1
-            Export-ModuleMember -Function   New-A9RCopyGroup,       Start-A9RCopyGroup ,        Stop-A9RCopyGroup,          Sync-A9RCopyGroup,      Remove-A9RCopyGroup,
-                                            Set-A9RCopyGroup,       Update-A9RCopyGroupTarget,  Restore-A9RCopyGroup,       Add-A9VvToRCopyGroup,   Remove-A9VvFromRCopyGroup,
-                                            New-A9RCopyTarget,      Update-A9RCopyTarget,       Add-A9TargetToRCopyGroup,   Get-A9RCopyLink,        Remove-A9TargetFromRCopyGroup,
-                                            New-A9SnapRcGroupVv,    Get-A9RCopyInfo,            Get-A9RCopyTarget,          Get-A9RCopyGroup,       Get-A9RCopyGroupTarget,
-                                            Get-A9RCopyGroupVv
-            . $PSScriptRoot\A9.scripts\StorageVolumes.ps1 
-            Export-ModuleMember -Function   New-a9Vv,               Get-A9VvStat,           Get-A9VvSpaceDistribution
-            . $PSScriptRoot\A9.scripts\SystemEvents.ps1
-            Export-ModuleMember -Function   Open-A9SSE,             Get-A9EventLog
-            . $PSScriptRoot\A9.scripts\System.ps1 
-            Export-ModuleMember -Function   Update-A9System,        Get-A9Version,          Get-A9Certificate,      Import-A9Certificate,       Get-A9CapacityInfo
-            . $PSScriptRoot\A9.scripts\SystemReporter.ps1 
-            Export-ModuleMember -Function   Get-A9CacheReport,      Get-A9CPGSpaceReport,   Get-A9CPGIOPsReport,    Get-A9CPUReport,
-                                            Get-A9PDSpaceReport,    Get-A9PDIOPsReport,     Get-A9PortIOPsReport,   Get-A9QoSIOPsReport, 
-                                            Get-A9RCopyIOPsReport,  Get-A9vLunIOPsReport,   Get-A9VvSpaceReport,    Get-A9RCopyVolumeIOPsReport
-            . $PSScriptRoot\A9.scripts\UserRole.ps1
-            Export-ModuleMember -Function Get-A9User,Get-A9Role
         }
         if ( ($PersistArrayType -like '3Par') )
             {   # Load the 3PAR specific Commands
-                        . $PSScriptRoot\3PAR.CLI\AdaptiveOptimization.ps1
+                    . $PSScriptRoot\3PAR.CLI\AdaptiveOptimization.ps1
                         Export-ModuleMember -Function   Get-A9AdaptiveOptimizationConfig,   New-A9AdaptiveOptimizationConfig,       Remove-A9AdaptiveOptimizationConfig, 
                                                         Start-A9AdaptiveOptimizationConfig, update-A9AdaptiveOptimizationConfig,    Get-A9SystemReportAOMoves,              
-                                                        Get-A9AdaptiveOptimizationConfig
-                if ( $LoadA9API )
-                    {   . $PSScriptRoot\3PAR.CLI\FilePersona.ps1
+                                                        Get-A9AdaptiveOptimizationConfig ,  Get-A9SystemReporterRegionIODensity    
+                    . $PSScriptRoot\3PAR.CLI\FilePersona.ps1
                         Export-ModuleMember -Function  Get-A9FileServices,          New-A9FPG,                  Remove-A9FPG, 
                             Get-A9FPG,                  Get-A9FPGReclamationTask,   New-A9VFS,                  Remove-A9VFS,               Get-A9VFS , 
                             New-A9FileStore,            Update-A9FileStore,         Remove-A9FileStore,         Get-A9FileStore ,           New-A9FileStoreSnapshot, 
                             Remove-A9FileStoreSnapshot, Get-A9FileStoreSnapshot,    New-A9FileShare,            Remove-A9FileShare ,        Get-A9FileShare, 
                             Get-A9DirPermission ,       New-A9FilePersonaQuota,     Update-A9FilePersonaQuota,  Remove-A9FilePersonaQuota,  Get-A9FilePersonaQuota, 
                             Restore-A9FilePersonaQuota, Group-A9FilePersonaQuota 
-                        . $PSScriptRoot\3PAR.CLI\FlashCacheOperations.ps1 
+                    . $PSScriptRoot\3PAR.CLI\FlashCacheOperations.ps1 
                         Export-ModuleMember -Function   Set-A9FlashCache,           New-A9FlashCache,           Remove-A9FlashCache,
                                                         Get-FlashCache,             Set-A9VvSetFlashCachePolicy
-                    }
-                if ( $LoadA9CLI )
-                    {  . $PSScriptRoot\3PAR.CLI\FilePersonaManagement.ps1
+                    . $PSScriptRoot\3PAR.CLI\FilePersonaManagement.ps1
                         Export-ModuleMember -Function   New-A9AdaptiveOptimizationConfig,   Remove-A9AdaptiveOptimizationConfig,    Start-A9AdaptiveOptimizationConfig, Update-A9AdaptiveOptimizationConfig, 
                             Get-A9SystemReportAOMoves,  Start-A9FSNDMP,                     Stop-A9FSNDMP,                          Get-A9SRStatfsfpg,                  Get-A9SystemReporterStatfscpu,
                             Get-A9SRStatfsmem,          Get-A9SystemReporterStatfsblock,    Get-A9SystemReporterStatfsav,           Get-A9SRStatfsnet, 
-                            Get-A9SRStatfsnfs,          Get-A9SystemReporterStatfssmb
-                        . $PSScriptRoot\3PAR.CLI\StorageFederation.ps1
+                            Get-A9SRStatfsnfs,          Get-A9SystemReporterStatfssmb,      Get-A9SystemReporterStatfssnapshot
+                    . $PSScriptRoot\3PAR.CLI\StorageFederation.ps1
                         Export-ModuleMember -Function   Join-A9Federation,                  New-A9Federation,                       Set-A9Federation, 
                                                         Remove-A9Federation,                Show-A9Federation
-                        . $PSScriptRoot\3PAR.CLI\Flashcache.ps1
-                        Export-ModuleMember -Function   New-A9FlashCache_CLI,               Set-A9FlashCache_CLI,                   Remove-A9FlashCache_CLI
-                    }
+                    . $PSScriptRoot\3PAR.CLI\Flashcache.ps1
+                        Export-ModuleMember -Function   New-A9FlashCache_CLI,               Set-A9FlashCache_CLI,                   Remove-A9FlashCache_CLI,
+                    . $PSScriptRoot\3PAR.CLI\SystemCommands.pd1
+                        Export-ModuleMember -Function   Show-A9EEProm
             }
     }
