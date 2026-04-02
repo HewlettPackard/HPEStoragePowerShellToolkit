@@ -50,6 +50,7 @@ Function New-A9AdaptiveOptimizationConfig
 .PARAMETER AOConfigurationName
 	Specifies an AO configuration name up to 31 characters in length.
 .NOTES
+	This command utilizes the SSH command 'createaocfg'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -100,6 +101,7 @@ Function Remove-A9AdaptiveOptimizationConfig
 .PARAMETER AOConfigurationName
 	Specifies the name of the AO configuration to be removed
 .NOTES
+	This command utilizes the SSH command 'removeaocfg'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -224,6 +226,7 @@ Function Start-A9AdaptiveOptimizationConfig
 
 	Start execution of AO for the vvset dbvvset in AOCFG prodaocfg using data for the past 3 hours:	
 .NOTES
+	This command utilizes the SSH command 'startao'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -321,6 +324,7 @@ Function Update-A9AdaptiveOptimizationConfig
 	Specifies a new name for the AO configuration of up to 31 characters in length.
 .PARAMETER AOConfigurationName
 .NOTES
+	This command utilizes the SSH command 'setaocfg'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -409,6 +413,9 @@ Function Get-A9SystemReportAOMoves
 	prefixed by "set:".  Note that snapshot VVs will not be considered since only base VVs have region space.
 .PARAMETER withvv
 	Show the data for each VV.
+.NOTES
+	This command utilizes the SSH command 'sraomoves'
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$btsecs,
@@ -452,9 +459,8 @@ Function Get-A9AdaptiveOptimizationConfig
 .EXAMPLE
 	PS:> Get-A9AdaptiveOptimizationConfig
 .NOTES
+	This command utilizes the SSH command 'showaocfg'
 	This command requires a SSH type connection.
-	Usage:
-	- AO will limit the space utilization of a CPG to the lowest of: max, warn, or limit. If none of these values is set for the AOCFG tier or CPG, then AO will only be bounded by the available raw space of the CPG characteristics.
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
 param(	[Parameter(ParameterSetName='SSH')]             [String]	$Domain,
@@ -593,6 +599,7 @@ Function Get-A9SystemReporterRegionIODensity
 .PARAMETER Rw
 	Specifies that the display includes separate read and write data. If not specified, the total is displayed.
 .NOTES
+	This command utilizes the SSH command 'srrgiodensity'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]

@@ -97,7 +97,7 @@ Function Get-A9SystemReportStats
 .EXAMPLE  
 	PS:> Get-A9SystemReport -VersusTime -Frequency hires -Groupby cpu -CPUReport
 .EXAMPLE	
-	PS:> Get-A9SystemReport -VersusTime -Frequency hires 
+	PS:> Get-A9SystemReport 
 
 	Cmdlet executed successfully
 

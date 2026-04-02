@@ -1,7 +1,6 @@
 ﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
-
-Function New-A9VvSet
+Function New-A9VolumeSet
 {
 <#
 .SYNOPSIS
@@ -22,11 +21,11 @@ Function New-A9VvSet
 .PARAMETER businessUnit
 	The business unit to which the volume iwll be used.
 .EXAMPLE
-	PS:> New-A9VvSet -VolumeSetName MyVVSet
+	PS:> New-A9VolumeSet -VolumeSetName MyVVSet
 
 	Creates a new empty Volume Set with name MyVVSet.
 .EXAMPLE
-	PS:> New-A9VvSet -VolumeSetName MyVVSet -SetMembers vol1,vol2,vol3
+	PS:> New-A9VolumeSet -VolumeSetName MyVVSet -SetMembers vol1,vol2,vol3
 
 	Creates a new Volume Set with name MyVVSet.
 #>
@@ -63,7 +62,7 @@ Process
 }
 }
 
-Function Set-A9VvSet 
+Function Set-A9VolumeSet 
 {
 <#
 .SYNOPSIS
@@ -95,19 +94,19 @@ Function Set-A9VvSet
 .PARAMETER Priority
 	May be high, medium or low, and only used when resyncing a volume set. The default value of medium is used if not specified.
 .EXAMPLE
-	PS:> Set-A9VvSet -VolumeSetName, xxx -RemoveMember -Members testvv3.0
+	PS:> Set-A9VolumeSet -VolumeSetName, xxx -RemoveMember -Members testvv3.0
 .EXAMPLE 
-	PS:> SetA9VvSet -VolumeSetName, xxx -AddMember -Members testvv3.0
+	PS:> SetA9VolumeSet -VolumeSetName, xxx -AddMember -Members testvv3.0
 .EXAMPLE 
-	PS:> Set-A9VvSet -VolumeSetName, xxx -ResyncPhysicalCopy -Priority high
+	PS:> Set-A9VolumeSet -VolumeSetName, xxx -ResyncPhysicalCopy -Priority high
 .EXAMPLE 
-	PS:> Set-A9VvSet -VolumeSetName, xxx -StopPhysicalCopy 
+	PS:> Set-A9VolumeSet -VolumeSetName, xxx -StopPhysicalCopy 
 .EXAMPLE 
-	PS:> Set-A9VvSet -VolumeSetName, xxx -PromoteVirtualCopy
+	PS:> Set-A9VolumeSet -VolumeSetName, xxx -PromoteVirtualCopy
 .EXAMPLE 
-	PS:> Set-A9VvSet -VolumeSetName, xxx -StopPromoteVirtualCopy
+	PS:> Set-A9VolumeSet -VolumeSetName, xxx -StopPromoteVirtualCopy
 .EXAMPLE 
-	PS:> Set-A9VvSet -VolumeSetName, xxx -NewName as-vvSet1 -Comment "Updateing new name"#>
+	PS:> Set-A9VolumeSet -VolumeSetName, xxx -NewName as-vvSet1 -Comment "Updateing new name"#>
 [CmdletBinding(DefaultParameterSetName='Default')]
 Param(
 	[Parameter(Mandatory)]									[String]	$VolumeSetName,
@@ -150,10 +149,10 @@ Process
 	if($Result.StatusCode -eq 200)
 		{	write-host "Cmdlet executed successfully" -foreground green
 			if($NewName)
-				{	return Get-A9VvSet -VolumeSetName $NewName
+				{	return Get-A9VolumeSet -VolumeSetName $NewName
 				}
 			else
-				{	return Get-A9VvSet -VolumeSetName $VolumeSetName
+				{	return Get-A9VolumeSet -VolumeSetName $VolumeSetName
 				}
 			Write-Verbose "End: Update-A9VvSet"
 		}
@@ -164,14 +163,14 @@ Process
 }
 }
 
-Function Get-A9VvSet 
+Function Get-A9VolumeSet 
 {
 <#
 .SYNOPSIS
 	Get Single or list of virtual volume Set.
 .DESCRIPTION
 	Get Single or list of virtual volume Set.
-.PARAMETER VVSetName
+.PARAMETER VolumeSetName
 	Specify name of the virtual volume Set.
 .EXAMPLE
 	PS:> Get-A9VvSet
@@ -182,11 +181,11 @@ Function Get-A9VvSet
 
 	Display a only the Volume Set named MyVolSet1.
 .EXAMPLE
-	PS:> Get-A9VvSet -VVSetName MyvvSet | where-object { $_.setmembers -contains "VolumeXYZ" }
+	PS:> Get-A9VolumeSet -VVSetName MyvvSet | where-object { $_.setmembers -contains "VolumeXYZ" }
 	
 	This command will gather all of the VolumeSets and filter to only show those where the volume named VolumeXYZ is present
 .EXAMPLE
-	PS:> Get-A9VvSet -VVSetName MyvvSet | where-object { $_.id -like 853 }
+	PS:> Get-A9VolumeSet -VVSetName MyvvSet | where-object { $_.id -like 853 }
 	
 	This command will gather all of the VolumeSets and filter to only show the volumeset with the ID of 853
 #>
@@ -228,28 +227,32 @@ Process
 }
 }
 
-Function Remove-A9VvSet
+Function Remove-A9VolumeSet
 {
 <#
 .SYNOPSIS
     Remove a Virtual Volume set
 .DESCRIPTION
-	Removes a VV set. If you need to remove a single (or multiple) Volumes from a VolumeSet, use the Set-A9VvSet command.
-.PARAMETER VolumeSetName 
-    Specify name of the VolumesetName..
+	Removes a Volume set. If you need to remove a single (or multiple) Volumes from a VolumeSet, use the Set-A9VvSet command.
+.PARAMETER VolumeSet
+    Specify name of the Volumeset.
 .EXAMPLE
-    PS:> Remove-A9VvSet -VolumeSetName "MyVVSet"
+    PS:> Remove-A9VolumeSet -VolumeSet "MyVVSet"
 
-	Remove a VV set "MyVVSet"
+	Remove a Volume set "MyVVSet"
+.NOTES
+	This command utilizes the API endpoint '/volumesets/'
+	This command uses a DELETE mechanism 
+	This command requires an API type connection.
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
-param(	[Parameter(ParameterSetName='API', Mandatory=$true)]	[String]	$VolumeSetName
+param(	[Parameter(ParameterSetName='API', Mandatory)]	[String]	$VolumeSet
 	)	
 Begin	
 {	Test-A9Connection -CLientType 'API' 
 }
 process
-{	$uri = '/volumesets/'+$VolumeSetName
+{	$uri = '/volumesets/'+$VolumeSet
 	$Result = $null
 	$Result = Invoke-A9API -uri $uri -type 'DELETE'
 	$status = $Result.StatusCode
@@ -258,7 +261,7 @@ process
 			return
 		}
 	else
-		{	Write-Error "Failure:  While Removing virtual volume Set:$VolumeSetName " 
+		{	Write-Error "Failure:  While Removing virtual volume Set:$VolumeSet " 
 			return $Result.StatusDescription
 		} 
 }

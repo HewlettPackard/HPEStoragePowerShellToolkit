@@ -10,6 +10,7 @@ Function Start-A9FSNDMP
 .EXAMPLE	
 	PS:> Start-A9FSNDMP
 .NOTES
+	This command utilizes the SSH command 'startfsndmp'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -35,6 +36,7 @@ Function Stop-A9FSNDMP
 .EXAMPLE	
 	PS:> Stop-A9FSNDMP	
 .NOTES
+	This command utilizes the SSH command 'stopfsndmp'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -129,6 +131,7 @@ Function Get-A9SRStatfsfpg
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
+	This command utilizes the SSH command 'srstatfsfpg'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -252,6 +255,7 @@ Function Get-A9SystemReporterStatfscpu
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
+	This command utilizes the SSH command 'srstatfscpu'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -362,6 +366,7 @@ Function Get-A9SRStatfsmem
 		dec		Sort in decreasing order.
 	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
 .NOTES
+	This command utilizes the SSH command 'srstatfsmem'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -482,6 +487,7 @@ Function Get-A9SystemReporterStatfsblock
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
+	This command utilizes the SSH command 'srstatfsblock'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -599,6 +605,7 @@ Function Get-A9SystemReporterStatfsav
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .NOTES
+	This command utilizes the SSH command 'srstatfsav'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]

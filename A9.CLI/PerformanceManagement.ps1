@@ -1,119 +1,4 @@
 ﻿## 	©2025 Hewlett Packard Enterprise Development LP
-Function Compress-A9VV_CLI
-{
-<#
-.SYNOPSIS   
-	The Compress-VV command is used to change the properties of a virtual volume that was created with the createvv command by associating it with a different CPG.
-.DESCRIPTION  
-	The Compress-VV command is used to change the properties of a virtual volume that was created with the createvv command by associating it with a different CPG.
-.PARAMETER SUBCommand
-	usr_cpg <cpg>
-		Moves the logical disks being used for user space to the specified CPG.
-		
-	snp_cpg <cpg>
-		Moves the logical disks being used for snapshot space to the specified CPG.
-		
-	restart
-		Restarts a tunevv command call that was previously interrupted because of component failure, or because of user initiated cancellation. This
-		cannot be used on TPVVs or TDVVs.
-		
-	rollback
-		Returns to a previously issued tunevv operation call that was interrupted. The canceltask command needs to run before the rollback.
-		This cannot be used on TPVVs or TDVVs.
-.PARAMETER CPGName
-	Indicates that only regions of the VV which are part of the the specified CPG should be tuned to the destination USR or SNP CPG.
-.PARAMETER VVName
-	Specifies the name of the existing virtual volume.
-.PARAMETER WaitTask
-	Specifies that the command will wait for any created tasks to complete.
-.PARAMETER DryRun
-	Specifies that the command is a dry run and that no logical disks or virtual volumes are actually tuned.  Cannot be used with the -tpvv, -dedup, -full, or -compr options.
-.PARAMETER Count
-	Specifies the number of identical virtual volumes to tune using an integer from 1 through 999. If not specified, one virtual volume
-	is tuned. If the '-cnt' option is specified, then the subcommands, "restart" and "rollback" are not permitted.
-.PARAMETER TPVV
-	Indicates that the VV should be converted to a thin provision virtual volume.  Cannot be used with the -dedup or -full options.
-.PARAMETER TDVV
-	This option is deprecated, see -dedup.
-.PARAMETER DeDup
-	Indicates that the VV should be converted to a thin provision virtual volume that shares logical disk space with other instances of this volume type.  Cannot be used with the -tpvv or -full options.
-.PARAMETER Full
-	Indicates that the VV should be converted to a fully provisioned virtual volume.  Cannot be used with the -tpvv, -dedup, or -compr options.
-.PARAMETER Compr
-	Indicates that the VV should be converted to a compressed virtual volume.  Cannot be used with the -full option.
-.PARAMETER KeepVV
-	Indicates that the original logical disks should be saved under a new virtual volume with the given name.  Can only be used with the -tpvv, -dedup, -full, or -compr options.
-.PARAMETER Src_Cpg 
-	Indicates that only regions of the VV which are part of the the specified CPG should be tuned to the destination USR or SNP CPG. This option is
-	recommended when a VV belongs to an AO configuration and will avoid disrupting any optimizations already performed.
-.PARAMETER Threshold 
-	Slice threshold. Volumes above this size will be tuned in slices. <threshold> must be in multiples of 128GiB. Minimum is 128GiB. Default is 16TiB. Maximum is 16TiB.
-.PARAMETER SliceSize
-	Slice size. Size of slice to use when volume size is greater than <threshold>. <size> must be in multiples of 128GiB. Minimum is 128GiB. Default is 2TiB. Maximum is 16TiB.
-.EXAMPLE	
-	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ
-.EXAMPLE
-	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -VVName XYZ
-.EXAMPLE
-	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -Option XYZ -VVName XYZ
-.EXAMPLE
-	PS:> Compress-A9VV_CLI -SUBCommand usr_cpg -CPGName XYZ -Option keepvv -KeepVVName XYZ -VVName XYZ
-.EXAMPLE
-	PS:> Compress-A9VV_CLI -SUBCommand snp_cpg -CPGName XYZ -VVName XYZ
-.NOTES
-	This command utilizes the SSH command 'tunevv'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(		[Parameter(Mandatory)][ValidateSet('usr_cpg','snp_cpg','restart','rollback')]
-											[String]	$SUBCommand ,
-			[Parameter(Mandatory)]			[String]	$VVName ,
-			[Parameter()]					[String]	$CPGName ,	
-			[Parameter()]					[switch]	$WaitTask ,		
-			[Parameter()]					[switch]	$DryRun ,		
-			[Parameter()]					[String]	$Count ,
-			[Parameter()]					[switch]	$TPVV ,
-			[Parameter()]					[switch]	$TDVV ,
-			[Parameter()]					[switch]	$DeDup ,
-			[Parameter()]					[switch]	$Full ,
-			[Parameter()]					[switch]	$Compr ,
-			[Parameter()]					[String]	$KeepVV ,		
-			[Parameter()]					[String]	$Threshold , 
-			[Parameter()]					[String]	$SliceSize , 		
-			[Parameter()]					[String]	$Src_Cpg 
-)	
-Begin	
-{	Test-A9Connection -ClientType 'SshClient' 
-}
-Process
-{	$Cmd = " tunevv "
-	if($SUBCommand)
-		{	$Cmd += " $SUBCommand"
-			if($SUBCommand -eq "usr_cpg" -Or $SUBCommand -eq "snp_cpg")
-				{	if($CPGName)	{	$Cmd += " $CPGName"	}
-					else			{	return "SubCommand : $SUBCommand,Must Require CPG Name."	}
-				}
-		}
-	$Cmd += " -f "	
-	if($WaitTask)	{	$Cmd += " -waittask "	}
-	if($DryRun)		{	$Cmd += " -dr "	}
-	if($Count)		{	$Cmd += " -cnt $Count"	}
-	if($TPVV)		{	$Cmd += " -tpvv "	}
-	if($TDVV)		{	$Cmd += " -tdvv "	}
-	if($DeDup)		{	$Cmd += " -dedup "	}
-	if($Full)		{	$Cmd += " -full "	}
-	if($Compr)		{	$Cmd += " -compr "	}
-	if($KeepVV)		{	$Cmd += " -keepvv $KeepVV"	}
-	if($Src_Cpg)	{	$Cmd += " -src_cpg $Src_Cpg"	}
-	if($Threshold)	{	$Cmd += " -slth $Threshold"	}
-	if($SliceSize)	{	$Cmd += " -slsz $SliceSize"	}
-	if($VVName)		{	$Cmd += " $VVName"	}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	return  $Result
-
-}
-}
 
 Function Get-A9Histogram
 {
@@ -262,14 +147,7 @@ Function Get-A9Histogram
 
 	This Example Selects which Metric to display. associated with Virtual Volume name.
 .NOTES
-	This command utilizes the SSH command 'HistCh'
-	This command utilizes the SSH command 'HistLD'
-	This command utilizes the SSH command 'HistPD'
-	This command utilizes the SSH command 'HistPort'
-	This command utilizes the SSH command 'HistQOS'
-	This command utilizes the SSH command 'HistVLUN'
-	This command utilizes the SSH command 'HistVV'
-	
+	This command utilizes the SSH command 'HistCh', 'HistLD', 'HistPD', 'HistPort', 'HistQOS','HistVLUN', 'HistVV'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -736,13 +614,13 @@ Process
 }
 }
 
-Function Get-A9StatisticsChunklet
+Function Get-A9Statistics
 {
 <#
 .SYNOPSIS
-	The command displays chunklet statistics in a timed loop.
+	The command displays statistics for Chunklets, Cache, CPU, Logical Disk, Physical Disk, Link Utilization, Ports, Remote Copy Volumes, Volumes, and VLuns, iSCSI, and FCoE.
 .DESCRIPTION
-	The command displays chunklet statistics in a timed loop. 
+	The command displays statistics for Chunklets, Cache, CPU, Logical Disk, Physical Disk, Link Utilization, Ports, Remote Copy Volumes, Volumes, and VLuns, iSCSI, and FCoE.
 .PARAMETER RW	
 	Specifies that reads and writes are displayed separately. If this option is not used, then the total of reads plus writes is displayed.
 .PARAMETER Idlep
@@ -761,556 +639,18 @@ Function Get-A9StatisticsChunklet
 	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-	PS:> Get-A9StatisticsChunklet -Iterration 1
-
-	This example displays chunklet statistics in a timed loop.
-.EXAMPLE
-	PS:>Get-A9StatisticsChunklet -RW -Iteration 1
-
-	This example Specifies that reads and writes are displayed separately.while displays chunklet statistics in a timed loop.  
-.EXAMPLE  
-	PS:> Get-A9StatisticsChunklet -LDname demo1 -CHnum 5 -Iterration 1 
-	
-	This example Specifies particular chunklet number & logical disk.
-.NOTES
-	This command utilizes the SSH command 'statch'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$Iteration ,
-		[Parameter()]	[switch]	$RW,
-		[Parameter()]	[switch]	$IDLEP,
-		[Parameter()]	[switch]	$Begin,
-		[Parameter()]	[switch]	$NI,
-		[Parameter()]	[String]	$Delay,
-		[Parameter()]	[String]	$LDname ,
-		[Parameter()]	[String]	$CHnum,
-		[Parameter()]	[switch]	$ShowRaw
-	)		
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$cmd= "statch"
-	$cmd+=" -iter $Iteration "
-	else		{	return "Error :  -Iteration is mandatory. "			}
-	if($RW)		{	$cmd +=" -rw "		}
-	if($IDLEP)	{	$cmd+=" -idlep "	}
-	if($Begin)	{	$cmd+=" -begin "	}
-	if($NI)		{	$cmd+=" -ni "		}
-	if($Delay)	{	$cmd+=" -d $Delay"	}
-	if($LDname)	{	$ld="showld"
-					$Result1 = Invoke-A9CLICommand -cmds  $ld
-					if($Result1 -match $LDname )	{	$cmd+=" -ld $LDname "	}
-					else{	Return "FAILURE : -LDname $LDname is not available . "	}
-				}
-	if($CHnum)	{	$cmd+=" -ch $CHnum "	}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	write-verbose "  Executing  Get-StatChunklet command displays chunklet statistics in a timed loop. with the command  " 
-	if ($ShowRaw) { return $Reult }
-	$range1 = $Result.Count
-	if($range1 -le "5" )	{	return "No Data Available"	}
-	if( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			if($IDLEP)	{	Add-Content -Path $tempFile -Value "Logical_Disk_I.D,LD_Name,Ld_Ch,Pd_id,Pd_Ch,R/W,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Svt_Cur,Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Idle_Cur,Idle_Avg,Time,Date" 	}
-			else 		{	Add-Content -Path $tempFile -Value "Logical_Disk_I.D,LD_Name,Ld_Ch,Pd_id,Pd_Ch,R/W,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Svt_Cur,Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Time,Date"	}
-			foreach ($s in  $Result[0..$LastItem] )
-				{	if ($s -match "r/w")
-						{	$s= [regex]::Replace($s,"^ +","")
-							$s= [regex]::Replace($s," +"," ")
-							$s= [regex]::Replace($s," ",",")
-							$global:time1 = $s.substring(0,8)
-							$global:date1 = $s.substring(9,19)
-							continue
-						}
-					if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Qlen"))	{	continue	}
-					$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +",",")# Replace one or more spaces with comma to build CSV line
-					$aa=$s.split(",").length
-					if ($aa -eq "11")	{	continue	}
-					if (($aa -eq "13") -and ($IDLEP))	{	continue	}
-					$s +=",$global:time1,$global:date1"
-					Add-Content -Path $tempFile -Value $s
-				}
-			Import-Csv $tempFile
-			Remove-Item $tempFile
-		}	
-	else{	return $Result	}	
-}
-}
-
-Function Get-A9StatCacheMemoryPages
-{
-<#
-.SYNOPSIS
-	The command displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
-.DESCRIPTION
-	The command displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
 .PARAMETER VVname   
 	Specifies that statistics are displayed for virtual volumes matching the specified name or pattern.
-.PARAMETER Domian 
-	Shows VVs that are in domains with names that match one or more of the specified domains or patterns.
-.PARAMETER Delay  
-	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
-.PARAMETER NI
-	Specifies that statistics for only non-idle VVs are displayed. This option is valid only if -v is also specified.
-.PARAMETER Iteration 
-	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
-.EXAMPLE
-	PS:> Get-A9StatCacheMemoryPages -Iteration 1
-
-	This Example displays Cache Memory Page (CMP).
-.EXAMPLE
-	PS:> Get-A9StatCacheMemoryPages -VVname Demo1 -Iteration 1
-
-	This Example displays Cache Memory Page (CMP) statistics by node or by Virtual Volume (VV).
-.NOTES
-	This command utilizes the SSH command 'Statcmp'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$NI,
-		[Parameter()]	[String]	$VVname ,
-		[Parameter()]	[String]	$Domian ,
-		[Parameter()]	[String]	$Delay  ,
-		[Parameter()]	[String]	$Iteration ,
-		[Parameter()]	[switch]	$ShowRaw
-)		
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$cmd= "statcmp -v "	
-	if($Iteration)	{	$cmd+=" -iter $Iteration "	}
-	else	{	return "Error :  -Iteration is mandatory. "	}	
-	if ($NI)	{	$cmd +=" -ni "	}
-	if($VVname)	{	$cmd+=" -n $VVname "	}		
-	if ($Domian){	$cmd+= " -domain $Domian "	}
-	if($Delay)	{	$cmd+=" -d $Delay"	}		
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	write-verbose "  Executing  Get-StatCMP command displays Cache Memory Page (CMP) statistics. with the command  " 
-	if ($ShowRaw) { return $Result }
-	$range1 = $Result.count
-	if($range1 -le "3")	{	return "No data available"	}	
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			Add-Content -Path $tempFile -Value "VVid,VVname,Type,Curr_Accesses,Curr_Hits,Curr_Hit%,Total_Accesses,Total_Hits,Total_Hit%,Time,Date"
-			foreach ($s in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +"," ")
-					$s= [regex]::Replace($s," ",",")
-					if ($s -match "Current")
-						{	$a=$s.split(",")
-							$global:time1 = $a[0]
-							$global:date1 = $a[1]
-							continue
-						}
-					if (($s -match "---") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "VVname"))	{	continue	}
-					$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +",",")# Replace one or more spaces with comma to build CSV line
-					$aa=$s.split(",").length
-					if ($aa -eq "11")	{	continue	}
-					$s +=",$global:time1,$global:date1"
-					Add-Content -Path $tempFile -Value $s
-				}
-			Import-Csv $tempFile
-			Remove-Item $tempFile
-		}
-	else{	return $Result	}
-}
-}
-
-Function Get-A9CPUStatisticalDataReports_CLI
-{
-<#
-.SYNOPSIS
-	The command displays CPU statistics for all nodes.
-.DESCRIPTION
-	The command displays CPU statistics for all nodes.
-.PARAMETER delay    
-	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483
 .PARAMETER total 
 	Show only the totals for all the CPUs on each node.
-.PARAMETER Iteration 
-	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-	PS:> Get-A9CPUStatisticalDataReports_CLI -iteration 1	
-	
-	This Example Displays CPU statistics for all nodes.
-.EXAMPLE  
-	PS:> Get-A9CPUStatisticalDataReports_CLI -delay 2  -total -iteration 1	
-
-	This Example Show only the totals for all the CPUs on each node.
-.NOTES
-	This command utilizes the SSH command 'StatCpu'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$delay,
-		[Parameter()]	[switch]	$total,
-		[Parameter(Mandatory)]	[String]	$Iteration,
-		[Parameter()]	[switch]	$ShowRaw
-)		
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$cmd= "statcpu "
-	$cmd+=" -iter $Iteration "
-	if($delay)	{	$cmd+=" -d $delay "	}
-	if ($total)	{	$cmd+= " -t "		}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd	
-	write-verbose "  Executing  Get-StatCPU command displays Cache Memory Page (CMP) statistics. with the command  " 
-	if ($ShowRaw) { return $Result}
-	$range1 = $Result.count
-	if($range1 -eq "5"){	return "No data available"	}		
-	if ( $Result.Count -gt 1)
-		{	$flg = "False"
-			$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			Add-Content -Path $tempFile -Value "node,cpu,user,sys,idle,intr/s,ctxt/s,Time,Date"
-			foreach ($s in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s,"-+","-")
-					$s= [regex]::Replace($s," +",",")
-					$s= [regex]::Replace($s,"---","")
-					$s= [regex]::Replace($s,"-","")  
-					$a=$s.split(",")
-					$c=$a.length
-					$b=$a.length
-					if ( 2 -eq $b )
-						{	$a=$s.split(",")
-							$global:time1 = $a[0]
-							$global:date1 = $a[1]
-						}
-					if (([string]::IsNullOrEmpty($s)) -or ($s -match "node"))	{	continue	}
-					if($c -eq "6")	{	$s +=",,$global:time1,$global:date1"	}
-					else	{	$s +=",$global:time1,$global:date1"	}
-					if($flg -eq "True")	{	Add-Content -Path $tempFile -Value $s		}
-					$flg = "True"			
-				}
-			Import-Csv $tempFile
-			Remove-Item $tempFile
-		}
-	else{	return $Result	}
-} 
-}
-
-Function Get-A9LogicalDiskStatisticsReports_CLI
-{
-<#
-.SYNOPSIS
-	The command displays read/write (I/O) statistics about Logical Disks (LDs) in a timed loop.
-.DESCRIPTION
-	The command displays read/write (I/O) statistics about Logical Disks (LDs) in a timed loop.
-.PARAMETER RW		
-	Specifies that reads and writes are displayed separately. If this option is not used, then the total of reads plus writes is displayed.
-.PARAMETER Begin	
-	Specifies that I/O averages are computed from the system start time. If not specified, the average is computed since the first iteration of the command.
-.PARAMETER IDLEP	
-    Specifies the percent of idle columns in the output.
-.PARAMETER VVname  
-	Show only LDs that are mapped to Virtual Volumes (VVs) with names matching any of names or patterns specified
-.PARAMETER LDname  
-	Only statistics are displayed for the specified LD or pattern
 .PARAMETER Domain
 	Shows only LDs that are in domains with names matching any of the names or specified patterns.
-.PARAMETER Delay 
-	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
-.PARAMETER Iteration 
-	Specifies that I/O statistics are displayed a specified number of times as indicated by the number argument using an integer from 1 through 2147483647.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-	PS:> Get-A9LogicalDiskStatisticsReports_CLI -Iteration 1
-	
-	This example displays read/write (I/O) statistics about Logical Disks (LDs).
-.EXAMPLE
-	PS:> Get-A9LogicalDiskStatisticsReports_CLI -rw -Iteration 1	
-	
-	This example displays statistics about Logical Disks (LDs).with Specification read/write
-.EXAMPLE  
-	PS:> Get-StatLD -Begin -delay 2 -Iteration 1
-
-	This example displays statistics about Logical Disks (LDs).with Specification begin & delay in execution of 2 sec.	
-.EXAMPLE  
-	PS:> Get-A9LogicalDiskStatisticsReports_CLI -Begin -VVname demo1 -Delay 2 -Iteration 1
-
-	This example displays statistics about Logical Disks (LDs) Show only LDs that are mapped to Virtual Volumes (VVs)	
-.EXAMPLE  
-	PS:> Get-A9LogicalDiskStatisticsReports_CLI -begin -LDname demoLD1 -delay 2 -Iteration 1
-
-	This example displays statistics about Logical Disks (LDs).With Only statistics are displayed for the specified LD
-.NOTES
-	This command utilizes the SSH command 'StatLD'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$RW,
-		[Parameter()]	[switch]	$IDLEP,
-		[Parameter()]	[switch]	$Begin,
-		[Parameter()]	[switch]	$NI,
-		[Parameter()]	[String]	$VVname ,
-		[Parameter()]	[String]	$LDname,
-		[Parameter()]	[String]	$Domain,
-		[Parameter()]	[String]	$Delay,
-		[Parameter(Mandatory)]	[String]	$Iteration,
-		[Parameter()]	[switch]	$ShowRaw
-	)		
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$cmd= "statld -iter $Iteration "	
-	if($RW)		{	$cmd +=" -rw "		}
-	if($IDLEP)	{	$cmd+=" -idlep "	}
-	if($Begin)	{	$cmd+=" -begin "	}
-	if($NI)		{	$cmd+=" -ni "		}
-	if($VVname)	{	$cmd+=" -vv $VVname "	}
-	if($LDname)	
-		{	if($cmd -match "-vv")	{	return "Stop: Executing -VVname $VVname and  -LDname $LDname cannot be done in a single Execution "	}
-			$cmd+=" $LDname "	
-		}	
-	if($Domain)		{	$cmd+=" -domain $Domain "	}	
-	if($Delay)		{	$cmd+=" -d $Delay "	}		
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	$range1 = $Result.count
-	if ($ShowRaw) { return $Result }
-	if($range1 -le "5")	{	return "No data available" }	
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count - 1		
-			if($IDLEP)	{	Add-Content -Path $tempFile -Value "Ldname,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Svt_Cur,Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Idle_Cur,Idle_Avg,Time,Date"}
-			else 		{	Add-Content -Path $tempFile -Value "Ldname,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Svt_Cur,Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Time,Date"		}
-			foreach ($s in  $Result[0..$LastItem] )
-				{	if ($s -match "r/w")
-						{	$s= [regex]::Replace($s,"^ +","")
-							$s= [regex]::Replace($s," +"," ")
-							$s= [regex]::Replace($s," ",",")
-							$a=$s.split(",")
-							$global:time1 = $a[0]
-							$global:date1 = $a[1]
-							continue
-						}
-					if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Ldname"))	{	continue	}
-					$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +",",")# Replace one or more spaces with comma to build CSV line
-					$aa=$s.split(",").length
-					if ($aa -eq "11")	{	continue	}
-					if (($aa -eq "13") -and ($IDLEP))	{	continue	}
-					$s +=",$global:time1,$global:date1"
-					Add-Content -Path $tempFile -Value $s		
-				}
-			Import-Csv $tempFile
-			Remove-Item $tempFile
-		}
-	else{	return $Result	}
-} 
-}
-
-Function Get-A9StatisticLinkUtilization
-{
-<#
-.SYNOPSIS
-	The Get-StatLink command displays statistics for link utilization for all nodes in a timed loop.
-.DESCRIPTION
-	The Get-StatLink command displays statistics for link utilization for all nodes in a timed loop.
-.PARAMETER Detail
-	Displays detailed information regarding the Queue statistics.	 
-.PARAMETER Interval
-	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483.
-.PARAMETER Iteration 
-	Specifies that I/O statistics are displayed a specified number of times as indicated by the number argument using an integer from 1 through 2147483647.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-	PS:> Get-A9StatisticLinkUtilization -Iteration 1
-
-	This Example displays statistics for link utilization for all nodes in a timed loop.
-.EXAMPLE
-	PS:> Get-A9StatisticLinkUtilization -Interval 3 -Iteration 1 
-	
-	This Example displays statistics for link utilization for all nodes in a timed loop, with a delay of 3 sec.
-.EXAMPLE
-	PS:> Get-A9StatisticLinkUtilization -Detail -Iteration 1
-.NOTES
-	This command utilizes the SSH command 'StatLink'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]					[switch]	$Detail,
-		[Parameter(Mandatory)]			[String]	$Interval,
-		[Parameter()]					[String]	$Iteration,
-		[Parameter()]					[switch]	$ShowRaw
-	)		
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$cmd= "statlink -iter $Iteration "
-	if ($Detail)	{	$cmd+=" -detail "	}
-	if ($Interval)	{	$cmd+=" -d $Interval "	}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	if ($ShowRaw) { return $Result }
-	$range1 = $Result.count
-	if($range1 -eq "3")	{	return "No data available"	}	
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			Add-Content -Path $tempFile -Value "Node,Q,ToNode,XCB_Cur,XCB_Avg,XCB_Max,KB_Cur,KB_Avg,KB_Max,XCBSz_KB_Cur,XCBSz_KB_Avg,Time,Date"
-			foreach ($s in  $Result[0..$LastItem] )
-				{	if ($s -match "Local DMA 0")
-						{	$s= [regex]::Replace($s,"Local DMA 0","Local_DMA_0")			
-						}
-					$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s,"-+","-")
-					$s= [regex]::Replace($s," +",",")
-					if ($s -match "XCB_sent_per_second")
-						{	$s= [regex]::Replace($s,"^ +","")
-							$s= [regex]::Replace($s," +"," ")
-							$s= [regex]::Replace($s," ",",")
-							$a=$s.split(",")
-							$global:time1 = $a[0]
-							$global:date1 = $a[1]
-							continue
-						}
-					if ($s -match "Local DMA 0")
-						{	 $s= [regex]::Replace($s,"Local DMA 0","Local_DMA_0")			
-						}
-					if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "ToNode"))	{	continue	}
-					$s +=",$global:time1,$global:date1"
-					Add-Content -Path $tempFile -Value $s
-				}
-			Import-Csv $tempFile
-			Remove-Item $tempFile
-		}
-	else{	return $Result	}
-} 
-}
-
-Function Get-APhysicalDiskStatisticsReports_CLI
-{
-<#
-.SYNOPSIS
-	The Get-StatPD command displays the read/write (I/O) statistics for physical disks in a timed loop.
-.DESCRIPTION
-    The Get-StatPD command displays the read/write (I/O) statistics for physical disks in a timed loop.   
 .PARAMETER Devinfo
 	Indicates the device disk type and speed.
-.PARAMETER RW
-	Specifies that reads and writes are displayed separately. If this option is not used, then the total of reads plus writes is displayed.
-.PARAMETER Begin
-    Specifies that I/O averages are computed from the system start time. If not specified, the average is computed since the first iteration of the command.
-.PARAMETER IDLEP
-	Specifies the percent of idle columns in the output.
-.PARAMETER NI
-	Specifies that statistics for only non-idle devices are displayed. This option is shorthand for the option				
 .PARAMETER wwn 
 	Specifies that statistics for a particular Physical Disk (PD) identified by World Wide Names (WWNs) are displayed.
-.PARAMETER nodes  
+.PARAMETER node  
 	Specifies that the display is limited to specified nodes and PDs connected to those nodes
-.PARAMETER ports   
-	Specifies that the display is limited to specified ports and PDs connected to those ports
-.PARAMETER  Iteration
-	Specifies that the histogram is to stop after the indicated number of iterations using an integer from 1 through 2147483647.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-	PS:> Get-APhysicalDiskStatisticsReports_CLI -RW –Iteration 1
-	
-	This example displays one iteration of I/O statistics for all PDs.
-.EXAMPLE  
-	PS:> Get-APhysicalDiskStatisticsReports_CLI -IDLEP –nodes 2 –Iteration 1
-
-	This example displays one iteration of I/O statistics for all PDs with the specification idlep preference of node 2.
-.EXAMPLE  
-	PS:> Get-APhysicalDiskStatisticsReports_CLI -NI -wwn 1122112211221122 –nodes 2 –Iteration 1
-
-	This Example Specifies that statistics for a particular Physical Disk (PD) identified by World Wide Names (WWNs) and nodes
-.NOTES
-	This command utilizes the SSH command 'StatPd'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$RW,
-		[Parameter()]	[switch]	$IDLEP,
-		[Parameter()]	[switch]	$Begin,
-		[Parameter()]	[switch]	$NI,	
-		[Parameter()]	[String]	$wwn ,
-		[Parameter()]	[String]	$nodes,
-		[Parameter()]	[String]	$slots,
-		[Parameter()]	[String]	$ports ,
-		[Parameter(Mandatory)]	[String]	$Iteration ,
-		[Parameter()]	[switch]	$DevInfo,
-		[Parameter()] 	[switch]	$ShowRaw	
-	)		
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$cmd= "statpd "	
-	$cmd+=" -iter $Iteration "
-	if($RW)		{	$cmd +=" -rw "	}
-	if($Begin)	{	$cmd+=" -begin "	}
-	if($IDLEP)	{	$cmd+=" -idlep "	}	
-	if($NI)		{	$cmd+=" -ni "	}
-	if($DevInfo){	$cmd+=" -devinfo "	}
-	if ($wwn)	{	$cmd+=" -w $wwn "	}	
-	if ($nodes)	{	$cmd+=" -nodes $nodes "	}	
-	if ($slots)	{	$cmd+=" -slots $slots "	}	
-	if ($ports ){	$cmd+=" -ports $ports "	}			
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	if ($ShowRaw) { return $Result }	
-	$range1 = $Result.count	
-	if($range1 -eq "4")	{	return "No data available"	}	
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count - 3
-			if($DevInfo)	{	Add-Content -Path $tempFile -Value "ID,Port,Type,K_RPM,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Svt_Cur,Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Idle_Cur,Idle_Avg,Time,Date"	}
-			else			{	Add-Content -Path $tempFile -Value "ID,Port,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Svt_Cur,Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Idle_Cur,Idle_Avg,Time,Date"	}
-			foreach ($s in  $Result[0..$LastItem] )
-				{	if ($s -match "r/w")
-						{	$s= [regex]::Replace($s,"^ +","")
-							$s= [regex]::Replace($s," +"," ")
-							$s= [regex]::Replace($s," ",",")
-							$a=$s.split(",")
-							$global:time1 = $a[0]
-							$global:date1 = $a[1]				
-							continue
-						}
-					if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Port"))	{	continue	}
-					$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +",",")# Replace one or more spaces with comma to build CSV line
-					$aa=$s.split(",").length
-					if ($aa -eq "13")	{	continue	}
-					$s +=",$global:time1,$global:date1"
-					Add-Content -Path $tempFile -Value $s
-				}
-			Import-Csv $tempFile
-			Remove-Item $tempFile
-		}
-	else{	return $Result	}
-}
-}
-
-Function Get-A9PortStatisticsReports_CLI
-{
-<#
-.SYNOPSIS
-	The command displays read/write (I/O) statistics for ports.
-.DESCRIPTION
-	The command displays read/write (I/O) statistics for ports.
 .PARAMETER Both
 	Show data transfers only.
 .PARAMETER Ctl
@@ -1321,137 +661,21 @@ Function Get-A9PortStatisticsReports_CLI
 	includes only statistics for Remote Copy over Fibre Channel ports related to cached READ requests
 .PARAMETER Rcip
 	Includes only statistics for Ethernet configured Remote Copy ports.
-.PARAMETER RW
-	Specifies that the display includes separate read and write data.
-.PARAMETER Begin
-	Specifies that I/O averages are computed from the system start time
-.PARAMETER Idlep
-	Specifies the percent of idle columns in the output.
 .PARAMETER HostPort
 	Displays only host ports (target ports).
 .PARAMETER Disk
 	Displays only disk ports (initiator ports).
 .PARAMETER Rcfc
 	Displays only Fibre Channel remote-copy configured ports.
-.PARAMETER NI
-	Specifies that statistics for only non-idle devices are displayed.
 .PARAMETER FS
 	Includes only statistics for File Persona ports.
 .PARAMETER Peer
 	Specifies to display only host ports (target ports), only disk ports (initiator ports), only Fibre Channel Remote Copy configured ports, or
 	only Fibre Channel ports for Data Migration. If no option is specified, all ports are displayed.
-.PARAMETER nodes  
-	Specifies that the display is limited to specified nodes and PDs connected to those nodes
-.PARAMETER ports   
-	Specifies that the display is limited to specified ports and PDs connected to those ports
 .PARAMETER slots
 	Specifies that the display is limited to specified PCI slots and physical disks connected to those PCI slots. The slot list is specified
 	as a series of integers separated by commas (e.g. 1,2,3). The list can also consist of a single integer. If the slot list is not specified, all
 	disks on all slots are displayed.
-.PARAMETER  Iteration
-	Specifies that the histogram is to stop after the indicated number of iterations using an integer from
-	1 through 2147483647.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-	PS:> Get-A9PortStatisticsReports_CLI -Iteration 1
-	This example displays one iteration of I/O statistics for all ports.
-.EXAMPLE  
-	PS:> Get-A9PortStatisticsReports_CLI -Both -Iteration 1
-	This example displays one iteration of I/O statistics for all ports,Show data transfers only. 
-.EXAMPLE  
-	Get-A9PortStatisticsReports_CLI -Host -nodes 2 -Iteration 1
-	This example displays I/O statistics for all ports associated with node 2.
-.NOTES
-	This command utilizes the SSH command 'StatPort'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Both ,
-		[Parameter()]	[switch]	$Ctl ,
-		[Parameter()]	[switch]	$Data ,
-		[Parameter()]	[switch]	$Rcfc ,
-		[Parameter()]	[switch]	$Rcip ,
-		[Parameter()]	[switch]	$RW ,
-		[Parameter()]	[switch]	$FS ,	
-		[Parameter()]	[switch]	$HostPort ,
-		[Parameter()]	[switch]	$Peer ,
-		[Parameter()]	[switch]	$IDLEP,
-		[Parameter()]	[switch]	$Begin,
-		[Parameter()]	[switch]	$NI,
-		[Parameter()]	[switch]	$Disk,
-		[Parameter()]	[String]	$nodes,
-		[Parameter()]	[String]	$slots,
-		[Parameter()]	[String]	$ports ,	
-		[Parameter(Mandatory)]	[String]	$Iteration ,
-		[parameter()]	[switch]	$ShowRaw
-	)		
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$cmd= "statport "
-	$cmd+=" -iter $Iteration "		
-	if($Both)		{	$cmd +=" -both "	}
-	if($Ctl)		{	$cmd +=" -ctl "		}
-	if($Data)		{	$cmd +=" -data "	}
-	if($Rcfc)		{	$cmd +=" -rcfc "	}
-	if($Rcip)		{	$cmd +=" -rcip "	}
-	if($FS)			{	$cmd +=" -fs "		}
-	if($HostPort)	{	$cmd +=" -host "	}
-	if($Disk)		{	$cmd +=" -disk "	}
-	if($Peer)		{	$cmd +=" -peer "	}	
-	if($RW)			{	$cmd +=" -rw "		}
-	if($Begin)		{	$cmd+=" -begin "	}
-	if($IDLEP)		{	$cmd+=" -idlep "	}	
-	if($NI)			{	$cmd+=" -ni "		}
-	if ($nodes)		{	$cmd+=" -nodes $nodes "	}
-	if ($slots)		{	$cmd+=" -slots $slots "	}
-	if ($ports )	{	$cmd+=" -ports $ports "	}				
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd	
-	if ($ShowRaw) { return $Reusult }
-	$range1 = $Result.count
-	if($range1 -eq "4")	{	return "No data available"	}
-	if(($Both) -And ($range -eq "6"))	{	return "No data available"	}
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count -3
-			if($Rcip)		{	Add-Content -Path $tempFile -Value "Port,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Errs,Drops,Time,Date"	}
-			elseif ($IDLEP)	{	Add-Content -Path $tempFile -Value "Port,D/C,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max, Svt_Cur, Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Idle_Cur,Idle_Avg,Time,Date"	}
-			else			{	Add-Content -Path $tempFile -Value "Port,D/C,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max, Svt_Cur, Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Time,Date"	}	
-			foreach ($s in  $Result[0..$LastItem] )
-				{	if ($s -match "r/w")
-						{	$s= [regex]::Replace($s,"^ +","")
-							$s= [regex]::Replace($s," +"," ")
-							$s= [regex]::Replace($s," ",",")
-							$a=$s.split(",")
-							$global:time1 = $a[0]
-							$global:date1 = $a[1]
-							continue
-						}
-					if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Port"))	{	continue	}
-					$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +",",")# Replace one or more spaces with comma to build CSV line
-					$aa=$s.split(",").length
-					if (($aa -eq "12") -or ($aa -eq "8") -or ($aa -eq "8"))	{	continue	}
-					$s +=",$global:time1,$global:date1"
-					Add-Content -Path $tempFile -Value $s
-				}
-			Import-Csv $tempFile
-			Remove-Item $tempFile
-		}	
-	else{	return $Result	}
-}
-}
-
-Function Get-A9RCopyStatisticalReports_CLI
-{
-<#
-.SYNOPSIS
-	The command displays statistics for remote-copy volumes in a timed loop.
-.DESCRIPTION
-    The command displays statistics for remote-copy volumes in a timed loop.
 .PARAMETER Async     
 	Show only volumes which are being copied in asynchronous mode.
 .PARAMETER sync		
@@ -1472,464 +696,729 @@ Function Get-A9RCopyStatisticalReports_CLI
 	Specifies that the sums for all targets and links of a volume are displayed.
 .PARAMETER domainsum	
 	Specifies that the sums for all volumes of a domain are displayed.
-.PARAMETER ni			
-	Specifies that statistics for only non-idle devices are displayed.
 .PARAMETER target   
 	Show only volumes whose group is copied to the specified target name.
 .PARAMETER port    
 	Show only volumes that are copied over the specified port or pattern.
 .PARAMETER group 
 	Show only volumes whose group matches the specified group name or pattern.
-.PARAMETER VVname	
-	Displays statistics only for the specified virtual volume or volume name pattern.
-.PARAMETER  Iteration
-	Specifies that the histogram is to stop after the indicated number of iterations using an integer from 1 through 2147483647.
 .PARAMETER DomainName
 	Shows only the virtual volumes that are in domains with names that match the specified domain name(s) or pattern(s).	
-.PARAMETER Interval
-	Specifies the interval in seconds that statistics are sampled from
-	using an integer from 1 through 2147483. If no count is specified, the
-	command defaults to 2 seconds.
 .PARAMETER Subset
 	Show subset statistics for Asynchronous Remote Copy on a per group basis.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.PARAMETER LW  
+	Lists the host’s World Wide Name (WWN) or iSCSI names.
+.PARAMETER Domainsum
+	Specifies that sums for VLUNs are grouped by domain in the display.
+.PARAMETER Hostsum
+	Specifies that sums for VLUNs are grouped by host in the display.
+.PARAMETER LUN  
+	Specifies that VLUNs with LUNs matching the specified LUN(s) or pattern(s) are displayed.
+.PARAMETER Fullcounts
+	Shows the values for the full list of counters instead of the default packets and KBytes for the specified protocols. 
+	The values are shown in three columns:
+		o Current   - Counts since the last sample.
+        o CmdStart  - Counts since the start of the command.
+        o Begin     - Counts since the port was reset.
+	This option cannot be used with the -prot option. If the -fullcounts option is not specified, the metrics from the start of the command are displayed.
+.PARAMETER Prev
+	Shows the differences from the previous sample.
 .EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1
-	This Example displays statistics for remote-copy volumes in a timed loop.
+	PS:> Get-A9Statistics -ReturnChunkletStats
 .EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -ASync
+	PS:> Get-A9Statistics -ReturnCacheStats
 .EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -Sync -VVname $VV
+	PS:> Get-A9Statistics -ReturnCPUStats
 .EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -TargetSum
+	PS:> Get-A9Statistics -$ReturnLinkUtilizationStats
 .EXAMPLE
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -VVSum   
-.EXAMPLE  
-	PS:> Get-A9RCopyStatisticalReports_CLI -Iteration 1 -periodic 
-
-	This Example displays statistics for remote-copy volumes in a timed loop and show only volumes that are being copied in asynchronous periodic mode	
-.EXAMPLE  
-	PS:> Get-A9RCopyStatisticalReports_CLI -target demotarget1  -Iteration 1
-
-	This Example displays statistics for remote-copy volumes in a timed loop and Show only volumes whose group is copied to the specified target name.
+	PS:> Get-A9Statistics -ReturnRemoteCopyVolumeStats
+.EXAMPLE
+	PS:> Get-A9Statistics -ReturnCacheStats
+.EXAMPLE
+	PS:> Get-A9Statistics ReturnVLunStats
+.EXAMPLE
+	PS:> Get-A9Statistics -ReturnVolumeStats
 .NOTES
-	This command utilizes the SSH command 'StatRCVv'
+	This command utilizes the SSH command 'statch', 'statcmp', 'statCpu', 'statld', 'StatLink', 'StatPd', 'StatRCVv', 'StatvLun', 'StatVv', 'StatiSCSI'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)][String]	$Iteration ,		
-		[Parameter()]				[String]	$Interval ,	
-		[Parameter()]				[String]	$Target ,		
-		[Parameter()]				[String]	$Port,
-		[Parameter()]				[String]	$Group ,
-		[Parameter()]				[String]	$VVname  ,
-		[Parameter()]				[String]	$DomainName  ,
-		[Parameter()]				[switch]	$ASync,
-		[Parameter()]				[switch]	$Sync,	
-		[Parameter()]				[switch]	$Periodic,
-		[Parameter()]				[switch]	$Primary,		
-		[Parameter()]				[switch]	$Secondary,		
-		[Parameter()]				[switch]	$TargetSum,
-		[Parameter()]				[switch]	$PortSum,	
-		[Parameter()]				[switch]	$GroupSum,
-		[Parameter()]				[switch]	$VVSum,
-		[Parameter()]				[switch]	$DomainSum,
-		[Parameter()]				[switch]	$NI,
-		[Parameter()]				[switch]	$SubSet,
-		[Parameter()]				[switch]	$ShowRaw
+param(	[Parameter(ParameterSetName='statch',Mandatory)]	[switch]	$ReturnChunkletStats,
+		[Parameter(ParameterSetName='statcmp',Mandatory)]	[switch]	$ReturnCacheStats,		
+		[Parameter(ParameterSetName='statcpu',Mandatory)]	[switch]	$ReturnCPUStats,
+		[Parameter(ParameterSetName='statld',Mandatory)]	[switch]	$ReturnLogicalDiskStats,
+		[Parameter(ParameterSetName='statlink',Mandatory)]	[switch]	$ReturnLinkUtilizationStats,
+		[Parameter(ParameterSetName='statport',Mandatory)]	[switch]	$ReturnPortStats,
+		[Parameter(ParameterSetName='statpd',Mandatory)]	[switch]	$ReturnPhysicalDiskStats,
+		[Parameter(ParameterSetName='statrcvv',Mandatory)]	[switch]	$ReturnRemoteCopyVolumeStats,
+		[Parameter(ParameterSetName='statvlun',Mandatory)]	[switch]	$ReturnVLunStats,
+		[Parameter(ParameterSetName='statvv',Mandatory)]	[switch]	$ReturnVolumeStats,
+		[Parameter(ParameterSetName='statiscsi',Mandatory)]	[switch]	$ReturniSCSIStats,
+		[Parameter(ParameterSetName='statfcoe',Mandatory)]	[switch]	$ReturnFCoEStats,
+		
+		[Parameter(ParameterSetName='statch')]	
+		[Parameter(ParameterSetName='statcmp')]			
+		[Parameter(ParameterSetName='statcpu')]	
+		[Parameter(ParameterSetName='statld')]	
+		[Parameter(ParameterSetName='statlink')]	
+		[Parameter(ParameterSetName='statport')]	
+		[Parameter(ParameterSetName='statpd')]	
+		[Parameter(ParameterSetName='statrcvv')]	
+		[Parameter(ParameterSetName='statvlun')]	
+		[Parameter(ParameterSetName='statvv')]
+		[Parameter(ParameterSetName='statiscsi')]			[switch]	$ShowRaw,
+		[Parameter(ParameterSetName='statch')]	
+		[Parameter(ParameterSetName='statcmp')]			
+		[Parameter(ParameterSetName='statcpu')]	
+		[Parameter(ParameterSetName='statld')]	
+		[Parameter(ParameterSetName='statport')]	
+		[Parameter(ParameterSetName='statlink')]	
+		[Parameter(ParameterSetName='statpd')]	
+		[Parameter(ParameterSetName='statrcvv')]	
+		[Parameter(ParameterSetName='statvlun')]	
+		[Parameter(ParameterSetName='statvv')]
+		[Parameter(ParameterSetName='statiscsi')]
+		[Parameter(ParameterSetName='statfcoe')]			[String]	$Iteration,
+		[Parameter(ParameterSetName='statch')]	
+		[Parameter(ParameterSetName='statld')]	
+		[Parameter(ParameterSetName='statport')]
+		[Parameter(ParameterSetName='statpd')]	
+		[Parameter(ParameterSetName='statvlun')]
+		[Parameter(ParameterSetName='statvv')]				[switch]	$RW,
+		[Parameter(ParameterSetName='statch')]				
+		[Parameter(ParameterSetName='statcmp')]	
+		[Parameter(ParameterSetName='statld')]	
+		[Parameter(ParameterSetName='statport')]
+		[Parameter(ParameterSetName='statpd')]
+		[Parameter(ParameterSetName='statrcvv')]
+		[Parameter(ParameterSetName='statvlun')]
+		[Parameter(ParameterSetName='statvv')]				[switch]	$NI,
+		[Parameter(ParameterSetName='statcmp')]	
+		[Parameter(ParameterSetName='statch')]
+		[Parameter(ParameterSetName='statld')]	
+		[Parameter(ParameterSetName='statcpu')]	
+		[Parameter(ParameterSetName='statvv')]	
+		[Parameter(ParameterSetName='statiscsi')]			[String]	$Delay,
+		[Parameter(ParameterSetName='statport')]
+		[Parameter(ParameterSetName='statch')]	
+		[Parameter(ParameterSetName='statld')]
+		[Parameter(ParameterSetName='statpd')]
+		[Parameter(ParameterSetName='statiscsi')]	
+		[Parameter(ParameterSetName='statvlun')]	
+		[Parameter(ParameterSetName='statfcoe')]			[switch]	$Begin,
+		[Parameter(ParameterSetName='statch')]
+		[Parameter(ParameterSetName='statld')]	
+		[Parameter(ParameterSetName='statport')]
+		[Parameter(ParameterSetName='statvlun')]
+		[Parameter(ParameterSetName='statpd')]				[switch]	$IDLEP,
+		[Parameter(ParameterSetName='statcmp')]	
+		[Parameter(ParameterSetName='statvlun')]
+		[Parameter(ParameterSetName='statvv')]	
+		[Parameter(ParameterSetName='statrcvv')]
+		[Parameter(ParameterSetName='statld')]				[String]	$Domian ,
+		[Parameter(ParameterSetName='statch')]	
+		[Parameter(ParameterSetName='statld')]				[String]	$LDname ,
+		[Parameter(ParameterSetName='statld')]
+		[Parameter(ParameterSetName='statcmp')]
+		[Parameter(ParameterSetName='statrcvv')]
+		[Parameter(ParameterSetName='statvlun')]
+		[Parameter(ParameterSetName='statvv')]				[String]	$VVname ,
+		[Parameter(ParameterSetName='statport')]
+		[Parameter(ParameterSetName='statvlun')]
+		[Parameter(ParameterSetName='statpd')]
+		[Parameter(ParameterSetName='statiscsi')]	
+		[Parameter(ParameterSetName='statfcoe')]			[String]	$node,
+		[Parameter(ParameterSetName='statch')]				[String]	$CHnum,
+		[Parameter(ParameterSetName='statcpu')]				[switch]	$total,
+		[Parameter(ParameterSetName='statlink')]			[switch]	$Detail,
+		[Parameter(Mandatory,ParameterSetName='statlink')]
+		[Parameter(ParameterSetName='statrcvv')]		
+		[Parameter(ParameterSetName='statfcos')]			[String]	$Interval,
+		[Parameter(ParameterSetName='statport')]			[switch]	$Both ,
+		[Parameter(ParameterSetName='statport')]			[switch]	$Ctl ,
+		[Parameter(ParameterSetName='statport')]			[switch]	$Data ,
+		[Parameter(ParameterSetName='statport')]			[switch]	$Rcfc ,
+		[Parameter(ParameterSetName='statport')]			[switch]	$Rcip ,
+		[Parameter(ParameterSetName='statport')]			[switch]	$FS ,	
+		[Parameter(ParameterSetName='statport')]			[switch]	$HostPort ,
+		[Parameter(ParameterSetName='statport')]			[switch]	$Peer ,
+		[Parameter(ParameterSetName='statport')]			[switch]	$Disk,
+		[Parameter(ParameterSetName='statport')]
+		[Parameter(ParameterSetName='statpd')]	
+		[Parameter(ParameterSetName='statiscsi')]
+		[Parameter(ParameterSetName='statfcoe')]			[String]	$slot,
+		[Parameter(ParameterSetName='statport')]
+		[Parameter(ParameterSetName='statpd')]
+		[Parameter(ParameterSetName='statiscsi')]
+		[Parameter(ParameterSetName='statrcvv')]	
+		[Parameter(ParameterSetName='statfcoe')]			[String]	$port , 
+		[Parameter(ParameterSetName='statpd')]				[String]	$wwn ,
+		[Parameter(ParameterSetName='statpd')]				[switch]	$DevInfo,
+		[Parameter(ParameterSetName='statrcvv')]			[String]	$Target ,		
+		[Parameter(ParameterSetName='statrcvv')]			[String]	$Group ,
+		[Parameter(ParameterSetName='statrcvv')]			[switch]	$ASync,
+		[Parameter(ParameterSetName='statrcvv')]			[switch]	$Sync,	
+		[Parameter(ParameterSetName='statrcvv')]			[switch]	$Periodic,
+		[Parameter(ParameterSetName='statrcvv')]			[switch]	$Primary,		
+		[Parameter(ParameterSetName='statrcvv')]			[switch]	$Secondary,		
+		[Parameter(ParameterSetName='statrcvv')]			[switch]	$TargetSum,
+		[Parameter(ParameterSetName='statrcvv')]			[switch]	$PortSum,	
+		[Parameter(ParameterSetName='statrcvv')]			[switch]	$GroupSum,
+		[Parameter(ParameterSetName='statrcvv')]
+		[Parameter(ParameterSetName='statvlun')]			[switch]	$VVSum,
+		[Parameter(ParameterSetName='statrcvv')]
+		[Parameter(ParameterSetName='statvlun')]			[switch]	$DomainSum,
+		[Parameter(ParameterSetName='statrcvv')]			[switch]	$SubSet,
+		[Parameter(ParameterSetName='statvlun')]			[switch]	$LW,
+		[Parameter(ParameterSetName='statvlun')]			[switch]	$HostSum,
+		[Parameter(ParameterSetName='statvlun')]			[String]	$LUN,
+		[Parameter(ParameterSetName='statiscsi')]
+		[Parameter(ParameterSetName='statfcoe')]		
+		[ValidateSet('current','cmdstart','begin')]			[Switch]	$Fullcounts,
+		[Parameter(ParameterSetName='statiscsi')]	
+		[Parameter(ParameterSetName='statfcoe')]			[Switch]	$Prev,
+		[Parameter(ParameterSetName='statfcoe')]			[switch]	$Counts
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
 }
 Process	
-{	$cmd= "statrcvv "	
-	$cmd+=" -iter $Iteration "
-	if ($Interval)	{	$cmd+=" -d $Interval"	}	
-	if ($Target)	{	$cmd+=" -t $Target"	}	
-	if ($Port)		{	$cmd+=" -port $Port "	}
-	if ($Group)		{	$cmd+=" -g $Group"	}
-	if($ASync)		{	$cmd += " -async "	}
-	if($Sync)		{	$cmd += " -sync "	}
-	if($Periodic)	{	$cmd += " -periodic "	}
-	if($Primary)	{	$cmd += " -primary "	}
-	if($Secondary)	{	$cmd += " -secondary "	}
-	if($TargetSum)	{	$cmd += " -targetsum "	}
-	if($PortSum)	{	$cmd += " -portsum "	}
-	if($GroupSum)	{	$cmd += " -groupsum "	}
-	if($VVSum)		{	$cmd += " -vvsum "	}
-	if($DomainSum)	{	$cmd += " -domainsum "	}
-	if($DomainName)	{	$cmd += " -domain $DomainName "	}
-	if($NI)			{	$cmd += " -ni "	}
-	if($SubSet)		{	$cmd += " -subset "	}
-	if ($VVname)	{	$cmd+=" $VVname"	}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	if ($ShowRaw) { return $Result}
-	$range1 = $Result.count
-	if($range1 -eq "4")	{	return "No data available"	}
-	if( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count - 2
-			if($TargetSum)		{	Add-Content -Path $tempFile -Value "Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-			elseif ($PortSum)	{	Add-Content -Path $tempFile -Value "Link,Target,Type,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-			elseif ($GroupSum)	{	Add-Content -Path $tempFile -Value "Group,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-			elseif ($VVSum)		{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-			elseif ($DomainSum)	{	Add-Content -Path $tempFile -Value "Domain,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-			else 				{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,Port,Type,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"}
-			foreach ($s in  $Result[0..$LastItem] )
-			{	$s= [regex]::Replace($s,"^ +","")
-				$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
-				if ($s -match "I/O")
-					{	$a=$s.split(",")
-						$global:time1 = $a[0]
-						$global:date1 = $a[1]
-						continue
-					}
-				if (($s -match "-------") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Avg"))	{	continue	}
-				$aa=$s.split(",").length
-				if ($aa -eq "11")	{	continue	}			
-				$s +=",$global:time1,$global:date1"
-				Add-Content -Path $tempFile -Value $s		
-			}
-			$Result = Import-Csv $tempFile
-			remove-item $tempFile
-		}
-	return $Result
-}
-}
-Function Get-A9vLunStatisticsReports_CLI
-{
-<#
-.SYNOPSIS
-	The command displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
-.DESCRIPTION
-	The Get-StatVLun command displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
-.PARAMETER LW  
-	Lists the host’s World Wide Name (WWN) or iSCSI names.
-.PARAMETER Domainsum
-	Specifies that sums for VLUNs are grouped by domain in the display.
-.PARAMETER vvSum
-	Specifies that sums for VLUNs of the same VV are displayed.
-.PARAMETER Hostsum
-	Specifies that sums for VLUNs are grouped by host in the display.
-.PARAMETER RW
-	Specifies reads and writes to be displayed separately.
-.PARAMETER Begin
-	Specifies that I/O averages are computed from the system start time.
-.PARAMETER IDLEP 
-	Includes a percent idle columns in the output.
-.PARAMETER NI
-	Specifies that statistics for only nonidle devices are displayed.
-.PARAMETER domian    
-	Shows only Virtual Volume Logical Unit Number (VLUNs) whose VVs are in domains with names that match one or more of the specified domain names or patterns.
-.PARAMETER VVname     
-	Requests that only Logical Disks (LDs) mapped to VVs that match any of the specified names to be displayed.
-.PARAMETER LUN  
-	Specifies that VLUNs with LUNs matching the specified LUN(s) or pattern(s) are displayed.
-.PARAMETER nodes
-	Specifies that the display is limited to specified nodes and Physical Disks (PDs) connected to those
-	nodes.
-.PARAMETER  Iteration
-	Specifies that the histogram is to stop after the indicated number of iterations using an integer from
-	1 through 2147483647.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-	PS:> Get-A9vLunStatisticsReports_CLI -Iteration 1
-
-	This example displays statistics for Virtual Volumes (VVs) and Logical Unit Number (LUN) host attachments.
-.EXAMPLE  
-	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -Iteration 1
-
-	This example displays statistics for Virtual Volumes (VVs) and Specifies that sums for VLUNs of the same VV are displayed.
-.EXAMPLE  
-	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -RW -Iteration 1
-.EXAMPLE  
-	PS:> Get-A9vLunStatisticsReports_CLI -vvSum -RW -VVname xxx -Iteration 1
-.EXAMPLE  
-	PS:> Get-A9vLunStatisticsReports_CLI -VVname demovv1 -Iteration 1
-
-	This example displays statistics for Virtual Volumes (VVs) and only Logical Disks (LDs) mapped to VVs that match any of the specified names to be displayed.
-.NOTES
-	This command utilizes the SSH command 'StatvLun'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]		[switch]	$RW,
-		[Parameter()]		[switch]	$IDLEP,
-		[Parameter()]		[switch]	$Begin,
-		[Parameter()]		[switch]	$NI, 
-		[Parameter()]		[switch]	$LW,
-		[Parameter()]		[switch]	$DomainSum,
-		[Parameter()]		[switch]	$vvSum,
-		[Parameter()]		[switch]	$HostSum,
-		[Parameter()]		[String]	$domian  ,
-		[Parameter()]		[String]	$VVname ,
-		[Parameter()]		[String]	$LUN ,
-		[Parameter()]		[String]	$nodes,
-		[Parameter(Mandatory)]	[String]	$Iteration ,
-		[Parameter()]		[switch]	$ShowRaw
-)		
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$cmd= "statvlun "
-	if($Iteration)	{	$cmd+=" -iter $Iteration "		}
-	if($RW)			{	$cmd +=" -rw "	}
-	if($Begin)		{	$cmd+=" -begin "	}
-	if($IDLEP)		{	$cmd+=" -idlep "	}	
-	if($NI)			{	$cmd+=" -ni "	}	
-	if($LW)			{	$cmd +=" -lw "	}
-	if($DomainSum)	{	$cmd+=" -domainsum "	}
-	if($vvSum)		{	$cmd+=" -vvsum "	}	
-	if($HostSum)	{	$cmd+=" -hostsum "	}
-	if ($domian)	{	$cmd+=" -domain $domian"	}	
-	if ($VVname)	{	$cmd+=" -v $VVname"	}			
-	if ($LUN)		{	$cmd+=" -l $LUN"	}	
-	if ($nodes)		{	$cmd+=" -nodes $nodes"	}				
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	if ($ShowRaw) { return $Result }
-	$range1 = $Result.count
-	if($range1 -eq "4")					{	return "No data available"	}	
-	if(($range1 -eq "6") -and ($NI))	{	return "No data available"	}
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count - 3
-			if($LW)				{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,Host_WWN/iSCSI_Name,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"}
-			elseif($DomainSum)	{	Add-Content -Path $tempFile -Value "Domain,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date" 	}
-			elseif($vvSum)		{	Add-Content -Path $tempFile -Value "VVname,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"	}
-			elseif($RW)			{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"	}
-			elseif($Begin)		{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"	}
-			elseif($IDLEP)		{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,IOSz_Cur,IOSz_Avg,Time,Date"	}
-			elseif($NI)			{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"	}
-			elseif($HostSum)	{	Add-Content -Path $tempFile -Value "Hostname,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"	}
-			else				{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date" 	}
-			foreach ($s in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +",",")	
-					if ($s -match "r/w")
-						{	$s= [regex]::Replace($s,"^ +","")
-							$s= [regex]::Replace($s," +"," ")
-							$s= [regex]::Replace($s," ",",")
-							$a=$s.split(",")
-							$global:time1 = $a[0]
-							$global:date1 = $a[1]
-							continue
-						}
-					if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "cur"))	{	continue	}
-					$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +",",")# Replace one or more spaces with comma to build CSV line
-					$aa=$s.split(",").length
-					if ($aa -eq "11")	{	continue	}
-					if (($aa -eq "13") -And ($IDLEP))	{	continue	}
-					$s +=",$global:time1,$global:date1"
-					Add-Content -Path $tempFile -Value $s
+{	$Cmd = $PSCmdlet.ParameterSetName
+	if ( $Iteration )	{	$cmd += " iter $iteration " }
+	else 				{	$cmd += " iter 1 "			}
+	$tempFile = [IO.Path]::GetTempFileName()
+	if ( $RW )		{	$cmd +=" -rw "		}
+	if ( $IDLEP )	{	$cmd+=" -idlep "	}
+	if ( $NI )		{	$cmd+=" -ni "		}
+	if ( $Begin )	{	$cmd+=" -begin "	}
+	Switch ( $PSCmdlet.ParameterSetName )
+		{	'statch'	
+				{	if ( $Delay )	{	$cmd+=" -d $Delay"	}
+					if ( $LDname ) 	{	$ld="showld"
+									$Result1 = Invoke-A9CLICommand -cmds  $ld
+									if($Result1 -match $LDname )	{	$cmd+=" -ld $LDname "	}
+									else{	Return "FAILURE : -LDname $LDname is not available . "	}
+								}
+					if($CHnum)	{	$cmd+=" -ch $CHnum "	}
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $cmd
+					write-verbose "  Executing  Get-StatChunklet command displays chunklet statistics in a timed loop. with the command  " 
+					if ($ShowRaw) { return $Reult }
+					$range1 = $Result.Count
+					if($range1 -le "5" )	{	return "No Data Available"	}
+					if( $Result.Count -gt 1)
+						{	$LastItem = $Result.Count
+							if($IDLEP)	{	Add-Content -Path $tempFile -Value "Logical_Disk_I.D,LD_Name,Ld_Ch,Pd_id,Pd_Ch,R/W,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Svt_Cur,Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Idle_Cur,Idle_Avg,Time,Date" 	}
+							else 		{	Add-Content -Path $tempFile -Value "Logical_Disk_I.D,LD_Name,Ld_Ch,Pd_id,Pd_Ch,R/W,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Svt_Cur,Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Time,Date"	}
+							foreach ($s in  $Result[0..$LastItem] )
+								{	if ($s -match "r/w")
+										{	$s= [regex]::Replace($s,"^ +","")
+											$s= [regex]::Replace($s," +"," ")
+											$s= [regex]::Replace($s," ",",")
+											$global:time1 = $s.substring(0,8)
+											$global:date1 = $s.substring(9,19)
+											continue
+										}
+									if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Qlen"))	{	continue	}
+									$s= [regex]::Replace($s,"^ +","")
+									$s= [regex]::Replace($s," +",",")# Replace one or more spaces with comma to build CSV line
+									$aa=$s.split(",").length
+									if ($aa -eq "11")	{	continue	}
+									if (($aa -eq "13") -and ($IDLEP))	{	continue	}
+									$s +=",$global:time1,$global:date1"
+									Add-Content -Path $tempFile -Value $s
+								}
+							$Result = Import-Csv $tempFile
+						}		
 				}
-			Import-Csv $tempFile
-			remove-item $tempFile
-		}
-	else{	return $Result	}
-}
-} 
-
-Function Get-A9VvStatisticsReports
-{
-<#
-.SYNOPSIS
-	The command displays statistics for Virtual Volumes (VVs) in a timed loop.
-.DESCRIPTION
-	The command displays statistics for Virtual Volumes (VVs) in a timed loop.
-.PARAMETER RW
-	Specifies reads and writes to be displayed separately.
-.PARAMETER Delay
-	<Seconds> Specifies the interval in seconds that statistics are sampled from using an integer from 1 through 2147483. 
-	If no count is specified, the command defaults to 2 seconds.
-.PARAMETER NI
-	Specifies that statistics for only non-idle devices are displayed. This option is shorthand for the option -filt curs,t,iops,0.
-.PARAMETER domian    
-	Shows only Virtual Volume Logical Unit Number (VLUNs) whose VVs are in domains with names that match one or more of the specified domain names or patterns.
-.PARAMETER  Iteration
-	Specifies that the histogram is to stop after the indicated number of iterations using an integer from
-	1 through 2147483647.
-.PARAMETER  VVname
-	Only statistics are displayed for the specified VV.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE
-	PS:> Get-A9VvStatisticsReports -Iteration 1
-	
-	This Example displays statistics for Virtual Volumes (VVs) in a timed loop.
-.EXAMPLE  
-	PS:> Get-A9VvStatisticsReports  -RW -Iteration 1
-
-	This Example displays statistics for Virtual Volumes (VVs) with specification of read/write option.
-.EXAMPLE  
-	PS:> Get-A9VvStatisticsReports -Delay -Seconds 2 -Iteration 1
-
-	Specifies the interval in seconds that statistics are sampled from using an integer from 1 through 2147483.
-.EXAMPLE  
-	PS:> Get-A9VvStatisticsReports -RW -domain ZZZ -VVname demovv1 -Iteration 1
-	This Example displays statistics for Virtual Volumes (VVs) with Only statistics are displayed for the specified VVname.			
-.NOTES
-	This command utilizes the SSH command 'StatVv'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]				[switch]	$RW ,
-		[Parameter()]				[switch]	$NI ,
-		[Parameter()]				[String]	$Delay  ,
-		[Parameter()]				[String]	$domian  ,
-		[Parameter()]				[String]	$VVname ,	
-		[Parameter(Mandatory)]		[String]	$Iteration,
-		[Parameter()]				[switch]	$ShowRaw
-	)			
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$cmd= "statvv "
-	if($Iteration)	{	$cmd+=" -iter $Iteration "	}
-	if ($RW)		{	$cmd+=" -rw "				}
-	if ($Delay)		{	$cmd+=" -d $Delay "			}
-	if ($NI)		{	$cmd+=" -ni "				}
-	if ($domian)	{	$cmd+=" -domain $domian"	}			
-	if ($VVname)	{	$cmd+="  $VVname"			}	
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd	
-	if ($ShowRaw) { return $Result }
-	$range1 = $Result.count
-	if($range1 -eq "4")	{	return "No data available"	}	
-	if ( $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count
-			Add-Content -Path $tempFile -Value "VVname,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Svt_Cur,Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Time,Date"
-			foreach ($s in  $Result[0..$LastItem] )
-				{	if ($s -match "r/w")
-						{	$s= [regex]::Replace($s,"^ +","")
-							$s= [regex]::Replace($s," +"," ")
-							$s= [regex]::Replace($s," ",",")
-							$a=$s.split(",")
-							$global:time1 = $a[0]
-							$global:date1 = $a[1]
-							continue
-						}
-					if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "VVname"))		{	continue	}
-					$s= [regex]::Replace($s,"^ +","")
-					$s= [regex]::Replace($s," +",",")# Replace one or more spaces with comma to build CSV line
-					$aa=$s.split(",").length
-					if ($aa -eq "11")	{	continue	}
-					$s +=",$global:time1,$global:date1"
-					Add-Content -Path $tempFile -Value $s
+			'statcmp'
+				{	if ( $VVname )	{	$cmd+=" -n $VVname "		}		
+					if ( $Domian )	{	$cmd+= " -domain $Domian "	}
+					if ( $Delay )	{	$cmd+=" -d $Delay"			}		
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $cmd
+					write-verbose "  Executing  Get-StatCMP command displays Cache Memory Page (CMP) statistics. with the command  " 
+					if ($ShowRaw) { return $Result }
+					$range1 = $Result.count
+					if($range1 -le "3")	{	return "No data available"	}	
+					if ( $Result.Count -gt 1)
+						{	$LastItem = $Result.Count
+							Add-Content -Path $tempFile -Value "VVid,VVname,Type,Curr_Accesses,Curr_Hits,Curr_Hit%,Total_Accesses,Total_Hits,Total_Hit%,Time,Date"
+							foreach ($s in  $Result[0..$LastItem] )
+								{	$s= [regex]::Replace($s,"^ +","")
+									$s= [regex]::Replace($s," +"," ")
+									$s= [regex]::Replace($s," ",",")
+									if ($s -match "Current")
+										{	$a=$s.split(",")
+											$global:time1 = $a[0]
+											$global:date1 = $a[1]
+											continue
+										}
+									if (($s -match "---") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "VVname"))	{	continue	}
+									$s= [regex]::Replace($s,"^ +","")
+									$s= [regex]::Replace($s," +",",")# Replace one or more spaces with comma to build CSV line
+									$aa=$s.split(",").length
+									if ($aa -eq "11")	{	continue	}
+									$s +=",$global:time1,$global:date1"
+									Add-Content -Path $tempFile -Value $s
+								}
+							$Result = Import-Csv $tempFile
+						}	
 				}
-			Import-Csv $tempFile	
-			remove-item $tempFile
+			'statcpu'	
+				{	if ( $delay )	{	$cmd+=" -d $delay "	}
+					if ( $total )	{	$cmd+= " -t "		}
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $cmd	
+					write-verbose "  Executing  Get-StatCPU command displays Cache Memory Page (CMP) statistics. with the command  " 
+					if ($ShowRaw) { return $Result}
+					$range1 = $Result.count
+					if ( $range1 -eq "5" )	{	return "No data available"	}		
+					if ( $Result.Count -gt 1 )
+						{	$flg = "False"
+							$LastItem = $Result.Count
+							Add-Content -Path $tempFile -Value "node,cpu,user,sys,idle,intr/s,ctxt/s,Time,Date"
+							foreach ($s in  $Result[0..$LastItem] )
+								{	$s= [regex]::Replace($s,"^ +","")
+									$s= [regex]::Replace($s,"-+","-")
+									$s= [regex]::Replace($s," +",",")
+									$s= [regex]::Replace($s,"---","")
+									$s= [regex]::Replace($s,"-","")  
+									$a=$s.split(",")
+									$c=$a.length
+									$b=$a.length
+									if ( 2 -eq $b )
+										{	$a=$s.split(",")
+											$global:time1 = $a[0]
+											$global:date1 = $a[1]
+										}
+									if (([string]::IsNullOrEmpty($s)) -or ($s -match "node"))	{	continue	}
+									if($c -eq "6")	{	$s +=",,$global:time1,$global:date1"	}
+									else	{	$s +=",$global:time1,$global:date1"	}
+									if($flg -eq "True")	{	Add-Content -Path $tempFile -Value $s		}
+									$flg = "True"			
+								}
+							$Result = Import-Csv $tempFile
+						}
+				}
+			'statld'
+				{	if ( $VVname )	{	$cmd+=" -vv $VVname "	}
+					if ( $LDname )	{	if ( $cmd -match "-vv" )	{	return "Stop: Executing -VVname $VVname and  -LDname $LDname cannot be done in a single Execution "	}
+										$cmd+=" $LDname "	
+									}	
+					if ( $Domain )	{	$cmd+=" -domain $Domain "	}	
+					if ( $Delay )	{	$cmd+=" -d $Delay "	}		
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $cmd
+					$range1 = $Result.count
+					if ( $ShowRaw ) 		{ return $Result }
+					if ( $range1 -le "5" )	{	return "No data available" }	
+					if ( $Result.Count -gt 1)
+						{	$LastItem = $Result.Count - 1		
+							if($IDLEP)	{	Add-Content -Path $tempFile -Value "Ldname,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Svt_Cur,Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Idle_Cur,Idle_Avg,Time,Date"}
+							else 		{	Add-Content -Path $tempFile -Value "Ldname,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Svt_Cur,Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Time,Date"		}
+							foreach ($s in  $Result[0..$LastItem] )
+								{	if ($s -match "r/w")
+										{	$s= [regex]::Replace($s,"^ +","")
+											$s= [regex]::Replace($s," +"," ")
+											$s= [regex]::Replace($s," ",",")
+											$a=$s.split(",")
+											$global:time1 = $a[0]
+											$global:date1 = $a[1]
+											continue
+										}
+									if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Ldname"))	{	continue	}
+									$s= [regex]::Replace($s,"^ +","")
+									$s= [regex]::Replace($s," +",",")# Replace one or more spaces with comma to build CSV line
+									$aa=$s.split(",").length
+									if ($aa -eq "11")	{	continue	}
+									if (($aa -eq "13") -and ($IDLEP))	{	continue	}
+									$s +=",$global:time1,$global:date1"
+									Add-Content -Path $tempFile -Value $s		
+								}
+							$Result = Import-Csv $tempFile
+						}
+				}
+			'statlink'	
+				{	if ( $Detail )	{	$cmd+=" -detail "		}
+					if ( $Interval) {	$cmd+=" -d $Interval "	}
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $cmd
+					if ($ShowRaw) { return $Result }
+					$range1 = $Result.count
+					if($range1 -eq "3")	{	return "No data available"	}	
+					if ( $Result.Count -gt 1)
+						{	$LastItem = $Result.Count
+							Add-Content -Path $tempFile -Value "Node,Q,ToNode,XCB_Cur,XCB_Avg,XCB_Max,KB_Cur,KB_Avg,KB_Max,XCBSz_KB_Cur,XCBSz_KB_Avg,Time,Date"
+							foreach ($s in  $Result[0..$LastItem] )
+								{	if ($s -match "Local DMA 0")
+										{	$s= [regex]::Replace($s,"Local DMA 0","Local_DMA_0")			
+										}
+									$s= [regex]::Replace($s,"^ +","")
+									$s= [regex]::Replace($s,"-+","-")
+									$s= [regex]::Replace($s," +",",")
+									if ($s -match "XCB_sent_per_second")
+										{	$s= [regex]::Replace($s,"^ +","")
+											$s= [regex]::Replace($s," +"," ")
+											$s= [regex]::Replace($s," ",",")
+											$a=$s.split(",")
+											$global:time1 = $a[0]
+											$global:date1 = $a[1]
+											continue
+										}
+									if ($s -match "Local DMA 0")
+										{	 $s= [regex]::Replace($s,"Local DMA 0","Local_DMA_0")			
+										}
+									if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "ToNode"))	{	continue	}
+									$s +=",$global:time1,$global:date1"
+									Add-Content -Path $tempFile -Value $s
+								}
+							$Result = Import-Csv $tempFile
+						}
+				}
+			'statpd'
+				{	if ( $DevInfo )	{	$cmd+=" -devinfo "	}
+					if ( $wwn )		{	$cmd+=" -w $wwn "	}	
+					if ( $node )	{	$cmd+=" -nodes $node "	}	
+					if ( $slot )	{	$cmd+=" -slots $slot "	}	
+					if ( $port )	{	$cmd+=" -ports $port "	}			
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $cmd
+					if ( $ShowRaw ) { return $Result }	
+					$range1 = $Result.count	
+					if ( $range1 -eq "4" )	{	return "No data available"	}	
+					if ( $Result.Count -gt 1 )
+						{	$LastItem = $Result.Count - 3
+							if($DevInfo)	{	Add-Content -Path $tempFile -Value "ID,Port,Type,K_RPM,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Svt_Cur,Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Idle_Cur,Idle_Avg,Time,Date"	}
+							else			{	Add-Content -Path $tempFile -Value "ID,Port,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Svt_Cur,Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Idle_Cur,Idle_Avg,Time,Date"	}
+							foreach ($s in  $Result[0..$LastItem] )
+								{	if ($s -match "r/w")
+										{	$s= [regex]::Replace($s,"^ +","")
+											$s= [regex]::Replace($s," +"," ")
+											$s= [regex]::Replace($s," ",",")
+											$a=$s.split(",")
+											$global:time1 = $a[0]
+											$global:date1 = $a[1]				
+											continue
+										}
+									if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Port"))	{	continue	}
+									$s= [regex]::Replace($s,"^ +","")
+									$s= [regex]::Replace($s," +",",")# Replace one or more spaces with comma to build CSV line
+									$aa=$s.split(",").length
+									if ($aa -eq "13")	{	continue	}
+									$s +=",$global:time1,$global:date1"
+									Add-Content -Path $tempFile -Value $s
+								}
+							$Result = Import-Csv $tempFile
+						}	
+				}
+			'statport'
+				{	if ( $Both )	{	$cmd +=" -both "	}
+					if ( $Ctl )		{	$cmd +=" -ctl "		}
+					if ( $Data )	{	$cmd +=" -data "	}
+					if ( $Rcfc )	{	$cmd +=" -rcfc "	}
+					if ( $Rcip )	{	$cmd +=" -rcip "	}
+					if ( $FS )		{	$cmd +=" -fs "		}
+					if ( $HostPort ){	$cmd +=" -host "	}
+					if ( $Disk )	{	$cmd +=" -disk "	}
+					if ( $Peer )	{	$cmd +=" -peer "	}	
+					if ( $Begin )	{	$cmd+=" -begin "	}
+					if ( $node )	{	$cmd+=" -nodes $node "	}
+					if ( $slot )	{	$cmd+=" -slots $slot "	}
+					if ( $port )	{	$cmd+=" -ports $port "	}				
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $cmd	
+					if ($ShowRaw) { return $Reusult }
+					$range1 = $Result.count
+					if ( $range1 -eq "4" )	{	return "No data available"	}
+					if ( ($Both) -And ($range -eq "6") )	{	return "No data available"	}
+					if ( $Result.Count -gt 1 )
+						{	$LastItem = $Result.Count -3
+							if($Rcip)		{	Add-Content -Path $tempFile -Value "Port,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Errs,Drops,Time,Date"	}
+							elseif ($IDLEP)	{	Add-Content -Path $tempFile -Value "Port,D/C,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max, Svt_Cur, Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Idle_Cur,Idle_Avg,Time,Date"	}
+							else			{	Add-Content -Path $tempFile -Value "Port,D/C,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max, Svt_Cur, Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Time,Date"	}	
+							foreach ($s in  $Result[0..$LastItem] )
+								{	if ($s -match "r/w")
+										{	$s= [regex]::Replace($s,"^ +","")
+											$s= [regex]::Replace($s," +"," ")
+											$s= [regex]::Replace($s," ",",")
+											$a=$s.split(",")
+											$global:time1 = $a[0]
+											$global:date1 = $a[1]
+											continue
+										}
+									if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Port"))	{	continue	}
+									$s= [regex]::Replace($s,"^ +","")
+									$s= [regex]::Replace($s," +",",")# Replace one or more spaces with comma to build CSV line
+									$aa=$s.split(",").length
+									if (($aa -eq "12") -or ($aa -eq "8") -or ($aa -eq "8"))	{	continue	}
+									$s +=",$global:time1,$global:date1"
+									Add-Content -Path $tempFile -Value $s
+								}
+							$Result = Import-Csv $tempFile
+						}		
+				}
+			'statrcvv'
+				{	if ( $Interval ){	$cmd+=" -d $Interval"		}	
+					if ( $Target )	{	$cmd+=" -t $Target"			}	
+					if ( $Port )	{	$cmd+=" -port $Port "		}
+					if ( $Group )	{	$cmd+=" -g $Group"			}
+					if ( $ASync )	{	$cmd += " -async "			}
+					if ( $Sync )	{	$cmd += " -sync "			}
+					if ( $Periodic ){	$cmd += " -periodic "		}
+					if ( $Primary )	{	$cmd += " -primary "		}
+					if ( $Secondary ){	$cmd += " -secondary "		}
+					if ( $TargetSum ){	$cmd += " -targetsum "		}
+					if ( $PortSum )	{	$cmd += " -portsum "		}
+					if ( $GroupSum ){	$cmd += " -groupsum "		}
+					if ( $VVSum )	{	$cmd += " -vvsum "			}
+					if ( $DomainSum ){	$cmd += " -domainsum "		}
+					if ( $Domain )	{	$cmd += " -domain $Domain "	}
+					if ( $SubSet )	{	$cmd += " -subset "			}
+					if ( $VVname )	{	$cmd+=" $VVname"			}
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $cmd
+					if ( $ShowRaw ) { return $Result}
+					$range1 = $Result.count
+					if( $range1 -eq "4" )	{	return "No data available"	}
+					if( $Result.Count -gt 1)
+						{	$LastItem = $Result.Count - 2
+							if ( $TargetSum )		{	Add-Content -Path $tempFile -Value "Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+							elseif ( $PortSum )		{	Add-Content -Path $tempFile -Value "Link,Target,Type,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+							elseif ( $GroupSum )	{	Add-Content -Path $tempFile -Value "Group,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+							elseif ( $VVSum )		{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+							elseif ( $DomainSum )	{	Add-Content -Path $tempFile -Value "Domain,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+							else 					{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,Port,Type,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"}
+							foreach ( $s in  $Result[0..$LastItem] )
+							{	$s= [regex]::Replace($s,"^ +","")
+								$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line
+								if ($s -match "I/O")
+									{	$a=$s.split(",")
+										$global:time1 = $a[0]
+										$global:date1 = $a[1]
+										continue
+									}
+								if (($s -match "-------") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Avg"))	{	continue	}
+								$aa=$s.split(",").length
+								if ($aa -eq "11")	{	continue	}			
+								$s +=",$global:time1,$global:date1"
+								Add-Content -Path $tempFile -Value $s		
+							}
+							$Result = Import-Csv $tempFile
+						}
+				}
+			'statvlun'
+				{	if ( $LW )			{	$cmd+= " -lw "				}
+					if ( $DomainSum )	{	$cmd+= " -domainsum "		}
+					if ( $vvSum )		{	$cmd+= " -vvsum "			}	
+					if ( $HostSum )		{	$cmd+= " -hostsum "			}
+					if ( $domian )		{	$cmd+= " -domain $domian"	}	
+					if ( $VVname )		{	$cmd+= " -v $VVname"		}			
+					if ( $LUN )			{	$cmd+= " -l $LUN"			}	
+					if ( $nodes )		{	$cmd+= " -nodes $nodes"		}				
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $cmd
+					if ($ShowRaw) { return $Result }
+					$range1 = $Result.count
+					if($range1 -eq "4")					{	return "No data available"	}	
+					if(($range1 -eq "6") -and ($NI))	{	return "No data available"	}
+					if ( $Result.Count -gt 1)
+						{	$LastItem = $Result.Count - 3
+							if ( $LW )				{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,Host_WWN/iSCSI_Name,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"}
+							elseif ( $DomainSum )	{	Add-Content -Path $tempFile -Value "Domain,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date" 	}
+							elseif ( $vvSum )		{	Add-Content -Path $tempFile -Value "VVname,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"	}
+							elseif ( $RW )			{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"	}
+							elseif ( $Begin )		{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"	}
+							elseif ( $IDLEP )		{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,IOSz_Cur,IOSz_Avg,Time,Date"	}
+							elseif ( $NI )			{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"	}
+							elseif ( $HostSum )		{	Add-Content -Path $tempFile -Value "Hostname,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"	}
+							else					{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date" 	}
+							foreach ( $s in  $Result[0..$LastItem] )
+								{	$s= [regex]::Replace($s,"^ +","")
+									$s= [regex]::Replace($s," +",",")	
+									if ($s -match "r/w")
+										{	$s= [regex]::Replace($s,"^ +","")
+											$s= [regex]::Replace($s," +"," ")
+											$s= [regex]::Replace($s," ",",")
+											$a=$s.split(",")
+											$global:time1 = $a[0]
+											$global:date1 = $a[1]
+											continue
+										}
+									if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "cur"))	{	continue	}
+									$s= [regex]::Replace($s,"^ +","")
+									$s= [regex]::Replace($s," +",",")# Replace one or more spaces with comma to build CSV line
+									$aa=$s.split(",").length
+									if ($aa -eq "11")	{	continue	}
+									if (($aa -eq "13") -And ($IDLEP))	{	continue	}
+									$s +=",$global:time1,$global:date1"
+									Add-Content -Path $tempFile -Value $s
+								}
+							$Result = Import-Csv $tempFile
+						}
+				}
+			'statvv'
+				{	if ( $Delay )	{	$cmd+=" -d $Delay "			}
+					if ( $domian )	{	$cmd+=" -domain $domian"	}			
+					if ( $VVname )	{	$cmd+="  $VVname"			}	
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $cmd	
+					if ( $ShowRaw ) { return $Result }
+					$range1 = $Result.count
+					if ( $range1 -eq "4" )	{	return "No data available"	}	
+					if ( $Result.Count -gt 1)
+						{	$LastItem = $Result.Count
+							Add-Content -Path $tempFile -Value "VVname,r/w,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,KB_Max,Svt_Cur,Svt_Avg,IOSz_Cur,IOSz_Avg,Qlen,Time,Date"
+							foreach ($s in  $Result[0..$LastItem] )
+								{	if ($s -match "r/w")
+										{	$s= [regex]::Replace($s,"^ +","")
+											$s= [regex]::Replace($s," +"," ")
+											$s= [regex]::Replace($s," ",",")
+											$a=$s.split(",")
+											$global:time1 = $a[0]
+											$global:date1 = $a[1]
+											continue
+										}
+									if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "VVname"))		{	continue	}
+									$s= [regex]::Replace($s,"^ +","")
+									$s= [regex]::Replace($s," +",",")# Replace one or more spaces with comma to build CSV line
+									$aa=$s.split(",").length
+									if ($aa -eq "11")	{	continue	}
+									$s +=",$global:time1,$global:date1"
+									Add-Content -Path $tempFile -Value $s
+								}
+							$Result = Import-Csv $tempFile	
+						}
+				}
+			'statisci'
+				{	if ( $Iterations )	{	$cmd= " statiscsi -dd -iter $Iterations "	}
+					else 				{	$cmd= " statiscsi -dd -iter 1 "	}
+					if ( $Delay)		{	$cmd+=" -d $Delay "				}	
+					if ( $Node)			{	$cmd+=" -nodes $Node "			}
+					if ( $Slot)			{	$cmd+=" -slots $Slot "			}
+					if ( $Port)			{	$cmd+=" -ports $Port "			}
+					if ( $Fullcounts)	{	$cmd+=" -fullcounts "			}
+					if ( $Prev)			{	$cmd+=" -prev "					}
+					if ( $Begin)		{	$cmd+=" -begin "				}	
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $cmd
+					write-verbose "  Executing Get-A9iSCSIStats command that displays information iSNS table for iSCSI ports in the system  " 	
+					if ( $ShowRaw )	{ return $result }
+					if($Result -match "Total" -or $Result.Count -gt 1)
+						{	$LastItem = $Result.Count 
+							$Flag = "False"
+							$Loop_Cnt = 2	
+							if($Fullcounts)	{	$Loop_Cnt = 1	}		
+							foreach ($s in  $Result[$Loop_Cnt..$LastItem] )
+								{	if($Flag -eq "true")
+										{	if(($s -match "From start of statiscsi command") -or ($s -match "----Receive---- ---Transmit---- -----Total-----") -or ($s -match "port    Protocol Pkts/s KBytes/s Pkts/s KBytes/s Pkts/s KBytes/s Errs/") -or ($s -match "Counts/sec") -or ($s -match "Port Counter                             Current CmdStart   Begin"))
+												{	if(($s -match "port    Protocol Pkts/s KBytes/s Pkts/s KBytes/s Pkts/s KBytes/s Errs/") -or ($s -match "Port Counter                             Current CmdStart   Begin"))
+														{	$temp="=============================="
+															Add-Content -Path $tempFile -Value $temp
+														}
+												}
+											else{	$s= [regex]::Replace($s,"^ ","")			
+													$s= [regex]::Replace($s," +",",")	
+													$s= [regex]::Replace($s,"-","")
+													$s= $s.Trim() -replace 'Pkts/s,KBytes/s,Pkts/s,KBytes/s,Pkts/s,KBytes/s','Pkts/s(Receive),KBytes/s(Receive),Pkts/s(Transmit),KBytes/s(Transmit),Pkts/s(Total),KBytes/s(Total)' 	
+													if($s.length -ne 0)
+														{	if(-not $Fullcounts)	{	$s=$s.Substring(1)		}
+														}				
+													Add-Content -Path $tempFile -Value $s	
+												}
+										}
+									else{	$s= [regex]::Replace($s,"^ ","")			
+											$s= [regex]::Replace($s," +",",")	
+											$s= [regex]::Replace($s,"-","")
+											$s= $s.Trim() -replace 'Pkts/s,KBytes/s,Pkts/s,KBytes/s,Pkts/s,KBytes/s','Pkts/s(Receive),KBytes/s(Receive),Pkts/s(Transmit),KBytes/s(Transmit),Pkts/s(Total),KBytes/s(Total)' 	
+											if($s.length -ne 0)
+												{	if(-not $Fullcounts)	{	$s=$s.Substring(1)	}					
+												}				
+											Add-Content -Path $tempFile -Value $s	
+										}
+									$Flag = "true"			
+								}
+							$Result = Import-Csv $tempFile 
+						}
+				}
+			'statfcoe'
+				{	if ( $interval )	{	$Cmd += " -d $interval " 	}
+					if ( $Iteration )	{	$Cmd += " -iter $Iteration "}
+					if ( $Node )		{	$Cmd += " -nodes $Node " 	}
+					if ( $Slot )		{	$Cmd += " -slots $Slot " 	}
+					if ( $Port )		{	$Cmd += " -ports $Port " 	}
+					if ( $Counts )		{	$Cmd += " -counts " 		}
+					if ( $Fullcounts )	{	$Cmd += " -fullcounts " 	}
+					if ( $Prev )		{	$Cmd += " -prev " 			}
+					if ( $Begin )		{	$Cmd += " -begin " 			}
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $Cmd
+					Return $Result
+				}
 		}
-	else{	return $Result	}	
+	Remove-Item $tempFile
+	return $Result	
 }
 }
 
-Function Set-A9StatisticsInUseChunklets
+Function Set-A9StatisticsChunklets
 {
 <#
 .SYNOPSIS
     The Set-Statch command sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD).
 .DESCRIPTION
 	The Set-Statch command sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD).
-.PARAMETER Start  
-    Specifies that the collection of statistics is either started or stopped for the specified Logical Disk (LD) and chunklet.
-.PARAMETER Stop  
-    Specifies that the collection of statistics is either started or stopped for the specified Logical Disk (LD) and chunklet.
-.PARAMETER LDname 	
-	Specifies the name of the logical disk in which the chunklet to be configured resides.
-.PARAMETER CLnum 	
+.PARAMETER Action
+	You must select either Start or Stop as the action to start or stop the collection of statistics
+.PARAMETER Chunklet 	
 	Specifies the chunklet that is configured using the setstatch command.	
-.EXAMPLE 
-	PS:> Set-A9StatisticsInUseChunklets -Start -LDname test1 -CLnum 1  
+.PARAMETER PhysicalDiskId
+	Use the Get-A9PhysicalDisk to get the valid physical disk Ids.
+.EXAMPLE
+	PS:> Set-A9StatisticsChunklets -action Start -PhysicalDiskId 2 
 	
-	This example starts and stops the statistics collection mode for chunklets.with the LD name test1.
+	This Example sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD) 2.
+.EXAMPLE 
+	PS:> Set-A9StatisticsChunklet -action Start -Logicaldiskname test1 -Chunklet 1  
+	
+	This example starts and stops the statistics collection mode for chunklets.with the Logicaldisk named test1.
 .NOTES
-	This command utilizes the SSH command 'SetStatCh'
+	This command utilizes the SSH command 'SetStatCh', 'setstatpdch'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]			[switch]	$Start,
-		[Parameter()]			[switch]	$Stop,
-		[Parameter(Mandatory)]	[String]	$LDname,
-		[Parameter(Mandatory)]	[String]	$CLnum
+param(	[Parameter(ParameterSetName='setstatch',Mandatory)]		[String]	$LogicalDiskName,
+		[Parameter(ParameterSetName='setstatch',Mandatory)]		[String]	$Chunklet,
+		[Parameter(ParameterSetName='SetStatPdCh',Mandatory)]	
+		[Parameter(ParameterSetName='setstatch',Mandatory)]	
+		[ValidateSet('start','stop')]							[string]	$Action,
+		[Parameter(ParameterSetName='SetStatPdCh',Mandatory)]	[String]	$PhysicalDiskID
 	)		
 Begin
 {	Test-A9Connection -ClientType SshClient
 }
 Process	
-{	$cmd1 = "setstatch "
-	if ($Start)		{	$cmd1 += " start "	}
-	if ($Stop)		{	$cmd1 += " stop "	}
-	if($LDname)		{	$cmd2="showld"
-						$Result1 = Invoke-A9CLICommand -cmds  $cmd2
-						if($Result1 -match $LDname)	{	$cmd1 += " $LDname "	}
-						Else		{	return "Error:  LDname  is Invalid ."	}
-					}
-	if($CLnum)		{	$cmd1+="$CLnum"	}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd1
-	write-verbose "   The Set-Statch command sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD).->$cmd"
-	if([string]::IsNullOrEmpty($Result))
-		{	return  "Success : Set-Statch $Result "	}
-	else
-		{	return  "FAILURE : While Executing Set-Statch $Result"	} 
-} 
-}
-
-Function Set-A9StatisticsCollectionPhysicalDiskChunklets
-{
-<#
-.SYNOPSIS
-    The command starts and stops the statistics collection mode for chunklets.
-.DESCRIPTION
-    The command starts and stops the statistics collection mode for chunklets.
-.PARAMETER Start  
-    Specifies that the collection of statistics is either started or stopped for the specified Logical Disk (LD) and chunklet.
-.PARAMETER Stop  
-    Specifies that the collection of statistics is either started or stopped for the specified Logical Disk (LD) and chunklet.
-.PARAMETER PD_ID   
-    Specifies the PD ID.
-.EXAMPLE
-	PS:> Set-A9StatisticsCollectionPhysicalDiskChunklets -Start -PD_ID 2
-	
-	This Example sets the statistics collection mode for all in-use chunklets on a Physical Disk (PD) 2.
-.NOTES
-	This command utilizes the SSH command 'SetStatPdCh'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]			[switch]	$Start,
-		[Parameter()]			[switch]	$Stop,
-		[Parameter(Mandatory)]	[String]	$PD_ID
-	)			
-Begin
-{	Test-A9Connection -ClientType SshClient
-}
-Process	
-{	$cmd1 = "setstatpdch "
-	if ($Start)		{	$cmd1 += " start "	}
-	if ($Stop)		{	$cmd1 += " stop "	}
-	$cmd2="showpd"
-	$Result1 = Invoke-A9CLICommand -cmds  $cmd2
-	if($Result1 -match $PD_ID)	{	$cmd1 += " $PD_ID "	}
-	Else						{	return "Error:  PD_ID   is Invalid ."	}						
-	$Result = Invoke-A9CLICommand -cmds  $cmd1
-	if([string]::IsNullOrEmpty($Result))
-		{	write-host "Success : Executing Set-StatPdch 	 " -ForegroundColor green
-			return $Result  
+{	$cmd = $PSCmdlet.ParameterSetName + ' ' +  $action
+	switch ($PSCmdlet.ParameterSetName)
+		{	'setstatch'
+				{	$cmd += $LogicalDiskName
+					if ( $Chunklet ) 	{	$cmd+=" $Chunklet"	}
+				}
+			'setstatpdch'
+				{	$cmd += " $PhysicalDiskId"
+				}
 		}
-	else
-	{	write-warning "FAILURE : While Executing Set-StatPdch 	"
-		return $Result  
-	} 
-}
+	write-verbose "Executing the following SSH command `n`t $cmd"
+	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if([string]::IsNullOrEmpty($Result))
+		{	write-host "Success : Executing Command 	 " -ForegroundColor green
+		}
+	else{	write-warning "FAILURE : While Executing $Cmd"
+		}
+	return $Result 
+	
+} 
 }
 
 Function Measure-A9System
@@ -2048,5 +1537,3 @@ Process
 	Return $Result
 }
 }
-
-

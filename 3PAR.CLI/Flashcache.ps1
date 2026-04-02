@@ -17,6 +17,7 @@ Function New-A9FlashCache_CLI
 	The minimum size of the flash cache is 64GiB. The maximum size of the flash cache is based on the node types, ranging from 768GiB up to 12288GiB (12TiB).
     An optional suffix (with no whitespace before the suffix) will modify the units to GiB (g or G suffix) or TiB (t or T suffix).
 .NOTES
+	This command utilizes the SSH command 'createflashcache'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -63,6 +64,7 @@ Function Set-A9FlashCache_CLI
 .EXAMPLE
 	PS:> Set-A9FlashCache_CLI -Enable -All
 .NOTES
+	This command utilizes the SSH command 'setflashcache'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -103,6 +105,7 @@ Function Remove-A9FlashCache_CLI
 .EXAMPLE
 	PS:> Remove-A9FlashCache_CLI
 .NOTES
+	This command utilizes the SSH command 'removeflashcache'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]

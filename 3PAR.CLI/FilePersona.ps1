@@ -9,6 +9,9 @@ Function Get-A9FileServices
 	Get the File Services information.
 .EXAMPLE
     PS:> Get-A9FileServices
+.NOTES
+	This command utilizes the API endpoint '/fileservices'
+	This command requires a API type connection.
 #>
 [CmdletBinding()]
 Param()

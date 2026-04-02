@@ -48,6 +48,7 @@ Function Push-A9GroupSnapVolume
 .EXAMPLE
 	PS:> Push-A9GroupSnapVolume -VVNames WSDS_compr01 -TargetVV y
 .NOTES
+	This command utilizes the SSH command 'promotegroupsv' 
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -123,6 +124,7 @@ Function Push-A9SnapVolume
 	
 	copies the differences of a snapshot back to target volume "vv23" of volume "vv1"
 .NOTES
+	This command utilizes the SSH command 'promotesv' 
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -171,6 +173,7 @@ Function Push-A9VvCopy
 	
 	Promotes virtual volume "volume1" to a base volume
 .NOTES
+	This command utilizes the SSH command 'promotevvcopy' 
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -225,7 +228,8 @@ Function Set-A9VvSnapshot
 .EXAMPLE	
 	PS:> Set-A9VvSnapshot -Name as2 -RemoveAndRecreate 
 .NOTES
-	This command requires a SSH type connection.
+	This command utilizes the SSH command 'updatevv' 
+	This command requires a SSH type connection. 
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory)]	[String]	$Name,		

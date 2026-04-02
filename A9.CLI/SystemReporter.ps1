@@ -25,6 +25,7 @@ Function Get-A9SystemReportDB
 	hires         20   19979       5m    10d ---      89d   110d 2024-10-24 17:05:00 12 days from now
 	hourly         2    1709       1h    90d ---    2.20y   110d 2024-10-24 18:00:00 1.99 years from now
 .NOTES
+	This command utilizes the SSH command 'showsr'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -58,6 +59,7 @@ Function Set-A9SystemReport
 
 	Stops System Reporter
 .NOTES
+	This command utilizes the SSH command 'startsr', 'stopsr'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -112,6 +114,7 @@ Function Get-A9SystemReportAlertCrit
 
 	Example displays all the criteria evaluated on an hourly basis which are also enabled.:
 .NOTES
+	This command utilizes the SSH command 'showsralertcrit'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding(DefaultParameterSetName='default')]
@@ -349,6 +352,9 @@ Function Get-A9SystemReportHistogram
 	2026-03-18 23:55:00 MDT      1773899700 1172           2           1           0           0           0            0            0            4             1
 	2026-03-19 00:00:00 MDT      1773900000 1093           2           1           1           0           0            0            0            0             1
 	2026-03-19 00:05:00 MDT      1773900300 1166           1           1           0           0           0            0            0            0             0
+.NOTES
+	This command utilizes the SSH command 'srhistld', 'srhistpd' ,'srhistport', 'srhistvlun'
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter()]									[switch]		$attime,
@@ -585,7 +591,6 @@ Process
 }
 }
 
-
 Function Set-A9SystemReporterAlertCrit
 {
 <#
@@ -641,6 +646,7 @@ Function Set-A9SystemReporterAlertCrit
 .EXAMPLE
 	PS:> Set-A9SRAlertCrit -Info -Name write_port_check
 .NOTES
+	This command utilizes the SSH command 'setsralertcrit'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -700,6 +706,7 @@ Function Remove-A9SystemReporterAlertCrit
 
 	Example removes the criterion named write_port_check:
 .NOTES
+	This command utilizes the SSH command 'removesralertcrit'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -823,6 +830,7 @@ Function New-A9SystemReporterAlertCrit
 .EXAMPLE
     PS:> New-A9SRAlertCrit -Type port  -PortType disk -Condition "write_iops>50" -Name write_port_check   
 .NOTES
+	This command utilizes the SSH command 'createsralertcrit'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -901,344 +909,17 @@ Process
 }
 }
 
-Function Get-A9SystemReporterStatrcvv
+Function Get-A9SystemReporterStats_CLI
 {
 <#
-.SYNOPSIS
-    System reporter performance reports for Remote Copy volumes.
-.DESCRIPTION
+.SYNOPSIS   
+	The command displays historical performance data reports for iSCSI sessions.
+	The command displays historical performance data reports for iSCSI ports.
 	The command displays historical performance data reports for Remote Copy volumes.
-.PARAMETER Attime
-	Performance is shown at a particular time interval, specified by the etsecs option, with one row per object group described by the
-	groupby option. Without this option performance is shown versus time, with a row per time interval.
-.PARAMETER Btsecs
-	Select the begin time in seconds for the report. The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the time at which the report begins depends
-	on the sample category (-hires, -hourly, -daily):
-		- For hires, the default begin time is 12 hours ago (-btsecs -12h).
-		- For hourly, the default begin time is 7 days ago (-btsecs -7d).
-		- For daily, the default begin time is 90 days ago (-btsecs -90d).
-	If begin time and sample category are not specified then the time
-	the report begins is 12 hours ago and the default sample category is hires.
-	If -btsecs 0 is specified then the report begins at the earliest sample.
-.PARAMETER Etsecs
-	Select the end time in seconds for the report.  If -attime is specified, select the time for the report.
-	The value can be specified as either
-	- The absolute epoch time (for example 1351263600).
-	- The absolute time as a text string in one of the following formats:
-		- Full time string including time zone: "2012-10-26 11:00:00 PDT"
-		- Full time string excluding time zone: "2012-10-26 11:00:00"
-		- Date string: "2012-10-26" or 2012-10-26
-		- Time string: "11:00:00" or 11:00:00
-	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-		be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-	If it is not specified then the report ends with the most recent
-	sample.
-.PARAMETER Hires
-	Select high resolution samples (5 minute intervals) for the report. This is the default.
-.PARAMETER Hourly
-	Select hourly samples for the report.
-.PARAMETER Daily
-	Select daily samples for the report.
-.PARAMETER Summary
-	Summarize performance across requested objects and time range. One of these 4 summary keywords must be included:
-		min   Display the minimum for each metric
-		avg   Display the average for each metric
-		max   Display the maximum for each metric
-		<N>%  Display percentile for each metric. <N> may be any number from 0 to 100. Multiple percentiles may be specified.
-	Other keywords which modify the summary display or computation:
-	detail
-		Display individual performance records in addition to one or more summaries. By default, -summary output excludes individual records and only displays the summary.
-	per_time
-		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per time. By default, one summary is computed across all records.
-	per_group
-		When requesting data across multiple points in time (vstime) and multiple object groupings (-groupby) compute summaries per
-		object grouping. By default, one summary is computed across all records.
-	only_compareby
-		When requesting data limited to certain object groupings with the -compareby option, use this keyword to compute summaries using only that reduced set of object groupings. By default,
-		summaries are computed from all records and ignore the limitation of the -compareby option, though the "detail" output does conform to the -compareby object limitation.
-.PARAMETER Groupby
-	For -attime reports, generate a separate row for each combination of <groupby> items.  Each <groupby> must be different and one of the following:
-	VV_NAME      The name of a volume admitted to a Remote Copy volume group with admitrcopyvv
-	DOM_NAME     The domain name for a Remote Copy group when group was created with creatercopygroup
-	TARGET_NAME  The target name of the Remote Copy target created with creatercopytarget
-	TARGET_MODE  The target mode - Per: Periodic, Sync: Synchronous or Async: Asynchronous
-	GROUP_NAME   The name of the Remote Copy group created with creatercopygroup
-	GROUP_ROLE   The role (primary=1 or secondary=0) of the Remote Copy group
-	PORT_TYPE    The port type (IP or FC) of the Remote Copy link(s) created with creatercopytarget
-	PORT_N       The node number for the port used by a Remote Copy link
-	PORT_S       The PCI slot number for the port used by a Remote Copy link
-	PORT_P       The port number for the port used by a Remote Copy link
-	VVSET_NAME   The virtual volume set name
-.PARAMETER Compareby
-	The compareby option limits output records to only certain objects, compared by a specified field.  Either the top or bottom X objects
-	can be displayed, up to 32 objects for vstime reports or 128 objects for attime reports.  The field used for comparison can be any of the
-	groupby fields or one of the following:
-	lcl_read_iops, lcl_write_iops, lcl_total_iops, lcl_read_kbps, lcl_write_kbps, lcl_total_kbps, lcl_read_svctms, lcl_write_svctms, lcl_total_svctms, lcl_read_ioszkb, lcl_write_ioszkb,
-	lcl_total_ioszkb, lcl_busy_pct, lcl_total_qlen, rmt_read_iops, rmt_write_iops, rmt_total_iops, rmt_read_kbps, rmt_write_kbps, rmt_total_kbps, rmt_read_ioszkb, rmt_write_ioszkb,
-	rmt_total_ioszkb, rmt_busy_pct, rmt_total_qlen, rpo_timeInt
-.PARAMETER Sortcol
-	Sorts command output based on column number (<col>). Columns are numbered from left to right, beginning with 0. At least one column must 
-	be specified. In addition, the direction of sorting (<dir>) can be specified as follows:
-		inc
-			Sort in increasing order (default).
-		dec
-			Sort in decreasing order.	
-	Multiple columns can be specified and separated by a colon (:). Rows with the same information in them as earlier columns will be sorted by values in later columns.
-.PARAMETER Vv
-	Limit the data to VVs with names that match one or more of the specified names or glob-style patterns. VV set name must be prefixed by "set:" and can also include patterns.
-.PARAMETER Target
-	Limit the data to TARGET_NAMEs that match one or more of the specified TARGET_NAMEs or glob-style patterns.
-.PARAMETER Mode
-	Limit the data to TARGET_MODEs of the specified mode. Allowed modes are:
-		Per      - Periodic
-		Sync     - Synchronous
-		Async    - Asynchronous
-.PARAMETER Group
-	Limit the data to GROUP_NAMEs that match one or more of the specified GROUP_NAMEs or glob-style patterns.
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(
-	[Parameter()]	[switch]	$Attime,
-	[Parameter()]	[String]	$Btsecs,
-	[Parameter()]	[String]	$Etsecs,
-	[Parameter()]	[switch]	$Hires,
-	[Parameter()]	[switch]	$Hourly,
-	[Parameter()]	[switch]	$Daily,
-	[Parameter()]	[String]	$Summary,
-	[Parameter()]	[String]	$Groupby,
-	[Parameter()]	[String]	$Compareby,
-	[Parameter()]	[String]	$Sortcol,
-	[Parameter()]	[String]	$Vv,
-	[Parameter()]	[String]	$Target,
-	[Parameter()]	[String]	$Mode,
-	[Parameter()]	[String]	$Group
-)
-Begin
-	{	Test-A9Connection -ClientType 'SshClient'
-	}
-Process 
-	{	$Cmd = " srstatrcvv "
-		if ($Attime) 	{	$Cmd += " -attime "			}
-		if ($Btsecs) 	{	$Cmd += " -btsecs $Btsecs "	}
-		if ($Etsecs) 	{	$Cmd += " -etsecs $Etsecs "	}
-		if ($Hires) 	{	$Cmd += " -hires " 			}
-		if ($Hourly) 	{	$Cmd += " -hourly "			}
-		if ($Daily) 	{	$Cmd += " -daily "			}
-		if ($Summary) 	{	$Cmd += " -summary $Summary "}
-		if ($Groupby) 	{	$Cmd += " -groupby $Groupby "}
-		if ($Compareby) {	$Cmd += " -compareby $Compareby "}
-		if ($Sortcol) 	{	$Cmd += " -sortcol $Sortcol "}
-		if ($Vv) 		{	$Cmd += " -vv $Vv "			}
-		if ($Target) 	{	$Cmd += " -target $Target "	}
-		if ($Mode) 		{	$Cmd += " -mode $Mode "		}
-		if ($Group) 	{	$Cmd += " -group $Group "	}
-		$Result = Invoke-A9CLICommand -cmds  $Cmd
-		Return $Result
-	}
-}
-
-Function Show-A9SystemReporterStatIscsi
-{
-<#
-.SYNOPSIS   
-	The command displays historical performance data reports for iSCSI ports.
-.DESCRIPTION  
-	The command displays historical performance data reports for iSCSI ports.
-.PARAMETER Attime
-    Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object group described by the
-	-groupby option. Without this option performance is shown versus time, with a row per time interval.
-.PARAMETER BTsecs
-    Select the begin time in seconds for the report. The value can be specified as either
-        - The absolute epoch time (for example 1351263600).
-        - The absolute time as a text string in one of the following formats:
-            - Full time string including time zone: "2012-10-26 11:00:00 PDT"
-            - Full time string excluding time zone: "2012-10-26 11:00:00"
-            - Date string: "2012-10-26" or 2012-10-26
-            - Time string: "11:00:00" or 11:00:00
-        - A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-			be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-        If it is not specified then the time at which the report begins depends on the sample category (-hires, -hourly, -daily):
-            - For hires, the default begin time is 12 hours ago (-btsecs -12h).
-            - For hourly, the default begin time is 7 days ago (-btsecs -7d).
-            - For daily, the default begin time is 90 days ago (-btsecs -90d).
-        If begin time and sample category are not specified then the time the report begins is 12 hours ago and the default sample category is hires.
-        If -btsecs 0 is specified then the report begins at the earliest sample.
-.PARAMETER ETsecs
-    Select the end time in seconds for the report.  If -attime is specified, select the time for the report. The value can be specified as either
-        - The absolute epoch time (for example 1351263600).
-        - The absolute time as a text string in one of the following formats:
-            - Full time string including time zone: "2012-10-26 11:00:00 PDT"
-            - Full time string excluding time zone: "2012-10-26 11:00:00"
-            - Date string: "2012-10-26" or 2012-10-26
-            - Time string: "11:00:00" or 11:00:00
-        - A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
-			be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
-        If it is not specified then the report ends with the most recent sample.
-.PARAMETER Hires
-    Select high resolution samples (5 minute intervals) for the report. This is the default.
-.PARAMETER Hourly
-    Select hourly samples for the report.
-.PARAMETER Daily
-    Select daily samples for the report.
-.PARAMETER Summary 
-    Summarize performance across requested objects and time range. The possible summary types are: "min" (minimum), "avg" (average), "max" (maximum), and "detail"
-    The "detail" type causes the individual performance records to be presented along with the summary type(s) requested. One or more of these summary types may be specified.
-.PARAMETER Groupby
-    For -attime reports, generate a separate row for each combination of <groupby> items.  Each <groupby> must be different and one of the following:
-        PORT_N      The node number for the port
-        PORT_S      The PCI slot number for the port
-        PORT_P      The port number for the port
-        PROTOCOL    The protocol type for the port
-.PARAMETER NSP
-	Dode Sloat Port Value 1:2:3
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE	
-	PS:> Show-A9SrStatIscsi
-.EXAMPLE
-	PS:> Show-A9SrStatIscsi -Attime
-.EXAMPLE
-	PS:> Show-A9SrStatIscsi -Summary min/max/aug/detail
-.EXAMPLE
-	PS:> Show-A9SrStatIscsi -BTSecs 1
-.EXAMPLE
-	PS:> Show-A9SrStatIscsi -ETSecs 1
-.EXAMPLE
-	PS:> Show-A9SrStatIscsi -Groupby PORT_N
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Attime, 
-		[Parameter()]	[switch]	$Hires,
-		[Parameter()]	[switch]	$Hourly,
-		[Parameter()]	[switch]	$Daily,
-		[Parameter()]	[ValidateSet( "min","avg","max","detail")]
-						[String]	$Summary ,
-		[Parameter()]	[String]	$BTSecs ,
-		[Parameter()]	[String]	$ETSecs ,
-		[Parameter()]	[ValidateSet("PORT_N","PORT_S","PORT_P","PROTOCOL")]
-						[String]	$Groupby ,
-		[Parameter()]	[String]	$NSP,
-		[Parameter()]	[switch]	$ShowRaw
-)		
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$cmd= "srstatiscsi "
-	if ($Attime)	{	$cmd+=" -attime "	}
-	if ($Summary)	{	$cmd+=" -summary $Summary "	}
-	if ($BTSecs)	{	$cmd+=" -btsecs $BTSecs "}
-	if ($ETSecs)	{	$cmd+=" -etsecs $ETSecs "	}
-	if ($Hires)		{	$cmd+=" -hires "	}
-	if ($Hourly)	{	$cmd+=" -hourly "	}
-	if ($Daily)		{	$cmd+=" -daily "	}		
-	if($Groupby)	{	$cmd+=" -groupby $Groupby"}
-	if ($NSP)		{	$cmd+=" $NSP "	}
-	write-verbose "  Executing  Show-SrStatIscsi command that displays information iSNS table for iSCSI ports in the system  "	
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-}
-end
-{	$Flag="True"
-	if ( $ShowRaw ) { return $Result}
-	if($Attime -or $Summary)
-		{	$Flag="Fals"
-			if($Result -match "Time")
-				{	if($Result.Count -lt 5){	return "No data found please try with different values."	}
-					$count=2
-					if($Summary)	{	$count=3	}
-					$tempFile = [IO.Path]::GetTempFileName()
-					$LastItem = $Result.Count
-					$incre = "true" 		
-					foreach ($s in  $Result[$count..$LastItem] )
-						{	$s= [regex]::Replace($s,"^ ","")						
-							$s= [regex]::Replace($s," +",",")			
-							$s= [regex]::Replace($s,"-","")			
-							$s= $s.Trim()			
-							if($incre -eq "true")
-								{	$sTemp1=$s				
-									$sTemp = $sTemp1.Split(',')							
-									$sTemp[1]="Pkts/s(Receive)"				
-									$sTemp[2]="KBytes/s(Receive)"
-									$sTemp[3]="Pkts/s(Transmit)"				
-									$sTemp[4]="Kytes/s(Transmit)"
-									$sTemp[5]="Pkts/s(Total)"				
-									$sTemp[6]="Kytes/s(Total)"
-									$newTemp= [regex]::Replace($sTemp,"^ ","")			
-									$newTemp= [regex]::Replace($sTemp," ",",")				
-									$newTemp= $newTemp.Trim()
-									$s=$newTemp							
-								}
-							if($incre -eq "false")	{	$s=$s.Substring(1)	}			
-							Add-Content -Path $tempFile -Value $s	
-							$incre="false"
-						}			
-					$returndata = Import-Csv $tempFile 
-					Remove-Item  $tempFile
-					return $returndata
-				}
-			else{	return $Result	}
-		}	
-	else{	if($Flag -eq "True")
-				{	if($Result -match "Time")
-						{	if($Result.Count -lt 4)	{	return "No data found please try with different values."	}
-							$tempFile = [IO.Path]::GetTempFileName()
-							$LastItem = $Result.Count
-							$incre = "true" 		
-							foreach ($s in  $Result[1..$LastItem] )
-								{	$s= [regex]::Replace($s,"^ ","")						
-									$s= [regex]::Replace($s," +",",")			
-									$s= [regex]::Replace($s,"-","")			
-									$s= $s.Trim() -replace 'Time','Date,Time,Zone' 						
-									if($incre -eq "true")
-										{	$s=$s.Substring(1)
-											$sTemp1=$s				
-											$sTemp = $sTemp1.Split(',')							
-											$sTemp[4]="Pkts/s(Receive)"				
-											$sTemp[5]="KBytes/s(Receive)"
-											$sTemp[6]="Pkts/s(Transmit)"				
-											$sTemp[7]="Kytes/s(Transmit)"
-											$sTemp[8]="Pkts/s(Total)"				
-											$sTemp[9]="Kytes/s(Total)"
-											$newTemp= [regex]::Replace($sTemp,"^ ","")			
-											$newTemp= [regex]::Replace($sTemp," ",",")				
-											$newTemp= $newTemp.Trim()
-											$s=$newTemp
-										}				
-									Add-Content -Path $tempFile -Value $s	
-									$incre="false"
-								}			
-							$returndata = Import-Csv $tempFile 
-							Remove-Item  $tempFile
-							return $returndata
-						}
-					else{	return $Result	}
-				}
-		}	
-	if($Result -match "Time")	{	return  " Success : Executing Show-SrStatIscsi"	}
-	else{	return  $Result	}
-}
-}
-
-Function Show-A9SystemReporterStatIscsiSession
-{
-<#
-.SYNOPSIS   
-	The command displays historical performance data reports for iSCSI sessions.
 .DESCRIPTION  
 	The command displays historical performance data reports for iSCSI sessions.
+	The command displays historical performance data reports for iSCSI ports.
+	The command displays historical performance data reports for Remote Copy volumes.
 .PARAMETER Attime
 	Performance is shown at a particular time interval, specified by the -etsecs option, with one row per object group described by the
 	-groupby option. Without this option performance is shown versus time, with a row per time interval.
@@ -1274,13 +955,11 @@ Function Show-A9SystemReporterStatIscsiSession
 	- A negative number indicating the number of seconds before the current time. Instead of a number representing seconds, <secs> can
 	be specified with a suffix of m, h or d to represent time in minutes (e.g. -30m), hours (e.g. -1.5h) or days (e.g. -7d).
 	If it is not specified then the report ends with the most recent sample.
-.PARAMETER Hires
-	Select high resolution samples (5 minute intervals) for the report.
-	This is the default.
-.PARAMETER Hourly
-	Select hourly samples for the report.
-.PARAMETER Daily
-	Select daily samples for the report.
+.PARAMETER Frequency
+	Can be one of three options; 
+	Hires : Select high resolution samples (5 minute intervals) for the report. This is the default.
+	Hourly : Select hourly samples for the report.
+	Daily : Select daily samples for the report.
 .PARAMETER Summary
 	Summarize performance across requested objects and time range.
 	The possible summary types are:
@@ -1288,7 +967,7 @@ Function Show-A9SystemReporterStatIscsiSession
 	The "detail" type causes the individual performance records to be
 	presented along with the summary type(s) requested. One or more of these
 	summary types may be specified.
-.PARAMETER Groupby
+.PARAMETER iSCSISessionGroupby
 	For -attime reports, generate a separate row for each combination of
 	<groupby> items.  Each <groupby> must be different and
 	one of the following:
@@ -1297,201 +976,353 @@ Function Show-A9SystemReporterStatIscsiSession
 	PORT_P      The port number for the session
 	ISCSI_NAME  The iSCSI name for the session
 	TPGT        The TPGT ID for the session
+.PARAMETER iSCSIGroupby
+    For -attime reports, generate a separate row for each combination of <groupby> items.  Each <groupby> must be different and one of the following:
+        PORT_N      The node number for the port
+        PORT_S      The PCI slot number for the port
+        PORT_P      The port number for the port
+        PROTOCOL    The protocol type for the port
 .PARAMETER NSP
 	Node Sloat Poart Value 1:2:3
+.PARAMETER RCopyGroupby
+	For -attime reports, generate a separate row for each combination of <groupby> items.  Each <groupby> must be different and one of the following:
+	VV_NAME      The name of a volume admitted to a Remote Copy volume group with admitrcopyvv
+	DOM_NAME     The domain name for a Remote Copy group when group was created with creatercopygroup
+	TARGET_NAME  The target name of the Remote Copy target created with creatercopytarget
+	TARGET_MODE  The target mode - Per: Periodic, Sync: Synchronous or Async: Asynchronous
+	GROUP_NAME   The name of the Remote Copy group created with creatercopygroup
+	GROUP_ROLE   The role (primary=1 or secondary=0) of the Remote Copy group
+	PORT_TYPE    The port type (IP or FC) of the Remote Copy link(s) created with creatercopytarget
+	PORT_N       The node number for the port used by a Remote Copy link
+	PORT_S       The PCI slot number for the port used by a Remote Copy link
+	PORT_P       The port number for the port used by a Remote Copy link
+	VVSET_NAME   The virtual volume set name
+.PARAMETER Vv
+	Limit the data to VVs with names that match one or more of the specified names or glob-style patterns. VV set name must be prefixed by "set:" and can also include patterns.
+.PARAMETER Target
+	Limit the data to TARGET_NAMEs that match one or more of the specified TARGET_NAMEs or glob-style patterns.
+.PARAMETER Mode
+	Limit the data to TARGET_MODEs of the specified mode. Allowed modes are:
+		Per      - Periodic
+		Sync     - Synchronous
+		Async    - Asynchronous
+.PARAMETER Group
+	Limit the data to GROUP_NAMEs that match one or more of the specified GROUP_NAMEs or glob-style patterns.
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE	
-	Show-SrStatIscsiSession
 .EXAMPLE
-	PS:> Show-A9SrStatIscsiSession -Attime
-.EXAMPLE
-	PS:> Show-A9SrStatIscsiSession -Attime -NSP 0:2:1
-.EXAMPLE
-	PS:> Show-A9SrStatIscsiSession -Summary min -NSP 0:2:1
-.EXAMPLE
-	PS:> Show-A9SrStatIscsiSession -Btsecs 1 -NSP 0:2:1
-.EXAMPLE
-	PS:> Show-A9SrStatIscsiSession -Hourly -NSP 0:2:1
-.EXAMPLE
-	PS:> Show-A9SrStatIscsiSession -Daily
-.EXAMPLE
-	PS:> Show-A9SrStatIscsiSession -Groupby PORT_N
+	PS:> Get-A9SystemReporterStat 
 .NOTES
+	This command utilizes the SSH command 'srstatiscsisession', 'srstatiscsi', 'srstatrcvv'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter()]	[switch]	$Attime, 
-		[Parameter()]	[switch]	$Hires,
-		[Parameter()]	[switch]	$Hourly,
-		[Parameter()]	[switch]	$Daily,
+param(	### Common
+		[Parameter()]										[switch]	$Attime, 
+		[Parameter()]
+		[validateset('hires','hourly','daily')]				[string]	$Frequency,
 		[Parameter()][ValidateSet("min","avg","max","detail")]	
-						[String]	$Summary ,
-		[Parameter()]	[String]	$BTSecs ,
-		[Parameter()]	[String]	$ETSecs ,
-		[Parameter()][ValidateSet("PORT_N","PORT_S","PORT_P","ISCSI_NAME","TPGT")]	
-						[String]	$Groupby ,
-		[Parameter()][ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]	
-						[String]	$NSP,
-		[Parameter()]	[switch]	$ShowRaw
+															[String]	$Summary ,
+		[Parameter()]										[String]	$BTSecs ,
+		[Parameter()]										[String]	$ETSecs ,
+		[Parameter()][ValidateSet('top','bottom')]			[String]	$Compareby,
+		[Parameter(ParameterSetName='srstatiscsisession')][ValidateSet("PORT_N","PORT_S","PORT_P","ISCSI_NAME","TPGT")]	
+															[String]	$iSCSIGroupby ,
+		[Parameter(Mandatory, ParameterSetName='srstatiscsisession')]	
+															[switch]	$ShowiSCSIStats,
+		[Parameter(ParameterSetName='srstatiscsisession')]
+		[Parameter(ParameterSetName='srstatiscsi')]
+		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]	
+															[String]	$NSP,
+		[Parameter(mandatory, ParameterSetName='srstatiscsisession')]
+															[switch]	$ShowISCSISessionStats,
+		[Parameter(ParameterSetName='srstatiscsi')]	[ValidateSet("PORT_N","PORT_S","PORT_P","PROTOCOL")]
+															[String]	$iSCSISessionGroupby ,
+		[Parameter(ParameterSetName='srstatrcvv')]	
+		[ValidateSet('TARGET_NAME','LINK_ID','LINKL_ADDR','LINK_IPC','PORT_N','PORT_S','PORT_P')]	
+															[String]	$RCopyGroupby,
+		[Parameter(ParameterSetName='srstatrcvv')]			[String]	$Volume,
+		[Parameter(ParameterSetName='srstatrcvv')]			[String]	$Target,
+		[Parameter(ParameterSetName='srstatrcvv')]			[String]	$Mode,
+		[Parameter(ParameterSetName='srstatrcvv')]			[String]	$Group,
+		[Parameter(mandatory, ParameterSetName='srstatrcvv')][Switch]	$ShowRCopyStats,
+		[Parameter()]										[switch]	$ShowRaw	
 	)	
 Begin
 	{	Test-A9Connection -ClientType 'SshClient'
 	}
 Process
-	{	$cmd= "srstatiscsisession "	
-		if ($Attime)	{	$cmd+=" -attime "	}
-		if ($Summary)	{	$cmd+=" -summary $Summary "	}
-		if ($BTSecs)	{	$cmd+=" -btsecs $BTSecs "	}
-		if ($ETSecs)	{	$cmd+=" -etsecs $ETSecs "	}
-		if ($Hires)		{	$cmd+=" -hires "	}
-		if ($Hourly)	{	$cmd+=" -hourly "	}
-		if ($Daily)		{	$cmd+=" -daily "	}	
-		if ($Groupby)	{	$cmd+=" -groupby $Groupby"	}
-		if ($NSP)	{	$cmd+=" $NSP "	}
-		write-verbose "  Executing  Show-SrStatIscsiSession command that displays information iSNS table for iSCSI ports in the system  "
-		$Result = Invoke-A9CLICommand -cmds  $cmd
-	}
-End
-	{	if ($ShowRaw) { return $Results}
-		if($Attime)
-			{	if($Result -match "Time")
-					{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
-						$tempFile = [IO.Path]::GetTempFileName()
-						$LastItem = $Result.Count
-						$incre = "true" 		
-						foreach ($s in  $Result[2..$LastItem] )
-							{	$s= [regex]::Replace($s,"^ ","")						
-								$s= [regex]::Replace($s," +",",")			
-								$s= [regex]::Replace($s,"-","")			
-								$s= $s.Trim()			
-								if($incre -eq "true")
-									{	$sTemp1=$s				
-										$sTemp = $sTemp1.Split(',')					
-										$sTemp[3]="Total(PDUs/s)"				
-										$sTemp[6]="Total(KBytes/s)"
-										$newTemp= [regex]::Replace($sTemp,"^ ","")			
-										$newTemp= [regex]::Replace($sTemp," ",",")				
-										$newTemp= $newTemp.Trim()
-										$s=$newTemp							
+	{	$cmd = $PSCmdlet.ParameterSetName + ' '
+		switch( $PSCmdlet.ParameterSetName)
+		{	'iSCSISessions'
+				{	$cmd= "srstatiscsisession "	
+					if ($Attime)	{	$cmd+=" -attime "	
+										if ($BTSecs)	{	$cmd+=" -btsecs $BTSecs "	}
+										if ($ETSecs)	{	$cmd+=" -etsecs $ETSecs "	}
 									}
-								if($incre -eq "false")	{	$s=$s.Substring(1)	}			
-								Add-Content -Path $tempFile -Value $s	
-								$incre="false"
-							}			
-						Import-Csv $tempFile 
-						Remove-Item  $tempFile
-					}
-				else{	return $Result	}
-			}
-		elseif($Summary)
-			{	if($Result -match "Time")
-					{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
-						$tempFile = [IO.Path]::GetTempFileName()
-						$LastItem = $Result.Count
-						$incre = "true" 		
-						foreach ($s in  $Result[3..$LastItem] )
-							{	$s= [regex]::Replace($s,"^ ","")						
-								$s= [regex]::Replace($s," +",",")			
-								$s= [regex]::Replace($s,"-","")			
-								$s= $s.Trim()			
-								if($incre -eq "true")
-									{	$sTemp1=$s				
-										$sTemp = $sTemp1.Split(',')					
-										$sTemp[3]="Total(PDUs/s)"				
-										$sTemp[6]="Total(KBytes/s)"
-										$newTemp= [regex]::Replace($sTemp,"^ ","")			
-										$newTemp= [regex]::Replace($sTemp," ",",")				
-										$newTemp= $newTemp.Trim()
-										$s=$newTemp							
-									}
-								if($incre -eq "false")	{	$s=$s.Substring(1)	}			
-								Add-Content -Path $tempFile -Value $s	
-								$incre="false"
-							}			
-						Import-Csv $tempFile 
-						Remove-Item  $tempFile
-					}
-				else{	return $Result	}
-			}
-		elseif($Groupby)
-			{	if($Result -match "Time")
-					{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
-						$tempFile = [IO.Path]::GetTempFileName()
-						$LastItem = $Result.Count
-						$incre = "true" 		
-						foreach ($s in  $Result[1..$LastItem] )
-							{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','		
-								$s= $s.Trim() -replace 'Time','Date,Time,Zone'				
-								if($incre -eq "true")
-									{	$sTemp1=$s.Substring(1)					
-										$sTemp2=$sTemp1.Substring(0,$sTemp1.Length - 17)
-										$sTemp2 +="TimeOut"					
-										$sTemp = $sTemp2.Split(',')					
-										$sTemp[7]="Total(PDUs/s)"				
-										$sTemp[10]="Total(KBytes/s)"
-										$newTemp= [regex]::Replace($sTemp,"^ ","")			
-										$newTemp= [regex]::Replace($sTemp," ",",")				
-										$newTemp= $newTemp.Trim()
-										$s=$newTemp							
-									}							
-								Add-Content -Path $tempFile -Value $s	
-								$incre="false"
-							}			
-						Import-Csv $tempFile 
-						Remove-Item  $tempFile
-					}
-				else{	return $Result	}
-			}
-		else{	if($Result -match "Time")
-				{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
-					$tempFile = [IO.Path]::GetTempFileName()
-					$LastItem = $Result.Count
-					$incre = "true" 		
-					foreach ($s in  $Result[1..$LastItem] )
-						{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','		
-							$s= $s.Trim()					
-							if($incre -eq "true")
-								{	$s=$s.Substring(1)								
-									$sTemp1=$s				
-									$sTemp = $sTemp1.Split(',')							
-									$sTemp[4]="Total(PDUs/s)"				
-									$sTemp[7]="Total(KBytes/s)"
-									$newTemp= [regex]::Replace($sTemp,"^ ","")			
-									$newTemp= [regex]::Replace($sTemp," ",",")				
-									$newTemp= $newTemp.Trim()
-									$s=$newTemp							
+					else 			{	$cmd+=" -vstime "	}
+					if ($Summary)	{	$cmd+=" -summary $Summary "	}
+					if ($Frequency)	{	$cmd+=" -$Frequency "	}
+					else 			{	$cmd+=' -hires '	}
+					if ($iSCSISessionGroupby)	{	$cmd+=" -groupby $iSCSISessionGroupby"	}
+					if ($NSP)	{	$cmd+=" $NSP "	}
+					write-verbose "  Executing  Show-SrStatIscsiSession command that displays information iSNS table for iSCSI ports in the system  "
+					$Result = Invoke-A9CLICommand -cmds  $cmd
+					if ($ShowRaw) { return $Results}
+					if($Attime)
+						{	if($Result -match "Time")
+								{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
+									$tempFile = [IO.Path]::GetTempFileName()
+									$LastItem = $Result.Count
+									$incre = "true" 		
+									foreach ($s in  $Result[2..$LastItem] )
+										{	$s= [regex]::Replace($s,"^ ","")						
+											$s= [regex]::Replace($s," +",",")			
+											$s= [regex]::Replace($s,"-","")			
+											$s= $s.Trim()			
+											if($incre -eq "true")
+												{	$sTemp1=$s				
+													$sTemp = $sTemp1.Split(',')					
+													$sTemp[3]="Total(PDUs/s)"				
+													$sTemp[6]="Total(KBytes/s)"
+													$newTemp= [regex]::Replace($sTemp,"^ ","")			
+													$newTemp= [regex]::Replace($sTemp," ",",")				
+													$newTemp= $newTemp.Trim()
+													$s=$newTemp							
+												}
+											if($incre -eq "false")	{	$s=$s.Substring(1)	}			
+											Add-Content -Path $tempFile -Value $s	
+											$incre="false"
+										}			
+									Import-Csv $tempFile 
+									Remove-Item  $tempFile
 								}
-							if($incre -eq "false")
-								{	$sTemp1=$s
-									$sTemp = $sTemp1.Split(',')	
-									$sTemp2=$sTemp[0]+"-"+$sTemp[1]+"-"+$sTemp[2]
-									$sTemp[0]=$sTemp2				
-									$sTemp[1]=$sTemp[3]
-									$sTemp[2]=$sTemp[4]
-									$sTemp[3]=$sTemp[5]
-									$sTemp[4]=$sTemp[6]
-									$sTemp[5]=$sTemp[7]
-									$sTemp[6]=$sTemp[8]
-									$sTemp[7]=$sTemp[9]
-									$sTemp[8]=$sTemp[10]
-									$sTemp[9]=$sTemp[11]
-									$sTemp[10]=""
-									$sTemp[11]=""				
-									$newTemp= [regex]::Replace($sTemp," ",",")	
-									$newTemp= $newTemp.Trim()
-									$s=$newTemp				
+							else{	return $Result	}
+						}
+					elseif($Summary)
+						{	if($Result -match "Time")
+								{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
+									$tempFile = [IO.Path]::GetTempFileName()
+									$LastItem = $Result.Count
+									$incre = "true" 		
+									foreach ($s in  $Result[3..$LastItem] )
+										{	$s= [regex]::Replace($s,"^ ","")						
+											$s= [regex]::Replace($s," +",",")			
+											$s= [regex]::Replace($s,"-","")			
+											$s= $s.Trim()			
+											if($incre -eq "true")
+												{	$sTemp1=$s				
+													$sTemp = $sTemp1.Split(',')					
+													$sTemp[3]="Total(PDUs/s)"				
+													$sTemp[6]="Total(KBytes/s)"
+													$newTemp= [regex]::Replace($sTemp,"^ ","")			
+													$newTemp= [regex]::Replace($sTemp," ",",")				
+													$newTemp= $newTemp.Trim()
+													$s=$newTemp							
+												}
+											if($incre -eq "false")	{	$s=$s.Substring(1)	}			
+											Add-Content -Path $tempFile -Value $s	
+											$incre="false"
+										}			
+									Import-Csv $tempFile 
+									Remove-Item  $tempFile
 								}
-							Add-Content -Path $tempFile -Value $s	
-							$incre="false"
-						}			
-					Import-Csv $tempFile 
-					Remove-Item  $tempFile
+							else{	return $Result	}
+						}
+					elseif($iSCSISessionGroupby)
+						{	if($Result -match "Time")
+								{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
+									$tempFile = [IO.Path]::GetTempFileName()
+									$LastItem = $Result.Count
+									$incre = "true" 		
+									foreach ($s in  $Result[1..$LastItem] )
+										{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','		
+											$s= $s.Trim() -replace 'Time','Date,Time,Zone'				
+											if($incre -eq "true")
+												{	$sTemp1=$s.Substring(1)					
+													$sTemp2=$sTemp1.Substring(0,$sTemp1.Length - 17)
+													$sTemp2 +="TimeOut"					
+													$sTemp = $sTemp2.Split(',')					
+													$sTemp[7]="Total(PDUs/s)"				
+													$sTemp[10]="Total(KBytes/s)"
+													$newTemp= [regex]::Replace($sTemp,"^ ","")			
+													$newTemp= [regex]::Replace($sTemp," ",",")				
+													$newTemp= $newTemp.Trim()
+													$s=$newTemp							
+												}							
+											Add-Content -Path $tempFile -Value $s	
+											$incre="false"
+										}			
+									Import-Csv $tempFile 
+									Remove-Item  $tempFile
+								}
+							else{	return $Result	}
+						}
+					else{	if($Result -match "Time")
+							{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
+								$tempFile = [IO.Path]::GetTempFileName()
+								$LastItem = $Result.Count
+								$incre = "true" 		
+								foreach ($s in  $Result[1..$LastItem] )
+									{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','		
+										$s= $s.Trim()					
+										if($incre -eq "true")
+											{	$s=$s.Substring(1)								
+												$sTemp1=$s				
+												$sTemp = $sTemp1.Split(',')							
+												$sTemp[4]="Total(PDUs/s)"				
+												$sTemp[7]="Total(KBytes/s)"
+												$newTemp= [regex]::Replace($sTemp,"^ ","")			
+												$newTemp= [regex]::Replace($sTemp," ",",")				
+												$newTemp= $newTemp.Trim()
+												$s=$newTemp							
+											}
+										if($incre -eq "false")
+											{	$sTemp1=$s
+												$sTemp = $sTemp1.Split(',')	
+												$sTemp2=$sTemp[0]+"-"+$sTemp[1]+"-"+$sTemp[2]
+												$sTemp[0]=$sTemp2				
+												$sTemp[1]=$sTemp[3]
+												$sTemp[2]=$sTemp[4]
+												$sTemp[3]=$sTemp[5]
+												$sTemp[4]=$sTemp[6]
+												$sTemp[5]=$sTemp[7]
+												$sTemp[6]=$sTemp[8]
+												$sTemp[7]=$sTemp[9]
+												$sTemp[8]=$sTemp[10]
+												$sTemp[9]=$sTemp[11]
+												$sTemp[10]=""
+												$sTemp[11]=""				
+												$newTemp= [regex]::Replace($sTemp," ",",")	
+												$newTemp= $newTemp.Trim()
+												$s=$newTemp				
+											}
+										Add-Content -Path $tempFile -Value $s	
+										$incre="false"
+									}			
+								Import-Csv $tempFile 
+								Remove-Item  $tempFile
+							}
+							else{	return $Result}
+						}	
+					if($Result -match "Time"){	return  " Success : Executing Show-SrStatIscsiSession"	}
+					else	{	return  $Result	}
 				}
-				else{	return $Result}
-			}	
-		if($Result -match "Time"){	return  " Success : Executing Show-SrStatIscsiSession"	}
-		else	{	return  $Result	}
-	}
+			'iSCSI'
+				{	$cmd= "srstatiscsi "
+					if ($Attime)	{	$cmd+=" -attime "	
+										if ($BTSecs)	{	$cmd+=" -btsecs $BTSecs "}
+										if ($ETSecs)	{	$cmd+=" -etsecs $ETSecs "	}
+									}
+					else			{	$cmd+=" -vstime "	}
+					if ($Summary)	{	$cmd+=" -summary $Summary "	}
+					if ($Frequency)	{	$cmd+=" -$Frequency "	}
+					else 			{	$cmd+=' -hires '	}
+					if($iSCSIGroupby)	{	$cmd+=" -groupby $iSCSIGroupby"}
+					if ($NSP)		{	$cmd+=" $NSP "	}
+					write-verbose "  Executing  Show-SrStatIscsi command that displays information iSNS table for iSCSI ports in the system  "	
+					$Result = Invoke-A9CLICommand -cmds  $cmd
+					$Flag="True"
+					if ( $ShowRaw ) { return $Result}
+					if($Attime -or $Summary)
+						{	$Flag="Fals"
+							if($Result -match "Time")
+								{	if($Result.Count -lt 5){	return "No data found please try with different values."	}
+									$count=2
+									if($Summary)	{	$count=3	}
+									$tempFile = [IO.Path]::GetTempFileName()
+									$LastItem = $Result.Count
+									$incre = "true" 		
+									foreach ($s in  $Result[$count..$LastItem] )
+										{	$s= [regex]::Replace($s,"^ ","")						
+											$s= [regex]::Replace($s," +",",")			
+											$s= [regex]::Replace($s,"-","")			
+											$s= $s.Trim()			
+											if($incre -eq "true")
+												{	$sTemp1=$s				
+													$sTemp = $sTemp1.Split(',')							
+													$sTemp[1]="Pkts/s(Receive)"				
+													$sTemp[2]="KBytes/s(Receive)"
+													$sTemp[3]="Pkts/s(Transmit)"				
+													$sTemp[4]="Kytes/s(Transmit)"
+													$sTemp[5]="Pkts/s(Total)"				
+													$sTemp[6]="Kytes/s(Total)"
+													$newTemp= [regex]::Replace($sTemp,"^ ","")			
+													$newTemp= [regex]::Replace($sTemp," ",",")				
+													$newTemp= $newTemp.Trim()
+													$s=$newTemp							
+												}
+											if($incre -eq "false")	{	$s=$s.Substring(1)	}			
+											Add-Content -Path $tempFile -Value $s	
+											$incre="false"
+										}			
+									$returndata = Import-Csv $tempFile 
+									Remove-Item  $tempFile
+									return $returndata
+								}
+							else{	return $Result	}
+						}	
+					else{	if($Flag -eq "True")
+								{	if($Result -match "Time")
+										{	if($Result.Count -lt 4)	{	return "No data found please try with different values."	}
+											$tempFile = [IO.Path]::GetTempFileName()
+											$LastItem = $Result.Count
+											$incre = "true" 		
+											foreach ($s in  $Result[1..$LastItem] )
+												{	$s= [regex]::Replace($s,"^ ","")						
+													$s= [regex]::Replace($s," +",",")			
+													$s= [regex]::Replace($s,"-","")			
+													$s= $s.Trim() -replace 'Time','Date,Time,Zone' 						
+													if($incre -eq "true")
+														{	$s=$s.Substring(1)
+															$sTemp1=$s				
+															$sTemp = $sTemp1.Split(',')							
+															$sTemp[4]="Pkts/s(Receive)"				
+															$sTemp[5]="KBytes/s(Receive)"
+															$sTemp[6]="Pkts/s(Transmit)"				
+															$sTemp[7]="Kytes/s(Transmit)"
+															$sTemp[8]="Pkts/s(Total)"				
+															$sTemp[9]="Kytes/s(Total)"
+															$newTemp= [regex]::Replace($sTemp,"^ ","")			
+															$newTemp= [regex]::Replace($sTemp," ",",")				
+															$newTemp= $newTemp.Trim()
+															$s=$newTemp
+														}				
+													Add-Content -Path $tempFile -Value $s	
+													$incre="false"
+												}			
+											$returndata = Import-Csv $tempFile 
+											Remove-Item  $tempFile
+											return $returndata
+										}
+									else{	return $Result	}
+								}
+						}	
+					if($Result -match "Time")	{	return  " Success : Executing Show-SrStatIscsi"	}
+					else{	return  $Result	}
+
+				}
+			'RCOPY'
+				{	$Cmd = " srstatrcvv "
+					if ($Attime) 		{	$Cmd += " -attime "			
+											if ($Btsecs) 	{	$Cmd += " -btsecs $Btsecs "	}
+											if ($Etsecs) 	{	$Cmd += " -etsecs $Etsecs "	}
+										}
+					else 				{	$Cmd += " -vstime "				}
+					if ( $Frequency)	{	$cmd+=" -$Frequency "			}
+					else 				{	$cmd+=' -hires '				}
+					if ( $Summary ) 	{	$Cmd += " -summary $Summary "	}
+					if ( $RCOPYGroupby ){	$Cmd += " -groupby $RCOPYGroupby "	}
+					if ( $Compareby ) 	{	$Cmd += " -compareby $Compareby "}
+					if ( $Volume ) 		{	$Cmd += " -vv $Volume "			}
+					if ( $Target ) 		{	$Cmd += " -target $Target "		}
+					if ( $Mode ) 		{	$Cmd += " -mode $Mode "			}
+					if ( $Group ) 		{	$Cmd += " -group $Group "		}
+					$Result = Invoke-A9CLICommand -cmds  $Cmd
+					Return $Result
+				}
+		}
+
+}
 }
 

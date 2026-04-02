@@ -991,12 +991,15 @@ Function Remove-A9TargetFromRCopyGroup
 	Remove a target from a Remote Copy group
 .DESCRIPTION	
     Remove a target from a Remote Copy group
-.EXAMPLE	
-	PS:> Remove-A9TargetFromRCopyGroup
 .PARAMETER GroupName
 	Remote Copy group Name.
 .PARAMETER TargetName
 	Target Name to be removed.  
+.EXAMPLE	
+	PS:> Remove-A9TargetFromRCopyGroup
+.NOTES
+	This command utilizes the API command '/remotecopygroups/groupname/targets/'
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory)]	[String]	$GroupName,

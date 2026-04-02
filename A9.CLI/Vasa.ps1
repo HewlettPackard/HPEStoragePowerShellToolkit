@@ -1,23 +1,21 @@
 ﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
-Function Show-A9VVolStorageContainerVM_CLI
+Function Get-A9VASAStorageContainer
 {
 <#
 .SYNOPSIS
     The Show-vVolvm command displays information about all virtual machines (VVol-based) or a specific virtual machine in a system.  This command
     can be used to determine the association between virtual machines and their associated virtual volumes. showvvolvm will also show the
     accumulation of space usage information for a virtual machine.
+	The command also displays VVol storage containers when using the ShowVASAStorageContainerVM option, used to contain VMware Volumes for Virtual Machines (VVols).
 .DESCRIPTION
     The Show-vVolvm command displays information about all virtual machines (VVol-based) or a specific virtual machine in a system.  This command
     can be used to determine the association between virtual machines and their associated virtual volumes. showvvolvm will also show the
     accumulation of space usage information for a virtual machine.
+.PARAMETER ShowVASAStorageContainerVM
+	The command also displays VVol storage containers when using the ShowVASAStorageContainerVM option, used to contain VMware Volumes for Virtual Machines (VVols).
 .PARAMETER container_name
     The name of the virtual volume storage container. May be "sys:all" to display all VMs.
-.PARAMETER Listcols
-	List the columns available to be shown in the -showcols option below (see "clihelp -col showvvolvm" for help on each column).
-
-	By default with mandatory option -sc, (if none of the information selection options below are specified) the following columns are shown:
-	VM_Name GuestOS VM_State Num_vv Physical Logical
 .PARAMETER Detailed
 	Displays detailed information about the VMs. The following columns are shown: VM_Name UUID Num_vv Num_snap Physical Logical GuestOS VM_State UsrCPG SnpCPG Container CreationTime
 .PARAMETER StorageProfiles
@@ -51,102 +49,65 @@ Function Show-A9VVolStorageContainerVM_CLI
 .PARAMETER VM_name 
 	Specifies the VMs with the specified name (up to 80 characters in length). This specifier can be repeated to display information about multiple VMs.
 	This specifier is not required. If not specified, showvvolvm displays information for all VMs in the specified storage container.
-.EXAMPLE
-	PS:> Show-A9VVolStorageContainerVM_CLI -container_name XYZ -option listcols 
-.EXAMPLE
-	PS:> Show-A9VVolStorageContainerVM_CLI -container_name XYZ -Detailed 
-.EXAMPLE
-	PS:> Show-A9VVolStorageContainerVM_CLI -container_name XYZ -StorageProfiles
-.EXAMPLE
-	PS:> Show-A9VVolStorageContainerVM_CLI -container_name XYZ -Summary 
-.EXAMPLE
-	PS:> Show-A9VVolStorageContainerVM_CLI -container_name XYZ -Binding
-.EXAMPLE
-	PS:> Show-A9VVolStorageContainerVM_CLI -container_name XYZ -VVAssociatedWithVM	
-.NOTES
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory)]	[String]	$container_name,
-		[Parameter()]	[switch]	$ListCols,
-		[Parameter()]	[String]	$ShowCols,
-		[Parameter()]	[switch]	$Detailed,
-		[Parameter()]	[switch]	$StorageProfiles,
-		[Parameter()]	[switch]	$Summary,
-		[Parameter()]	[switch]	$Binding,
-		[Parameter()]	[switch]	$VVAssociatedWithVM,
-		[Parameter()]	[switch]	$RemoteCopy,
-		[Parameter()]	[switch]	$AutoDismissed,
-		[Parameter()]	[String]	$VM_name
-	)	
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process	
-{	$cmd = "showvvolvm "
-	if($ListCols)
-		{	$cmd +=" -listcols "
-			$Result = Invoke-A9CLICommand -cmds  $cmd
-			write-verbose " The Show-vVolvm command creates and admits physical disk definitions to enable the use of those disks  "  
-			return 	$Result	
-		}
-	if ($ShowCols)			{	$cmd +=" -showcols $ShowCols "	}
-	if ($Detailed)			{	$cmd +=" -d "		}
-	if ($StorageProfiles)	{	$cmd +=" -sp "	}
-	if ($Summary)			{	$cmd +=" -summary "	}
-	if ($Binding)			{	$cmd +=" -binding "	}
-	if ($VVAssociatedWithVM){	$cmd +=" -vv "	}
-	if ($RemoteCopy)		{	$cmd +=" -rcopy "	}
-	if ($AutoDismissed)		{	$cmd +=" -autodismissed "	}	
-	$cmd+="  -sc $container_name "		
-	if ($VM_name)			{	$cmd+=" $VM_name "	}	
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	return 	$Result	
-}
-}
-
-Function Get-A9VolStorageContainer_CLI
-{
-<#
-.SYNOPSIS
-    The command displays VVol storage containers, used to contain
-    VMware Volumes for Virtual Machines (VVols).
-.DESCRIPTION
-    The command displays VVol storage containers, used to contain
-    VMware Volumes for Virtual Machines (VVols).
-.PARAMETER Listcols
-	List the columns available to be shown in the -showcols option described below.
-.PARAMETER Detailed
-	Displays detailed information about the storage containers, including any
-	VVols that have been auto-dismissed by remote copy DR operations.
 .PARAMETER SC_name  
 	Storage Container
 .EXAMPLE
-	PS:> Get-A9vVolSc_CLI 
+	PS:> Get-A9VASAStorageContainer -container_name XYZ 
 .EXAMPLE
-	PS:> Get-A9vVolSc_CLI -Detailed -SC_name test
+	PS:> Get-A9VASAStorageContainer -container_name XYZ -Detailed 
+.EXAMPLE
+	PS:> Get-A9VASAStorageContainer -container_name XYZ -StorageProfiles
+.EXAMPLE
+	PS:> Get-A9VASAStorageContainer -container_name XYZ -Summary 
+.EXAMPLE
+	PS:> Get-A9VASAStorageContainer -container_name XYZ -Binding
+.EXAMPLE
+	PS:> Get-A9VASAStorageContainer -container_name XYZ -VVAssociatedWithVM	
+.EXAMPLE
+	PS:> Get-A9VASAStorageContainer
+.EXAMPLE
+	PS:> Get-A9VASAStorageContainer -Detailed -SC_name test
+.EXAMPLE
+	PS:> Get-A9VASAStorageContainer -Detailed -ShowVASAStorageContainerVM
 .NOTES
+	This command utilizes the SSH command 'showvvolsc', 'showvvolvm'
 	This command requires a SSH type connection.
 #>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$Detailed,	
-		[Parameter()]	[switch]	$Listcols,
-		[Parameter()]	[String]	$SC_name
+[CmdletBinding(DefaultParameterSetName='showvvolsc')]
+param(	[Parameter()]											[switch]	$Detailed,	
+		[Parameter(ParameterSetName='showvvolsc')]				[String]	$SC_name,
+		[Parameter(Mandatory,ParameterSetName='showvvolvm')]	[String]	$container_name,
+		[Parameter(ParameterSetName='showvvolvm')]				[switch]	$StorageProfiles,
+		[Parameter(ParameterSetName='showvvolvm')]				[switch]	$Summary,
+		[Parameter(ParameterSetName='showvvolvm')]				[switch]	$Binding,
+		[Parameter(ParameterSetName='showvvolvm')]				[switch]	$VVAssociatedWithVM,
+		[Parameter(ParameterSetName='showvvolvm')]				[switch]	$RemoteCopy,
+		[Parameter(ParameterSetName='showvvolvm')]				[switch]	$AutoDismissed,
+		[Parameter(ParameterSetName='showvvolvm')]				[String]	$VM_name,
+		[Parameter(ParameterSetName='showvvolvm')]				[switch]	$ShowVASAStorageContainerVM
 	)	
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process	
-{	$cmd= "showvvolsc "	
-	if ($Listcols)		{	$cmd+=" -listcols "	}
-	if ($Detailed)		{	$cmd+=" -d "		}
-	if ($SC_name)		{	$cmd+=" $SC_name "	}	
+{	$cmd = $PSCmdlet.ParameterSetName + ' '
+	if ( $Detailed )			{	$cmd+=" -d "			}
+	if ( $SC_name )				{	$cmd+=" $SC_name "		}	
+	if ( $Detailed )			{	$cmd +=" -d "			}
+	if ( $StorageProfiles )		{	$cmd +=" -sp "			}
+	if ( $Summary )				{	$cmd +=" -summary "		}
+	if ( $Binding )				{	$cmd +=" -binding "		}
+	if ( $VVAssociatedWithVM )	{	$cmd +=" -vv "			}
+	if ( $RemoteCopy )			{	$cmd +=" -rcopy "		}
+	if ( $AutoDismissed )		{	$cmd +=" -autodismissed "}	
+	if ( $ContainerName )		{	$cmd+="  -sc $container_name "}		
+	if ( $VM_name )				{	$cmd+=" $VM_name "		}			
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	return 	$Result	
 }
 }
 
-Function Set-A9VVolStorageContainer
+Function Set-A9VASAStorageContainer
 {
 <#
 .SYNOPSIS
@@ -173,28 +134,28 @@ Function Set-A9VVolStorageContainer
 .PARAMETER vvset
 	The Virtual Volume set (VV set) name, which is used, or to be used, as a VVol storage container.
 .EXAMPLE
-	PS:> Set-A9VVolStorageContainer -vvset XYZ (Note: set: already include in code please dont add with vvset)
+	PS:> Set-A9VASAStorageContainer -vvset XYZ (Note: set: already include in code please dont add with vvset)
 .EXAMPLE
-	PS:> Set-A9VVolStorageContainer -Create -vvset XYZ
+	PS:> Set-A9VASAStorageContainer -Create -vvset XYZ
 .NOTES
+	This command utilizes the SSH command 'setvvolsc'
 	This command requires a SSH type connection.
 #>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$vvset,
-		[Parameter()]	[switch]	$Create,
-		[Parameter()]	[switch]	$Remove,
-		[Parameter()]	[switch]	$Keep
+[CmdletBinding(DefaultParameterSetName='setvvolsc')]
+param(	[Parameter(Mandatory,ParameterSetName='setvvolsc')]	[String]	$VolumeSet,
+		[Parameter(ParameterSetName='setvvolsc')]			[switch]	$Create,
+		[Parameter(ParameterSetName='setvvolsc')]			[switch]	$Remove,
+		[Parameter(ParameterSetName='setvvolsc')]			[switch]	$Keep
 	)	
 Begin
 {	Test-A9Connection -ClientType "SshClient"
 }
 process
-{	$cmd= " setvvolsc -f"			
-	if ($Create){	$cmd += " -create "	}
-	if ($Remove){	$cmd += " -remove "	}
-	if($Keep)	{	$cmd += " -keep "	}
-	if ($vvset)	{	$cmd +="  set:$vvset "	}	
-	else		{	return " FAILURE :  vvset is mandatory to execute Set-VVolSC command"	}
+{	$cmd = $PSCmdlet.ParameterSetName + ' -f'			
+	if ( $Create )		{	$cmd += " -create "	}
+	if ( $Remove ) 		{	$cmd += " -remove "	}
+	if ( $Keep )		{	$cmd += " -keep "	}
+	if ( $VolumeSet )	{	$cmd +="  set:$VolumeSet "	}	
 	$Result = Invoke-A9CLICommand -cmds  $cmd
 	return 	$Result	
 }

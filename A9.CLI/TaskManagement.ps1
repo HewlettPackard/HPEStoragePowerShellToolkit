@@ -7,7 +7,12 @@ Function Remove-A9Task
     Remove one or more tasks or task details.                                                                                                           .
 .DESCRIPTION
     The Remove-Task command removes information about one or more completed tasks
-    and their details.
+    and their details.  With this command, the specified task ID and any information associated with it are removed from the system. However, task IDs are not recycled, so the
+    next task started on the system uses the next whole integer that has not already been used. Task IDs roll over at 29999. The system stores
+    information for the most recent 2000 tasks.
+
+    - With this command, the specified task ID and any information associated with it are removed from the system. However, task IDs are not recycled, so the next task 
+    started on the system uses the next whole integer that has not already been used. Task IDs roll over at 29999. The system stores information for the most recent 2,000 tasks.
 .PARAMETER All
     Remove all tasks including details.
 .PARAMETER Details
@@ -25,12 +30,9 @@ Function Remove-A9Task
 
     PS:> Remove-A9Task -A
 .NOTES
-  With this command, the specified task ID and any information associated with it are removed from the system. However, task IDs are not recycled, so the
-  next task started on the system uses the next whole integer that has not already been used. Task IDs roll over at 29999. The system stores
-  information for the most recent 2000 tasks.
-
-  - With this command, the specified task ID and any information associated with it are removed from the system. However, task IDs are not recycled, so the next task started on the system uses the next whole integer that has not already been used. Task IDs roll over at 29999. The system stores information for the most recent 2,000 tasks.
+	This command utilizes the SSH command 'removetask'
 	This command requires a SSH type connection.
+
 #>
 [CmdletBinding()]
 param(  [Parameter(parametersetname='One')]   [String]   $TaskID,
@@ -76,6 +78,7 @@ Function Set-A9Task
   Task 13492 done
 
 .NOTES
+	This command utilizes the SSH command 'settask', 'waittask'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -83,7 +86,7 @@ param(  [Parameter(mandatory,parametersetname='wait')]
         [Parameter(mandatory,parametersetname='set')]   [String]  $TaskID,
         [Parameter(mandatory,parametersetname='set')]   
         [ValidateSet('high','med','low','auto')]        [String]  $Priority,
-        [Parameter(mandatory,parametersetname='wait')]  [Swutcg]  $WaitForTaskCompletion   
+        [Parameter(mandatory,parametersetname='wait')]  [Switch]  $WaitForTaskCompletion   
     )	
 Begin
   { Test-A9Connection -ClientType 'SshClient'

@@ -26,6 +26,7 @@ Function Get-A9UserConnection
 
 	Specifies the more detailed information about the user connection
 .NOTES
+	This command utilizes the SSH command 'showuserconn'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -76,6 +77,7 @@ Function Remove-A9UserConnection
     PS:> Remove-A9UserConnection -userID 8347247 -useranme MyAdmin -IPAddress 192.168.100.44
 
 .NOTES
+	This command utilizes the SSH command 'removewsapisession', 'removeuserconn'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]

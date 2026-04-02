@@ -20,7 +20,6 @@ Function Test-A9Connection
     Test-Connection -ClientType SshClient 
 .EXAMPLE
     Test-Connection -ClientType API
-.Notes
 #>
 [CmdletBinding()]
 Param(	[ValidateSet('SshClient','API')]	[String]	$ClientType,

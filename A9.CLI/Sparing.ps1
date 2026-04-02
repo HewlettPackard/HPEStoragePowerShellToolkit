@@ -25,8 +25,8 @@ Function Get-A9Spare
 	
 	Displays information about chunklets in the system that are reserved for spares
 .NOTES
+	This command utilizes the SSH command 'showspare' 
 	This command requires a SSH type connection.
-	Usage: The showpdch command is a more general and versatile command that can be used instead of showspare
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[Switch]	$used,
@@ -94,12 +94,8 @@ Function New-A9Spare
 	This example specifies the position in a drive cage, drive magazine, physical disk,and chunklet number. –pos 1:0.2:3:121, 
 	where 1 is the drive cage, 0.2 is the drive magazine, 3 is the physical disk, and 121 is the chunklet number.
 .NOTES
+	This command utilizes the SSH command 'createspare' 
 	This command requires a SSH type connection.
-	Authority: Super, Service
-		Any role granted the spare_create right
-	Usage:
-	- Access to all domains is required to run this command.
-	= To verify the creation of a spare chunklet, issue the showspare command.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='Pdid',mandatory)]		[String]	$Pdid_chunkNumber,
@@ -135,7 +131,9 @@ Function Move-A9Chunklet
 .SYNOPSIS
 	Moves a list of chunklets (or a complete physical disk) from one physical disk to another or to the spare pool.
 .DESCRIPTION
-	Moves a list of chunklets (or a complete physical disk) from one physical disk to another or to the spare pool..
+	Moves a list of chunklets (or a complete physical disk) from one physical disk to another or to the spare pool.
+	- Chunklets moved through the movech command are only moved temporarily.
+	- Issuing either the moverelocpd or servicemag resume command (see the servicemag command) can move the chunklet back to its original position.
 .PARAMETER SourcePD_Id
     Specifies that the chunklet located at the specified PD. This is a required parameter.
 	If this is presented with a souce chunklet posistion it will moves data from specified Physical Disks (PDs) to a temporary location selected by the system
@@ -175,9 +173,9 @@ Function Move-A9Chunklet
 
 	Since no TargetPD is specified, the device will move this chunklet to the spare pool
 .NOTES
+	This command utilizes the SSH command 'movech' ,'movechtospare', 'movepd', 'movepdtospare'
 	This command requires a SSH type connection.
-	- Chunklets moved through the movech command are only moved temporarily.
-	- Issuing either the moverelocpd or servicemag resume command (see the servicemag command) can move the chunklet back to its original position.
+
 #>
 [CmdletBinding(DefaultParameterSetName='ClearPD')]
 param(
@@ -298,6 +296,7 @@ Function Restore-A9RelocatedChunklets
 
 	moves chunklets that were on physical disk 8 that were relocated to another position, back to physical disk 8
 .NOTES
+	This command utilizes the SSH command 'moverelocpd'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]

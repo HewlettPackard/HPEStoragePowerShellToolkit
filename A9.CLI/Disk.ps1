@@ -151,7 +151,7 @@ Function Set-A9PhysicalDisk
 
 	displays PD 25 marked as allocatable for LDs.
 .NOTES
-	This command utilizes the SSH command 'AdmitPD, SetPD or ControlPD, or CheckPD'	
+	This command utilizes the SSH command 'AdmitPD', 'SetPD', 'ControlPD', 'CheckPD', 'TunePD'	
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -228,9 +228,9 @@ Process
 	{	switch($PSCmdlet.ParameterSetName)
 			{	'Allocate'	{	$cmd = "setpd ldalloc $Ldalloc $PD_ID " 
 							}
-				'Spinup'	{	$Cmd = " controlpd spinup $wwn"
+				'Spinup'	{	$Cmd = "controlpd spinup $wwn"
 							}
-				'Spindown'	{	$Cmd = " controlpd spindown"
+				'Spindown'	{	$Cmd = "controlpd spindown"
 								if( $Force )		{	$Cmd += " -ovrd " }
 								$Cmd += " $WWN "
 							}
@@ -325,6 +325,7 @@ Function Set-A9LogicalDisk
 .PARAMETER Override
 	Specifies that the Logical is forced to start, even if some underlying data is missing.
 .NOTES
+	This command utilizes the SSH command 'CheckLd', 'StartLD', 'CompactPD'	
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -389,22 +390,37 @@ Function Get-A9LogicalDisk
 	Show information about logical disks (LDs) in the system.
 .DESCRIPTION
 	The Get-LD command displays configuration information about the system's LDs.
+.PARAMETER LogicalDiskName
+	Requests that information for a specified LD is displayed. This specifier can be repeated to display configuration information about multiple LDs. 
+	If not specified, configuration information for all LDs in the system is displayed.
 .PARAMETER Cpg
 	Requests that only LDs in common provisioning groups (CPGs) that match the specified CPG names or patterns be displayed. Multiple CPG names or
 	patterns can be repeated using a comma-separated list .
-.PARAMETER Vv	
+.PARAMETER Volume	
 	Requests that only LDs mapped to virtual volumes that match and of the specified names or patterns be displayed. Multiple volume names or
 	patterns can be repeated using a comma-separated list .
 .PARAMETER Degraded
 	Only shows LDs with degraded availability.
 .PARAMETER Detailed
 	Requests that more detailed layout information is displayed.
-.PARAMETER CheckLD
+.PARAMETER CheckLogicalDisk
 	Requests that checkld information is displayed.
 .PARAMETER Policy
 	Requests that policy information about the LD is displayed.
 .PARAMETER State
-	Requests that the detailed state information is displayed.	This is the same as s.
+	Requests that the detailed state information is displayed.
+.PARAMETER LogicalDiskFormat
+	Shows the logical disk's row and set layout on the physical disk, where the line format <form> is one of:
+		row—One line per logical disk row.
+		set—One line per logical disk set.
+.PARAMETER LogicalDiskInfo
+	Specifies the information shown for each logical disk chunklet, where <info> can be one of:
+		pdpos—Shows the physical disk position (default).
+		pdid—Shows the physical disk ID.
+		pdch—Shows the physical disk chunklet.
+	If multiple <info> fields are specified, each corresponding field will be shown separately by a dash (-).
+.PARAMETER LogicalDiskChunklet
+	Will force the command to return chunklet usage information instead of basic Logical Disk informatoin
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object.  
 .EXAMPLE
@@ -453,37 +469,56 @@ Function Get-A9LogicalDisk
 	6    tp-0-sa-0.0        SSD_r6     1    0/1   16384    49152      4     256        3      0      cage   cage     2024-07-10       SSD
 	8    tp-0-sa-0.1        SSD_r6     1    1/0   5120     15360      5     256        3      0      cage   cage     2024-07-10       SSD
 .NOTES
+	This command utilizes the SSH command 'ShowLD', 'ShowLDChk'	
 	This command requires a SSH type connection.
 #>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$Cpg,
-		[Parameter()]	[String]	$Vv,
-		[Parameter()]	[switch]	$Degraded,
-		[Parameter()]	[switch]	$Detailed,
-		[Parameter()]	[switch]	$CheckLD,
-		[Parameter()]	[switch]	$Policy,
-		[Parameter()]	[switch]	$State,
-		[Parameter()]	[String]	$LD_Name,
-		[Parameter()]	[switch]	$ShowRaw
+[CmdletBinding(DefaultParameterSetName='showld')]
+param(	[Parameter(ParameterSetName='showld')]	[String]	$Cpg,
+		[Parameter(ParameterSetName='showld')]	[String]	$Volume,
+		[Parameter()]							[switch]	$Degraded,
+		[Parameter(ParameterSetName='showld')]	[switch]	$Detailed,
+		[Parameter(ParameterSetName='showld')]	[switch]	$CheckLogicalDisk,
+		[Parameter(ParameterSetName='showld')]	[switch]	$Policy,
+		[Parameter(ParameterSetName='showld')]	[switch]	$State,
+		[Parameter()]						[String]	$LogicalDiskName,
+		[Parameter()]						[switch]	$ShowRaw,
+		[Parameter(ParameterSetName='showldch')][ValidateSet('row','set')]				
+											[String]	$LogicalDiskFormat,
+		[Parameter(ParameterSetName='showldch')][ValidateSet('pdpos','pdid','pdch')]	
+											[String]	$LogicalDiskInfo,
+		[Parameter(Mandatory, ParameterSetName='showldch')]
+											[Switch]	$LogicalDiskChunklet		
 )
 Begin
 	{	Test-A9Connection -ClientType 'SshClient'
 	}
 process
-	{	$Cmd = " showld "
-		if($Cpg)	{	$Cmd += " -cpg $Cpg "}
-		if($Vv)		{	$Cmd += " -vv $Vv "}
-		if($Domain)	{	$Cmd += " -domain $Domain "}
-		if($Degraded){	$Cmd += " -degraded " }
-		if($Detailed){	$Cmd += " -d " }
-		if($CheckLD){	$Cmd += " -ck " }
-		if($Policy)	{	$Cmd += " -p "	}
-		if($LD_Name){ 	$Cmd += " $LD_Name " }
-		$Result = Invoke-A9CLICommand -cmds  $Cmd
-	}
-end
-	{	if($ShowRaw -or $Policy) {	Return $Result }
-		if($Result.count -gt 1)
+{	$Cmd = $PSCmdlet.ParameterSetName + ' ' 
+	switch ($PSCmdlet.ParameterSetName)
+		{	'showld'
+				{	if ( $Cpg )					{	$Cmd += " -cpg $Cpg "		}
+					if ( $Volume )					{	$Cmd += " -vv $Volume "	}
+					if ( $Domain )				{	$Cmd += " -domain $Domain "	}
+					if ( $Degraded )			{	$Cmd += " -degraded " 		}
+					if ( $Detailed )			{	$Cmd += " -d " 				}
+					if ( $CheckLogicalDisk )	{	$Cmd += " -ck " 			}
+					if ( $Policy )				{	$Cmd += " -p "				}
+					if ( $LogicalDiskName )		{ 	$Cmd += " $LogicalDiskName "}
+					
+					
+				}
+			'showldch'
+				{	if($Degraded)			{	$Cmd += " -degraded " 					}
+					if($LogicalDiskFormat)	{	$Cmd += " -lformat $LogicalDiskFormat " }
+					if($LogicalDiskInfo)	{	$Cmd += " -linfo $LogicalDiskInfo " 	}
+					if($LogicalDiskName)	{	$Cmd += " $LogicalDiskName " 			}
+					write-host "Command to be sent via CLI;`n`t $Cmd"
+					$Result = Invoke-A9CLICommand -cmds  $Cmd
+				} 
+		}
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
+if ( ($Result.count -gt 1) -and -not ($ShowRaw -or $Policy) )
+	{	if ( $PSCmdlet.ParameterSetName -eq 'showld')
 			{	if ( $Cpg )	
 					{	#	Need to split the dataset into two collections
 						$EndOfFirstDataSet = ($Result | Select-String 'total').linenumber[0]
@@ -493,9 +528,9 @@ end
 						$ResultHeader = (($Result1[1].split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
 						Add-Content -Path $tempfile -Value $ResultHeader				
 						foreach ($S in  $Result1[2..($Result1.Count - 4)] )
-								{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
-									Add-Content -Path $tempfile -Value $s				
-								}
+							{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
+								Add-Content -Path $tempfile -Value $s				
+							}
 						$Result1 = Import-Csv -Delimiter 'Z'  $tempFile 
 						Remove-Item $tempFile
 						$tempFile = [IO.Path]::GetTempFileName()
@@ -509,27 +544,27 @@ end
 						$ResultFinal = $( @{LDForSA = $Result1}, @{LDforSD = $Result2} )
 						# Now to rejoin the datasets.
 						$NewObj = @(    foreach( $Item in ($ResultFinal).LDforSA)	
-																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
-																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-																	$DataSetType = "HPE.A9Storage.LogicalDisk"
-																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
-																	$DataSetType = $DataSetType + ".TypeName"
-																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-																	[PSCustomObject]$NewItem
-																}
+											{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
+												$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+												$DataSetType = "HPE.A9Storage.LogicalDisk"
+												$NewItem.PSTypeNames.Insert(0,$DataSetType)
+												$DataSetType = $DataSetType + ".TypeName"
+												$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+												[PSCustomObject]$NewItem
+											}
 										foreach( $Item in ($ResultFinal).LDforSD)	
-																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
-																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-																	$DataSetType = "HPE.A9Storage.LogicalDisk"
-																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
-																	$DataSetType = $DataSetType + ".TypeName"
-																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-																	[PSCustomObject]$NewItem
-																}
-								)
+												{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
+													$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+													$DataSetType = "HPE.A9Storage.LogicalDisk"
+													$NewItem.PSTypeNames.Insert(0,$DataSetType)
+													$DataSetType = $DataSetType + ".TypeName"
+													$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+													[PSCustomObject]$NewItem
+													}
+									)
 						return $NewObj
 					}
-				if($Detailed)
+				if($Detailed )
 					{	$tempFile = [IO.Path]::GetTempFileName()
 						$ResultHeader = 'IdZNameZCPGZRAIDZOwnZSizeMBZRSizeMBZRowSzZStepKBZSetSzZRefcntZAvailZCAvailZCreationDateZCreationTimeZCreationzoneZDev_Type'
 						Add-Content -Path $tempfile -Value $ResultHeader				
@@ -540,15 +575,15 @@ end
 						$Result = Import-Csv -Delimiter 'Z'  $tempFile 
 						Remove-Item $tempFile
 						$NewObj = @(    foreach( $Item in $Result)	
-																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDiskDetailed"}
-																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-																	$DataSetType = "HPE.A9Storage.LogicalDiskDetailed"
-																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
-																	$DataSetType = $DataSetType + ".TypeName"
-																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-																	[PSCustomObject]$NewItem
-																}
-								)
+											{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDiskDetailed"}
+												$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+												$DataSetType = "HPE.A9Storage.LogicalDiskDetailed"
+												$NewItem.PSTypeNames.Insert(0,$DataSetType)
+												$DataSetType = $DataSetType + ".TypeName"
+												$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+												[PSCustomObject]$NewItem
+											}
+									)
 						return $NewObj
 					}	
 				if($CheckLD)
@@ -562,15 +597,15 @@ end
 						$Result = Import-Csv  $tempFile 
 						Remove-Item $tempFile
 						$NewObj = @(    foreach( $Item in $Result)	
-																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDiskCheckLD"}
-																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-																	$DataSetType = "HPE.A9Storage.LogicalDiskCheckLD"
-																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
-																	$DataSetType = $DataSetType + ".TypeName"
-																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-																	[PSCustomObject]$NewItem
-																}
-								)
+											{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDiskCheckLD"}
+												$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+												$DataSetType = "HPE.A9Storage.LogicalDiskCheckLD"
+												$NewItem.PSTypeNames.Insert(0,$DataSetType)
+												$DataSetType = $DataSetType + ".TypeName"
+												$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+												[PSCustomObject]$NewItem
+											}
+									)
 						return $NewObj
 					}	
 				else
@@ -584,21 +619,36 @@ end
 						$Result = Import-Csv -Delimiter 'Z'  $tempFile 
 						Remove-Item $tempFile
 						$NewObj = @(    foreach( $Item in $Result)	
-																{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
-																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-																	$DataSetType = "HPE.A9Storage.LogicalDisk"
-																	$NewItem.PSTypeNames.Insert(0,$DataSetType)
-																	$DataSetType = $DataSetType + ".TypeName"
-																	$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-																	[PSCustomObject]$NewItem
-																}
-								)
+											{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
+												$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+												$DataSetType = "HPE.A9Storage.LogicalDisk"
+												$NewItem.PSTypeNames.Insert(0,$DataSetType)
+												$DataSetType = $DataSetType + ".TypeName"
+												$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+												[PSCustomObject]$NewItem
+											}
+									)
 						return $NewObj
 					}
 			}
-		Return  $Result
+		else			
+			{	if($Result.count -gt 1 -and -not $ShowRaw)
+					{	$tempFile = [IO.Path]::GetTempFileName()
+						$LastItem = $Result.Count - 3 
+						$FristCount = 0
+						if($Lformat -Or $Linfo)	{	$FristCount = 1	}
+						foreach ($S in  $Result[$FristCount..$LastItem] )
+							{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','					
+								Add-Content -Path $tempfile -Value $s				
+							}
+						$Result = Import-Csv $tempFile 
+						Remove-Item $tempFile	
+					}
+			}
 	}
+	Return $Result
 } 
+}
 
 Function Remove-A9LogicalDisk
 {
@@ -616,6 +666,7 @@ Function Remove-A9LogicalDisk
 .EXAMPLE
 	PS:> Remove-A9LogicalDisk -LD_Name xxx
 .NOTES
+	This command utilizes the SSH command 'RemoveLD'	
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]

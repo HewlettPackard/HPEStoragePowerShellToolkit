@@ -108,6 +108,7 @@ Function Add-A9RCopyLink_CLI
 	
 	This Example WWN creates an RCFC link to target System2, which connects to the local 5:3:2 (N:S:P) in the target system.
 .NOTES
+	This command utilizes the SSH command 'admitrcopylink'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -162,6 +163,7 @@ Function Get-A9StatRCopy_CLI
 
 	This example shows statistics for sending links ,Specifies that the heartbeat round-trip time & displays statistics as kilobytes	
 .NOTES
+	This command utilizes the SSH command 'statrcopy'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -270,6 +272,7 @@ Function Set-A9RCopyGroupPeriod_CLI
 .EXAMPLE
 	PS:> Set-A9RCopyGroupPeriod_CLI -Period 10m -Natural -TargetName CHIMERA03 -GroupName AS_TEST	
 .NOTES
+	This command utilizes the SSH command 'setrcopygroup'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -357,6 +360,7 @@ Function Set-A9AdmitRCopyHost
         555 RH0_Group0_0            1 NO     NO         NO  Pri
         556 RH1_Group0_2            1 NO     NO         NO  Sec
 .NOTES
+	This command utilizes the SSH command 'admitrcopyhost'
 	This command requires a SSH type connection.
 	SUPPORTED ARRAY VERSIONS: HPE Primera OS 4.3 onwards, HPE Alletra OS 9.3 onwards
     This command is only supported for groups for which the active_active policy is set.
@@ -430,6 +434,7 @@ Function Test-A9RCopyLink_CLI
 .EXAMPLE
 	PS:> Test-A9RCopyLink_CLI -PortConn -NSP 0:5:4 
 .NOTES
+	This command utilizes the SSH command 'checkrclink'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -494,6 +499,7 @@ Function Disable-A9RCopylink_CLI
 .EXAMPLE
 	Disable-RCopylink -RCFC -Target_name test -NSP_WWN 1245
 .NOTES
+	This command utilizes the SSH command 'dismissrcopylink'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -525,6 +531,8 @@ Function Remove-A9RCopyHost
     Dismiss/Remove hosts from a remote copy group.
 .DESCRIPTION
     The Remove-RCopyHost command removes hosts from a remote copy group
+	SUPPORTED ARRAY VERSIONS HPE Primera OS 4.3 onwards, HPE Alletra OS 9.3 onwards
+    This command is only supported for groups for which the active_active policy is set.
 .PARAMETER Force
     Specifies that the command is forced. If this option is not used, the command requires confirmation before proceeding with its operation.
 .PARAMETER GroupName
@@ -536,9 +544,8 @@ Function Remove-A9RCopyHost
 
 	PS:> Remove-A9RCopyHost group1 host1
 .NOTES
+	This command utilizes the SSH command 'dismissrcopyhost'
 	This command requires a SSH type connection.
-	SUPPORTED ARRAY VERSIONS HPE Primera OS 4.3 onwards, HPE Alletra OS 9.3 onwards
-    This command is only supported for groups for which the active_active policy is set.
 #>
 [CmdletBinding()]
 param(	[Parameter()]    [String]	$Force,

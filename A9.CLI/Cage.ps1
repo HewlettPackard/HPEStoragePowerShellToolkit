@@ -103,7 +103,8 @@ Function Get-A9Cage
 .SYNOPSIS
 	The command displays information about drive cages.
 .DESCRIPTION
-	The command displays information about drive cages.    
+	The command displays information about drive cages.  
+	Parameter cagename was removed as a powershell filter can gather the same output (get-a9cage | where {$_.name -eq 'cage1' } )  
 .PARAMETER ErrorInformation  
 	Displays error information.
 .PARAMETER State
@@ -276,7 +277,6 @@ Function Get-A9Cage
 .NOTES
 	This command utilizes the SSH command 'ShowCage'
 	This command requires a SSH type connection.
-	Parameter cagename was removed as a powershell filter can gather the same output (get-a9cage | where {$_.name -eq 'cage1' } )
 #>
 [CmdletBinding(DefaultParameterSetName='default')]
 param(	[Parameter(parametersetname='A9Errror')]		[Switch]	$ErrorInformation,

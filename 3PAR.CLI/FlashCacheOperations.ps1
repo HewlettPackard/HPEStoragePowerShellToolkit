@@ -18,14 +18,16 @@ Function Set-A9FlashCache
 	Enable Flash Cache policy
 .PARAMETER Disable
 	Disable Flash Cache policy
+.NOTES
+	This command utilizes the API Endpoint '/system'
+	This command requires a API type connection.
 #>
 [CmdletBinding()]
 Param(	[Parameter(ParameterSetName = "Enabled",  Mandatory=$true, ValueFromPipeline=$true)]	[switch]	$Enable,
 		[Parameter(ParameterSetName = "disabled", Mandatory=$true, ValueFromPipeline=$true)]	[switch]	$Disable
 )
 Begin 
-{	# Test if connection exist
-    Test-A9Connection -ClientType 'API'
+{	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	

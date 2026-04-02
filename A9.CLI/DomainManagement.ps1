@@ -358,10 +358,8 @@ Function Set-A9DomainSet
 [CmdletBinding(DefaultParameterSetName='Comment')]
 param(	[Parameter(Mandatory, ParameterSetName='Comment')]
 		[Parameter(Mandatory, ParameterSetName='Both')]				[String]	$Comment,
-
 		[Parameter(Mandatory, ParameterSetName='NewName')]
 		[Parameter(Mandatory, ParameterSetName='Both')]				[String]	$NewName,
-
 		[Parameter(Mandatory)]										[String]	$DomainSetName
 )
 Begin

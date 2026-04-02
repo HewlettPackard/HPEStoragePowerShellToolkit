@@ -45,7 +45,6 @@ Function Get-A9Alert
 .NOTES
 	This command utilizes the SSH command 'ShowAlert
 	This command requires a SSH type connection. 
-	The option is only to request Detailed information. 
 #>
 [CmdletBinding()]
 param(	[Parameter()]							
@@ -155,8 +154,7 @@ Function Get-A9Health
 .PARAMETER showraw
 	This will output the raw SSH streamed data instead of the processed object that is normally returned.
 .NOTES
-	This command utilizes the SSH command 'CheckHealth -full'	
-	Since this command returns an object, the default behaviour is to get detailed reports, if you want to filter by component you can more easily use powershell filtering.
+	This command utilizes the SSH command 'CheckHealth'	
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]

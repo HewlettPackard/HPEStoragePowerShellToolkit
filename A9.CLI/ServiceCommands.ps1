@@ -8,13 +8,6 @@ Function Add-A9Hardware
 	The command admits new hardware into the system. If new disks are discovered on any two-node HPE StoreServ system, tunesys will be
 	started automatically to redistribute existing volumes to use the new capacity. This facility can be disabled using either the -notune
 	option or setting the AutoAdmitTune system parameter to "no". On systems with more than two nodes, tunesys must always be run manually after disk installation.
-.PARAMETER Checkonly
-	Only performs passive checks; does not make any changes.
-.PARAMETER SkipDrivePatch
-	Suppresses the check for drive table update packages for new hardware enablement.
-.PARAMETER SupressAutotune
-	Do not automatically run tunesys to rebalance the system after new disks are discovered.
-.NOTES
 	- Handles any nodes, disks, or cages added into the system.
 	- Verifies the presence of all expected hardware and handles all checks, including valid states, cabling, and firmware revisions.
 	- Handles creating system logical disks while adding and rebalancing spare chunklets.
@@ -22,6 +15,15 @@ Function Add-A9Hardware
 	- If new disks are discovered, the set size for existing CPGs is recalculated. Changes to the CPG occur prior to any tunesys operation so that the affected LDs are automatically tuned.
 	- Checks for drive table patch updates unless you specify the -nopatch option.
 	- In addition, discovery of new disks in any combination can cause tunesys to start automatically and rebalance the system after the admithw command has completed.
+.PARAMETER Checkonly
+	Only performs passive checks; does not make any changes.
+.PARAMETER SkipDrivePatch
+	Suppresses the check for drive table update packages for new hardware enablement.
+.PARAMETER SupressAutotune
+	Do not automatically run tunesys to rebalance the system after new disks are discovered.
+.NOTES
+	This command utilizes the SSH command 'admithw' 
+	This command requires a SSH type connection. 
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[switch]	$Checkonly,
@@ -68,7 +70,7 @@ Function Get-A9SystemPatch
 	The showpatchcommand with a specific individual installed patch number displays the fields below when used with the optional -d option:
 
 	PS:> Get-A9SystemPatch P### -detailed
-.NOTES
+.OUTPUTS
 	Patch ID.          Specifies the patch ID. 
 	Release Version.   Specifies TPD or UI release affected by the patch. 
 	Synopsis.          Specifies the purpose of the patch. 
@@ -78,8 +80,10 @@ Function Get-A9SystemPatch
 	Affected Packages. Specifies the new packages being changed. 
 	Obsoletes.         Specifies the patch IDs deleted by this patch. 
 	Requires.          Specifies the patch IDs of any other patches required by this patch. 
-	Notes.             Specifies any special instructions for the patch. 
-
+	Note-s.             Specifies any special instructions for the patch. 
+.NOTES
+	This command utilizes the SSH command 'showpatch' 
+	This command requires a SSH type connection. 
 #>
 [CmdletBinding(DefaultParameterSetName='Default')]
 param(	[Parameter(ParameterSetName='ByPatchId', Mandatory)]		[string]	$PatchId,
@@ -123,18 +127,7 @@ Function Get-A9Version
 	Get list of Storage system software version information
 .EXAMPLE
     PS:> Get-A9Version -ShowVersion	
-
-	Get list of Storage system release version number only
-.EXAMPLE
-    PS:> Get-A9Version -Build	
-
-	Get list of Storage system versions including build levels
-.NOTES
-	Usage: When displaying all versions, for certain components multiple versions might be 
-	installed. In such cases, multiple lines are displayed.
-
-	If no options are specified, the overall version of the software is displayed.
-
+	
 	Release version 4.0.3
 	Patches: None 
 	Component Name   Version 
@@ -145,7 +138,16 @@ Function Get-A9Version
 	TPD Kernel Code   4.0.3
 	Drive Firmware    4.0.1        
 	Enclosure Firmware4.0.2        
-	Upgrade Tool      21 (190813) 
+	Upgrade Tool      21 (190813)
+	
+	Get list of Storage system release version number only
+.EXAMPLE
+    PS:> Get-A9Version -Build	
+
+	Get list of Storage system versions including build levels
+.NOTES
+	This command utilizes the SSH command 'showversion' 
+	This command requires a SSH type connection. 
 #>
 [CmdletBinding()]
 param(	[Parameter()]    [switch]    $All,
@@ -187,23 +189,8 @@ Function Reset-A9SystemNode
 .EXAMPLE
 	PS:> Reset-A9SystemNode -Halt -Node_ID 0.
 .NOTES
-	Authority: Super, Service
-		Any role granted the node_shutdown right
-
-	- Usage Requires access to all domains.
-	- The system manager executes a set of validation checks before proceeding with the shutdown.
-	- Unless indicated otherwise, if any of the following conditions exist, the shutdown operation will not proceed:
-	- The system checks for interrupting connectivity to various volumes and returns an error if multipathing is configured incorrectly.
-	- System software upgrade is in progress.
-	- Target node is not online.
-	- If the system is processing tasks, the command returns a warning message to inform the user that tasks are running, and that the shutdown operation can cause some tasks to fail. If the user confirms the shutdown operation, the specified node reboots even if tasks are running.
-	- If no tasks are running when the initial checks are performed, and a new task starts afterward, the shutdown fails.
-	- Any other node is online but not yet integrated into the cluster.
-	- Another shutdown node operation is already in progress.
-	- Shutdown node operation will result in the system shutting down due to loss of quorum.
-	- One or more orphaned logical disks exist on the system that cannot be preserved.
-	- One or more admin logical disks cannot be reset, resulting in the kernel being unable to access meta data from those logical disks.
-	- One or more data (user or snap) logical disks cannot be reset, causing their associated VLUNs to become inaccessible to host applications.
+	This command utilizes the SSH command 'shutdownnode' 
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='Halt',		Mandatory)]	[switch]	$Halt,
@@ -272,13 +259,8 @@ Function Set-A9Magazines
 .EXAMPLE
 	PS:> Set-A9Magazines -Offloop -Port "Both" -Cage_name "xxx" -Magazine "xxx"
 .NOTES
-	Authority:Super, Service
-		Any role granted the mag_control right
-	- Access to all domains is required to run this command.
-	Taking a drive magazine off-loop has the following consequences:
-	- Relocation of chunklets.
-	- Affected logical disks are put into write-through mode.
-	- Momentary dip in throughput, but no loss of connectivity.
+	This command utilizes the SSH command 'controlmag' 
+	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
 param( 	[Parameter(ParameterSetName='OffLoop',mandatory)]	[switch]	$Offloop,
@@ -316,6 +298,9 @@ Function Invoke-A9CageService
 	The command is necessary when executing removal and replacement actions for a drive cage interface card or power cooling module. The
 	start subcommand is used to initiate service on a cage, and the end subcommand is used to indicate that service is completed.
 	Alternately you ccan use the upgrade command options to upgrade the firmware on cages. 
+	Issuing the Invoke-A9CageService command results in chunklet relocation, causing a dip in throughput.
+	After issuing the start subcommand, the end subcommand must be issued to indicate that service is completed and to restore the cage to its normal state.
+	When you issue the upgradecage command, the drive cage becomes temporarily degraded as the system upgrades each interface card.
 .PARAMETER StartServiceWindow
 	Specifies the start of service on a cage.
 .PARAMETER EndServiceWindow
@@ -346,9 +331,9 @@ Function Invoke-A9CageService
 
 	PS:> invoke-A9CageService start -iom 0 cage0
 .NOTES
-	Issuing the Invoke-A9CageService command results in chunklet relocation, causing a dip in throughput.
-	After issuing the start subcommand, the end subcommand must be issued to indicate that service is completed and to restore the cage to its normal state.
-	When you issue the upgradecage command, the drive cage becomes temporarily degraded as the system upgrades each interface card.
+	This command utilizes the SSH command 'servicecage', 'upgradecage' 
+	This command requires a SSH type connection.
+	
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='StartPCM', Mandatory)]	
@@ -483,6 +468,7 @@ Function Set-A9ServiceNodes
 .EXAMPLE
 	Set-A9ServiceNodes -Start -Pci 3 -Nodeid 0
 .NOTES
+	This command utilizes the SSH command 'servicenode'
 	This command requires a SSH type connection.
 
 #>
@@ -538,12 +524,8 @@ Function Get-A9ServiceNodes
 .EXAMPLE
 	Set-A9ServiceNodes -Start -Pci 3 -Nodeid 0
 .NOTES
+		This command utilizes the SSH command 'servicenode'
 	This command requires a SSH type connection.
-	Authority: Super, Service
-	Any role granted the node_service right
-
-	Usage: Access to all domains is required to run this command. If a component is found unsafe to remove, the command will return an error.
-	If no option is specified, only node LED will be illuminated.
 #>
 [CmdletBinding()]
 param(	[Parameter(Mandatory)] 	
@@ -585,19 +567,8 @@ Function Reset-A9System
 .EXAMPLE
 	PS:> Reset-A9System -Halt
 .NOTES
+	This command utilizes the SSH command 'shutdownsys'
 	This command requires a SSH type connection.
-	Authority = Super, Service
-		Any role granted the sys_shutdown right
-	
-	Usage: Access to all domains is required to run this command. The execution of shutdownsys command can affect service. Hence, a confirmation is 
-	required before proceeding with this command. After the shutdownsys command is issued, there is no indication from the CLI that the shutdown 
-	is occurring. You can issue the showsys command to display the current status of the system during the initial stage of the shutdown process 
-	and after the system has fully restarted.
-
-	If the node that was running on the system manager fails or if the system manager process exits while executing the shutdownsys command, 
-	the shutdown will not complete. The only safe action is to reissue the shutdownsys command.
-
-	Do not issue any commands other than showsys while the system is shutting down.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='Halt',   Mandatory)]	[switch]	$Halt,
@@ -637,16 +608,8 @@ Function Update-A9PdFirmware
 	Specifies that the firmware of either one or more physical disks identified by their IDs (PD_ID) is upgraded. If this specifier is not
 	used, then the -a or -w option must be issued on the command line.
 .NOTES
+	This command utilizes the SSH command 'upgradepd'
 	This command requires a SSH type connection.
-	Authority: Super, Service
-		Any role granted the sys_shutdown right
-	Usage:
-	- Access to all domains is required to run this command.
-	- The execution of shutdownsys command can affect service.
-	- Hence, a confirmation is required before proceeding with this command.
-	- After the shutdownsys command is issued, there is no indication from the CLI that the shutdown is occurring. You can issue the showsys command to display the current status of the system during the initial stage of the shutdown process and after the system has fully restarted.
-	- If the node that was running on the system manager fails or if the system manager process exits while executing the shutdownsys command, the shutdown will not complete. The only safe action is to reissue the shutdownsys command.
-	- Do not issue any commands other than showsys while the system is shutting down.
 #>
 [CmdletBinding()]
 param(	[Parameter()]							[switch]	$Skiptest,
@@ -690,6 +653,7 @@ Function Get-A9ResetReason
 	
 	PS:> Get-A9ResetReason -detailed
 .NOTES
+	This command utilizes the SSH command 'showreset'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -789,6 +753,7 @@ Function Set-A9Security
 
     Warning: This action will restart the ssh service, which may terminate ALL existing connections including this one. When that happens, you must reconnect to continue.
 .NOTES
+	This command utilizes the SSH command 'controlsecurity'
 	This command requires a SSH type connection.
 
 	- The Management Interfaces are CIM, CLI, EKM used for Data at Rest Encryption, LDAP Authentication, QW, RDA, SNMP, Syslog, SSH, and WSAPI.
@@ -846,6 +811,7 @@ Function Get-A9SecurityFIPS
     -----------------
     11      6 Enabled
 .NOTES
+	This command utilizes the SSH command 'controlsecurity'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]

@@ -48,7 +48,7 @@ param(	[Parameter()]
 		[Parameter(ParameterSetName="Drive",mandatory)]	[switch]	$Drive,
 		[Parameter(ParameterSetName="Batt",mandatory)]	[switch]	$Battery,
 		[Parameter(ParameterSetName="EB",mandatory)]
-		[ValiatePattern('^\d{1}:\d{1}')]				[switch]	$EnclosureBay,
+		[ValidatePattern('^\d{1}:\d{1}')]				[switch]	$EnclosureBay,
 		[Parameter(mandatory)]							[String]	$NodeID
 )
 Begin
@@ -147,11 +147,11 @@ Function Ping-A9RCIPPorts
 .EXAMPLE
 	PS:> Ping-A9RCIPPorts -PF -IP_address 192.168.245.5 -NSP 0:3:1
 .NOTES
-	This command utilizes the SSH command 'ControlPort RcIP Ping'
+	This command utilizes the SSH command 'ControlPort', 'RcIP', 'Ping'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-Param(		[Parameter(Mandatory)]			[System.IPAddress]	$IP_address,
+Param(		[Parameter(Mandatory)]			[string]	$IP_address,
 			[Parameter(Mandatory)]	
 			[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
 											[String]	$NSP,
@@ -466,7 +466,7 @@ Function Set-A9NodePowerSupplyId
 	PS:> Set-A9NodeProperties -PS_ID 1 -S xxx -Node_ID 1
 .NOTES
 	This command utilizes the SSH command 'SetNode'
-	This command requires a SSH type connection, and does not exist on the Alletra B10000
+	This command requires a SSH type connection. Does not exist on the Alletra B10000
 #>
 [CmdletBinding()]
 param( 	[Parameter(Mandatory)]	[String]	$PowerSupplyID,
@@ -608,7 +608,6 @@ process
 }
 }
 
-
 Function Get-A9SystemInfo
 {
 <#
@@ -676,13 +675,7 @@ Function Get-A9SystemInfo
 .EXAMPLE
 	PS:> Get-A9SystemInfo -showBatteryInfo
 .NOTES
-	This command utilizes the SSH command 'ShowSys'
-	This command utilizes the SSH command 'ShowBattery'
-	This command utilizes the SSH command 'ShowFirmwareDB'
-	This command utilizes the SSH command 'ShowNodeEV'
-	This command utilizes the SSH command 'ShowNet'
-	This command utilizes the SSH command 'ShowToC'
-	This command utilizes the SSH command 'ShowNode'
+	This command utilizes the SSH command 'ShowSys', 'ShowBattery', 'ShowFirmwareDB', 'ShowNodeEV', 'ShowNet', 'ShowToC', 'ShowNode'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
@@ -844,193 +837,6 @@ process
 	return $Result		
 }
 }
-
-Function Show-A9FCOEStatistics
-{
-<#
-.SYNOPSIS
-	Show-FCOEStatistics - Display FCoE statistics
-.DESCRIPTION
-	The Show-FCOEStatistics command displays Fibre Channel over Ethernet statistics.
-.PARAMETER D
-	Looping delay in seconds <secs>. The default is 2.
-.PARAMETER Iter
-	The command stops after a user-defined <number> of iterations.
-.PARAMETER Nodes
-	List of nodes for which the ports are included.
-.PARAMETER Slots
-	List of PCI slots for which the ports are included.
-.PARAMETER Ports
-	List of ports which are included. Lists are specified in a comma-separated manner such as: -ports 1,2 or -ports 1.
-.PARAMETER Counts
-	Shows the counts. The default is to show counts/sec.
-.PARAMETER Fullcounts
-	Shows the values for the full list of counters instead of the default packets and KBytes for the specified protocols. The values are shown in three columns:
-		Current - Counts since the last sample.
-		CmdStart - Counts since the start of the command.
-		Begin - Counts since the port was reset.
-.PARAMETER Prev
-	Shows the differences from the previous sample.
-.PARAMETER Begin
-	Shows the values from when the system was last initiated.
-.NOTES
-	This command utilizes the SSH command 'StartFCOE'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]		[String]	$D,
-		[Parameter()]		[String]	$Iter,
-		[Parameter()]		[String]	$Nodes,
-		[Parameter()]		[String]	$Slots,
-		[Parameter()]		[String]	$Ports,
-		[Parameter()]		[switch]	$Counts,
-		[Parameter()]		[switch]	$Fullcounts,
-		[Parameter()]		[switch]	$Prev,
-		[Parameter()]		[switch]	$Begin
-)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process
-{	$Cmd = " statfcoe "
-	if($D)			{	$Cmd += " -d $D " }
-	if($Iter)		{	$Cmd += " -iter $Iter " }
-	if($Nodes)		{	$Cmd += " -nodes $Nodes " }
-	if($Slots)		{	$Cmd += " -slots $Slots " }
-	if($Ports)		{	$Cmd += " -ports $Ports " }
-	if($Counts)		{	$Cmd += " -counts " }
-	if($Fullcounts)	{	$Cmd += " -fullcounts " }
-	if($Prev)		{	$Cmd += " -prev " }
-	if($Begin)		{	$Cmd += " -begin " }
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
-
-
-Function Get-A9iSCSIStats
-{
-<#
-.SYNOPSIS  
-	The command displays the iSCSI statistics.
-.DESCRIPTION  
-	The command displays the iSCSI statistics.
-.PARAMETER Iterations 
-	The command stops after a user-defined <number> of iterations.
-.PARAMETER Delay
-	Looping delay in seconds <secs>. The default is 2.
-.PARAMETER NodeList
-	List of nodes for which the stats are included.
-.PARAMETER SlotList
-	List of PCI slots for which the stats are included.
-.PARAMETER PortList
-	List of ports for which the stats are included. Lists are specified in a comma-separated manner such as: -ports 1,2 or -ports 1.
-.PARAMETER Fullcounts
-	Shows the values for the full list of counters instead of the default packets and KBytes for the specified protocols. 
-	The values are shown in three columns:
-		o Current   - Counts since the last sample.
-        o CmdStart  - Counts since the start of the command.
-        o Begin     - Counts since the port was reset.
-	This option cannot be used with the -prot option. If the -fullcounts option is not specified, the metrics from the start of the command are displayed.
-.PARAMETER Prev
-	Shows the differences from the previous sample.
-.PARAMETER Begin
-	Shows the values from when the system was last initiated.
-.EXAMPLE
-	PS:> Get-A9iSCSIStats
-.EXAMPLE
-	PS:> Get-A9iSCSIStats -Iterations 1
-.EXAMPLE
-	PS:> Get-A9iSCSIStats -Iterations 1 -Delay 2
-.EXAMPLE
-	PS:> Get-A9iSCSIStats -Iterations 1 -NodeList 1
-.EXAMPLE
-	PS:> Get-A9iSCSIStats -Iterations 1 -SlotList 1
-.EXAMPLE
-	PS:> Get-A9iSCSIStats -Iterations 1 -PortList 1
-.EXAMPLE
-	PS:> Get-A9iSCSIStats -Iterations 1 -Fullcounts
-.EXAMPLE
-	PS:> Get-A9iSCSIStats -Iterations 1 -Prev
-.EXAMPLE
-	PS:> Get-A9iSCSIStats -Iterations 1 -Begin
-.NOTES
-	This command utilizes the SSH command 'StatiSCSI'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	[String]	$Iterations,
-		[Parameter()]	[String]	$Delay,		
-		[Parameter()]	[String]	$NodeList,
-		[Parameter()]	[String]	$SlotList,
-		[Parameter()]	[String]	$PortList,
-		[Parameter()]	[Switch]	$Fullcounts,
-		[Parameter()]	[Switch]	$Prev,		
-		[Parameter()]	[Switch]	$Begin,
-		[Parameter()]	[Switch]	$ShowRaw		
-	)
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}		
-process	
-{	if ($Iterations){	$cmd= " statiscsi -dd -iter $Iterations "	}
-	else 			{	$cmd= " statiscsi -dd -iter 1 "	}
-	if($Delay)		{	$cmd+=" -d $Delay "	}	
-	if($NodeList)	{	$cmd+=" -nodes $NodeList "	}
-	if($SlotList)	{	$cmd+=" -slots $SlotList "	}
-	if($PortList)	{	$cmd+=" -ports $PortList "	}
-	if($Fullcounts)	{	$cmd+=" -fullcounts "	}
-	if($Prev)		{	$cmd+=" -prev "	}
-	if($Begin)		{	$cmd+=" -begin "	}	
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	write-verbose "  Executing Get-A9iSCSIStats command that displays information iSNS table for iSCSI ports in the system  " 	
-	if ( $ShowRaw )	{ return $result }
-	if($Result -match "Total" -or $Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count 
-			$Flag = "False"
-			$Loop_Cnt = 2	
-			if($Fullcounts)	{	$Loop_Cnt = 1	}		
-			foreach ($s in  $Result[$Loop_Cnt..$LastItem] )
-				{	if($Flag -eq "true")
-						{	if(($s -match "From start of statiscsi command") -or ($s -match "----Receive---- ---Transmit---- -----Total-----") -or ($s -match "port    Protocol Pkts/s KBytes/s Pkts/s KBytes/s Pkts/s KBytes/s Errs/") -or ($s -match "Counts/sec") -or ($s -match "Port Counter                             Current CmdStart   Begin"))
-								{	if(($s -match "port    Protocol Pkts/s KBytes/s Pkts/s KBytes/s Pkts/s KBytes/s Errs/") -or ($s -match "Port Counter                             Current CmdStart   Begin"))
-										{	$temp="=============================="
-											Add-Content -Path $tempFile -Value $temp
-										}
-								}
-							else
-								{	$s= [regex]::Replace($s,"^ ","")			
-									$s= [regex]::Replace($s," +",",")	
-									$s= [regex]::Replace($s,"-","")
-									$s= $s.Trim() -replace 'Pkts/s,KBytes/s,Pkts/s,KBytes/s,Pkts/s,KBytes/s','Pkts/s(Receive),KBytes/s(Receive),Pkts/s(Transmit),KBytes/s(Transmit),Pkts/s(Total),KBytes/s(Total)' 	
-									if($s.length -ne 0)
-										{	if(-not $Fullcounts)	{	$s=$s.Substring(1)		}
-										}				
-									Add-Content -Path $tempFile -Value $s	
-								}
-						}
-					else
-						{	$s= [regex]::Replace($s,"^ ","")			
-							$s= [regex]::Replace($s," +",",")	
-							$s= [regex]::Replace($s,"-","")
-							$s= $s.Trim() -replace 'Pkts/s,KBytes/s,Pkts/s,KBytes/s,Pkts/s,KBytes/s','Pkts/s(Receive),KBytes/s(Receive),Pkts/s(Transmit),KBytes/s(Transmit),Pkts/s(Total),KBytes/s(Total)' 	
-							if($s.length -ne 0)
-								{	if(-not $Fullcounts)	{	$s=$s.Substring(1)	}					
-								}				
-							Add-Content -Path $tempFile -Value $s	
-						}
-					$Flag = "true"			
-				}
-			$Result = Import-Csv $tempFile 
-			remove-item $tempFile
-		}
-	return  $Result	
-} 
-}
-
 
 Function Show-A9iSCSISession
 {
@@ -1505,7 +1311,6 @@ param(	[Parameter(ParameterSetName='iscsi')]			[string]	$Lun,
 		[Parameter(ParameterSetName='Inq')]				
 		[Parameter(ParameterSetName='Mode')]			[switch]	$Detailed,
 		[Parameter(mandatory,ParameterSetName='rescan')][switch]	$Rescan,
-
 		[Parameter(ParameterSetName='inq')]				
 		[Parameter(ParameterSetName='mode')]			[String]	$LUN_WWN,		
 		[Parameter(ParameterSetName='iscsi')]			[String]	$Node_WWN,

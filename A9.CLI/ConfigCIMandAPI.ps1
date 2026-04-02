@@ -21,17 +21,17 @@ Function Remove-A9WsapiSession
   This command utilizes the SSH command 'RemoveWSAPISession'
 	This command requires a SSH type connection.
 #>
-[CmdletBinding()]
-param(  [Parameter()]           [switch]    $Close_sse,
-        [Parameter(Mandatory)]  [String]    $Id,
-        [Parameter(Mandatory)]  [String]    $User_name,
-        [Parameter(Mandatory)]  [String]    $IP_address
+[CmdletBinding(DefaultParameterSetName='RemoveWSAPISession')]
+param(  [Parameter(ParameterSetName='RemoveWSAPISession')]            [switch]    $Close_sse,
+        [Parameter(Mandatory,ParameterSetName='RemoveWSAPISession')]  [String]    $Id,
+        [Parameter(Mandatory,ParameterSetName='RemoveWSAPISession')]  [String]    $User_name,
+        [Parameter(Mandatory,ParameterSetName='RemoveWSAPISession')]  [String]    $IP_address
 )
 Begin	
   {   Test-A9Connection -ClientType 'SshClient' 
   }
 Process
-  { $Cmd = " removewsapisession -f"
+  { $cmd = $PSCmdlet.ParameterSetName + ' -f'
     if($Close_sse)  {  $Cmd += " $Close_sse" }
     $Cmd += " $Id $User_name $IP_address "
     write-verbose "Executing the following SSH command `n`t $cmd"
@@ -69,49 +69,37 @@ Function Set-A9Wsapi
 .EXAMPLE
 	PS:> Set-A9Wsapi -Policy tls_strict
 .EXAMPLE
-  PS:> Start-A9Wsapi
+  PS:> Set-A9Wsapi -start
 .EXAMPLE
-  PS:> Stop-A9Wsapi
+  PS:> Set-A9Wsapi -stop
 .NOTES
-	This command utilizes the SSH commands 'SetWSAPI, StartWSAPI, and StopWSAPI'
+	This command utilizes the SSH command 'SetWSAPI', 'StartWSAPI', 'StopWSAPI'
   This command requires a SSH type connection.
-  Usage:
-  - Access to all domains is required to run this command.
-  - When the Web Services API server is active, a warning message showing the current status of the Web Services API server is displayed and 
-    you will be prompted for confirmation before continuing. The -f option forces the action without a warning message and prompt.
-  - Setting the session timeout alone is not service affecting and will not restart the WSAPI server. However, if the timeout option 
-    is specified along with service affecting options like -pol the WSAPI server will restart.
 #>
-[CmdletBinding(DefaultParameterSetName='Set')]
-param(  [Parameter(ParameterSetName='Set')] 	[ValidateSet('tls_strict','no_tls_strict','per_user_limit','no_per_user_limit')]
+[CmdletBinding(DefaultParameterSetName='SetWSAPI')]
+param(  [Parameter(ParameterSetName='SetWSAPI')] 	[ValidateSet('tls_strict','no_tls_strict','per_user_limit','no_per_user_limit')]
                         [String]	$Policy,
-        [Parameter(ParameterSetName='Set')] 	[ValidateRange(3,1440)]
+        [Parameter(ParameterSetName='SetWSAPI')] 	[ValidateRange(3,1440)]
                         [String]	$Timeout,
-        [Parameter(ParameterSetName='Set')] 	[ValidateSet('enable','disable')]
+        [Parameter(ParameterSetName='SetWSAPI')] 	[ValidateSet('enable','disable')]
                         [String]	$Evtstream,
-        [Parameter(Mandatory, ParameterSetName='Start')] 
+        [Parameter(Mandatory, ParameterSetName='StartWSAPI')] 
                         [Switch]  $Start,
-        [Parameter(Mandatory, ParameterSetName='Stop')] 
+        [Parameter(Mandatory, ParameterSetName='StopWSAPI')] 
                         [Switch]  $Stop,
-        [Parameter(Mandatory, ParameterSetName='Stop')] 
+        [Parameter(Mandatory, ParameterSetName='StopWSAPI')] 
                         [Switch]  $KeepUI
 )
 Begin	
-  {   Test-A9Connection -ClientType 'SshClient' 
+  {   Test-A9Connection -ClientType 'SshClient'       
   }
 Process
-  { switch($PSCmdlet.ParameterSetName)
-    { 'Set'   { $Cmd = " setwsapi -f"
-                if($Policy)   {	$Cmd += " -pol $Pol"            }
-                if($Timeout)  {	$Cmd += " -timeout $Timeout"    }
-                if($Evtstream){	$Cmd += " -evtstream $Evtstream"}
-              }
-      'Start' { $cmd= " startwsapi"
-              }
-      'Stop'  { $Cmd = " stopwsapi -f"
-                if ( $Keep_UI)  { $Cmd+= ' -keep_ui'}
-              }
-    }
+  { $cmd = $PSCmdlet.ParameterSetName + ' '
+    if ($PSCmdlet.ParameterSetName -eq 'SetWSAPI' -or $PSCmdlet.ParameterSetName -eq 'StopWSAPI')  { $Cmd += "-f "  }           
+    if ( $Policy )    {	$Cmd += " -pol $Pol"            }
+    if ( $Timeout )   {	$Cmd += " -timeout $Timeout"    }
+    if ( $Evtstream ) {	$Cmd += " -evtstream $Evtstream"}
+    if ( $Keep_UI )  { $Cmd+= '-keep_ui'  }
     write-verbose "Executing the following SSH command `n`t $cmd"
     $Result = Invoke-A9CLICommand -cmds  $Cmd
     Return $Result
@@ -144,20 +132,20 @@ Function Get-A9CIM
 	This command utilizes the SSH command 'ShowCIM'
   This command requires a SSH type connection.
 #>
-[CmdletBinding()]
-param(  [Parameter()]   [Switch]    $Policy,
-        [Parameter()]   [switch]    $ShowRaw
+[CmdletBinding(DefaultParameterSetName='ShowCim')]
+param(  [Parameter(ParameterSetName='ShowCim')]   [Switch]    $Policy,
+        [Parameter(ParameterSetName='ShowCim')]   [switch]    $ShowRaw
 )		
 Begin 
     { Test-A9Connection -ClientType 'SshClient' 
     }
 process
-    {   $cmd = "showcim "
+    {   $cmd = $PSCmdlet.ParameterSetName + ' '
         write-verbose "Executing the following SSH command `n`t $cmd"
         $Result1 = Invoke-A9CLICommand -cmds $cmd
-        $cmd += " -pol " 	
+        $cmd += "-pol " 	
         write-verbose "Executing the following SSH command `n`t $cmd"
-		$Result2 = Invoke-A9CLICommand -cmds $cmd
+		    $Result2 = Invoke-A9CLICommand -cmds $cmd
         $Result3 = $Result1 + $Result2
         if ($ShowRaw)   { return $Result3 }
         if ( $Result1.count -gt 1)
@@ -189,7 +177,6 @@ Function Set-A9CIM
 .DESCRIPTION
     The cmdlet sets properties of the CIM server, including options to enable/disable the HTTP and HTTPS ports for the CIM server. setcim allows
     a user to enable/disable the SLP port. The command also sets the CIM server policy. You cannot disable both of the HTTP and HTTPS ports.
-
 .PARAMETER Slp
     Enables or disables the SLP port 427.
 .PARAMETER Http
