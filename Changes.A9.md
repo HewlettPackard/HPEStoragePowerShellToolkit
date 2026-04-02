@@ -217,11 +217,11 @@ The following CLI based commands have changed.
 		New-A9Host_CLI,						--> New-A9Host
 		Remove-A9Host_CLI,					--> Remove-A9Host
 		Remove-A9HostSet_CLI, 				--> Remove-A9HostSet
-		Get-A9VVList,						--> Get-A9VV
-		Get-A9VVSet,						--> Get-A9VVSet
-		New-A9VV_CLI,						--> New-A9VV
-		New-A9VVSet_CLI,					--> New-A9VVSet
-		Update-A9VVProperties_CLI,			--> Set-A9VV
+		Get-A9VVList,						--> Get-A9Volume
+		Get-A9VVSet,						--> Get-A9VolumeSet
+		New-A9VV_CLI,						--> New-A9Volume
+		New-A9VVSet_CLI,					--> New-A9VolumeSet
+		Update-A9VVProperties_CLI,			--> Set-A9Volume
 		Set-A9Host_CLI,						--> Set-A9Host
 		Test-A9CLIObject,					-->	No longer used
 		Get-A9WsAPISession,					--> Get-A9CIM
@@ -240,13 +240,17 @@ The following CLI based commands have changed.
 		Start-A9LD_CLI						--> Set-A9LogicalDisk -Start
 		Compress-A9LD						--> Set-A9LogicalDisk -consolidate -trimonly
 		Comfirm-A9LD						-->	Set-A9LogicalDisk -fixerror -recover -progress
-
+		Get-A9LogicalDiskChunklet			--> Get-A9LogicalDisk -LogicalDiskChunklet
+  
 	The following command have been renamed
 		Update-A9Host_CLI 		--> Set-A9Host_CLI
 		Get-A9Space 			-->	Get-A9Space_CLI
 		Set-A9NodesDate 		--> Set-A9Date	- And added using local time option
 		Show-A9ISCSIStatistics	--> Get-A9iSCSIStats
 		remove-a9disk			--> Remove-A9PhysicalDisk
+		Set-A9VVolStorageContainer        -->   Set-A9VASAStorageContainer
+		Show-A9VVolStorageContainer_CLI   -->	Get-A9VASAStorageContainer
+		Show-A9VVolStorageContainerVM_CLI -->	Get-A9VASAStorageContainer -ShowVASAStorageContainerVM
 
 	The Pattern/DryRun options have been removed as a non-interactive SSH session does not allow confirmation from the following commands
 		Set-A9VVSpace_CLI,	Remove-A9WsAPISession,	Compress-A9LogicalDisk,	Remove-A9Alert
@@ -410,10 +414,37 @@ The following CLI based commands have changed.
 		Get-A9VVSpaceReport				-->		Get-A9SpaceReport -VolumeSpaceReport
 		Get-A9SystemReportCPGSpace		--> 	Get-A9SpaceReport -CPGSpaceReport
 		Get-A9SystemReportCPGSpace		--> 	Get-A9SpaceReport -LogicalDiskSpaceReport
+		Set-A9StatisticsCollectionPhysicalDiskChunklets -->  Set-A9StatisticsChunklets -physicalDiskId
+
 
 		Set-A9RCopyTargetPol_CLI		--> 	Target Policies are no longer supported
 	  	Remove-A9VvLogicalDiskCpgTemplates-->	Templates no longer needed/supported
 		Update-A9Host					--> 	Set-A9Host
+		Show-A9PDMappingtoVV_CLI		--> 	Get-A9Mapping -PhysicalDisk
+		Show-A9VvMappedToPD				-->		Get-A9Mapping -ShowVolumeToPhysicalDiskMapping
+		Show-A9VvpDistribution			-->		Get-A9Mapping -ShowVolumeToLogicalDiskMapping
+		Show-A9LdMappingToVvs_CLI		--> 	Get-A9Mapping -LogicalDiskId
+		Set-A9VVProperties_CLI			-->		Set-A9Volume_CLI
+		Set-A9VVSpace_CLI				--> 	Set-A9Volume_CLI -freespace
+		Show-A9SystemReporterStatIscsi	--> 	Get-A9SystemReporterStat -ShowiSCSIStats
+		Show-A9SystemReporterStatIscsiSession-->Get-A9SystemReporterStat -ShowiSCSISessionSttts
+		Show-A9SystemReporterStatRCopy	-->		Get-A9SystemReporterStat -ShowRCopyStats
+		Get-A9StatCacheMemoryPages		-->		Get-A9Statistics -ReturnCacheStats
+		Get-A9StatChunklets				-->		Get-A9Statistics -ReturnChunkletStats
+		Get-A9CPUStatisticalDataReports_CLI--> 	Get-A9Statistics -ReturnCPUStats
+		Get-A9LogicalDiskStatisticsReports_CLI-->Get-A9Statistics -ReturnLogicalDiskStats
+		Get-A9StatisticLinkUtilization	-->		Get-A9Statistics -ReturnLinkUtilizationStats
+		Get-A9PortStatisticsReports_CLI -->		Get-A9Statistics -ReturnPortStats
+		Get-APhysicalDiskStatisticsReports_CLI-->Get-A9Statistics -ReturnPhysicalDiskStats
+		Get-A9RCopyStatisticalReports_CLI-->	Get-A9Statistics -ReturnRemoteCopyVolumeStats
+		Get-A9vLunStatisticsReports_CLI-->		Get-A9Statistics -ReturnVLunStats
+		Get-A9VvStatisticsReports		-->		Get-A9Statistics -ReturnVolumeStats
+		Get-A9iSCSIStats				--> 	Get-A9Statistics -ReturniSCSIStats
+		Show-A9FCOEStatistics			-->		Get-A9Statistics -ReturnFCOEStats
+		Compress-A9VV_CLI				-->		Set-A9Volume_ClI -Compress
+		Add-A9VV_cli					-->		Set-A9Volume_cli -Admit
+		Import-A9VV_CLI					-->		Set-A9Volume_cli -import
+
 
 	The following commands used to have options to run in API and in CLI if available, in the following cases all of the CLI dependancies on parameters have been removed
 		Get-A9Host
@@ -472,7 +503,6 @@ The following CLI based commands have changed.
 	WSAPIUserAndRoleInformation.PS1 has been renamed to UserRole.ps1
 
 	SystemInformationQueriesAndManagement.ps1 has been renamed to System.PS1
-	
 
 	Get-A9CapacityInfo was moved to the System.ps1 file allowing the removal of the File AvailableSpace.PS1
 
