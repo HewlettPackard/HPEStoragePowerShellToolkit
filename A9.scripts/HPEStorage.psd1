@@ -1,0 +1,24 @@
+﻿@{
+    RootModule          = '.\HPEStorage.psm1'
+    ModuleVersion       = '4.2.0.0'
+    GUID                = '46a7e8f6-729c-45d0-b979-96c684fb28fe'
+    Author              = 'Hewlett Packard Enterprise Development LP'
+    CompanyName         = 'Hewlett Packard Enterprise Development LP'
+    Copyright           = '© 2020,2021,2024 Hewlett Packard Enterprise Development LP'
+    Description         = 'HPE Storage Module providing support for the following platforms; Alletra MP B10000, Alletra 9000, Primera, 3PAR, Alletra 6000, and MSA which provides storage administrators the convenience of managing from a PowerShell environment.'
+    PowerShellVersion   = '5.0'
+    FormatsToProcess 	= @('Formatters\HPEA6NS.format.ps1xml','Formatters\HPEA9.format.ps1xml')  
+    # CmdletsToExport     = '*'
+    # VariablesToExport   = '*'
+    # AliasesToExport     = '*'
+    PrivateData         = @{
+            PSData      = @{    Tags        = @('Alletra' , 'Primera' , '3PAR' , 'Nimble', 'MSA', '3PAR' , 'FilePersona','MP', 'B10000') 
+                                LicenseUri  = 'https://github.com/HewlettPackard/HPEStoragePowerShellToolkit/blob/main/License.txt'
+                                ProjectUri  = 'https://github.com/HewlettPackard/HPEStoragePowerShellToolkit/'
+                                IconUri     = 'https://github.com/HewlettPackard/HPEStoragePowerShellToolkit/blob/main/hpesm_pri_grn_rev_rgb.png'
+                                ReleaseNotes= 'Please see the ReadMe.MD and the Changes_*.MD in this modules root directory.'
+            } 
+    } 
+}
+
+
