@@ -547,15 +547,19 @@ Process
 													[decimal[]]$BottomPercBucket=@()
 													[decimal[]]$TopPercBucket=@()
 													[decimal[]]$BottomPercBucket   += 0
-													[decimal[]]$TopPercBucket      += [math]::Round($MillisecondBucket[0] / $MillisecondTotal,3)
+													try {	[decimal[]]$TopPercBucket      += [math]::Round($MillisecondBucket[0] / $MillisecondTotal,3)
+														}
+													catch [System.DivideByZeroException]
+														{	[decimal[]]$TopPercBucket      += 0
+														}
 													while ($Index -lt 10)
-														{   if ($MillisecondTotal -eq 0) 
-															    { $BucketPerc = 0 
+														{   try	{	$BottomPercBucket   += [math]::Round($TopPercBucket[$Index-1],3)
+																	$TopPercBucket      += [math]::Round($BottomPercBucket[$index] + $BucketPerc,3)
+																}
+															catch [System.DivideByZeroException] 
+															    { 	$BucketPerc[$Index] = 0
+																	TopPercBucket[$index] = 0 
 																} 
-															else{ $BucketPerc         =  $MillisecondBucket[$Index] / $MillisecondTotal 
-															    }
-															$BottomPercBucket   += [math]::Round($TopPercBucket[$Index-1],3)
-															$TopPercBucket      += [math]::Round($BottomPercBucket[$index] + $BucketPerc,3)
 															$Index+=1
 														}
 													$Index=0
