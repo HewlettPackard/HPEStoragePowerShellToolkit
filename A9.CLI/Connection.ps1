@@ -47,7 +47,8 @@ Process
 		{	if ( $null -eq $WsapiConnection)				{	if ($ReturnBoolean) { return $false} else { Throw "Connection object is null/empty. Create a valid connection object and retry"				}}
 			if (-not ($WsapiConnection.IPAddress) )			{	if ($ReturnBoolean) { return $false} else { Throw "Connection IP address is null/empty. Create a valid connection object and retry"			}}
 			if (-not ($WsapiConnection.Key))				{	if ($ReturnBoolean) { return $false} else { Throw "Connection object Key null or empty. Create a valid connection object and retry"			}}	
-			if ($ReturnBoolean) { return $true } else { return }
+			if ($ReturnBoolean) { return $true } 
+			return 
 		}
 }
 }
@@ -245,6 +246,7 @@ Process
 			$global:WsapiConnection = $null
 			If ($3parkey) 	{	Remove-Variable -name 3parKey -scope global	}
 			If ($3parArray)	{	Remove-Variable -name 3parArray -scope global }
+			write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $data
 		}
 }

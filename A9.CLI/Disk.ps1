@@ -107,7 +107,7 @@ Function Set-A9PhysicalDisk
 .PARAMETER Ports
 	Specifies that the display is limited to specified ports and physical disks connected to those ports. The port list is specified as a series of 
 	integers separated by commas (e.g. 1,2,3). The list can also consist of a single integer. If the port list is not specified, all disks on all ports are displayed.
-.PARAMETER VV_Name
+.PARAMETER Volume
 	Specifies that the physical disks used by the indicated virtual volume name are included for statistic sampling.
 .PARAMETER Seconds
 	Specifies the interval, in seconds, that statistics are sampled using an integer from 1 through 2147483. If no interval is specified, the option defaults to 30 seconds.
@@ -117,7 +117,7 @@ Function Set-A9PhysicalDisk
 .PARAMETER Frequency
 	Specifies the interval, in minutes, that the command enters standby mode between iterations using an integer greater than 0. If this option is
 	not specified, the number of iterations is looped indefinitely.
-.PARAMETER Vvlayout
+.PARAMETER Volumelayout
 	Specifies that the layout of the virtual volume is displayed. If this option is not specified, the layout of the virtual volume is not displayed.
 .PARAMETER Portstat
 	Specifies that statistics for all disk ports in the system are displayed. If this option is not specified, statistics for ports are not displayed.
@@ -196,7 +196,7 @@ param(	[Parameter(Mandatory, ParameterSetName='Allocate')]
 		[Parameter(ParameterSetName='OptimizeM')]
 		[Parameter(ParameterSetName='OptimizeA')]			[String]	$Ports,
 		[Parameter(ParameterSetName='OptimizeM')]
-		[Parameter(ParameterSetName='OptimizeA')]			[String]	$VolumeName,
+		[Parameter(ParameterSetName='OptimizeA')]			[String]	$Volume,
 		[Parameter(ParameterSetName='OptimizeM')]
 		[Parameter(ParameterSetName='OptimizeA')]
 		[ValidateRange(1,2147483)]							[int]		$Seconds,
@@ -207,7 +207,7 @@ param(	[Parameter(Mandatory, ParameterSetName='Allocate')]
 		[Parameter(ParameterSetName='OptimizeA')]
 		[ValidateRange(1,6000)]								[int]		$Frequency,
 		[Parameter(ParameterSetName='OptimizeA')]
-		[Parameter(ParameterSetName='OptimizeM')]			[switch]	$Vvlayout,
+		[Parameter(ParameterSetName='OptimizeM')]			[switch]	$Volumelayout,
 		[Parameter(ParameterSetName='OptimizeA')]
 		[Parameter(ParameterSetName='OptimizeM')]			[switch]	$Portstat,
 		[Parameter(ParameterSetName='OptimizeA')]
@@ -257,11 +257,11 @@ Process
 								if($Nodes)			{	$Cmd += " -nodes $Nodes "		}
 								if($Slots)			{	$Cmd += " -slots $Slots "		}
 								if($Ports)			{	$Cmd += " -ports $Ports "		}
-								if($VV_Name)		{	$Cmd += " -vv $VV_Name "		} 
+								if($Volume)			{	$Cmd += " -vv $Volume "		} 
 								if($Seconds)		{	$Cmd += " -d $Seconds "			}
 								if($Iterations)		{	$Cmd += " -iter $Itererations "	} 
 								if($Frequency)		{	$Cmd += " -freq $Frequency "	}
-								if($Vvlayout)		{	$Cmd += " -vvlayout "			}		
+								if($Volumelayout)	{	$Cmd += " -vvlayout "			}		
 								if($Portstat)		{	$Cmd += " -portstat"			}
 								if($Pdstat)			{	$Cmd += " -pdstat" 				}
 								if($Chstat)			{	$Cmd += " -chstat" 				}
@@ -273,11 +273,11 @@ Process
 								if($Nodes)			{	$Cmd += " -nodes $Nodes "		}
 								if($Slots)			{	$Cmd += " -slots $Slots "		}
 								if($Ports)			{	$Cmd += " -ports $Ports "		}
-								if($VV_Name)		{	$Cmd += " -vv $VV_Name "		} 
+								if($Volume)			{	$Cmd += " -vv $Volume "		} 
 								if($Seconds)		{	$Cmd += " -d $Seconds "			}
 								if($Iterations)		{	$Cmd += " -iter $Itererations "	} 
 								if($Frequency)		{	$Cmd += " -freq $Frequency "	}
-								if($Vvlayout)		{	$Cmd += " -vvlayout "			}		
+								if($Volumelayout)	{	$Cmd += " -vvlayout "			}		
 								if($Portstat)		{	$Cmd += " -portstat"			}
 								if($Pdstat)			{	$Cmd += " -pdstat" 				}
 								if($Chstat)			{	$Cmd += " -chstat" 				}
@@ -441,7 +441,7 @@ Function Get-A9LogicalDisk
 	10   tp-0-sa-0.2        1                 1/0   12288    7168     C,SA   Y     Y
 	14   tp-0-sa-0.5        1                 1/0   5120     5120     C,SD   Y     Y
 .EXAMPLE
-	PS:> Get-A9LogicalDisk -Vv AzureLocalPool2
+	PS:> Get-A9LogicalDisk -Volume AzureLocalPool2
 
 	id   Name               RAID Detailed_State Own   SizeMB   UsedMB   Use    WThru MapV
 	--   ----               ---- -------------- ---   ------   ------   ---    ----- ----
@@ -480,14 +480,14 @@ param(	[Parameter(ParameterSetName='showld')]	[String]	$Cpg,
 		[Parameter(ParameterSetName='showld')]	[switch]	$CheckLogicalDisk,
 		[Parameter(ParameterSetName='showld')]	[switch]	$Policy,
 		[Parameter(ParameterSetName='showld')]	[switch]	$State,
-		[Parameter()]						[String]	$LogicalDiskName,
-		[Parameter()]						[switch]	$ShowRaw,
+		[Parameter()]							[String]	$LogicalDiskName,
+		[Parameter()]							[switch]	$ShowRaw,
 		[Parameter(ParameterSetName='showldch')][ValidateSet('row','set')]				
-											[String]	$LogicalDiskFormat,
+												[String]	$LogicalDiskFormat,
 		[Parameter(ParameterSetName='showldch')][ValidateSet('pdpos','pdid','pdch')]	
-											[String]	$LogicalDiskInfo,
+												[String]	$LogicalDiskInfo,
 		[Parameter(Mandatory, ParameterSetName='showldch')]
-											[Switch]	$LogicalDiskChunklet		
+												[Switch]	$LogicalDiskChunklet		
 )
 Begin
 	{	Test-A9Connection -ClientType 'SshClient'
@@ -497,7 +497,7 @@ process
 	switch ($PSCmdlet.ParameterSetName)
 		{	'showld'
 				{	if ( $Cpg )					{	$Cmd += " -cpg $Cpg "		}
-					if ( $Volume )					{	$Cmd += " -vv $Volume "	}
+					if ( $Volume )				{	$Cmd += " -vv $Volume "	}
 					if ( $Domain )				{	$Cmd += " -domain $Domain "	}
 					if ( $Degraded )			{	$Cmd += " -degraded " 		}
 					if ( $Detailed )			{	$Cmd += " -d " 				}
@@ -517,42 +517,33 @@ process
 				} 
 		}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-if ( ($Result.count -gt 1) -and -not ($ShowRaw -or $Policy) )
-	{	if ( $PSCmdlet.ParameterSetName -eq 'showld')
-			{	if ( $Cpg )	
-					{	#	Need to split the dataset into two collections
-						$EndOfFirstDataSet = ($Result | Select-String 'total').linenumber[0]
-						$Result1 = $Result[0..$EndOfFirstDataSet]	
-						$Result2 = $Result[($EndOfFirstDataSet+1)..($Result.count-1)]
-						$tempFile = [IO.Path]::GetTempFileName()
-						$ResultHeader = (($Result1[1].split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
-						Add-Content -Path $tempfile -Value $ResultHeader				
-						foreach ($S in  $Result1[2..($Result1.Count - 4)] )
-							{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
-								Add-Content -Path $tempfile -Value $s				
-							}
-						$Result1 = Import-Csv -Delimiter 'Z'  $tempFile 
-						Remove-Item $tempFile
-						$tempFile = [IO.Path]::GetTempFileName()
-						Add-Content -Path $tempfile -Value $ResultHeader				
-						foreach ($S in  $Result2[2..($Result2.Count - 4)] )
+	if ( ($Result.count -gt 1) -and -not ($ShowRaw -or $Policy) )
+		{	if ( $PSCmdlet.ParameterSetName -eq 'showld')
+				{	if ( $Cpg )	
+						{	#	Need to split the dataset into two collections
+							$EndOfFirstDataSet = ($Result | Select-String 'total').linenumber[0]
+							$Result1 = $Result[0..$EndOfFirstDataSet]	
+							$Result2 = $Result[($EndOfFirstDataSet+1)..($Result.count-1)]
+							$tempFile = [IO.Path]::GetTempFileName()
+							$ResultHeader = (($Result1[1].split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
+							Add-Content -Path $tempfile -Value $ResultHeader				
+							foreach ($S in  $Result1[2..($Result1.Count - 4)] )
 								{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
 									Add-Content -Path $tempfile -Value $s				
 								}
-						$Result2 = Import-Csv -Delimiter 'Z'  $tempFile 
-						Remove-Item $tempFile
-						$ResultFinal = $( @{LDForSA = $Result1}, @{LDforSD = $Result2} )
-						# Now to rejoin the datasets.
-						$NewObj = @(    foreach( $Item in ($ResultFinal).LDforSA)	
-											{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
-												$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-												$DataSetType = "HPE.A9Storage.LogicalDisk"
-												$NewItem.PSTypeNames.Insert(0,$DataSetType)
-												$DataSetType = $DataSetType + ".TypeName"
-												$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-												[PSCustomObject]$NewItem
-											}
-										foreach( $Item in ($ResultFinal).LDforSD)	
+							$Result1 = Import-Csv -Delimiter 'Z'  $tempFile 
+							Remove-Item $tempFile
+							$tempFile = [IO.Path]::GetTempFileName()
+							Add-Content -Path $tempfile -Value $ResultHeader				
+							foreach ($S in  $Result2[2..($Result2.Count - 4)] )
+									{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
+										Add-Content -Path $tempfile -Value $s				
+									}
+							$Result2 = Import-Csv -Delimiter 'Z'  $tempFile 
+							Remove-Item $tempFile
+							$ResultFinal = $( @{LDForSA = $Result1}, @{LDforSD = $Result2} )
+							# Now to rejoin the datasets.
+							$NewObj = @(    foreach( $Item in ($ResultFinal).LDforSA)	
 												{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
 													$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
 													$DataSetType = "HPE.A9Storage.LogicalDisk"
@@ -560,92 +551,102 @@ if ( ($Result.count -gt 1) -and -not ($ShowRaw -or $Policy) )
 													$DataSetType = $DataSetType + ".TypeName"
 													$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
 													[PSCustomObject]$NewItem
-													}
-									)
-						return $NewObj
-					}
-				if($Detailed )
-					{	$tempFile = [IO.Path]::GetTempFileName()
-						$ResultHeader = 'IdZNameZCPGZRAIDZOwnZSizeMBZRSizeMBZRowSzZStepKBZSetSzZRefcntZAvailZCAvailZCreationDateZCreationTimeZCreationzoneZDev_Type'
-						Add-Content -Path $tempfile -Value $ResultHeader				
-						foreach ($S in  $Result[1..($Result.Count - 3)] )
-							{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
-								Add-Content -Path $tempfile -Value $s				
-							}
-						$Result = Import-Csv -Delimiter 'Z'  $tempFile 
-						Remove-Item $tempFile
-						$NewObj = @(    foreach( $Item in $Result)	
-											{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDiskDetailed"}
-												$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-												$DataSetType = "HPE.A9Storage.LogicalDiskDetailed"
-												$NewItem.PSTypeNames.Insert(0,$DataSetType)
-												$DataSetType = $DataSetType + ".TypeName"
-												$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-												[PSCustomObject]$NewItem
-											}
-									)
-						return $NewObj
-					}	
-				if($CheckLD)
-					{	$tempFile = [IO.Path]::GetTempFileName()
-						$ResultHeader = 'Id,Name,Detailed_State,Total,Checked,Invalid,Last_Date_Checked,Last_Time_Checked,Last_TimeZone_Checked'
-						Add-Content -Path $tempfile -Value $ResultHeader				
-						foreach ($S in  $Result[1..($Result.Count - 3)] )
-							{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
-								Add-Content -Path $tempfile -Value $s				
-							}
-						$Result = Import-Csv  $tempFile 
-						Remove-Item $tempFile
-						$NewObj = @(    foreach( $Item in $Result)	
-											{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDiskCheckLD"}
-												$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-												$DataSetType = "HPE.A9Storage.LogicalDiskCheckLD"
-												$NewItem.PSTypeNames.Insert(0,$DataSetType)
-												$DataSetType = $DataSetType + ".TypeName"
-												$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-												[PSCustomObject]$NewItem
-											}
-									)
-						return $NewObj
-					}	
-				else
-					{	$tempFile = [IO.Path]::GetTempFileName()
-						$ResultHeader = ((($Result[0].split(' ')).trim()).trim('-') | where-object { $_ -ne '' } ) -join 'Z'
-						Add-Content -Path $tempfile -Value $ResultHeader				
-						foreach ($S in  $Result[1..($Result.Count - 3)] )
-							{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
-								Add-Content -Path $tempfile -Value $s				
-							}
-						$Result = Import-Csv -Delimiter 'Z'  $tempFile 
-						Remove-Item $tempFile
-						$NewObj = @(    foreach( $Item in $Result)	
-											{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
-												$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-												$DataSetType = "HPE.A9Storage.LogicalDisk"
-												$NewItem.PSTypeNames.Insert(0,$DataSetType)
-												$DataSetType = $DataSetType + ".TypeName"
-												$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-												[PSCustomObject]$NewItem
-											}
-									)
-						return $NewObj
-					}
-			}
-		else			
-			{	if($Result.count -gt 1 -and -not $ShowRaw)
-					{	$tempFile = [IO.Path]::GetTempFileName()
-						$LastItem = $Result.Count - 3 
-						$FristCount = 0
-						if($Lformat -Or $Linfo)	{	$FristCount = 1	}
-						foreach ($S in  $Result[$FristCount..$LastItem] )
-							{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','					
-								Add-Content -Path $tempfile -Value $s				
-							}
-						$Result = Import-Csv $tempFile 
-						Remove-Item $tempFile	
-					}
-			}
-	}
+												}
+											foreach( $Item in ($ResultFinal).LDforSD)	
+													{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
+														$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+														$DataSetType = "HPE.A9Storage.LogicalDisk"
+														$NewItem.PSTypeNames.Insert(0,$DataSetType)
+														$DataSetType = $DataSetType + ".TypeName"
+														$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+														[PSCustomObject]$NewItem
+														}
+										)
+							return $NewObj
+						}
+					if($Detailed )
+						{	$tempFile = [IO.Path]::GetTempFileName()
+							$ResultHeader = 'IdZNameZCPGZRAIDZOwnZSizeMBZRSizeMBZRowSzZStepKBZSetSzZRefcntZAvailZCAvailZCreationDateZCreationTimeZCreationzoneZDev_Type'
+							Add-Content -Path $tempfile -Value $ResultHeader				
+							foreach ($S in  $Result[1..($Result.Count - 3)] )
+								{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
+									Add-Content -Path $tempfile -Value $s				
+								}
+							$Result = Import-Csv -Delimiter 'Z'  $tempFile 
+							Remove-Item $tempFile
+							$NewObj = @(    foreach( $Item in $Result)	
+												{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDiskDetailed"}
+													$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+													$DataSetType = "HPE.A9Storage.LogicalDiskDetailed"
+													$NewItem.PSTypeNames.Insert(0,$DataSetType)
+													$DataSetType = $DataSetType + ".TypeName"
+													$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+													[PSCustomObject]$NewItem
+												}
+										)
+							return $NewObj
+						}	
+					if($CheckLD)
+						{	$tempFile = [IO.Path]::GetTempFileName()
+							$ResultHeader = 'Id,Name,Detailed_State,Total,Checked,Invalid,Last_Date_Checked,Last_Time_Checked,Last_TimeZone_Checked'
+							Add-Content -Path $tempfile -Value $ResultHeader				
+							foreach ($S in  $Result[1..($Result.Count - 3)] )
+								{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+									Add-Content -Path $tempfile -Value $s				
+								}
+							$Result = Import-Csv  $tempFile 
+							Remove-Item $tempFile
+							$NewObj = @(    foreach( $Item in $Result)	
+												{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDiskCheckLD"}
+													$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+													$DataSetType = "HPE.A9Storage.LogicalDiskCheckLD"
+													$NewItem.PSTypeNames.Insert(0,$DataSetType)
+													$DataSetType = $DataSetType + ".TypeName"
+													$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+													[PSCustomObject]$NewItem
+												}
+										)
+							return $NewObj
+						}	
+					else
+						{	$tempFile = [IO.Path]::GetTempFileName()
+							$ResultHeader = ((($Result[0].split(' ')).trim()).trim('-') | where-object { $_ -ne '' } ) -join 'Z'
+							Add-Content -Path $tempfile -Value $ResultHeader				
+							foreach ($S in  $Result[1..($Result.Count - 3)] )
+								{	$s = (($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join 'Z'
+									Add-Content -Path $tempfile -Value $s				
+								}
+							$Result = Import-Csv -Delimiter 'Z'  $tempFile 
+							Remove-Item $tempFile
+							$NewObj = @(    foreach( $Item in $Result)	
+												{   $NewItem=@{PSTypeName = "HPE.A9Storage.LogicalDisk"}
+													$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+													$DataSetType = "HPE.A9Storage.LogicalDisk"
+													$NewItem.PSTypeNames.Insert(0,$DataSetType)
+													$DataSetType = $DataSetType + ".TypeName"
+													$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+													[PSCustomObject]$NewItem
+												}
+										)
+							return $NewObj
+						}
+				}
+			else			
+				{	if($Result.count -gt 1 -and -not $ShowRaw)
+						{	$tempFile = [IO.Path]::GetTempFileName()
+							$LastItem = $Result.Count - 3 
+							$FristCount = 0
+							if($Lformat -Or $Linfo)	{	$FristCount = 1	}
+							foreach ($S in  $Result[$FristCount..$LastItem] )
+								{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','					
+									Add-Content -Path $tempfile -Value $s				
+								}
+							$Result = Import-Csv $tempFile 
+							Remove-Item $tempFile	
+						}
+				}
+		}
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	Return $Result
 } 
 }

@@ -99,7 +99,7 @@ Function Move-A9DomainObject
 .PARAMETER DomainName
 	Specifies the domain or domain set to which the specified object is moved. 
 	The domain set name must start with "set:". To remove an object from any domain, specify the string "-unset" for the domain name or domain set specifier.
-.PARAMETER Vv
+.PARAMETER Volume
 	Specifies that the object is a virtual volume.
 .PARAMETER Cpg
 	Specifies that the object is a common provisioning group (CPG).
@@ -110,7 +110,7 @@ Function Move-A9DomainObject
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory, ParameterSetName='VV')]				[switch]	$vv,
+param(	[Parameter(Mandatory, ParameterSetName='VV')]				[switch]	$Volume,
 		[Parameter(Mandatory, ParameterSetName='CPG')]				[switch]	$Cpg,
 		[Parameter(Mandatory, ParameterSetName='HOST')]				[switch]	$Hosts,
 		[Parameter(Mandatory)]										[String]	$ObjName,
@@ -121,7 +121,7 @@ Begin
 }
 Process
 {	$Cmd = " movetodomain "
-	if($Vv) 	{	$Cmd += " -vv " }
+	if($Volume) {	$Cmd += " -vv " }
 	if($Cpg)	{	$Cmd += " -cpg " }
 	if($Hosts)	{	$Cmd += " -host " }
 	$Cmd += " -f $ObjName $DomainName " 
@@ -155,7 +155,7 @@ Function New-A9Domain
 .PARAMETER Comment
 	Specify any comments or additional information for the domain. The comment can be up to 511 characters long. Unprintable characters are not allowed. 
 	The comment must be placed inside quotation marks if it contains spaces.
-.PARAMETER Vvretentiontimemax
+.PARAMETER VolumeRetentionTimeMax
 	Specify the maximum value that can be set for the retention time of a volume in this domain. <time> is a positive integer value and in the range of 0 - 43,800 hours (1825 days).
 	Time can be specified in days or hours providing either the 'd' or 'D' for day and 'h' or 'H' for hours following the entered time value.
 	To disable setting the volume retention time in the domain, enter 0 for <time>.
@@ -169,7 +169,7 @@ Function New-A9Domain
 #>
 [CmdletBinding()]
 param(	[Parameter()]	[String]	$Comment,
-		[Parameter()]	[String]	$Vvretentiontimemax,
+		[Parameter()]	[String]	$VolumeRetentionTimeMax,
 		[Parameter(mandatory)]	[String]	$Domain_name
 )
 Begin
@@ -177,8 +177,8 @@ Begin
 } 
 Process
 {	$Cmd = " createdomain "
-	if($Comment)			{	$Cmd += " -comment " + '" ' + $Comment +' "'	 }
-	if($Vvretentiontimemax) {	$Cmd += " -vvretentiontimemax $Vvretentiontimemax " } 
+	if ( $Comment )					{	$Cmd += " -comment " + '" ' + $Comment +' "'	 		}
+	if ( $VolumeRetentionTimeMax ) 	{	$Cmd += " -vvretentiontimemax $VolumeRetentionTimeMax " } 
 	$Cmd += " $Domain_name "
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
@@ -305,10 +305,10 @@ Function Set-A9Domain
 .PARAMETER Comment
 	Specifies comments or additional information for the domain. The comment can be up to 511 characters long and must be enclosed in quotation
 	marks. Unprintable characters are not allowed within the <comment> specifier.
-.PARAMETER Vvretentiontimemax
+.PARAMETER VolumeRetentionTimeMax
 	Specifies the maximum value that can be set for the retention time of a volume in this domain. <time> is a positive integer value and in the
 	range of 0 - 43,800 hours (1825 days). Time can be specified in days or hours providing either the 'd' or 'D' for day and 'h' or 'H' for hours
-	following the entered time value. To remove the maximum volume retention time for the domain, enter '-vvretentiontimemax ""'. As a result, the maximum 
+	following the entered time value. To remove the maximum volume retention time for the domain, enter '-Volumeretentiontimemax ""'. As a result, the maximum 
 	volume retention time for the system is used instead. To disable setting the volume retention time in the domain, enter 0 for <time>.
 .EXAMPLE
 	Update-A9Domain -DomainName xyz
@@ -319,7 +319,7 @@ Function Set-A9Domain
 [CmdletBinding()]
 param(	[Parameter()]			[String]	$NewName,
 		[Parameter()]			[String]	$Comment,
-		[Parameter()]			[String]	$Vvretentiontimemax,
+		[Parameter()]			[String]	$VolumeRetentionTimeMax,
 		[Parameter(Mandatory)]	[String]	$DomainName
 )
 Begin
@@ -327,9 +327,9 @@ Begin
 }
 Process
 {	$Cmd = " setdomain "
-	if($NewName)			{	$Cmd += " -name $NewName " }
-	if($Comment)			{	$Cmd += " -comment " + '" ' + $Comment +' "'}
-	if($Vvretentiontimemax)	{	$Cmd += " -vvretentiontimemax $Vvretentiontimemax "	}
+	if ( $NewName )					{	$Cmd += " -name $NewName " }
+	if ( $Comment )					{	$Cmd += " -comment " + '" ' + $Comment +' "'}
+	if ( $VolumeRetentionTimeMax )	{	$Cmd += " -vvretentiontimemax $VolumeRetentionTimeMax "	}
 	$Cmd += " $DomainName "
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
 	Return $Result

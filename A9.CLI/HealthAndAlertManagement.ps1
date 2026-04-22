@@ -140,6 +140,7 @@ Process
 												[PSCustomObject]$NewItem
 											}
 				)
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	Return $NewObj
 }
 }
@@ -215,6 +216,7 @@ Process
 						}
 				}
 		}
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	Return ($NewObj | convertto-json | convertfrom-json)
 }
 }

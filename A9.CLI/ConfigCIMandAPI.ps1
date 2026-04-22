@@ -147,6 +147,7 @@ process
         write-verbose "Executing the following SSH command `n`t $cmd"
 		    $Result2 = Invoke-A9CLICommand -cmds $cmd
         $Result3 = $Result1 + $Result2
+        write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
         if ($ShowRaw)   { return $Result3 }
         if ( $Result1.count -gt 1)
             {   $Result2 = @{Policy = @($Result2[1].split(',')) }                 

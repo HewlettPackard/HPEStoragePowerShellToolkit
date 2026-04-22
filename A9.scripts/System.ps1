@@ -104,7 +104,7 @@ Process
                     {   $Result = Invoke-A9API -uri '/system' -type 'GET' 
                         if($Result.StatusCode -eq 200)
                             {	$dataPS = $Result.content | ConvertFrom-Json
-                                write-host "Cmdlet executed successfully" -foreground green
+                                write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
                                 return $dataPS
                             }
                         else
@@ -144,6 +144,7 @@ Process
                                                     }
                                                 $returndata = Import-Csv $tempFile
                                                 Remove-Item $tempFile
+												write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
                                                 return $returndata	
                                             }
                                         elseif($SystemParameters -or $Descriptor)
@@ -159,7 +160,8 @@ Process
                                                                 { $ReturnData.add($s[0], $s[1]) 
                                                                 }
                                                         }	
-                                                return $returndata	
+                                                write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+												return $returndata	
                                             }
                             }
                         else{	write-warning "FAILURE"
@@ -175,7 +177,8 @@ Process
                                             $Result = Import-Csv $tempFile
                                             Remove-Item $tempFile
                                         }
-                        return $Result
+                        write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+						return $Result
                     }
         }
     }
@@ -271,7 +274,7 @@ Process
 	$ObjMain += $Obj
     $Result = Invoke-A9API -uri '/system' -type 'PUT' -body $body 
 	if ( $Result.StatusCode -eq 200 )
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return Get-A9System		
 		}
 	else
@@ -327,7 +330,7 @@ Process
 		}
 	if($Result.StatusCode -eq 200)
 	{	$dataPS = $Result.content | ConvertFrom-Json
-		write-host "Cmdlet executed successfully" -foreground green
+		write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 		$NewObj = @(    foreach( $Item in $DataPS)
 							{   $NewItem=@{PSTypeName = "HPE.A9Storage.Version"}
 								$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
@@ -404,7 +407,7 @@ Process
 	If ( $DataPS.Members )
 		{ $DataPS = $DataPS.members }
 	if($Result.StatusCode -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $DataPS
 		}
 	else
@@ -461,7 +464,7 @@ Process
     $Result = Invoke-A9API -uri '/volumes' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return
 		}
 	else
@@ -499,14 +502,13 @@ Begin
 { Test-A9Connection -ClientType 'API' 
 }
 Process
-{ $Result = Invoke-A9API -uri '/capacity' -type 'GET' 
-  if($Result.StatusCode -eq 200)
-    { $dataPS = ($Result.content | ConvertFrom-Json)
-    }
-  else
-    { return $Result.StatusDescription
-    }
-  return $dataPS.allCapacity
+{ 	$Result = Invoke-A9API -uri '/capacity' -type 'GET' 
+  	if($Result.StatusCode -ne 200)
+		{ 	return $Result.StatusDescription
+		}
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+	$dataPS = ($Result.content | ConvertFrom-Json)
+  	return $dataPS.allCapacity
 }
 }
 
@@ -529,17 +531,13 @@ Process
 {	$Result = $null
 	$dataPS = $null	
 	$Result = Invoke-A9API -uri '/eventstream' -type 'GET' 
-	if($Result.StatusCode -eq 200)
-		{	$dataPS = ($Result.content | ConvertFrom-Json).members
-		}	
-	if($Result.StatusCode -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $dataPS		
-		}
-	else
+	if($Result.StatusCode -ne 200)
 		{	write-error "FAILURE : While Executing Open-A9SSE."
 			return $Result.StatusDescription
 		}
+	$dataPS = ($Result.content | ConvertFrom-Json).members
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+	return $dataPS		
 }	
 }
 
@@ -569,7 +567,6 @@ Process
 			$ItemCount = $dataPS.count
 			Write-Progress -Activity "Processing $ItemCount Items..." -status "40% Complete" -PercentComplete 40
 			$Current=1
-			[int]$LastCountperc = 40
 			$NewObj = @(    foreach( $Item in $DataPS)	
                                         {   $NewItem=@{PSTypeName = "HPE.A9Storage.EventLog"}
 
@@ -660,7 +657,7 @@ Process
 			Write-Progress -Activity "Processing $ItemCount Items..." -status "100% Complete" -PercentComplete 100
 			start-sleep 3
 			Write-Progress -Activity "Processing $ItemCount Items..." -Completed
-			write-host "Cmdlet executed successfully" -foreground green
+			write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $NewObj		
 		}
 	else
@@ -731,7 +728,7 @@ Process
                             $Result = Invoke-A9API -uri '/wsapiconfiguration' -type 'GET' 
                             if($Result.StatusCode -eq 200)
                                 {	$dataPS = $Result.content | ConvertFrom-Json
-                                    write-host "Cmdlet executed successfully" -foreground green
+                                    write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
                                     return $dataPS
                                 }
                             else
@@ -771,16 +768,17 @@ Process
                                     $returndata = Import-Csv $tempFile
                                     Remove-Item  $tempFile
                                     $NewObj = @(    foreach( $Item in $returndata)	
-                                        {   $NewItem=@{PSTypeName = "HPE.A9Storage.APISession"}
-										    $Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
-											$DataSetType = "HPE.A9Storage.APISession"
-											$NewItem.PSTypeNames.Insert(0,$DataSetType)
-											$DataSetType = $DataSetType + ".TypeName"
-											$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
-											[PSCustomObject]$NewItem
-										}
-						            )
-                                    return $NewObj
+														{   $NewItem=@{PSTypeName = "HPE.A9Storage.APISession"}
+															$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+															$DataSetType = "HPE.A9Storage.APISession"
+															$NewItem.PSTypeNames.Insert(0,$DataSetType)
+															$DataSetType = $DataSetType + ".TypeName"
+															$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+															[PSCustomObject]$NewItem
+														}
+												)
+                                    write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+									return $NewObj
                                 }
                                 else
                                     {	return $Result

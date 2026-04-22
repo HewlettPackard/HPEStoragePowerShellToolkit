@@ -96,7 +96,8 @@ Process
                     }
             }
         if($Result.StatusCode -eq 200)
-            {	$dataPS = $Result.content | ConvertFrom-Json
+            {	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+                $dataPS = $Result.content | ConvertFrom-Json
                 if ($dataPS.members ) { $dataPS = $dataPS.members }
                 $NewObj = @(    foreach( $Item in $DataPS)	{   $NewItem=@{PSTypeName = "HPE.A9Storage.Task"}
 																$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
@@ -230,7 +231,7 @@ Process
         $uri = "/tasks/" + $TaskID
         $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
         if($Result.StatusCode -eq 200)
-            {	write-host "Cmdlet executed successfully" -foreground green
+            {	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
                 return $Result		
             }
         else

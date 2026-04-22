@@ -704,7 +704,8 @@ Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }	
 process
-{	switch($PSCmdlet.ParameterSetName)
+{	$tempFile = [IO.Path]::GetTempFileName()
+	switch($PSCmdlet.ParameterSetName)
 		{	"Info"	
 					{	$sysinfocmd = "showsys "
 						if ($Option)
@@ -713,7 +714,6 @@ process
 									{	$Result = Invoke-A9CLICommand -cmds "showdate"
 										write-verbose "Get system date information " 
 										write-verbose "Get system fan information cmd -> showdate " 
-										$tempFile = [IO.Path]::GetTempFileName()
 										Add-Content -Path $tempFile -Value "Node,Date"
 										foreach ($s in  $Result[1..$Result.Count] )
 											{	$splits = $s.split(" ")
@@ -727,7 +727,6 @@ process
 												Add-Content -Path $tempFile -Value $var3
 											}
 										$Result = Import-Csv $tempFile
-										Remove-Item $tempFile
 									}	
 								else{	$Result = Invoke-A9CLICommand -cmds  $sysinfocmd
 									}
@@ -762,7 +761,6 @@ process
 													Add-Content -Path $tempfile -Value $s				
 												}
 											$Result = Import-Csv $tempFile 
-											Remove-Item $tempFile
 										}
 							}
 					}
@@ -776,7 +774,7 @@ process
 			'Enviormental'
 					{	$Cmd = " shownodeenv "
 						if ( $PersistArrayType -eq 'AlletraMP-B10000')
-							{	write-host "This command is not supported on the HPE Alletra MP B10000 type array"	
+							{	write-warning "This command is not supported on the HPE Alletra MP B10000 type array"	
 								return
 							}
 						if($Node_ID)	{	$Cmd += " -n $Node_ID "} 
@@ -806,8 +804,7 @@ process
 						write-verbose "Executing the following SSH command `n`t $cmd"
 						$Result = Invoke-A9CLICommand -cmds  $Cmd
 						if($Result.count -gt 1)
-							{	$tempFile = [IO.Path]::GetTempFileName()
-								$LastItem = $Result.Count -1  
+							{	$LastItem = $Result.Count -1  
 								$incre = "True"
 								foreach ($s in  $Result[0..$LastItem] )
 									{	$s= [regex]::Replace($s,"^ ","")
@@ -828,17 +825,19 @@ process
 										$incre = "False"		
 									}
 								$Result = Import-Csv $tempFile 
-								remove-item $tempFile	
 							}
-						if($Result.count -gt 1)	{	write-host " Success : Executing Get-Node" -ForegroundColor green }
 					}
 		}
+	Remove-Item $tempFile
 	write-verbose "Executing the following SSH command `n`t $cmd"
+	if ( $Result.count -gt 1 )	
+		{ 	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+		}
 	return $Result		
 }
 }
 
-Function Show-A9iSCSISession
+Function Get-A9iSCSISession
 {
 <#
 .SYNOPSIS
@@ -902,14 +901,14 @@ process
 												}
 					)
 	if($Result -match "total")	
-		{	write-host " Success : Executing Show-iSCSISession"
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $NewObj 
 		}
 	else{	return  $Result	}	
 }
 }
 
-Function Show-A9Portdevices_CLI
+Function Get-A9Portdevice_CLI
 {
 <#
 .SYNOPSIS
@@ -1032,54 +1031,10 @@ process
 	if($NSP)		{ 	$Cmd += " $NSP " }
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	Return $Result
 } 
 }
-
-Function Show-A9PortISNS
-{
-<#
-.SYNOPSIS   
-	The command shows iSNS host information for iSCSI ports in the system.
-.DESCRIPTION 
-	The command shows iSNS host information for iSCSI ports in the system.
-.PARAMETER NSP
-	Specifies the port for which information about devices on that port are displayed.
-.EXAMPLE	
-	PS:> Show-PortISNS
-.EXAMPLE	
-	PS:> Show-PortISNS -NSP 1:2:3
-.NOTES
-	This command utilizes the SSH command 'ShowPortiSNS'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	
-		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
-						[String]	$NSP 
-	)	
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$cmd= "showportisns "	
-	if ($NSP)	{	$cmd+=" $NSP "	}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	if($Result -match "N:S:P")
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count -2 		
-			foreach ($s in  $Result[0..$LastItem] )
-				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
-					Add-Content -Path $tempFile -Value $s				
-				}			
-			$Result = Import-Csv $tempFile 
-			remove-item $tempFile
-		}
-	if($Result -match "N:S:P")	{	write-host " Success : Executing Show-PortISNS" -ForegroundColor green	}
-	return  $Result
-}	
-} 
 
 Function Start-A9NodeRescue
 {
@@ -1111,7 +1066,7 @@ process
 }
 }
 
-Function Get-A9HostPorts_CLI
+Function Get-A9Port_CLI
 {
 <#
 .SYNOPSIS
@@ -1146,6 +1101,10 @@ Function Get-A9HostPorts_CLI
 	Displays the identities hosted by each physical port.
 .PARAMETER NSP
 	Nede slot port
+.PARAMETER ShowISNS
+	The command shows iSNS host information for iSCSI ports in the system.
+.PARAMETER ShowArp
+	The command shows the ARP table for iSCSI ports in the system.
 .EXAMPLE
 	PS:> Get-A9HostPorts_CLI
 		Lists all ports including targets, disks, and RCIP ports
@@ -1164,7 +1123,7 @@ Function Get-A9HostPorts_CLI
 
 	This replaces the -state option
 .NOTES
-	This command utilizes the SSH command 'ShowPort'
+	This command utilizes the SSH command 'ShowPort', 'ShowPortiSNS'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding(DefaultParameterSetName='default')]
@@ -1180,94 +1139,88 @@ Param(		[Parameter(ParameterSetName='inven')]			[switch]	$Inventory,
 			[Parameter(ParameterSetName='IDS')]				[switch]	$Identity,
 			[Parameter()]	
 			[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
-															[String]	$NSP
+															[String]	$NSP,
+			[Parameter(ParameterSetName='isns')]			[switch]	$ShowISNS,
+			[Parameter(ParameterSetName='arp')]				[switch]	$ShowArp
+			
 		)
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
 }
 process
-{	$Cmds = "showport"
-	if($Inventory)	{	$Cmds+=" -i "			}
-	if($Connected)	{	$Cmds+=" -c "			}
-	if($Parameters)	{	$Cmds+=" -par "			}
-	if($PortType)	{	$Cmds+=" -$($PortType.toLower() ) "	}
-	if($ISCSIInfo)	{	$Cmds+=" -$($iSCSIInfo.toLower() ) "}
-	if($SFPInfo -eq 'Basic')	{	$Cmds+=" -sfp "		}
-	if($SFPInfo -eq 'Detail')	{	$Cmds+=" -sfp -d "	}
-	if($SFPInfo -eq 'Diagnostic'){	$Cmds+=" -sfp -ddm "}
-	if($Identity)	{	$Cmds+=" -ids "			}
-	if($NSP)		{	$Cmds+=" $NSP"			}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result=Invoke-A9CLICommand  -cmds $Cmds 	
-	$LastItem = $Result.Count -2  
-	if($Result -match "N:S:P")
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			foreach ($s in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s," +",",")	
-					$s= [regex]::Replace($s,"-","")
-					$s= [regex]::Replace($s,"\s+",",") 		
-					$s= [regex]::Replace($s,"/HW_Addr","") 
-					# $s= [regex]::Replace($s,"N:S:P","Device")
-					$s= $s.Trim() 	
-					Add-Content -Path $tempFile -Value $s				
+{	$tempFile = [IO.Path]::GetTempFileName()
+	switch ( $PSCmdlet.ParameterSetName )
+		{	'default'	
+				{	$Cmds = "showport"
+					if($Inventory)	{	$Cmds+=" -i "			}
+					if($Connected)	{	$Cmds+=" -c "			}
+					if($Parameters)	{	$Cmds+=" -par "			}
+					if($PortType)	{	$Cmds+=" -$($PortType.toLower() ) "	}
+					if($ISCSIInfo)	{	$Cmds+=" -$($iSCSIInfo.toLower() ) "}
+					if($SFPInfo -eq 'Basic')	{	$Cmds+=" -sfp "		}
+					if($SFPInfo -eq 'Detail')	{	$Cmds+=" -sfp -d "	}
+					if($SFPInfo -eq 'Diagnostic'){	$Cmds+=" -sfp -ddm "}
+					if($Identity)	{	$Cmds+=" -ids "			}
+					if($NSP)		{	$Cmds+=" $NSP"			}
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result=Invoke-A9CLICommand  -cmds $Cmds 	
+					$LastItem = $Result.Count -2  
+					if($Result -match "N:S:P")
+						{	foreach ($s in  $Result[0..$LastItem] )
+								{	$s= [regex]::Replace($s,"^ ","")			
+									$s= [regex]::Replace($s," +",",")	
+									$s= [regex]::Replace($s,"-","")
+									$s= [regex]::Replace($s,"\s+",",") 		
+									$s= [regex]::Replace($s,"/HW_Addr","") 
+									# $s= [regex]::Replace($s,"N:S:P","Device")
+									$s= $s.Trim() 	
+									Add-Content -Path $tempFile -Value $s				
+								}
+							write-host 'Success : Executing Get-HostPorts' -ForegroundColor green
+						}
 				}
-			$Result = Import-Csv $tempFile
-			remove-item $tempFile
-			write-host 'Success : Executing Get-HostPorts' -ForegroundColor green
+			'isns'
+				{	$cmd= "showportisns "	
+					if ($NSP)	{	$cmd+=" $NSP "	}
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $cmd
+					if($Result -match "N:S:P")
+						{	$tempFile = [IO.Path]::GetTempFileName()
+							$LastItem = $Result.Count -2 		
+							foreach ($s in  $Result[0..$LastItem] )
+								{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+									Add-Content -Path $tempFile -Value $s				
+								}			
+							$Result = Import-Csv $tempFile 
+						}
+					if($Result -match "N:S:P")	{	write-host " Success : Executing Show-PortISNS" -ForegroundColor green	}
+					return  $Result	
+				}
+			'arp'
+				{	$cmd= "showportarp "	
+					if ($NSP)	{	$cmd+=" $NSP "	}
+					write-verbose "Executing the following SSH command `n`t $cmd"
+					$Result = Invoke-A9CLICommand -cmds  $cmd
+					if($Result.Count -gt 1)
+						{	$tempFile = [IO.Path]::GetTempFileName()
+							$LastItem = $Result.Count 		
+							foreach ($s in  $Result[0..$LastItem] )
+								{	$s= [regex]::Replace($s,"^ ","")			
+									$s= [regex]::Replace($s," +",",")
+									$s= [regex]::Replace($s,"-","")
+									$s= $s.Trim() 	
+									Add-Content -Path $tempFile -Value $s				
+								}			
+							$Result = Import-Csv $tempFile 
+						}	
+					return $Result	
+				}
 		}
-	return $Result	
+	remove-item $tempFile
+	return $Result			
 }
 }
 
-Function Show-A9PortARP
-{
-<#
-.SYNOPSIS   
-	The command shows the ARP table for iSCSI ports in the system.
-.DESCRIPTION  
-	The command shows the ARP table for iSCSI ports in the system.
-.PARAMETER NSP
-	Specifies the port for which information about devices on that port are displayed.
-.EXAMPLE
-	PS:> Show-A9PortARP
-.EXAMPLE
-	PS:> Show-A9PortARP -NSP 1:2:3
-.NOTES
-	This command utilizes the SSH command 'ShowPortArp'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()]	
-		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
-						[String]	$NSP 			
-	)	
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}	
-Process	
-{	$cmd= "showportarp "	
-	if ($NSP)	{	$cmd+=" $NSP "	}
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	if($Result.Count -gt 1)
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			$LastItem = $Result.Count 		
-			foreach ($s in  $Result[0..$LastItem] )
-				{	$s= [regex]::Replace($s,"^ ","")			
-					$s= [regex]::Replace($s," +",",")
-					$s= [regex]::Replace($s,"-","")
-					$s= $s.Trim() 	
-					Add-Content -Path $tempFile -Value $s				
-				}			
-			Import-Csv $tempFile 
-			remove-item $tempFile
-		}	
-	else{	return $Result	}
-	if($Result.Count -gt 1)		{	return  " Success : Executing Show-PortARP"	}
-	else						{	return  $Result	}	
-} 
-}
 
 Function Get-A9Target
 {

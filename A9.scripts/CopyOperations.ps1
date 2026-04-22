@@ -90,9 +90,8 @@ Process
 	if ( $VolumeNames )					{	$ParameterBody["volumeGroup"] 		= "$($VolumeGroup)"	} 	   	
 	if ( $ParameterBody.Count -gt 0 )	{	$body["parameters"] = $ParameterBody 					}
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
-	$status = $Result.StatusCode
-	if($status -eq 201)
-		{	Write-HOST "SUCCESS: volume snapshot:$snpVVName created successfully" -ForegroundColor green 
+	if ( $Result.StatusCode -eq 201 )
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $Result
 		}
 	else
@@ -214,9 +213,8 @@ Process
 	Write-Verbose "Request: Request to New-A9VvCopy : $VolumeName (Invoke-A9API)." 
 	$uri = '/volumes/'+$VolumeName
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
-	$status = $Result.StatusCode
-	if($status -eq 201)
-		{	Write-host "SUCCESS: Physical copy of a volume: $VolumeName created successfully" -ForegroundColor green
+	if( $Result.StatusCode -eq 201)
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $Result
 		}
 	else
@@ -288,8 +286,8 @@ Process
 		}
 	Write-Verbose "The Command Executed was an HTTP Put to $uri with a body of $body"
 	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
-	if($Result.StatusCode -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+	if ( $Result.StatusCode -eq 200 )
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $Result		
 		}
 	else
@@ -343,15 +341,12 @@ Process
     $Result = $null	
 	$uri = '/volumesets/'+$VolumeSetName
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body	
-	$status = $Result.StatusCode
-	if($status -eq 201)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
+	if ( $Result.StatusCode -ne 201 )
 		{	write-error "FAILURE : While creating Physical copy of a VV set : $VolumeSetName "
 			return $Result.StatusDescription
 		}
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+	return $Result
 }
 }
 
@@ -412,7 +407,7 @@ Begin
 }
 Process 
 {	$body = @{}	
-	Switch($PSCmdlet.ParameterSetName)
+	Switch ( $PSCmdlet.ParameterSetName )
 	{	'Reset'	
 				{	$body["action"] = 3
 					if($Priority)	
@@ -458,9 +453,8 @@ Process
 					$Result = Invoke-A9API -uri '/volumes/' -type 'POST' -body $body 
 				}
 	}
-	$status = $Result.StatusCode
-	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+	if ( $Result.StatusCode -eq 200 )
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $Result			
 		}
 	else

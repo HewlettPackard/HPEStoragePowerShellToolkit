@@ -1,38 +1,14 @@
 ﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
-Function Get-A9Histogram
+Function Get-A9Histogram_CLI
 {
 <#
 .SYNOPSIS
-	The Get-A9HistogramVv command displays Virtual Volume (VV) service time histograms in a timed loop.
+	The Get-A9Histogram command displays Virtual Volume service time histograms in a timed loop.
 .DESCRIPTION
-	The Get-A9HistogramVv command displays Virtual Volume (VV) service time histograms in a timed loop.
+	The Get-A9Histogram command displays Virtual Volume service time histograms in a timed loop.
 .PARAMETER domain
-	Shows only the VVs that are in domains with names that match the specified domain name(s) .
-.PARAMETER Metric
-	Selects which Metric to display. Metrics can be one of the following:
-	1)both - (Default) Displays both I/O time and I/O size histograms.
-	2)time - Displays only the I/O time histogram.
-	3)size - Displays only the I/O size histogram.
-.PARAMETER Timecols
-	For the I/O time histogram, shows the columns from the first column <fcol> through last column <lcol>. The available columns range from 0 through 31.
-
-	The first column (<fcol>) must be a value greater than or equal to 0, but less than the value of the last column (<lcol>).
-
-	The last column (<lcol>) must be less than or equal to 31.
-
-	The first column includes all data accumulated for columns less than the first column and the last column includes accumulated data for all columns greater than the last column.
-
-	The default value of <fcol> is 6.
-	The default value of <lcol> is 15.
-.PARAMETER Sizecols
-	For the I/O size histogram, shows the columns from the first column (<fcol>) through the last column (<lcol>). Available columns range from 0 through 15.
-
-	The first column (<fcol>) must be a value greater than or equal to 0, but less than the value of the last column (<lcol>) (default value of 3).
-	The last column (<lcol>) must be less than or equal to 15 (default value of 11).
-
-	The default value of <fcol> is 3.
-	The default value of <lcol> is 11.
+	Shows only the Volumes that are in domains with names that match the specified domain name(s) .
 .PARAMETER Percentage
 	Shows the access count in each bucket as a percentage. If this option isnot specified, the histogram shows the access counts.
 .PARAMETER Previous
@@ -61,8 +37,8 @@ Function Get-A9Histogram
 	Specifies the minimum number of access above the threshold service time. When filtering is done, the <count> is compared with the sum
 	of all columns starting with the one which corresponds to the threshold service time. For example, -t,8,100 means to only display
 	the rows where the 8ms column and all columns to the right adds up to more than 100.
-.PARAMETER VVName
-	Requests that only LDs mapped to VVs that match and of the specified names or patterns be displayed. Multiple volume names or patterns can be repeated using a comma-separated list.
+.PARAMETER Volume
+	Requests that only LDs mapped to Volumes that match and of the specified names or patterns be displayed. Multiple volume names or patterns can be repeated using a comma-separated list.
 .PARAMETER iteration
 	Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
 .PARAMETER hostE
@@ -129,21 +105,21 @@ Function Get-A9Histogram
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
-    PS:> Get-A9HistogramVv -iteration 1
+    PS:> Get-A9Histogram -iteration 1
 
-	This Example displays Virtual Volume (VV) service time histograms service iteration number of times.
+	This Example displays Virtual Volume service time histograms service iteration number of times.
 .EXAMPLE
-	PS:> Get-A9HistogramVv -iteration 1 -domain domain.com
-	This Example Shows only the VVs that are in domains with names that match the specified domain name(s)
+	PS:> Get-A9Histogram -iteration 1 -domain domain.com
+	This Example Shows only the that are in domains with names that match the specified domain name(s)
 .EXAMPLE	
-	PS:> Get-A9HistogramVv -iteration 1 –Metric both
+	PS:> Get-A9Histogram -iteration 1 –Metric both
 	This Example Selects which Metric to display.
 .EXAMPLE
-	PS:> Get-A9HistogramVv -iteration 1 -Timecols "1 2"
+	PS:> Get-A9Histogram -iteration 1 -Timecols "1 2"
 .EXAMPLE
-	PS:> Get-A9HistogramVv -iteration 1 -Sizecols "1 2"
+	PS:> Get-A9Histogram -iteration 1 -Sizecols "1 2"
 .EXAMPLE	
-	PS:> Get-A9HistogramVv –Metric both -VVname demoVV1 -iteration 1
+	PS:> Get-A9Histogram –Metric both -Volume demoVV1 -iteration 1
 
 	This Example Selects which Metric to display. associated with Virtual Volume name.
 .NOTES
@@ -152,16 +128,18 @@ Function Get-A9Histogram
 #>
 [CmdletBinding()]
 param(	# Common
+		[Parameter(Mandatory, ParameterSetName='Volume')]	[Switch]	$VolumeHistogram,
+		[Parameter(Mandatory, ParameterSetName='VLUN')]		[Switch]	$VLunHistogram,
+		[Parameter(Mandatory, ParameterSetName='Port')]		[Switch]	$PortHistogram,
+		[Parameter(Mandatory, ParameterSetName='RCVV')]		[Switch]	$RemoteCopyHistogram,
+		[Parameter(Mandatory,ParameterSetName='PhysicalDisk')][String]	$PhysicalDiskHistogram,
+		[Parameter(Mandatory,ParameterSetName='LogicalDisk')][String]	$LogicalDiskHistogram,
+		[Parameter(Mandatory,ParameterSetName='Chunklet')]	[String]	$ChunkletHistogram,		
 		[Parameter()]										[String]	$iteration,
 		[Parameter()]										[String]	$domain,
 		[Parameter()]										[Switch]	$Percentage,
 		[Parameter()]										[Switch]	$Previous,	
-		[Parameter()][ValidateSet("both","time","size")]	[String]	$Metric,
 		# VV 
-		[Parameter(ParameterSetName='Volume')]
-		[Parameter(ParameterSetName='LogicalDisk')]			[String]	$Timecols,
-		[Parameter(ParameterSetName='Volume')]
-		[Parameter(ParameterSetName='LogicalDisk')]			[String]	$Sizecols,	
 		[Parameter(ParameterSetName='Port')]
 		[Parameter(ParameterSetName='Chunklet')]
 		[Parameter(ParameterSetName='Volume')]				[Switch]	$RW,
@@ -173,8 +151,7 @@ param(	# Common
 		[Parameter(ParameterSetName='Port')]
 		[Parameter(ParameterSetName='RCVV')]
 		[Parameter(ParameterSetName='LogicalDisk')]
-		[Parameter(ParameterSetName='Volume')]				[String]	$vvname,
-		[Parameter(Mandatory, ParameterSetName='Volume')]	[Switch]	$VolumeHistogram,
+		[Parameter(ParameterSetName='Volume')]				[String]	$Volume,
 		# VLUN
 		[Parameter(ParameterSetName='Port')]
 		[Parameter(ParameterSetName='VLUN')]				[String]	$hostE,
@@ -193,7 +170,6 @@ param(	# Common
 		[Parameter(ParameterSetName='LogicalDisk')]	
 		[Parameter(ParameterSetName='Chunklet')]
 		[Parameter(ParameterSetName='VLUN')]				[Switch]	$Beginning,
-		[Parameter(Mandatory, ParameterSetName='VLUN')]		[Switch]	$VLunHistogram,
 		#Port
 		[Parameter(ParameterSetName='Port')]				[Switch]	$Both,
 		[Parameter(ParameterSetName='Port')]				[Switch]	$CTL,
@@ -201,7 +177,6 @@ param(	# Common
 		[Parameter(ParameterSetName='Port')]				[Switch]	$PEER,
 		[Parameter(ParameterSetName='Port')]				[Switch]	$Disk,
 		[Parameter(ParameterSetName='Port')]				[Switch]	$RCFC,
-		[Parameter(Mandatory, ParameterSetName='Port')]		[Switch]	$PortHistogram,
 		# RCVV
 		[Parameter(ParameterSetName='RCVV')]				[switch]	$Sync,
 		[Parameter(ParameterSetName='RCVV')]				[switch]	$Periodic,
@@ -213,66 +188,46 @@ param(	# Common
 		[Parameter(ParameterSetName='RCVV')]				[switch]	$Prev,
 		[Parameter(ParameterSetName='RCVV')]				[String]	$group,
 		[Parameter(ParameterSetName='RCVV')]				[String]	$target,
-		[Parameter(Mandatory, ParameterSetName='RCVV')]		[Switch]	$RemoteCopyHistogram,
 		# Physical Disk
 		[Parameter(ParameterSetName='PhysicalDisk')]		[String]	$WWN,
 		[Parameter(ParameterSetName='PhysicalDisk')]		[Switch]	$Devinfo,
 		[Parameter(ParameterSetName='PhysicalDisk')]		[String]	$FSpec,
-		[Parameter(Mandatory,ParameterSetName='PhysicalDisk')][String]	$PhysicalDiskHistogram,
 		# Logical Disk
 		[Parameter(ParameterSetName='LogicalDisk')]	
 		[Parameter(ParameterSetName='Chunklet')]			[Switch]	$NonIdle,
 		[Parameter(ParameterSetName='Chunklet')]
 		[Parameter(ParameterSetName='LogicalDisk')]			[String]	$LdName,
-		[Parameter(Mandatory,ParameterSetName='LogicalDisk')][String]	$LogicalDiskHistogram,
 		# Chunklet
 		[Parameter(ParameterSetName='Chunklet')]			[String]	$Chunklet_num,
-		[Parameter(Mandatory,ParameterSetName='Chunklet')]	[String]	$ChunkletHistogram,
-
 		[Parameter()]										[switch]	$ShowRaw
 	)
 Begin
 {	Test-A9Connection -ClientType SshClient
 }
 Process	
-{	switch($PSCmdlet.ParameterSetName)
+{	$tempFile = [IO.Path]::GetTempFileName()
+	switch($PSCmdlet.ParameterSetName)
 		{	'Volume'
 					{	$Cmd = "histvv "
-						if ( $iteration )	{ 	$Cmd += " -iter $iteration "}	
-						else				{	$Cmd += " -iter 1 "			}
-						if ( $domain )		{ 	$Cmd += " -domain $domain "	}
-						if ( $Metric )		{	$opt="both","time","size"
-												$Metric = $Metric.toLower()
-												if ($opt -eq $Metric)	{	$Cmd += " -metric $Metric"						}
-												else 					{	return " metrics $Metric not found only [ both | time | size ] can be passed one at a time "	}
-											}
-						if ( $Timecols )	{ 	$Cmd += " -timecols $Timecols "			}
-						if ( $Sizecols )	{ 	$Cmd += " -sizecols $Sizecols "			}
-						if ( $Previous )	{	$Cmd += " -prev "	}	
-						if ( $Percentage )	{	$Cmd += " -pct "	}
-						if ( $RW )			{	$Cmd += " -rw "	}
-						if ( $IntervalInSeconds )	{ 	$Cmd += " -d $IntervalInSeconds "	}
-						if ( $FSpace )		{ 	$Cmd += " -filt $FSpace "			}
-						if ( $VVname )		{	$vv=$VVname
-												$Cmd1 ="showvv"
-												$Result1 = Invoke-A9CLICommand -cmds  $Cmd1
-												if($Result1 -match $vv)	{	$cmd += " $vv "	}
-												else					{	Return "Error: -VVname $VVname is not available `n Try Using Get-VvList to list all the VV's Available  "	}
-											}		
+						if ( $iteration )	{ 	$Cmd += " -iter $iteration"				}		
+						else				{	$Cmd += " -iter 1"						}
+						if ( $domain )		{ 	$Cmd += " -domain $domain"				}
+						if ( $Previous )	{	$Cmd += " -prev"						}	
+						if ( $Percentage )	{	$Cmd += " -pct"							}
+						if ( $RW )			{	$Cmd += " -rw"							}
+						if ( $IntervalInSeconds )	{ 	$Cmd += " -d $IntervalInSeconds"}
+						if ( $FSpace )		{ 	$Cmd += " -filt $FSpace"				}
+						if ( $Volume )		{	$cmd += " $Volume"						}		
 						write-verbose "Executing the following SSH command `n`t $cmd"
 						$Result = Invoke-A9CLICommand -cmds  $Cmd
-						write-verbose " Get-HistVv command displays Virtual Volume Logical Unit Number (VLUN)  "
-						if ($ShowRaw) { return $Result } 
+						if ( $ShowRaw -or $rw ) { return $Result } 
 						$range1 = $Result.count
-						if($range1 -le "5")	{	return "No data available"	}	
+						if ( $range1 -le "5")	{	return "No data available"	}	
 						if ( $Result.Count -gt 1)
-							{	$tempFile = [IO.Path]::GetTempFileName()
-								$LastItem = $Result.Count
-								if("time" -eq $Metric.trim().tolower())		{	Add-Content -Path $tempFile -Value 'VVname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),time,date'	}
-								elseif("size" -eq $Metric.trim().tolower())	{	Add-Content -Path $tempFile -Value 'VVname,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes),time,date'	}
-								else										{	Add-Content -Path $tempFile -Value 'VVname,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes),time,date'	}
-								foreach ($s in  $Result[0..$LastItem] )
-									{	if ($s -match "millisec")
+							{	$LastItem = $Result.Count
+								Add-Content -Path $tempFile -Value 'VVname,0.5ms,0.75ms,1ms,1.5ms,2ms,3ms,4ms,6ms,8ms,12ms,16ms,4KB,8KB,16KB,32KB,64KB,128KB,256KB,512KB,1MB,time,date'	
+								foreach ( $s in  $Result[0..$LastItem] )
+									{	if ( $s -match "millisec" )
 											{	$s= [regex]::Replace($s,"^ +","")
 												$s= [regex]::Replace($s," +"," ")
 												$s= [regex]::Replace($s," ",",")
@@ -281,7 +236,7 @@ Process
 												$global:date1 = $split1[1]
 												continue
 											}
-										if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "VVname"))	{	continue	}			
+										if ( ($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "VVname") )	{	continue	}			
 										$s= [regex]::Replace($s,"^ +","")
 										$s= [regex]::Replace($s,"-+","-")
 										$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line			
@@ -289,7 +244,6 @@ Process
 										Add-Content -Path $tempFile -Value $s
 									}
 								$Result = Import-Csv $tempFile
-								Remove-Item $tempFile
 							}
 					}
 			'VLUN'	
@@ -298,7 +252,7 @@ Process
 						else				{	$Cmd += " -iter 1 "			}
 						if ( $domain )		{ 	$Cmd += " -domain $domain "	}	
 						if ( $hostE )		{	$Cmd += " -host $host "		}
-						if ( $vvname )		{	$Cmd += " -v $vvname "		}
+						if ( $Volume )		{	$Cmd += " -v $Volume "		}
 						if ( $lun )			{	$Cmd += " -l $lun "			}
 						if ( $Nodes )		{	$Cmd += " -nodes $Nodes"	}
 						if ( $Slots )		{	$Cmd += " -slots $Slots"	}
@@ -308,24 +262,14 @@ Process
 						if ( $Beginning )	{	$Cmd += " -begin "			}
 						if ( $Percentage )	{	$Cmd += " -pct "			}		
 						write-verbose "Executing the following SSH command `n`t $cmd"
-						$Result = Invoke-A9CLICommand -cmds  $Cmd
-						write-verbose " histograms The Get-HistVLun command displays Virtual Volume Logical Unit Number (VLUN)  " 
-						if ($ShowRaw) { return $ShowRaw }
+						$Result = Invoke-A9CLICommand -cmds  $Cmd 
+						if ( $ShowRaw ) 	{ 	return $ShowRaw }
 						$range1 = $Result.Count
-						if($range1 -le "5" ){	return "No Data Available"	}	
+						if ( $range1 -le "5" ){	return "No Data Available"	}	
 						if ( $Result.Count -gt 1)
-							{	$tempFile = [IO.Path]::GetTempFileName()
-								$LastItem = $Result.Count 
-								if("time" -eq $Metric.trim().tolower())
-									{	Add-Content -Path $tempFile -Value 'Lun,VVname,Host,Port,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),time,date'
-										$LastItem = $Result.Count -3
-									}
-								elseif("size" -eq $Metric.trim().tolower())
-									{	Add-Content -Path $tempFile -Value 'Lun,VVname,Host,Port,4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes),time,date'
-										$LastItem = $Result.Count -3
-									}
-								else	{	Add-Content -Path $tempFile -Value 'Lun,VVname,Host,Port,0.50(millisec),1(millisec),2(millisec),4(millisec),8(millisec),16(millisec),32(millisec),64(millisec),128(millisec),256(millisec),4k(bytes),8k(bytes),16k(bytes),32k(bytes),64k(bytes),128k(bytes),256k(bytes),512k(bytes),1m(bytes),time,date'	}
-								foreach ($s in  $Result[0..$LastItem] )
+							{	$LastItem = $Result.Count 
+								Add-Content -Path $tempFile -Value 'Lun,VVname,Host,Port,0.5ms,0.75ms,1ms,1.5ms,2ms,3ms,4ms,6ms,8ms,12ms,16ms,4KB,8KB,16KB,32KB,64KB,128KB,256KB,512KB,1MB,time,date'	
+								foreach ( $s in  $Result[0..$LastItem] )
 									{	if ($s -match "millisec")
 											{	$s= [regex]::Replace($s,"^ +","")
 												$s= [regex]::Replace($s," +"," ")
@@ -345,7 +289,6 @@ Process
 										Add-Content -Path $tempFile -Value $s
 									}
 								$Result = Import-Csv $tempFile
-								Remove-Item $tempFile
 							}	
 					}	
 			'Port'	
@@ -362,23 +305,19 @@ Process
 						if ( $Disk )			{	$Cmd +=" -disk "	}
 						if ( $RCFC )			{	$Cmd +=" -rcfc "	}
 						if ( $PEER )			{	$Cmd +=" -peer "	}
-						if ( $Metric )			{	$Cmd += " -metric $Metric"	}	
 						if ( $Previous )		{	$Cmd += " -prev "	}
 						if ( $Beginning )		{	$Cmd += " -begin "	}
 						if ( $Percentage )		{	$Cmd += " -pct "	}
 						if ( $RW )				{	$Cmd += " -rw "		}
 						write-verbose "Executing the following SSH command `n`t $cmd"
 						$Result = Invoke-A9CLICommand -cmds  $Cmd 	
-						if ($ShowRaw) { return $Result }
+						if ( $ShowRaw -or $RW ) 		{ 	return $Result 		}
 						$range1 = $Result.count
-						if ($range1 -lt "5")	{	return "No data available"	}		
+						if ( $range1 -lt "5" )	{	return "No data available"	}		
 						if ( $Result.Count -gt 1)
-							{	$tempFile = [IO.Path]::GetTempFileName()
-								$LastItem = $Result.Count
-								if("time" -eq $Metric.trim().tolower())		{	Add-Content -Path $tempFile -Value 'Port,Data/Ctrl,0.50,1,2,4,8,16,32,64,128,256,time,date'	}
-								elseif("size" -eq $Metric.trim().tolower())	{	Add-Content -Path $tempFile -Value 'Port,Data/Ctrl,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	}
-								elseif($RW)									{	Add-Content -Path $tempFile -Value 'Port,Data/Ctrl,R/W,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	}
-								else										{	Add-Content -Path $tempFile -Value 'Port,Data/Ctrl,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	}
+							{	$LastItem = $Result.Count
+								if($RW)			{	Add-Content -Path $tempFile -Value 'Port,Data/Ctrl,R/W,0.5ms,0.75ms,1ms,1.5ms,2ms,3ms,4ms,6ms,8ms,12ms,16ms,4KB,8KB,16KB,32KB,64KB,128KB,256KB,512KB,1MB,time,date'	}
+								else		    {	Add-Content -Path $tempFile -Value 'Port,Data/Ctrl,0.5ms,0.75ms,1ms,1.5ms,2ms,3ms,4ms,6ms,8ms,12ms,16ms,4KB,8KB,16KB,32KB,64KB,128KB,256KB,512KB,1MB,time,date'	}
 								foreach ($s in  $Result[0..$LastItem] )
 									{	if ($s -match "millisec")
 											{	$s= [regex]::Replace($s,"^ +","")
@@ -397,7 +336,6 @@ Process
 										Add-Content -Path $tempFile -Value $s
 									}
 								$Result = Import-Csv $tempFile
-								Remove-Item $tempFile
 							}
 					}
 			'RCVV'	
@@ -419,14 +357,13 @@ Process
 						if ( $domain )			{ 	$Cmd += " -domain  $domain"	}
 						if ( $group )			{ 	$Cmd += " -g $group"		}
 						if ( $target )			{ 	$Cmd += " -t $target"		}
-						if ( $VVName )			{ 	$Cmd += " $VVName"			}
+						if ( $Volume )			{ 	$Cmd += " $Volume"			}
 						write-verbose "Executing the following SSH command `n`t $cmd"
 						$Result = Invoke-A9CLICommand -cmds  $Cmd
 						if ($ShowRaw) { return $ShowRaw }
 						if ( $Result.Count -gt 1)
-							{	$tempFile = [IO.Path]::GetTempFileName()
-								$LastItem = $Result.Count - 2
-								if($VVSum)			{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date" }
+							{	$LastItem = $Result.Count - 2
+								if($VolumeSum)		{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date" }
 								elseif($PortSum) 	{	Add-Content -Path $tempFile -Value "Link,Target,Type,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date"}
 								elseif($GroupSum) 	{	Add-Content -Path $tempFile -Value "Group,Target,Mode,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date"	}
 								elseif($TargetSum)	{	Add-Content -Path $tempFile -Value "Target,Svt_0.50,Svt_1,Svt_2,Svt_4,Svt_8,Svt_16,Svt_32,Svt_64,Svt_128,Svt_256,Rmt_0.50,Rmt_1,Rmt_2,Rmt_4,Rmt_8,Rmt_16,Rmt_32,Rmt_64,Rmt_128,Rmt_256,Time,Date"}
@@ -450,7 +387,6 @@ Process
 										Add-Content -Path $tempFile -Value $s
 									}
 								$Result = Import-Csv $tempFile
-								Remove-Item $tempFile
 							}
 					}
 			'PhyscialDisk'
@@ -461,37 +397,22 @@ Process
 						if ( $Nodes )		{	$Cmd += " -nodes $Nodes"	}
 						if ( $Slots )		{	$Cmd += " -slots $Slots"	}
 						if ( $Ports )		{	$Cmd += " -ports $Ports"	}
-						if ( $Devinfo )		{	$Cmd += " -devinfo "	}
-						if ( $Metric )		{	$Met = $Metric
-												$c = "both","time","size"
-												$Metric = $metric.toLower()
-												if($c -eq $Met)		{	$Cmd += " -metric $Metric "}
-												else	{	return "FAILURE: -Metric $Metric is Invalid. Use only [ both | time | size ]."	}
-											}
-						if ( $Previous )	{	$Cmd += " -prev "		}
-						if ( $Beginning )	{	$Cmd += " -begin "		}
-						if ( $Percentage )	{	$Cmd += " -pct "		}	
-						if ( $FSpec )		{	$Cmd += " -filt $FSpec"	}
+						if ( $Devinfo )		{	$Cmd += " -devinfo "		}
+						if ( $Previous )	{	$Cmd += " -prev "			}
+						if ( $Beginning )	{	$Cmd += " -begin "			}
+						if ( $Percentage )	{	$Cmd += " -pct "			}	
+						if ( $FSpec )		{	$Cmd += " -filt $FSpec"		}
 						write-verbose "Executing the following SSH command `n`t $cmd"
 						$Result = Invoke-A9CLICommand -cmds  $Cmd 
 						if ( $ShowRaw ) 	{	$ShowRaw }
 						$range1 = $Result.count
 						if ( $range1 -lt "5" )	{	return "No data available"	}		
 						if ( $Result.Count -gt 1 )
-							{	$tempFile = [IO.Path]::GetTempFileName()
-								$LastItem = $Result.Count
-								if("time" -eq $Metric.trim().tolower())
-									{	Add-Content -Path $tempFile -Value 'ID,Port,0.50,1,2,4,8,16,32,64,128,256,time,date'
-										$LastItem = $Result.Count - 3
-									}
-								elseif("size" -eq $Metric.trim().tolower())
-									{	Add-Content -Path $tempFile -Value 'ID,Port,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	
-										$LastItem = $Result.Count - 3
-									}
-								elseif ($Devinfo)	{	Add-Content -Path $tempFile -Value  'ID,Port,Type,K_RPM,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'	}
-								else				{	Add-Content -Path $tempFile -Value  'ID,Port,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'				}
-								foreach ($s in  $Result[0..$LastItem] )
-									{	if ($s -match "millisec")
+							{	$LastItem = $Result.Count
+								if   ( $Devinfo )	{	Add-Content -Path $tempFile -Value  'ID,Port,Type,K_RPM,0.5ms,1ms,2ms,4ms,8ms,16ms,32ms,64ms,128ms,256ms,4KB,8KB,16KB,32KB,64KB,128KB,256KB,512KB,1MB,time,date'	}
+								else				{	Add-Content -Path $tempFile -Value  'ID,Port,0.5ms,0.75ms,1ms,1.5ms,2ms,3ms,4ms,6ms,8ms,12ms,16ms,4KB,8KB,16KB,32KB,64KB,128KB,256KB,512KB,1MB,time,date'				}
+								foreach ( $s in  $Result[0..$LastItem] )
+									{	if ( $s -match "millisec" )
 											{	$s= [regex]::Replace($s,"^ +","")
 												$s= [regex]::Replace($s," +"," ")
 												$s= [regex]::Replace($s," ",",")
@@ -500,28 +421,24 @@ Process
 												$global:date1 = $split1[1]
 												continue
 											}
-										if (($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "ID"))	{	continue	}
+										if ( ($s -match "----") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "ID") )	{	continue	}
 										$s= [regex]::Replace($s,"^ +","")
 										$s= [regex]::Replace($s,"-+","-")
 										$s= [regex]::Replace($s," +",",")			# Replace one or more spaces with comma to build CSV line			
 										$aa=$s.split(",").length
-										if ($aa -eq "20") 	{	continue	}
+										if ( $aa -eq "20" ) 	{	continue	}
 										$s +=",$global:time1,$global:date1"
 										Add-Content -Path $tempFile -Value $s
 									}
 								$Result = Import-Csv $tempFile
-								Remove-Item $tempFile
 							}
 					}
 			'LogicalDisk'
 					{	$Cmd = "histld -iter $Iteration "
 						if ( $Iteration )		{	$Cmd += " -iter $Iteration "		}
 						else 					{	$Cmd += " -iter 1 "					}
-						if ( $Metric )			{	$Cmd += " -metric $Metric "			}
-						if ( $VVName )			{	$Cmd += " -vv $VVName "				} 
+						if ( $Volume )			{	$Cmd += " -vv $Volume "				} 
 						if ( $Domain )			{	$Cmd += " -domain $Domain"			}
-						if ( $Timecols )		{	$Cmd += " -timecols $Timecols "		}
-						if ( $Sizecols )		{	$Cmd += " -sizecols $Sizecols "		}	
 						if ( $Percentage )		{	$Cmd += " -pct "					}
 						if ( $Previous )		{	$Cmd += " -prev "					}				
 						if ( $Beginning )		{	$Cmd += " -begin "					}
@@ -530,27 +447,24 @@ Process
 						if ( $LdName )			{	$Cmd += "  $LdName "				}
 						write-verbose "Executing the following SSH command `n`t $cmd"
 						$Result = Invoke-A9CLICommand -cmds  $Cmd
-						if ($ShowRaw) { $ShowRaw }
+						if ( $ShowRaw ) 		{ $ShowRaw }
 						$range1 = $Result.count
 						#write-host "count = $range1"
-						if($range1 -lt "5")		{	return "No data available Please Try With Valid Data. `n"	}	
-						if ( $Result.Count -gt 1)
-							{	$tempFile = [IO.Path]::GetTempFileName()
-								$LastItem = $Result.Count
-								if ($Metric -eq "time")		{	Add-Content -Path $tempFile -Value  'Logical_Disk_Name,0.50,1,2,4,8,16,32,64,128,256,time,date'	}
-								if ($Metric -eq "size")		{	Add-Content -Path $tempFile -Value  'Logical_Disk_Name,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date' 	}
-								else						{	Add-Content -Path $tempFile -Value  'Logical_Disk_Name,0.50,1,2,4,8,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date' 	}
-								foreach ($s in  $Result[0..$LastItem] )
-									{	if ($s -match "millisec")
-										{	$s= [regex]::Replace($s,"^ +","")
-											$s= [regex]::Replace($s," +"," ")
-											$s= [regex]::Replace($s," ",",")
-											$split1=$s.split(",")
-											$global:time1 = $split1[0]
-											$global:date1 = $split1[1]
-											continue
-										}
-										if (($s -match "-------") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Ldname"))	{	continue	}
+						if ( $range1 -lt "5" )		{	return "No data available Please Try With Valid Data. `n"	}	
+						if ( $Result.Count -gt 1 )
+							{	$LastItem = $Result.Count
+								Add-Content -Path $tempFile -Value  'Logical_Disk_Name,0.5ms,0.75ms,1ms,1.5ms,2ms,3ms,4ms,6ms,8ms,12ms,16ms,4KB,8KB,16KB,32KB,64KB,128KB,256KB,512KB,1MB,time,date'
+								foreach ( $s in  $Result[0..$LastItem] )
+									{	if ( $s -match "millisec" )
+											{	$s= [regex]::Replace($s,"^ +","")
+												$s= [regex]::Replace($s," +"," ")
+												$s= [regex]::Replace($s," ",",")
+												$split1=$s.split(",")
+												$global:time1 = $split1[0]
+												$global:date1 = $split1[1]
+												continue
+											}
+										if ( ($s -match "-------") -or ([string]::IsNullOrEmpty($s)) -or ($s -match "Ldname") )	{	continue	}
 										#write-host "s = $s"
 										$s= [regex]::Replace($s,"^ +","")
 										$s= [regex]::Replace($s," +"," ")
@@ -559,7 +473,6 @@ Process
 										Add-Content -Path $tempFile -Value $s
 									}
 								$result = Import-Csv $tempFile
-								Remove-Item $tempFile
 							}
 					}
 			'Chunklet'
@@ -568,7 +481,6 @@ Process
 						else 					{	$Cmd += " -iter 1 "				}
 						if ( $LDname )			{	$CMD +=" -ld $LDname "			}
 						if ( $Chunklet_num )	{	$Cmd +=" -ch $Chunklet_num "	} 
-						if ( $Metric )			{	$Cmd +=" -metric $Metric "		}
 						if ( $Percentage )		{	$Cmd +=" -pct "					}
 						if ( $Previous )		{	$Cmd +=" -prev "				}
 						if ( $Beginning )		{	$Cmd +=" -begin "				}
@@ -579,12 +491,11 @@ Process
 						$Result = Invoke-A9CLICommand -cmds  $histchCMD	
 						$range1 = $Result.count
 						if ( $range1 -le "5")	{	return "No data available Please try with valid input."	}
-						if ( $ShowRaw ) 		{ 	return $Result }
+						if ( $ShowRaw -or $rw ) 		{ 	return $Result }
 						if ( $Result.Count -gt 1)
-							{	$tempFile = [IO.Path]::GetTempFileName()
-								$LastItem = $Result.Count		
-								if($RW)	{	$LastItem = $LastItem - 4	}		
-								Add-Content -Path $tempFile -Value 'Ldid,Ldname,logical_Disk_CH,Pdid,PdCh,0.5,1.0,2.0,4.0,8.0,16,32,64,128,256,4k,8k,16k,32k,64k,128k,256k,512k,1m,time,date'
+							{	$LastItem = $Result.Count		
+								if ( $RW )	{	$LastItem = $LastItem - 4	}		
+								Add-Content -Path $tempFile -Value 'Ldid,Ldname,logical_Disk_CH,Pdid,PdCh,0.5ms,0.75ms,1ms,1.5ms,2ms,3ms,4ms,6ms,8ms,12ms,16ms,4KB,8KB,16KB,32KB,64KB,128KB,256KB,512KB,1MB,time,date'
 								foreach ($s in  $Result[0..$LastItem] )
 									{	if ($s -match "millisec")
 											{	$s= [regex]::Replace($s,"^ +","")
@@ -605,16 +516,96 @@ Process
 										Add-Content -Path $tempFile -Value $s
 									}
 								$result = Import-Csv $tempFile
-								Remove-Item $tempFile
 							}	
-						
 					}
 		}
+	Remove-Item $tempFile
+	if ( $Result.count -gt 1 )
+	{	$NewObj = @(    foreach( $Item in $Result )	
+                                        {   $NewItem=@{PSTypeName = "HPE.A9Storage.Histogram"}
+											if ( $Item."0.5ms")
+												{	$MillisecondBucket=@()
+													# 0.5ms,0.75ms,1ms,1.5ms,2ms,3ms,4ms,6ms,8ms,12ms,16ms
+													$MillisecondBucket  += $Item.'0.5ms'
+													$MillisecondBucket  += $Item.'0.75ms'
+													$MillisecondBucket  += $Item.'1ms'
+													$MillisecondBucket  += $Item.'1.5ms'
+													$MillisecondBucket  += $Item.'2ms'
+													$MillisecondBucket  += $Item.'3ms'
+													$MillisecondBucket  += $Item.'4ms'
+													$MillisecondBucket  += $Item.'6ms'
+													$MillisecondBucket  += $Item.'8ms'
+													$MillisecondBucket  += $Item.'12ms'
+													$MillisecondBucket  += $Item.'16ms'
+													$MillisecondTotal = 0
+													foreach($num in $MillisecondBucket)
+														{   $MillisecondTotal += $num
+														}
+													$BottomBucket   = @(0,0.5,0.75,1,1.5,2,3,4,6,8,12 )
+													$TopBucket      = @(0.5,0.75,1,1.5,2,3,4,6,8,12,16)
+													$Index=1
+													[decimal[]]$BottomPercBucket=@()
+													[decimal[]]$TopPercBucket=@()
+													[decimal[]]$BottomPercBucket   += 0
+													[decimal[]]$TopPercBucket      += [math]::Round($MillisecondBucket[0] / $MillisecondTotal,3)
+													while ($Index -lt 10)
+														{   if ($MillisecondTotal -eq 0) 
+															    { $BucketPerc = 0 
+																} 
+															else{ $BucketPerc         =  $MillisecondBucket[$Index] / $MillisecondTotal 
+															    }
+															$BottomPercBucket   += [math]::Round($TopPercBucket[$Index-1],3)
+															$TopPercBucket      += [math]::Round($BottomPercBucket[$index] + $BucketPerc,3)
+															$Index+=1
+														}
+													$Index=0
+													$RunningIOPS = 0
+													while ($Index -lt 11)
+													{   $RunningIOPS += $MillisecondBucket[$index]
+														if ( $TopPercBucket[$Index] -gt 0.50 -and $BottomPercBucket[$index] -lt 0.50 )
+															{   $fpnum = [math]::round($MillisecondTotal / 2)
+																$iopsbot = $RunningIOPS - $MillisecondBucket[$index]
+																$ThisBucket = $fpnum - $iopsbot
+																$Between = $ThisBucket / $MillisecondBucket[$Index]
+																$ThisLatency = [math]::round( ($TopBucket[$index] - $BottomBucket[$index]) * ($between) + $BottomBucket[$index], 2)
+																$NewItem['50thPercentile'] = $ThisLatency
+															}
+														if ( $TopPercBucket[$Index] -gt 0.95 -and $BottomPercBucket[$index] -lt 0.95 )
+															{   $fpnum = [math]::round($MillisecondTotal * 0.95)
+																$iopsbot = $RunningIOPS - $MillisecondBucket[$index]
+																$ThisBucket = $fpnum - $iopsbot
+																$Between = $ThisBucket / $MillisecondBucket[$Index]
+																$ThisLatency = [math]::round( ($TopBucket[$index] - $BottomBucket[$index]) * ($between) + $BottomBucket[$index], 2 )
+																$NewItem['95thPercentile'] = $ThisLatency
+															}
+														if ( $TopPercBucket[$Index] -gt 0.99 -and $BottomPercBucket[$index] -lt 0.99 )
+															{   $fpnum = [math]::round($MillisecondTotal * 0.99)
+																$iopsbot = $RunningIOPS - $MillisecondBucket[$index]
+																$ThisBucket = $fpnum - $iopsbot
+																$Between = $ThisBucket / $MillisecondBucket[$Index]
+																$ThisLatency = [math]::round( ($TopBucket[$index] - $BottomBucket[$index]) * ($between) + $BottomBucket[$index], 2 )
+																$NewItem['99thPercentile'] = $ThisLatency
+															}
+														$Index+=1
+													}
+												}
+										    $Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+											$DataSetType = "HPE.A9Storage.Histogram"
+											$NewItem.PSTypeNames.Insert(0,$DataSetType)
+											$DataSetType = $DataSetType + ".TypeName"
+											$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+											[PSCustomObject]$NewItem
+										}
+						            )
+                        write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+                        return $NewObj	
+	}
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	return $result
 }
 }
 
-Function Get-A9Statistics
+Function Get-A9Statistics_CLI
 {
 <#
 .SYNOPSIS
@@ -639,7 +630,7 @@ Function Get-A9Statistics
 	Specifies that CMP statistics are displayed a specified number of times as indicated by the num argument using an integer
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.PARAMETER VVname   
+.PARAMETER Volume
 	Specifies that statistics are displayed for virtual volumes matching the specified name or pattern.
 .PARAMETER total 
 	Show only the totals for all the CPUs on each node.
@@ -823,7 +814,7 @@ param(	[Parameter(ParameterSetName='statch',Mandatory)]	[switch]	$ReturnChunklet
 		[Parameter(ParameterSetName='statcmp')]
 		[Parameter(ParameterSetName='statrcvv')]
 		[Parameter(ParameterSetName='statvlun')]
-		[Parameter(ParameterSetName='statvv')]				[String]	$VVname ,
+		[Parameter(ParameterSetName='statvv')]				[String]	$Volume ,
 		[Parameter(ParameterSetName='statport')]
 		[Parameter(ParameterSetName='statvlun')]
 		[Parameter(ParameterSetName='statpd')]
@@ -866,7 +857,7 @@ param(	[Parameter(ParameterSetName='statch',Mandatory)]	[switch]	$ReturnChunklet
 		[Parameter(ParameterSetName='statrcvv')]			[switch]	$PortSum,	
 		[Parameter(ParameterSetName='statrcvv')]			[switch]	$GroupSum,
 		[Parameter(ParameterSetName='statrcvv')]
-		[Parameter(ParameterSetName='statvlun')]			[switch]	$VVSum,
+		[Parameter(ParameterSetName='statvlun')]			[switch]	$VolumeSum,
 		[Parameter(ParameterSetName='statrcvv')]
 		[Parameter(ParameterSetName='statvlun')]			[switch]	$DomainSum,
 		[Parameter(ParameterSetName='statrcvv')]			[switch]	$SubSet,
@@ -933,7 +924,7 @@ Process
 						}		
 				}
 			'statcmp'
-				{	if ( $VVname )	{	$cmd+=" -n $VVname "		}		
+				{	if ( $Volume )	{	$cmd+=" -n $Volume "		}		
 					if ( $Domian )	{	$cmd+= " -domain $Domian "	}
 					if ( $Delay )	{	$cmd+=" -d $Delay"			}		
 					write-verbose "Executing the following SSH command `n`t $cmd"
@@ -1003,8 +994,8 @@ Process
 						}
 				}
 			'statld'
-				{	if ( $VVname )	{	$cmd+=" -vv $VVname "	}
-					if ( $LDname )	{	if ( $cmd -match "-vv" )	{	return "Stop: Executing -VVname $VVname and  -LDname $LDname cannot be done in a single Execution "	}
+				{	if ( $Volume )	{	$cmd+=" -vv $Volume "	}
+					if ( $LDname )	{	if ( $cmd -match "-vv" )	{	return "Stop: Executing -Volume $Volume and  -LDname $LDname cannot be done in a single Execution "	}
 										$cmd+=" $LDname "	
 									}	
 					if ( $Domain )	{	$cmd+=" -domain $Domain "	}	
@@ -1172,11 +1163,11 @@ Process
 					if ( $TargetSum ){	$cmd += " -targetsum "		}
 					if ( $PortSum )	{	$cmd += " -portsum "		}
 					if ( $GroupSum ){	$cmd += " -groupsum "		}
-					if ( $VVSum )	{	$cmd += " -vvsum "			}
+					if ( $VolumeSum ){	$cmd += " -vvsum "			}
 					if ( $DomainSum ){	$cmd += " -domainsum "		}
 					if ( $Domain )	{	$cmd += " -domain $Domain "	}
 					if ( $SubSet )	{	$cmd += " -subset "			}
-					if ( $VVname )	{	$cmd+=" $VVname"			}
+					if ( $Volume )	{	$cmd += " $Volume"			}
 					write-verbose "Executing the following SSH command `n`t $cmd"
 					$Result = Invoke-A9CLICommand -cmds  $cmd
 					if ( $ShowRaw ) { return $Result}
@@ -1187,7 +1178,7 @@ Process
 							if ( $TargetSum )		{	Add-Content -Path $tempFile -Value "Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
 							elseif ( $PortSum )		{	Add-Content -Path $tempFile -Value "Link,Target,Type,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
 							elseif ( $GroupSum )	{	Add-Content -Path $tempFile -Value "Group,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
-							elseif ( $VVSum )		{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
+							elseif ( $VolumeSum )	{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
 							elseif ( $DomainSum )	{	Add-Content -Path $tempFile -Value "Domain,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"	}
 							else 					{	Add-Content -Path $tempFile -Value "VVname,RCGroup,Target,Mode,Port,Type,I/O_Cur,I/O_Avg,I/O_Max,KBytes_Cur,KBytes_Avg,KBytes_Max,Svt_Cur,Svt_Avg,Rmt_Cur,Rmt_Avg,IOSz_Cur,IOSz_Avg,Time,Date"}
 							foreach ( $s in  $Result[0..$LastItem] )
@@ -1211,10 +1202,10 @@ Process
 			'statvlun'
 				{	if ( $LW )			{	$cmd+= " -lw "				}
 					if ( $DomainSum )	{	$cmd+= " -domainsum "		}
-					if ( $vvSum )		{	$cmd+= " -vvsum "			}	
+					if ( $VolumeSum )		{	$cmd+= " -vvsum "		}	
 					if ( $HostSum )		{	$cmd+= " -hostsum "			}
 					if ( $domian )		{	$cmd+= " -domain $domian"	}	
-					if ( $VVname )		{	$cmd+= " -v $VVname"		}			
+					if ( $Volume )		{	$cmd+= " -v $Volume"		}			
 					if ( $LUN )			{	$cmd+= " -l $LUN"			}	
 					if ( $nodes )		{	$cmd+= " -nodes $nodes"		}				
 					write-verbose "Executing the following SSH command `n`t $cmd"
@@ -1227,7 +1218,7 @@ Process
 						{	$LastItem = $Result.Count - 3
 							if ( $LW )				{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,Host_WWN/iSCSI_Name,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"}
 							elseif ( $DomainSum )	{	Add-Content -Path $tempFile -Value "Domain,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date" 	}
-							elseif ( $vvSum )		{	Add-Content -Path $tempFile -Value "VVname,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"	}
+							elseif ( $VolumeSum )	{	Add-Content -Path $tempFile -Value "VVname,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"	}
 							elseif ( $RW )			{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"	}
 							elseif ( $Begin )		{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,Time,Date"	}
 							elseif ( $IDLEP )		{	Add-Content -Path $tempFile -Value "Lun,VVname,Host,Port,r/w,r/w_Cur,r/w_Avg,r/w_Max,I/O_Cur,I/O_Avg,I/O_Max,KB_Cur,KB_Avg,Svt_Cur,Svt_Avg,Qlen,IOSz_Cur,IOSz_Avg,Time,Date"	}
@@ -1261,7 +1252,7 @@ Process
 			'statvv'
 				{	if ( $Delay )	{	$cmd+=" -d $Delay "			}
 					if ( $domian )	{	$cmd+=" -domain $domian"	}			
-					if ( $VVname )	{	$cmd+="  $VVname"			}	
+					if ( $Volume )	{	$cmd+="  $Volume"			}	
 					write-verbose "Executing the following SSH command `n`t $cmd"
 					$Result = Invoke-A9CLICommand -cmds  $cmd	
 					if ( $ShowRaw ) { return $Result }
@@ -1358,11 +1349,12 @@ Process
 				}
 		}
 	Remove-Item $tempFile
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	return $Result	
 }
 }
 
-Function Set-A9StatisticsChunklets
+Function Set-A9StatisticsChunklets_CLI
 {
 <#
 .SYNOPSIS
@@ -1421,7 +1413,7 @@ Process
 } 
 }
 
-Function Measure-A9System
+Function Measure-A9System_CLI
 {
 <#
 .SYNOPSIS

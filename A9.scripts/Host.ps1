@@ -135,6 +135,7 @@ Process
                                                                 [PSCustomObject]$NewItem
                                                             }
 						                            )
+                                        write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
                                         return $NewObj
                                     }
                                 else
@@ -181,6 +182,7 @@ Process
 										}
 						            )
 
+                        write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
                         return $NewObj
                     }
                 else
@@ -288,7 +290,7 @@ Process
     $Result = Invoke-A9API -uri '/hosts' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			Get-A9Host -HostName $HostName
 		}
 	else
@@ -322,7 +324,7 @@ Process
 	$Result = Invoke-A9API -uri $uri -type 'DELETE' 
 	$status = $Result.StatusCode
 	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return
 		}
 	else
@@ -461,14 +463,11 @@ Process
     $Result = $null
     $uri = $uri + '/hosts/' + $hostname
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
-	$status = $Result.StatusCode
-	if($status -eq 201)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			Get-A9Host -HostName $HostName
-		}
-	else
+	if ( $Result.StatusCode -eq 201 )
 		{	Write-Error "Failure:  While creating Host:$HostName " 
 			return $Result.StatusDescription
 		}	
+    write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+	Get-A9Host -HostName $HostName
 }
 }

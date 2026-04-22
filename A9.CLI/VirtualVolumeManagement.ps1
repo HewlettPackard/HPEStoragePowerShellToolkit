@@ -140,14 +140,14 @@ process
 }
 }
 
-Function Show-A9VvScsiReservations
+Function Get-A9VvScsiReservations
 {
 <#
 .SYNOPSIS
 	Show information about scsi reservations of virtual volumes (VVs).
 .DESCRIPTION
 	The command displays SCSI reservation and registration information for Virtual Logical Unit Numbers (VLUNs) bound for a specified port.
-.PARAMETER VV_Name
+.PARAMETER Volume
 	Specifies the virtual volume name, using up to 31 characters.
 .PARAMETER SCSI3
 	Specifies that either SCSI-3 persistent reservation or SCSI-2 reservation information is displayed. If this option is not specified,
@@ -160,7 +160,7 @@ Function Show-A9VvScsiReservations
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
-	PS:> Show-A9RSV_CLI -Hostname virt-r-node1
+	PS:> Get-A9VvScsiReservations -Hostname virt-r-node1
 
 	no reservations found
 .NOTES
@@ -171,7 +171,7 @@ Function Show-A9VvScsiReservations
 param(	[Parameter()]	[switch]	$SCSI3,
 		[Parameter()]	[switch]	$SCSI2,
 		[Parameter()]	[String]	$Hostname,
-		[Parameter()]	[String]	$VV_Name,
+		[Parameter()]	[String]	$Volume,
 		[Parameter()]	[switch]	$ShowRaw
 )
 Begin	
@@ -179,12 +179,12 @@ Begin
 }
 process
 {	$Cmd = " showrsv "
-	if($SCSI3)		{	$Cmd += " -l scsi3 "}
-	if($SCSI2)		{	$Cmd += " -l scsi2 " }
-	if($HostInfo)	{	$Cmd += " -host $Hostname " }
-	if($VV_Name)	{	$Cmd += " $VV_Name " }
+	if ( $SCSI3 )		{	$Cmd += " -l scsi3 "}
+	if ( $SCSI2 )		{	$Cmd += " -l scsi2 " }
+	if ( $HostInfo )	{	$Cmd += " -host $Hostname " }
+	if ( $Volume )		{	$Cmd += " $Volume " }
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	if($Result.count -gt 1 -and (-not $ShowRaw))
+	if ( $Result.count -gt 1 -and (-not $ShowRaw) )
 		{	if($Result -match "SYNTAX" )	{	Return $Result	}
 			$tempFile = [IO.Path]::GetTempFileName()
 			$LastItem = $Result.Count		
@@ -192,10 +192,10 @@ process
 				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','			
 					Add-Content -Path $tempfile -Value $s				
 				}
-			Import-Csv $tempFile 
+			$Result = Import-Csv $tempFile 
 			Remove-Item $tempFile	
 		}
-	else{		Return  $Result }
+	Return  $Result
 }
 }
 
@@ -519,8 +519,6 @@ process
 						if($MinAlloc)	{	$Cmd+= " -minalloc $MinAlloc"	}
 						if($Usrcpg)		{	$Cmd += " $Usrcpg "	}
 						if($VolumeName)		{	$Cmd += " $VolumeName"	}	
-						$Result = Invoke-A9CLICommand -cmds  $Cmd
-						return  $Result
 					}
 		}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
@@ -529,7 +527,7 @@ process
 }
 }
 
-Function Show-A9Peer_CLI
+Function Get-A9Peer_CLI
 {
 <#
 .SYNOPSIS   

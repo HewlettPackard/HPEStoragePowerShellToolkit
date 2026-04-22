@@ -547,6 +547,7 @@ Process
 	if($Nodeid)		{	$Cmd += " $Nodeid " 	}
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	Return $Result
 }
 }
@@ -700,6 +701,7 @@ Process
                                                         [PSCustomObject]$NewItem
                                                     }
                                         )
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
     return $NewObj
 }
 }
@@ -823,6 +825,7 @@ Process
 {	$Cmd = " controlsecurity fips status "
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
     Return $Result
 }
 }

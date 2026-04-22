@@ -50,7 +50,7 @@ Process
 			Remove-Item  ve-Item  $tempFile	
 		}
 	if($Result.count -gt 1)	
-		{	write-host " Success : Executing Get-Maint"	-ForegroundColor green 
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 		}
 	return  $Result								
 }

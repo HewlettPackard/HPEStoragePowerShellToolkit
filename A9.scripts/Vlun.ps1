@@ -1,8 +1,6 @@
 ﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
 
-
-
 Function Get-A9vLun 
 {
 <#
@@ -81,9 +79,7 @@ Process
 			if ( $LUNID )		{	$dataPS = $dataPS | where-object {$_.lun -like $LUNID }					}
 			if ( $HostName )	{	$dataPS = $dataPS | where-object {$_.hostname -like $HostName }			}
 			if($dataPS.Count -gt 0)
-				{	write-host "Cmdlet executed successfully" -foreground green
-					# The following code will decorate the returned objects with desciptions for codified enums. 
-					# The following code will also add the formatting information as well.
+				{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 					$NewObj = @(    foreach( $Item in $dataPS)	
 																{   $NewItem=@{PSTypeName = "HPE.A9Storage.vLun"}
 																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
@@ -240,7 +236,7 @@ Process
 	$Result = Invoke-A9API -uri $uri -type 'DELETE'
 	$status = $Result.StatusCode
 	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			Write-verbose "SUCCESS: VLUN Successfully removed with Given Values [ VolumeName : $VolumeName $VolumeSetName | LUNID : $LUNID | HostName : $HostName $HostSetName | NSP : $NSP ]." 
 			return $Result		
 		}
@@ -365,7 +361,7 @@ Process
 	$Result = Invoke-A9API -uri '/vluns' -type 'POST' -body $body -verbose
 	$status = $Result.StatusCode	
 	if($status -eq 201)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return Get-A9vLun -VolumeName $VolumeName -LUNID $LUNID -HostName $HostName
 		}
 	else

@@ -24,12 +24,10 @@ Begin
     }
 Process
 {	$uri = '/cpgs/'+$CPGName
-    $Result = $null
     write-verbose "Executing the following API DELETE command `n $url" 
     $Result = Invoke-A9API -uri $uri -type 'DELETE'
-    $status = $Result.StatusCode
-    if($status -eq 200)
-        {	write-host "Cmdlet executed successfully" -foreground green
+    if ( $Result.StatusCode -eq 200 )
+        {	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
             return 		
         }
     else
@@ -156,61 +154,38 @@ param(
 
 	)		
 Begin 
-    {	if ( $PSCmdlet.ParameterSetName -eq 'API' )
-            {	if ( Test-A9Connection -CLientType 'API' -returnBoolean )
-                    {	$PSetName = 'API'
-                    }
-                else{	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
-                            {	$PSetName = 'SSH'
-                            }
-                    }
-            }
-            elseif ($PSCmdlet.ParameterSetName -eq 'ssh' )	
-            {	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
-                    {	$PSetName = 'SSH'
-                    }
-                else{	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
-                        return
-                    }
+    {	if ($PSCmdlet.ParameterSetName -ne 'API' -and -not (Test-A9COnnection -ClientType 'SshClient' -returnBoolean ) )
+            {	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
+                return
             }
     }
 Process
 {	switch -wildcard ($PsCmdlet.ParameterSetName)
-    {   'API'   {   if($CPGName)
-                        {	$uri = '/cpgs/'+$CPGName
-                            $Result = Invoke-A9API -uri $uri -type 'GET' 
-                            if($Result.StatusCode -eq 200)
-                                {	$dataPS = $Result.content | ConvertFrom-Json
-                                }
-                        }
-                    else
-                        {	$Result = Invoke-A9API -uri '/cpgs' -type 'GET'
-                            if($Result.StatusCode -eq 200)
-                                {	$dataPS = ($Result.content | ConvertFrom-Json).members
-                                }		
-                        }
-                    if($Result.StatusCode -eq 200)
-                        {	write-host "Executed successfully" -foreground green
-                            return $dataPS
-                        }
-                    else
+    {   'API'   {   $uri = '/cpgs'
+                    if($CPGName)                {	$uri = $uri + '/'+$CPGName    }        
+                    $Result = Invoke-A9API -uri $uri -type 'GET' 
+                    $dataPS = $Result.content
+                    if ( $DataPs.members )      {   $DataPS = $DataPS.members    }
+                    if ( $Result.StatusCode -ne 200 )
                         {	write-error "FAILURE : While Executing Get-A9Cpg CPG:$CPGName "
                             return $Result.StatusDescription
-                    }
+                        }
+                    write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+                    return $dataPS
                 }
         "SSH*"   {	$GetCPGCmd = "showcpg "
-                    if($Alert)			{	$GetCPGCmd += "-alert -hist "
+                    if ( $Alert)		{	$GetCPGCmd += "-alert -hist "
                                             $IndexHeader=3; $StartIndex=4; $EndIndex=6; $history=$true
                                 		}
-                    if($SAG)			{	$GetCPGCmd += "-sag -hist "
+                    if ( $SAG )			{	$GetCPGCmd += "-sag -hist "
                                             $IndexHeader=2; $StartIndex=3; $EndIndex=5; $history=$true
                                 		}
-                    if($SDG)			{	$GetCPGCmd += "-sdg -hist"
+                    if ( $SDG )			{	$GetCPGCmd += "-sdg -hist"
                                             $IndexHeader=2; $StartIndex=3; $EndIndex=4; $history=$true
                                 		}
-                    if($DomainName)	{	$GetCPGCmd += "-domain $DomainName "
+                    if ( $DomainName )	{	$GetCPGCmd += "-domain $DomainName "
                                     	}
-                    if ($cpgName)		{	if (-not $Alert -and -not $SAG -and -not $SDG )
+                    if ( $cpgName )		{	if (-not $Alert -and -not $SAG -and -not $SDG )
                                                 {   $GetCPGCmd +=" -hist "
                                                 }
                                             $GetCPGCmd += " $cpgName "
@@ -260,6 +235,7 @@ Process
                     if ( $PsCmdlet.ParameterSetName -eq 'SSHu' ) 
                                     {   $Result2 = $NewObj | Where-object { $_.Total -ne "0"       } }
                     Remove-Item  $tempFile
+                    write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
                     return $Result2
                 }
         }
@@ -498,15 +474,12 @@ Process
                             }	
     if ( $LDLayoutDiskPatternsBody.Count -gt 0 )	{	$LDLayoutBody["diskPatterns"] = $LDLayoutDiskPatternsBody		}		
     if ( $LDLayoutBody.Count -gt 0 )				{	$body["LDLayout"] = $LDLayoutBody 	}	
-    $Result = $null	
     $Result = Invoke-A9API -uri '/cpgs' -type 'POST' -body $body 
-    $status = $Result.StatusCode
-    if ( $status -eq 201 )  {	write-host "Cmdlet executed successfully" -foreground green
-                                return Get-A9Cpg -CPGName $CPGName
-                            }
-                        else{	write-error "FAILURE : While creating CPG:$CPGName "
+    if ( $Result.StatusCode -ne 201 )  {	write-error "FAILURE : While creating CPG:$CPGName "
                                 return $Result.StatusDescription
                             }	
+    write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+    return Get-A9Cpg -CPGName $CPGName
 }
 }
 
@@ -770,17 +743,15 @@ Process
                         }
         }
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body	
-    $status = $Result.StatusCode
-    if($status -eq 200)
-        {	write-host "Cmdlet executed successfully" -foreground green
+    if ( $Result.StatusCode -ne 200 )
+        {	write-error "FAILURE : While Updating CPG:$CPGName " 
+            return $Result.StatusDescription
+        }
+    write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
             if($NewName)    {	return Get-A9Cpg -CPGName $NewName
                             }
             else            {	return Get-A9Cpg -CPGName $CPGName
                             }
-        }
-    else{	write-error "FAILURE : While Updating CPG:$CPGName " 
-            return $Result.StatusDescription
-        }
 }
 }
 
@@ -888,22 +859,9 @@ param(	[Parameter(ParameterSetName='sshErrors')]	[switch]	$ErrorInfo,
         [Parameter(ParameterSetName='ssh')]         [switch]    $ShowRaw
 )		
 Begin 
-    {	if ( $PSCmdlet.ParameterSetName -eq 'API' )
-            {	if ( Test-A9Connection -CLientType 'API' -returnBoolean )
-                    {	$PSetName = 'API'
-                    }
-                else{	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
-                            {	$PSetName = 'SSH'
-                            }
-                    }
-            }
-            elseif ( ($PSCmdlet.ParameterSetName -eq 'ssh') -or ($PSCmdlet.ParameterSetName -eq 'ssPattern') )	
-            {	if ( Test-A9COnnection -ClientType 'SshClient' -returnBoolean )
-                    {	$PSetName = 'SSH'
-                    }
-                else{	write-warning "No SSH connection was Detected to complete the command. Please use the Connect-HPESAN command to reconnect."
-                        return
-                    }
+    {	if ( ($PSCmdlet.ParameterSetName -eq 'ssh') -or ($PSCmdlet.ParameterSetName -eq 'ssPattern') -and -not (Test-A9COnnection -ClientType 'SshClient' -returnBoolean) )	
+            {	write-warning "No SSH connection was Detected and the parameters selected require an SSH connection. Please use the Connect-HPESAN command to reconnect."
+                return
             }
     }
 Process
@@ -955,6 +913,7 @@ Process
                                                         [PSCustomObject]$NewItem
                                                     }
                                         )
+                            write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
                             return $NewObj
                         }
                     else
@@ -1072,6 +1031,7 @@ Process
                             }
                     $returnvalue = Import-Csv $tempFile 
                     Remove-Item  $tempFile
+                    write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
                     return $returnvalue
                 }
     }

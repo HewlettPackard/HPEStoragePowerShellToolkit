@@ -83,16 +83,16 @@ Begin
 	}
 Process
 	{	$cmd= "locatecage "	
-		if ($time)	{	$cmd+=" -t $time"	}
+		if ( $time )			{	$cmd+=" -t $time"	}
 		$cmd+=" $CageName"
-		if ($ModuleName)	{	$cmd +=" $ModuleName"  	}		
-		if ($ModuleNumber)	{	$cmd +=" $ModuleNumber"	}
-		if ($Mag)		{	$cmd +=" $Mag"		}
-		if ($PortName)	{	$cmd +=" $PortName"	}				
+		if ( $ModuleName )		{	$cmd +=" $ModuleName"  	}		
+		if ( $ModuleNumber )	{	$cmd +=" $ModuleNumber"	}
+		if ( $Mag )				{	$cmd +=" $Mag"		}
+		if ( $PortName )		{	$cmd +=" $PortName"	}				
 		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $cmd	
-		if($Result)	{	write-error "FAILURE : While Executing Find-Cage `n "	} 	
-		else		{	write-host "Success : Find-Cage Command Executed Successfully" -ForegroundColor Green }
+		if($Result)	{	Write-warning "While Executing $($PSCmdlet.MyInvocation.MyCommand.Name), No Expected Results Found."	} 	
+		else		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green }
 		return$Result
 	}
 }
@@ -303,7 +303,7 @@ param(	[Parameter(parametersetname='A9Errror')]		[Switch]	$ErrorInformation,
 Begin	
 	{   Test-A9Connection -ClientType 'SshClient' 
 		if ( 	( ($ArrayType.ToLower() -ne "3par") -and ($PSCmdlet.ParameterSetName -eq '3Par') ) -or
-						( ($ArrayType.ToLower() -eq "3par") -and ($PSCmdlet.ParameterSetName -ne '3Par') ) )
+				( ($ArrayType.ToLower() -eq "3par") -and ($PSCmdlet.ParameterSetName -ne '3Par') ) )
 					{	write-warning "You selected a parameter set that doesnt match the type of Array you have"
 						write-warning "If the Arraytype is 3Par you must select the -3ParOnly, If it is not you must not select any of the parameters that are 3par specific."
 						return
@@ -312,10 +312,10 @@ Begin
 Process
 	{	$cmd= "showcage "
 		if ( $ErrorInformation )	
-			{	if ( ($arraytype.ToLower() -eq '3Par') ) 	
-					{ 	$cmd +=" -e "}
-				else{	$cmd +=" -error " }
-			}
+							{	if ( ($arraytype.ToLower() -eq '3Par') ) 	
+									{ 	$cmd +=" -e "}
+								else{	$cmd +=" -error " }
+							}
 		if ( $CachedData -and ($arraytype.ToLower() -eq '3Par') ) 	{ 	$cmd +=" -c "}
 		if ( $State 	 -and ($arraytype.ToLower() -eq '3Par') ) 	{ 	$cmd +=" -state "}
 		if ( $SFP )			{ 	$cmd +=" -sfp " }
@@ -360,7 +360,7 @@ Process
 						$EndIndex=$Result.count-3
 					}
 			}
-		else{	write-warning "FAILURE : While Executing Get-Cage"
+		else{	Write-warning "While Executing $($PSCmdlet.MyInvocation.MyCommand.Name), No Expected Results Found."
 				Return $Result
 			}	
 		$tempFile = [IO.Path]::GetTempFileName()	
@@ -374,9 +374,7 @@ Process
 		Remove-Item $tempFile
 		$dataPS = $returndata
 		if($dataPS.Count -gt 0)
-				{	write-host "Cmdlet executed successfully" -foreground green
-					# The following code will decorate the returned objects with desciptions for codified enums. 
-					# The following code will also add the formatting information as well.
+				{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 					$NewObj = @(    foreach( $Item in $DataPS)	{   $NewItem=@{PSTypeName = "HPE.A9Storage.Cage"}
 																	$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
 																	$DataSetType = "HPE.A9Storage.Cage"
@@ -388,10 +386,8 @@ Process
 															)
 					return $NewObj	
 				}
-			else
-				{	Write-warning "While Executing Get-A9Vv, No Expected Results Found." 
-					return 
-				}
+		Write-warning "While Executing $($PSCmdlet.MyInvocation.MyCommand.Name), No Expected Results Found." 
+		return 
 	}
 }
 
@@ -435,11 +431,8 @@ Process
 		if ($CageName)	{	$cmd +="$CageName "	}
 		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $cmd
-	}
-end
-	{	if($Result)	{	write-warning "FAILURE : While Executing Set-Cage:" 	} 	
-		else 		{	write-host "Success : Executing Set-Cage Command" -ForegroundColor Green }
-		return$Result
+		write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green 
+		return $Result
 	}
 }
 

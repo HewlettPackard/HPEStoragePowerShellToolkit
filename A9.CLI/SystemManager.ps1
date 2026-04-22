@@ -39,7 +39,7 @@ End
 			}
 		$returndata = Import-Csv $tempFile 
 		Remove-Item  $tempFile
-		write-host " Success : Executing Get-Encryption" -ForegroundColor green 
+		write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 		return $returndata	
 	}
 }

@@ -339,7 +339,7 @@ Process
 	$uri = '/volumes/'+$VolumeName 
 	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $Body
 	if($Result.StatusCode -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			if($NewName)	{	return Get-A9Vv -VVName $NewName	}
 			else			{	return Get-A9Vv -VVName $VolumeName		}
 		}
@@ -518,7 +518,7 @@ Process
 									$dataPS = $dataPS | where-object { $_.provisioningType -like $PEnum }
 								}
 							if($dataPS.Count -gt 0)
-								{	write-host "Cmdlet executed successfully" -foreground green
+								{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 									$NewObj = @(    foreach( $Item in $DataPS)	{   $NewItem=@{PSTypeName = "HPE.A9Storage.VVStat"}
 																					$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
 																					$DataSetType = "HPE.A9Storage.VVStat"
@@ -531,11 +531,11 @@ Process
 									if ($Volume) 	{	return ($NewObj | where-object {$_.name -like $Volume })	}
 									else			{ 	return $NewObj		}
 								}
-							else{	Write-warning "While Executing Get-A9Vv, No Expected Results Found." 
+							else{	Write-warning "While Executing $($PSCmdlet.MyInvocation.MyCommand.Name), No Expected Results Found." 
 									return 
 								}
 						}
-					else{	Write-Error "Failure:  While Executing Get-A9Vv." 
+					else{	Write-Error "Failure:  While Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" 
 							return $Result.StatusDescription
 						}
 				}
@@ -550,11 +550,11 @@ Process
 							if($Result.StatusCode -eq 200)	{	$dataPS = ($Result.content | ConvertFrom-Json).members 	}			
 						}
 					If($Result.StatusCode -eq 200)
-						{	write-host "Cmdlet executed successfully" -foreground green
+						{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 							return $dataPS
 						}
 					else
-						{	Write-Error "Failure:  While Executing Get-A9VvSpaceDistribution." 
+						{	Write-Error "Failure:  While Executing $($PSCmdlet.MyInvocation.MyCommand.Name)." 
 							return $Result.StatusDescription
 						}
 				}
@@ -632,7 +632,7 @@ process
 							$Result = Invoke-A9API -uri $uri -type 'DELETE' 
 							$status = $Result.StatusCode
 							if($status -eq 200)
-								{	write-host "Cmdlet executed successfully" -foreground green
+								{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 									return
 								}
 							else
@@ -650,6 +650,7 @@ process
 							write-verbose "The command to be run is : $ActionCmd"			
 							if([string]::IsNullOrEmpty($Result1))
 								{	if($vvName)	{	return  "Success : Removed Volume $VolumeName "	}
+									write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 									return  "Success : Removed Volume "
 								}
 							else

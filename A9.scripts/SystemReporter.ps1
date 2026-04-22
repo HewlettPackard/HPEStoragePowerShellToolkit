@@ -1,6 +1,6 @@
 ﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
-Function Get-A9SystemReportStats
+Function Get-A9SystemReporterStats
 {
 <#
 .SYNOPSIS	
@@ -81,9 +81,9 @@ Function Get-A9SystemReportStats
 	Lase than time For At Time query expressions, you can use the sampleTime parameter
 	Time format should be like this: 2018-07-18T13:25:00+05:30
 .EXAMPLE 
-	PS:> Get-A9SystemReport -AtTime -Frequency hires -CPUReport
+	PS:> Get-A9SystemReporterStats -AtTime -Frequency hires -CPUReport
 .EXAMPLE  
-	PS:> Get-A9SystemReport -VersusTime -Frequency hires -CPUReport | format-table
+	PS:> Get-A9SystemReporterStats -VersusTime -Frequency hires -CPUReport | format-table
 	Cmdlet executed successfully
 
 	node cpu 	userPct 	systemPct 	idlePct interruptsPerSec contextSwitchesPerSec
@@ -93,11 +93,11 @@ Function Get-A9SystemReportStats
 	0    10    	8.60      	1.00   		90.50             0.00                  0.00
 	0    11    	6.50      	1.10   		92.40             0.00                  0.00
 .EXAMPLE  
-	PS:> Get-A9SystemReport -VersusTime -Frequency hires -NodeId 1 -CPUReport
+	PS:> Get-A9SystemReporterStats -VersusTime -Frequency hires -NodeId 1 -CPUReport
 .EXAMPLE  
-	PS:> Get-A9SystemReport -VersusTime -Frequency hires -Groupby cpu -CPUReport
+	PS:> Get-A9SystemReporterStats -VersusTime -Frequency hires -Groupby cpu -CPUReport
 .EXAMPLE	
-	PS:> Get-A9SystemReport 
+	PS:> Get-A9SystemReporterStats
 
 	Cmdlet executed successfully
 
@@ -113,18 +113,18 @@ Function Get-A9SystemReportStats
 
 	This is the sample output of a single record, this command would return many of these results. 
 .EXAMPLE	
-	PS:> Get-A9SystemReportStats -Frequency hires -NodeId 1 -CPUReport
+	PS:> Get-A9SystemReporterStats -Frequency hires -NodeId 1 -CPUReport
 
 .EXAMPLE
-	PS:> Get-A9SystemReportStats -AtTime -Frequency hires -NodeId 1 -CacheReport
+	PS:> Get-A9SystemReporterStats -AtTime -Frequency hires -NodeId 1 -CacheReport
 .EXAMPLE
-	PS:> Get-A9SystemReportStats -AtTime -Frequency hires -Groupby node -CacheReport
+	PS:> Get-A9SystemReporterStats -AtTime -Frequency hires -Groupby node -CacheReport
 .EXAMPLE
-	PS:> Get-A9SystemReportStats -Frequency hires -Summary min -CacheReport
+	PS:> Get-A9SystemReporterStats -Frequency hires -Summary min -CacheReport
 .EXAMPLE
-	PS:> Get-A9SystemReportStats -Compareby bottom -NoOfRecords 2 -ComparebyField hitIORead -CacheReport
+	PS:> Get-A9SystemReporterStats -Compareby bottom -NoOfRecords 2 -ComparebyField hitIORead -CacheReport
 .EXAMPLE	
-	PS:> Get-A9SystemReportStats -Frequency hires -GETime 2018-07-18T13:20:00+05:30 -LETime 2018-07-18T13:25:00+05:30  -CacheReport
+	PS:> Get-A9SystemReporterStats -Frequency hires -GETime 2018-07-18T13:20:00+05:30 -LETime 2018-07-18T13:25:00+05:30  -CacheReport
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory, ParameterSetName='Cache')]	[switch]	$CacheReport,
@@ -185,7 +185,7 @@ Process
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
-			if($dataPS.Count -gt 0)	{	write-host "Cmdlet executed successfully" -foreground green
+			if($dataPS.Count -gt 0)	{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 										return $dataPS
 									}
 			else					{	Write-Error "Failure:  While Executing PS:> Get-A9SystemReport. Expected Result Not Found with Given Filter Option ." 
@@ -198,7 +198,7 @@ Process
 }	
 }
 
-Function Get-A9SpaceReport
+Function Get-A9SystemReporterSpace
 {
 <#
 .SYNOPSIS	
@@ -523,7 +523,7 @@ Process
 	if ( $Result.StatusCode -eq 200 )
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 			if ( $dataPS.Count -gt 0 )
-				{	write-host "Cmdlet executed successfully" -foreground green
+				{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 					return $dataPS
 				}
 			else{	Write-Error "Failure:  While Executing Get-A9*SpaceReport. Expected Result Not Found with Given Filter Option ." 
@@ -537,7 +537,7 @@ Process
 }
 
 
-Function Get-A9IOPsReport
+Function Get-A9SystemReporterIOPs
 {
 <#
 .SYNOPSIS	
@@ -885,7 +885,7 @@ Process
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 			if($dataPS.Count -gt 0)
-				{	write-host "Cmdlet executed successfully" -foreground green
+				{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 					return $dataPS
 				}
 			else

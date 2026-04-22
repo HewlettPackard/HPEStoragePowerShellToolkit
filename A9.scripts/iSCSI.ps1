@@ -51,7 +51,7 @@ Process
 	$uri = "/ports/" + $NSP + "/iSCSIVlans/" + $VlanTag 
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
 	if($Result.StatusCode -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $Result		
 		}
 	else
@@ -88,17 +88,13 @@ Begin
 }
 Process 
 {	$uri = "/ports/"+$NSP+"/iSCSIVlans/"+$VlanTag 
-	$Result = $null
 	$Result = Invoke-A9API -uri $uri -type 'DELETE'
-	$status = $Result.StatusCode
-	if($status -eq 202)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return 
-		}
-	else
-	{	Write-Error "Failure:  While Removing an iSCSI port VLAN : $NSP " 
-		return $Result.StatusDescription
-	}    
+	if ( $Result.StatusCode -ne 200 )
+		{	Write-Error "Failure:  While Removing an iSCSI port VLAN : $NSP " 
+			return $Result.StatusDescription
+		}  
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+	return   
 }
 }
 
@@ -118,7 +114,6 @@ Function Get-A9IscsivLan
 	Get the VLANs for all NSP port combinations
 .EXAMPLE
 	PS:> Get-A9IscsivLans -NSP 1:0:1
-
 #>
 [CmdletBinding()]
 Param(	[Parameter()]	
@@ -129,9 +124,7 @@ Begin
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
-{	$Result = $null
-	$dataPS = $null	
-	$Query="?query=""  """
+{	$dataPS = $null	
 	if ( -not $NSP)
 		{	$ValidNSPs = @()
 			foreach ( $PortItem in $( Get-A9Port | where-object {$_.portWWN} | where-object {$_.ModeDescription -like 'TARGET'} ) )
@@ -150,15 +143,13 @@ Process
 		}
 	$uri = '/ports/'+$NSP+'/iSCSIVlans/'
 	$Result = Invoke-A9API -uri $uri -type 'GET'
-
 	if($Result.StatusCode -eq 200)
 		{	if ( $dataPS.members ) 	{	$dataPS = ($Result.content | ConvertFrom-Json).members }
-			if ($DataPS -gt 0)
-				{	write-host "Cmdlet executed successfully" -foreground green
+			if ( $DataPS -gt 0 )
+				{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 					$NewObj = @(    foreach( $Item in $DataPS)	
 													{   $NewItem=@{PSTypeName = "HPE.A9Storage.iSCSIvLan"}
 														$NewItem['NSP'] = $NSP
-
 														$Enum = $Item.smartSANStatus
 															Switch ($Enum)
 																{   1	{   $desc = 'ENABLED'       }
@@ -172,7 +163,6 @@ Process
 																	remove-variable Desc -erroraction SilentlyContinue
 																	remove-variable Enum -erroraction SilentlyContinue
 																}
-
 															$Enum = $Item.option
 															Switch ($Enum)
 																{   1	{   $desc = 'ENABLED'   }
@@ -185,7 +175,6 @@ Process
 																	remove-variable Desc -erroraction SilentlyContinue
 																	remove-variable Enum -erroraction SilentlyContinue
 																}
-
 														$Enum = $Item.class2
 															Switch ($Enum)
 																{   1	{   $desc = 'ACK0'      }
@@ -198,7 +187,6 @@ Process
 																	remove-variable Desc -erroraction SilentlyContinue
 																	remove-variable Enum -erroraction SilentlyContinue
 																}
-
 														$Enum = $Item.connectionType
 															Switch ($Enum)
 																{   1	{   $desc = 'LOOP'      }
@@ -211,7 +199,6 @@ Process
 																	remove-variable Desc -erroraction SilentlyContinue
 																	remove-variable Enum -erroraction SilentlyContinue
 																}
-
 														$Enum = $Item.ConnectionMode
 															Switch ($Enum)
 																{   1	{   $desc = 'DISK'      }
@@ -225,7 +212,6 @@ Process
 																	remove-variable Desc -erroraction SilentlyContinue
 																	remove-variable Enum -erroraction SilentlyContinue
 																}
-
 														$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
 														$DataSetType = "HPE.A9Storage.iSCSIvLan"
 														$NewItem.PSTypeNames.Insert(0,$DataSetType)
@@ -295,31 +281,28 @@ Begin
 }
 Process 
 {	$body = @{}
-	$Result = $null
 	$uri = '/ports/'+$NSP
 	Switch($PSCmdlet.ParameterSetName)
 		{	'set'	{	$iSCSIPortInfobody = @{}
-						If ($IPAdr) 		{ 	$iSCSIPortInfobody["ipAddr"] ="$($IPAdr)" 	}  
-						If ($Netmask) 		{ 	$iSCSIPortInfobody["netmask"] ="$($Netmask)" 	}
-						If ($Gateway) 		{ 	$iSCSIPortInfobody["gateway"] ="$($Gateway)" 	}
-						If ($MTU) 			{ 	$iSCSIPortInfobody["mtu"] = $MTU	}
-						If ($ISNSPort) 		{ 	$iSCSIPortInfobody["iSNSPort"] =$ISNSPort	}
-						If ($ISNSAddr) 		{ 	$iSCSIPortInfobody["iSNSAddr"] ="$($ISNSAddr)" 	}	
-						if($iSCSIPortInfobody.Count -gt 0){	$body["iSCSIPortInfo"] = $iSCSIPortInfobody 	}
+						If ($IPAdr) 		{ 	$iSCSIPortInfobody["ipAddr"] 	=	"$($IPAdr)" 		}  
+						If ($Netmask) 		{ 	$iSCSIPortInfobody["netmask"] 	=	"$($Netmask)" 		}
+						If ($Gateway) 		{ 	$iSCSIPortInfobody["gateway"] 	=	"$($Gateway)" 		}
+						If ($MTU) 			{ 	$iSCSIPortInfobody["mtu"] 		= 	$MTU				}
+						If ($ISNSPort) 		{ 	$iSCSIPortInfobody["iSNSPort"] 	=	$ISNSPort			}
+						If ($ISNSAddr) 		{ 	$iSCSIPortInfobody["iSNSAddr"] 	=	"$($ISNSAddr)" 		}	
+						if($iSCSIPortInfobody.Count -gt 0){	$body["iSCSIPortInfo"] = $iSCSIPortInfobody }
 						$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 					}
 			'reset'	{	$body["action"] = 2
 						$Result = Invoke-A9API -uri $uri -type 'POST' -body $body	
 					}
 		}
-	if($Result.StatusCode -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result		
-		}
-	else
+	if($Result.StatusCode -ne 200)
 		{	Write-Error "Failure:  While Configuring iSCSI ports: $NSP " 
 			return $Result.StatusDescription
 		}
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+	return $Result
 }
 }
 
@@ -357,20 +340,16 @@ Begin
 }
 Process 
 {	$body = @{}    
-    $body["ipAddr"] = "$($IPAddress)"
-	$body["netmask"] = "$($Netmask)"
-	$body["vlanTag"] = $VlanTag   
-    $Result = $null
+    $body["ipAddr"] 	= "$($IPAddress)"
+	$body["netmask"] 	= "$($Netmask)"
+	$body["vlanTag"] 	= $VlanTag   
 	$uri = "/ports/"+$NSP+"/iSCSIVlans/"
-	$Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
-	$status = $Result.StatusCode	
-	if($status -eq 201)
-		{	write-host "Cmdlet executed successfully" -foreground green
-			return $Result
-		}
-	else
+	$Result = Invoke-A9API -uri $uri -type 'POST' -body $body 	
+	if ( $Result.StatusCode -ne 201 )
 		{	Write-Error "Failure:  While creating VLAN on an iSCSI port : $NSP" 
 			return $Result.StatusDescription
-		}	
+		}
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+	return $Result	
 }
 }

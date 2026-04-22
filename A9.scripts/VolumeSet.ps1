@@ -52,7 +52,7 @@ Process
     $Result = Invoke-A9API -uri '/volumesets' -type 'POST' -body $body 
 	$status = $Result.StatusCode	
 	if($status -eq 201)
-	{	write-host "Cmdlet executed successfully" -foreground green
+	{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 		return ( Get-a9VvSet | where-object {$_.name -like $VolumeSetName})
 	}
 	else
@@ -147,7 +147,7 @@ Process
 	$uri = '/volumesets/'+$VolumeSetName 
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
 	if($Result.StatusCode -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			if($NewName)
 				{	return Get-A9VolumeSet -VolumeSetName $NewName
 				}
@@ -203,7 +203,7 @@ Process
 	If($Result.StatusCode -eq 200)
 		{	$dataPS = $Result.content | ConvertFrom-Json
 			if ( $dataPS.members ) {	$dataps = $dataPS.members }
-			write-host "Cmdlet executed successfully" -foreground green
+			write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			$NewObj = @(    foreach( $Item in $DataPS)	{   $NewItem=@{PSTypeName = "HPE.A9Storage.VolumeSet"}
 															$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
 															$DataSetType = "HPE.A9Storage.VolumeSet"
@@ -257,7 +257,7 @@ process
 	$Result = Invoke-A9API -uri $uri -type 'DELETE'
 	$status = $Result.StatusCode
 	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return
 		}
 	else

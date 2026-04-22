@@ -59,7 +59,7 @@ Process
 							[PSCustomObject]$NewItem
 						}
 				)
-	write-host "Cmdlet executed successfully." -foreground green
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	return $NewObj				
 }	
 }
@@ -119,7 +119,7 @@ Process
 		{	write-warning "Cmdlet executed successfully however No data was returned."
 			return 
 		}
-	write-host "Cmdlet executed successfully" -foreground green
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	$NewObj = @(    foreach( $Item in $DataPS )	
 						{   $NewItem=@{ PSTypeName = "HPE.A9Storage.Role" }
 							$Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }

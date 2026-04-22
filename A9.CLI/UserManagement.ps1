@@ -42,10 +42,7 @@ process
 	if ($Current)	{	$cmd2 += " -current " }
 	if ($Detailed)	{	$cmd2 += " -d "	}
 	$result = Invoke-A9CLICommand -cmds  $cmd2
-
-}
-End
-{	if (-not $ShowRaw -and -not $Detailed)
+	if (-not $ShowRaw -and -not $Detailed)
 		{	$tempFile = [IO.Path]::GetTempFileName()
 			Add-Content -Path $tempFile -Value "Id,Name,IP_Addr,Role,Connected_since_Date,Connected_since_Time,Connected_since_TimeZone,Current,Client,ClientName"
 			foreach($s in $result[1..($result.count - 3)])
@@ -55,8 +52,8 @@ End
 			$Result = Import-CSV $tempFile
 			remove-item $tempFile
 		}
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	return $Result
-
 }
 }
 

@@ -56,7 +56,7 @@ Process
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			Get-A9Host -HostName $HostName
 		}
 	else
@@ -111,14 +111,10 @@ Begin
     {	Test-A9Connection -CLientType 'API'
     }
 Process 
-    {	$Result = $null
-        $dataPS = $null		
-        $uri = '/hostsets'
-        # if($HostSetName)    {	$uri += '/' + $HostSetName    }
-        $Result = Invoke-A9API -uri $uri -type 'GET'
+    {	$uri = '/hostsets'
+       $Result = Invoke-A9API -uri $uri -type 'GET'
         If ($Result.StatusCode -eq 200)
-            {	# if the return data is one item, then the sub-object members does not exist
-                $dataPS1 = ($Result.content | ConvertFrom-Json)
+            {	$dataPS1 = ($Result.content | ConvertFrom-Json)
                 if ($dataPS1.members) { $dataPS = $dataPS1.members }
                 if ($dataPS.Count -gt 0)
                     {	write-host "Cmdlet executed successfully" -foreground green
@@ -132,6 +128,7 @@ Process
                                                 [PSCustomObject]$NewItem
                                             }
                                     )
+						write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
                         if ( $HostSetName ) 
                             {   return ($NewObj | where-object {$_.name -like $HostSetName } )
                             }
@@ -150,7 +147,6 @@ Process
             }
     }
 }
-
 
 Function New-A9HostSet 
 {
@@ -208,7 +204,7 @@ Process
     $Result = Invoke-A9API -uri '/hostsets' -type 'POST' -body $body 
 	$status = $Result.StatusCode	
 	if($status -eq 201)
-	{	write-host "Cmdlet executed successfully" -foreground green
+	{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 		return Get-A9HostSet -HostSetName $HostSetName
 	}
 	else
@@ -225,12 +221,6 @@ Function Set-A9HostSet
 	Update an existing Host Set.
 .DESCRIPTION
 	Update an existing Host Set. by adding or removing members, or altering its name or comment.
-.EXAMPLE    
-	PS:> Set-A9HostSet -HostSetName xxx -NewName yyy
-.EXAMPLE    
-	PS:> Set-A9HostSet -HostSetName xxx -RemoveMember -Members as-Host4
-.EXAMPLE
-	PS:> Set-A9HostSet -HostSetName xxx -AddMember -Members as-Host4
 .PARAMETER HostSetName
 	Existing Host Name
 .PARAMETER AddMember
@@ -244,6 +234,12 @@ Function Set-A9HostSet
 	To remove the comment, use “”.
 .PARAMETER Members
 	The volume or host to be added to or removed from the set.
+.EXAMPLE    
+	PS:> Set-A9HostSet -HostSetName xxx -NewName yyy
+.EXAMPLE    
+	PS:> Set-A9HostSet -HostSetName xxx -RemoveMember -Members as-Host4
+.EXAMPLE
+	PS:> Set-A9HostSet -HostSetName xxx -AddMember -Members as-Host4
 #>
 [CmdletBinding(DefaultParameterSetName="default")]
 Param(
@@ -278,7 +274,7 @@ Process
 	$uri = '/hostsets/'+$HostSetName 
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			if($NewName)	{	Get-A9HostSet -HostSetName $NewName	}	
 			else			{	Get-A9HostSet -HostSetName $HostSetName	}
 		}
@@ -309,16 +305,12 @@ Begin
 }
 Process 
 {	$uri = '/hostsets/'+$HostSetName
-	$Result = $null
 	$Result = Invoke-A9API -uri $uri -type 'DELETE'
-	$status = $Result.StatusCode
-	if($status -eq 200)
-	{	write-host "Cmdlet executed successfully" -foreground green
-		return
-	}
-	else
-	{	Write-Error "Failure:  While Removing Host Set:$HostSetName " 
-		return $Result.StatusDescription
-	}    
+	if ( $Result.StatusCode -ne 200 )
+		{	Write-Error "Failure:  While Removing Host Set:$HostSetName " 
+			return $Result.StatusDescription
+		}   
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+	return 
 }
 }

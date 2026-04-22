@@ -71,7 +71,7 @@ Process
     $Result = Invoke-A9API -uri '/remotecopygroups' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
-	{	write-host "Cmdlet executed successfully" -foreground green
+	{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 		return $Result
 	}
 	else
@@ -142,7 +142,7 @@ Process
     $Result = Invoke-A9API -uri '/remotecopytargets' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $Result
 		}
 	else
@@ -212,7 +212,7 @@ Process
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body	
 	$status = $Result.StatusCode
 	if($status -eq 201)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $Result
 		}
 	else
@@ -288,7 +288,7 @@ Process
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
-	{	write-host "Cmdlet executed successfully" -foreground green
+	{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 		return $Result
 	}
 	else
@@ -354,7 +354,7 @@ Process
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
 	$status = $Result.StatusCode
 	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $Result		
 		}
 	else
@@ -516,7 +516,6 @@ Begin
 Process 
 {	$body = @{}	
 	$TargetsBody=@()
-	$PoliciesBody=@{}
 	switch($PSCmdlet.ParameterSetName)
 		{	'CPGs'	{	$body["localUserCPG"] = "$($LocalUserCPG)"
 						$body["localSnapCPG"] = "$($LocalSnapCPG)"
@@ -562,7 +561,7 @@ Process
 	$uri = '/remotecopygroups/'+ $GroupName
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return Get-A9System				
 		}
 	else
@@ -647,7 +646,7 @@ Process
 	$uri = '/remotecopygroups/'+ $GroupName+'/targets/'+$TargetName
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 	
 	if($Result.StatusCode -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return Get-A9System		
 		}
 	else
@@ -745,7 +744,7 @@ Process
 	Write-Verbose "Request: Request to Update-A9RCopyTarget (Invoke-A9API)." 
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
-	{	write-host "Cmdlet executed successfully" -foreground green
+	{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	}
 	else
 	{	Write-Error "Failure:  While Updating Remote Copy Target / Target Name : $TargetName." 
@@ -802,7 +801,7 @@ Process
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = $Result.content | ConvertFrom-Json
-			write-host "Cmdlet executed successfully" -foreground green
+			write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $dataPS
 		}
 	else
@@ -840,7 +839,7 @@ Process
 	$Result = Invoke-A9API -uri $uri -type 'GET' 		  
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
-			write-host "Cmdlet executed successfully" -foreground green
+			write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $dataPS
 		}
 	else
@@ -924,7 +923,7 @@ Process
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 			if($dataPS.Count -gt 0)
-				{	write-host "Cmdlet executed successfully" -foreground green
+				{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 					return $dataPS
 				}
 			else
@@ -974,7 +973,7 @@ Process
 	$Result = Invoke-A9API -uri $uri -type 'DELETE' 
 	$status = $Result.StatusCode
 	if($status -eq 202)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return
 		}
 	else
@@ -1014,7 +1013,7 @@ Process
 	$Result = Invoke-A9API -uri $uri -type 'PUT' 
 	$status = $Result.StatusCode
 	if($status -eq 201)
-	{	write-host "Cmdlet executed successfully" -foreground green
+	{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 		return $Result
 	}
 	else
@@ -1060,7 +1059,7 @@ Process
     $Result = Invoke-A9API -uri $uri -type 'DELETE' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $Result
 		}
 	else

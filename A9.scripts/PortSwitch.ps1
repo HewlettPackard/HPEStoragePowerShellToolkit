@@ -48,7 +48,7 @@ Process
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 		}
 	if($dataPS.Count -gt 0)
-		{	write-host "Cmdlet executed successfully" -foreground green
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			$NewObj = @(    foreach( $Item in $DataPS)	
 													{   $NewItem=@{PSTypeName = "HPE.A9Storage.Port"}
 
@@ -190,16 +190,14 @@ Begin
 }
 Process 
 {	if ( $NSP)	
-		{	$Result = $null
-			$dataPS = $null	
-			$Query="?query=""  """
+		{	$dataPS = $null	
 			$uri = '/portdevices/all/'+$NSP
 			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			If($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 				}	
 			if($dataPS.Count -gt 0)
-				{	write-host "Cmdlet executed successfully" -foreground green
+				{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 					$NewObj = @(    foreach( $Item in $DataPS)	
 												{   $NewItem=@{PSTypeName = "HPE.A9Storage.PortDevice"}
 													$NewItem['NSP'] = "$NSP"
@@ -271,7 +269,7 @@ Process
 	If($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 			if($dataPS.Count -gt 0)
-					{	write-host "Cmdlet executed successfully" -foreground green
+					{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 						return $dataPS
 					}
 				else{	Write-Warning "The Command executed successfully but returned no items. " 
@@ -331,7 +329,7 @@ Process
 		$Result = Invoke-A9API -uri $uri -type 'GET'
 		If($Result.StatusCode -eq 200)
 		{	if($dataPS.Count -gt 0)
-				{	write-host "Cmdlet executed successfully" -foreground green
+				{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 					$NewObj = @(    foreach( $Item in $DataPS)	
 													{   $NewItem=@{PSTypeName = "HPE.A9Storage.FCSwitch"}
 														$NewItem['NSP'] = "$NSP"

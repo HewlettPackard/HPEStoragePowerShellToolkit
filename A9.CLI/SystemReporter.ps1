@@ -1,6 +1,6 @@
 ﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
-Function Get-A9SystemReportDB
+Function Get-A9SystemReporterDB_CLI
 {
 <#
 .SYNOPSIS
@@ -8,7 +8,7 @@ Function Get-A9SystemReportDB
 .DESCRIPTION
     Displays the amount of space consumed by the various System Reporter databases on the System Reporter volume.
 .EXAMPLE
-	PS:> Get-A9SystemReporter
+	PS:> Get-A9SystemReporter_cli
 
 	Node Total(MiB) Used(MiB) Used%
 	-------------------------------
@@ -43,7 +43,7 @@ Process
 	}
 }
 
-Function Set-A9SystemReport
+Function Set-A9SystemReporter_CLI
 {
 <#
 .SYNOPSIS
@@ -55,7 +55,7 @@ Function Set-A9SystemReport
 
 	Starts System Reporter
 .EXAMPLE
-    PS:> Set-A9SystemReporter -Stop
+    PS:> Set-A9SystemReporter-CLI -Stop
 
 	Stops System Reporter
 .NOTES
@@ -75,13 +75,13 @@ Process
 		write-verbose "System reporter command => $srinfocmd"
 		$Result = Invoke-A9CLICommand -cmds  $srinfocmd
 		if(-not $Result)	
-			{	write-host "Success: System Reporter" -ForegroundColor green
+			{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			}
 		else{	return $Result	
 			}		
 	}
 }
-Function Get-A9SystemReportAlertCrit
+Function Get-A9SystemReporterAlertCrit_CLI
 {
 <#
 .SYNOPSIS
@@ -146,8 +146,7 @@ Process
 	elseif($Result -match "No criteria listed")	
 		{	write-warning "No srcriteria listed"
 		}
-	else{
-			$tempFile = [IO.Path]::GetTempFileName()
+	else{	$tempFile = [IO.Path]::GetTempFileName()
 			foreach ( $s in  $Result[0..($Result.count-3)] )
 				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 					Add-Content -Path $tempFile -Value $s
@@ -159,7 +158,7 @@ Process
 }
 }
 
-Function Get-A9SystemReportHistogram
+Function Get-A9SystemReporterHistogram_CLI
 {
 <#
 .SYNOPSIS
@@ -447,7 +446,6 @@ Process
 								{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
 									Add-Content -Path $tempFile -Value $s
 								}
-
 						}
 			'PhysicalDisk'
 						{	$srinfocmd = "srhistpd "
@@ -587,11 +585,13 @@ Process
 		}	
 	$Result = Import-Csv $tempFile
 	Remove-Item  $tempFile
+	
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	return $Result
 }
 }
 
-Function Set-A9SystemReporterAlertCrit
+Function Set-A9SystemReporterAlertCrit_CLI
 {
 <#
 .SYNOPSIS
@@ -692,7 +692,7 @@ Process
 }
 }
 
-Function Remove-A9SystemReporterAlertCrit
+Function Remove-A9SystemReporterAlertCrit_CLI
 {
 <#
 .SYNOPSIS
@@ -726,7 +726,7 @@ Process
 }
 }
 
-Function New-A9SystemReporterAlertCrit
+Function New-A9SystemReporterAlertCrit_CLI
 {
 <#
 .SYNOPSIS
@@ -1052,7 +1052,8 @@ Begin
 	{	Test-A9Connection -ClientType 'SshClient'
 	}
 Process
-	{	$cmd = $PSCmdlet.ParameterSetName + ' '
+	{	$tempFile = [IO.Path]::GetTempFileName()
+		$cmd = $PSCmdlet.ParameterSetName + ' '
 		switch( $PSCmdlet.ParameterSetName)
 		{	'iSCSISessions'
 				{	$cmd= "srstatiscsisession "	
@@ -1072,7 +1073,6 @@ Process
 					if($Attime)
 						{	if($Result -match "Time")
 								{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
-									$tempFile = [IO.Path]::GetTempFileName()
 									$LastItem = $Result.Count
 									$incre = "true" 		
 									foreach ($s in  $Result[2..$LastItem] )
@@ -1094,15 +1094,12 @@ Process
 											Add-Content -Path $tempFile -Value $s	
 											$incre="false"
 										}			
-									Import-Csv $tempFile 
-									Remove-Item  $tempFile
+									$Result = Import-Csv $tempFile 
 								}
-							else{	return $Result	}
 						}
 					elseif($Summary)
 						{	if($Result -match "Time")
 								{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
-									$tempFile = [IO.Path]::GetTempFileName()
 									$LastItem = $Result.Count
 									$incre = "true" 		
 									foreach ($s in  $Result[3..$LastItem] )
@@ -1124,15 +1121,12 @@ Process
 											Add-Content -Path $tempFile -Value $s	
 											$incre="false"
 										}			
-									Import-Csv $tempFile 
-									Remove-Item  $tempFile
+									$Result = Import-Csv $tempFile 
 								}
-							else{	return $Result	}
 						}
 					elseif($iSCSISessionGroupby)
 						{	if($Result -match "Time")
 								{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
-									$tempFile = [IO.Path]::GetTempFileName()
 									$LastItem = $Result.Count
 									$incre = "true" 		
 									foreach ($s in  $Result[1..$LastItem] )
@@ -1153,10 +1147,8 @@ Process
 											Add-Content -Path $tempFile -Value $s	
 											$incre="false"
 										}			
-									Import-Csv $tempFile 
-									Remove-Item  $tempFile
+									$Result = Import-Csv $tempFile 
 								}
-							else{	return $Result	}
 						}
 					else{	if($Result -match "Time")
 							{	if($Result.Count -lt 5)	{	return "No data found please try with different values."	}
@@ -1200,31 +1192,29 @@ Process
 										Add-Content -Path $tempFile -Value $s	
 										$incre="false"
 									}			
-								Import-Csv $tempFile 
-								Remove-Item  $tempFile
+								$Result = Import-Csv $tempFile 
 							}
-							else{	return $Result}
 						}	
-					if($Result -match "Time"){	return  " Success : Executing Show-SrStatIscsiSession"	}
+					if ( $Result -match "Time" ) {	return  " Success : Executing Show-SrStatIscsiSession"	}
 					else	{	return  $Result	}
 				}
 			'iSCSI'
 				{	$cmd= "srstatiscsi "
-					if ($Attime)	{	$cmd+=" -attime "	
-										if ($BTSecs)	{	$cmd+=" -btsecs $BTSecs "}
-										if ($ETSecs)	{	$cmd+=" -etsecs $ETSecs "	}
-									}
-					else			{	$cmd+=" -vstime "	}
-					if ($Summary)	{	$cmd+=" -summary $Summary "	}
-					if ($Frequency)	{	$cmd+=" -$Frequency "	}
-					else 			{	$cmd+=' -hires '	}
-					if($iSCSIGroupby)	{	$cmd+=" -groupby $iSCSIGroupby"}
-					if ($NSP)		{	$cmd+=" $NSP "	}
+					if ( $Attime )		{	$cmd+=" -attime "	
+											if ( $BTSecs )	{	$cmd+=" -btsecs $BTSecs "	}
+											if ( $ETSecs )	{	$cmd+=" -etsecs $ETSecs "	}
+										}
+					else				{	$cmd+=" -vstime "				}
+					if ( $Summary )		{	$cmd+=" -summary $Summary "		}
+					if ( $Frequency )	{	$cmd+=" -$Frequency "			}
+					else 				{	$cmd+=' -hires '				}
+					if ( $iSCSIGroupby ){	$cmd+=" -groupby $iSCSIGroupby"	}
+					if ( $NSP )			{	$cmd+=" $NSP "					}
 					write-verbose "  Executing  Show-SrStatIscsi command that displays information iSNS table for iSCSI ports in the system  "	
 					$Result = Invoke-A9CLICommand -cmds  $cmd
 					$Flag="True"
-					if ( $ShowRaw ) { return $Result}
-					if($Attime -or $Summary)
+					if ( $ShowRaw ) { 	return $Result		}
+					if ( $Attime -or $Summary )
 						{	$Flag="Fals"
 							if($Result -match "Time")
 								{	if($Result.Count -lt 5){	return "No data found please try with different values."	}
@@ -1256,19 +1246,15 @@ Process
 											Add-Content -Path $tempFile -Value $s	
 											$incre="false"
 										}			
-									$returndata = Import-Csv $tempFile 
-									Remove-Item  $tempFile
-									return $returndata
+									$Result = Import-Csv $tempFile 
 								}
-							else{	return $Result	}
 						}	
-					else{	if($Flag -eq "True")
-								{	if($Result -match "Time")
-										{	if($Result.Count -lt 4)	{	return "No data found please try with different values."	}
-											$tempFile = [IO.Path]::GetTempFileName()
+					else{	if ( $Flag -eq "True" )
+								{	if ( $Result -match "Time" )
+										{	if($Result.Count -lt 4 )	{	return "No data found please try with different values."	}
 											$LastItem = $Result.Count
 											$incre = "true" 		
-											foreach ($s in  $Result[1..$LastItem] )
+											foreach ( $s in  $Result[1..$LastItem] )
 												{	$s= [regex]::Replace($s,"^ ","")						
 													$s= [regex]::Replace($s," +",",")			
 													$s= [regex]::Replace($s,"-","")			
@@ -1291,14 +1277,11 @@ Process
 													Add-Content -Path $tempFile -Value $s	
 													$incre="false"
 												}			
-											$returndata = Import-Csv $tempFile 
-											Remove-Item  $tempFile
-											return $returndata
+											$Result = Import-Csv $tempFile 	
 										}
-									else{	return $Result	}
 								}
 						}	
-					if($Result -match "Time")	{	return  " Success : Executing Show-SrStatIscsi"	}
+					if ( $Result -match "Time" )	{	return  " Success : Executing Show-SrStatIscsi"	}
 					else{	return  $Result	}
 
 				}
@@ -1322,7 +1305,9 @@ Process
 					Return $Result
 				}
 		}
-
+	Remove-Item  $tempFile		
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+	return $Result
 }
 }
 

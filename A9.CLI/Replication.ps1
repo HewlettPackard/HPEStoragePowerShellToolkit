@@ -184,6 +184,7 @@ Process
 	if ($Unit)		{	$cmd+=" -u $Unit  "	}
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-CLICommand -cmds  $cmd	
+	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	return  $Result
 }
 }
@@ -326,7 +327,7 @@ Process
 	write-verbose "Executing the following SSH command `n`t $cmd"
 	$Result = Invoke-CLICommand -cmds  $cmd	
 	write-verbose "  Executing Set-RCopyGroupPeriod using cmd   " 
-	if([string]::IsNullOrEmpty($Result))	{	write-host  "Success : Executing Command "	-ForegroundColor green}
+	if([string]::IsNullOrEmpty($Result))	{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green }
 	else									{	write-warning "FAILURE : While Executing"}
 	return $result 
 }

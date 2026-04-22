@@ -175,7 +175,6 @@ Function Move-A9Chunklet
 .NOTES
 	This command utilizes the SSH command 'movech' ,'movechtospare', 'movepd', 'movepdtospare'
 	This command requires a SSH type connection.
-
 #>
 [CmdletBinding(DefaultParameterSetName='ClearPD')]
 param(
@@ -183,38 +182,27 @@ param(
 		[Parameter(mandatory,parametersetname='targ')]
 		[Parameter(mandatory,parametersetname='ToSpare')]
 		[Parameter(mandatory,parametersetname='PDToSparePerm')]
-		[Parameter(mandatory,parametersetname='PDToSpareOvrd')]
-		
-															[String]	$SourcePD_Id,
+		[Parameter(mandatory,parametersetname='PDToSpareOvrd')]	[String]	$SourcePD_Id,
 		[Parameter(mandatory,parametersetname='targ')]
-		[Parameter(mandatory,parametersetname='ToSpare')]
-															[String]	$SourceChunk_Position,	
-
-		[Parameter(mandatory,parametersetname='targ')]		[String]	$TargetPD_Id,
-	
-		[Parameter(mandatory,parametersetname='targ')]		[String]	$TargetChunk_Position,
-	
+		[Parameter(mandatory,parametersetname='ToSpare')]		[String]	$SourceChunk_Position,	
+		[Parameter(mandatory,parametersetname='targ')]			[String]	$TargetPD_Id,
+		[Parameter(mandatory,parametersetname='targ')]			[String]	$TargetChunk_Position,
 		[Parameter(parametersetname='PDToSparePerm')]
-		[Parameter(parametersetname='targ')]				[Switch]	$Permanent,
-	
+		[Parameter(parametersetname='targ')]					[Switch]	$Permanent,
 		[Parameter(parametersetname='PDToSpareOvrd')]
-		[Parameter(parametersetname='targ')]				[Switch]	$Overide,
-
+		[Parameter(parametersetname='targ')]					[Switch]	$Overide,
 		[Parameter(parametersetname='PDToSparePerm')]
 		[Parameter(parametersetname='PDToSpareOvrd')]
 		[Parameter(parametersetname='ClearPD')]
-		[Parameter(parametersetname='ToSpare')]				[Switch]	$nowait,
-
+		[Parameter(parametersetname='ToSpare')]					[Switch]	$nowait,
 		[Parameter(parametersetname='PDToSparePerm')]
 		[Parameter(parametersetname='PDToSpareOvrd')]
 		[Parameter(parametersetname='ClearPD')]
-		[Parameter(parametersetname='ToSpare')]				[Switch]	$Devtype,
-
-		[Parameter(parametersetname='PDToSparePerm')]			
-		[Parameter(parametersetname='PDToSpareOvrd')]		[Switch]	$PhysicalDeviceToSpare,
-		[Parameter(parametersetname='ClearPD')]				[Switch]	$ClearPhysicalDevice,
-		[Parameter(parametersetname='ToSpare')]				[switch]	$ChunkletToSpare,
-		[Parameter(mandatory,parametersetname='targ')]		[switch]	$RelocateChunklet
+		[Parameter(parametersetname='ToSpare')]					[Switch]	$Devtype,
+		[Parameter(parametersetname='PDToSparePerm')]			[switch]	$PhysicalDeviceToSpare,
+		[Parameter(parametersetname='ClearPD')]					[switch]	$ClearPhysicalDevice,
+		[Parameter(parametersetname='PDToSpareOvrd')]			[switch]	$ChunkletToSpare,
+		[Parameter(parametersetname='ToSpare')]					[switch]	$RelocateChunklet
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -269,8 +257,7 @@ process
 			remove-item $tempFile
 			$DataPS = $returnresult
 		}
-	else	
-		{	$DataPS = $Result	
+	else{	$DataPS = $Result	
 		}
 	$DataPS = $DataPS | convertto-json | ConvertTo-Json
 	return $DataPS
@@ -389,8 +376,7 @@ process
 		if($position)			{	$newsparecmd += " -pos $position"		}
 		$Result = Invoke-A9CLICommand -cmds  $newsparecmd
 	}
-end
-	{	if($Result -match "removed")	{	write-host "Success : Removed spare chunklet "  -ForegroundColor green	}
+end	{	if($Result -match "removed")	{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green	}
 		return $Result
 	}
 }
