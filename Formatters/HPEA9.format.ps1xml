@@ -1881,6 +1881,214 @@
             
             </TableControl>
         </View>
+        <View> <Name>HPE.A9Storage.Historgram</Name>
+            <ViewSelectedBy>
+                <TypeName>HPE.A9Storage.Histogram</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <TableHeaders>
+
+                    <TableColumnHeader>
+                        <width>8</width>
+                        <label>0.5ms</label>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                        <label>0.75ms</label>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>8</width>
+                        <label>1.5ms</label>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                        
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                        <label>50th %ile</label>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
+                        <width>8</width>
+                        <label>95th %ile</label>
+                    </TableColumnHeader>
+
+                    <TableColumnHeader>
+                        <width>8</width>
+                        <label>99th %ile</label>
+                    </TableColumnHeader>
+
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <ScriptBlock>$_.'0.5ms'</ScriptBlock>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <ScriptBlock>$_.'0.75ms'</ScriptBlock>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>1ms</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                               <ScriptBlock>$_.'1.5ms'</ScriptBlock>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>2ms</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>3ms</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>4ms</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>6ms</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>8ms</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>12ms</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>16ms</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>4KB</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>8KB</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>16KB</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>32KB</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>64KB</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>128KB</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>256KB</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>512KB</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <PropertyName>1MB</PropertyName>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <scriptblock>"$($_.50thPercentile) ms"</scriptblock>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <scriptblock>"$($_.95thPercentile) ms"</scriptblock>
+                            </TableColumnItem>
+
+                            <TableColumnItem>
+                                <scriptblock>"$($_.99thPercentile) ms"</scriptblock>
+                            </TableColumnItem>
+
+                        </TableColumnItems>
+                    </TableRowEntry>
+                 </TableRowEntries>
+            
+            </TableControl>
+        </View>
 
     </ViewDefinitions>
 </Configuration>
+
