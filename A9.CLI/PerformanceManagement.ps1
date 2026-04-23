@@ -38,7 +38,8 @@ Function Get-A9Histogram_CLI
 	of all columns starting with the one which corresponds to the threshold service time. For example, -t,8,100 means to only display
 	the rows where the 8ms column and all columns to the right adds up to more than 100.
 .PARAMETER Volume
-	Requests that only LDs mapped to Volumes that match and of the specified names or patterns be displayed. Multiple volume names or patterns can be repeated using a comma-separated list.
+	Requests that only LDs mapped to Volumes that match and of the specified names or patterns be displayed. 
+	Multiple volume names or patterns can be repeated using quotes and seperating .
 .PARAMETER iteration
 	Specifies that the statistics are to stop after the indicated number of iterations using an integer from 1 through 2147483647.
 .PARAMETER hostE
@@ -105,9 +106,13 @@ Function Get-A9Histogram_CLI
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
-    PS:> Get-A9Histogram -iteration 1
+    PS:> Get-A9Histogram -VolumeHistorgram -Volume "AzureLocalPool2" -iteration 3
 
-	This Example displays Virtual Volume service time histograms service iteration number of times.
+	This Example displays Virtual Volume service time histograms service iteration number of times
+.EXAMPLE
+    PS:> Get-A9Histogram -VolumeHistorgram -Volume "AzureLocalPool2 AzurelocalPool6TB" -iteration 3
+
+	This Example displays Virtual Volume service time histograms for both listed volumes service iteration number of times
 .EXAMPLE
 	PS:> Get-A9Histogram -iteration 1 -domain domain.com
 	This Example Shows only the that are in domains with names that match the specified domain name(s)
@@ -544,13 +549,13 @@ Process
 													$BottomBucket   = @(0,0.5,0.75,1,1.5,2,3,4,6,8,12 )
 													$TopBucket      = @(0.5,0.75,1,1.5,2,3,4,6,8,12,16)
 													$Index=1
-													[decimal[]]$BottomPercBucket=@()
-													[decimal[]]$TopPercBucket=@()
-													[decimal[]]$BottomPercBucket   += 0
-													try {	[decimal[]]$TopPercBucket      += [math]::Round($MillisecondBucket[0] / $MillisecondTotal,3)
+													[decimal[]]$BottomPercBucket		=@()
+													[decimal[]]$TopPercBucket			=@()
+													[decimal[]]$BottomPercBucket 		+= 0
+													try {	[decimal[]]$TopPercBucket   += [math]::Round($MillisecondBucket[0] / $MillisecondTotal,3)
 														}
 													catch [System.DivideByZeroException]
-														{	[decimal[]]$TopPercBucket      += 0
+														{	[decimal[]]$TopPercBucket   += 0
 														}
 													while ($Index -lt 10)
 														{   try	{	$BottomPercBucket   += [math]::Round($TopPercBucket[$Index-1],3)
@@ -567,10 +572,10 @@ Process
 													while ($Index -lt 11)
 													{   $RunningIOPS += $MillisecondBucket[$index]
 														if ( $TopPercBucket[$Index] -gt 0.50 -and $BottomPercBucket[$index] -lt 0.50 )
-															{   $fpnum = [math]::round($MillisecondTotal / 2)
-																$iopsbot = $RunningIOPS - $MillisecondBucket[$index]
+															{   $fpnum 		= [math]::round($MillisecondTotal / 2)
+																$iopsbot 	= $RunningIOPS - $MillisecondBucket[$index]
 																$ThisBucket = $fpnum - $iopsbot
-																$Between = $ThisBucket / $MillisecondBucket[$Index]
+																$Between 	= $ThisBucket / $MillisecondBucket[$Index]
 																$ThisLatency = [math]::round( ($TopBucket[$index] - $BottomBucket[$index]) * ($between) + $BottomBucket[$index], 2)
 																$NewItem['50thPercentile'] = $ThisLatency
 															}
@@ -600,9 +605,9 @@ Process
 											$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
 											[PSCustomObject]$NewItem
 										}
-						            )
+				    )
                         write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
-                        return $NewObj	
+                        return $($NewObj | where-object { $_.VVname -eq 'total'})	
 	}
 	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	return $result

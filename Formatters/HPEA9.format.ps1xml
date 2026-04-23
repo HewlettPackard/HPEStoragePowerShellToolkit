@@ -1889,6 +1889,11 @@
                 <TableHeaders>
 
                     <TableColumnHeader>
+                        <width>18</width>
+                        <label>VVname</label>
+                    </TableColumnHeader>
+                    
+                    <TableColumnHeader>
                         <width>8</width>
                         <label>0.5ms</label>
                     </TableColumnHeader>
@@ -1990,6 +1995,10 @@
                 <TableRowEntries>
                     <TableRowEntry>
                         <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>VVname</PropertyName>
+                            </TableColumnItem>
+                            
                             <TableColumnItem>
                                 <ScriptBlock>$_.'0.5ms'</ScriptBlock>
                             </TableColumnItem>

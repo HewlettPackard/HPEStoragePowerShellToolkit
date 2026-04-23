@@ -94,19 +94,19 @@ Function Set-A9VolumeSet
 .PARAMETER Priority
 	May be high, medium or low, and only used when resyncing a volume set. The default value of medium is used if not specified.
 .EXAMPLE
-	PS:> Set-A9VolumeSet -VolumeSetName, xxx -RemoveMember -Members testvv3.0
+	PS:> Set-A9VolumeSet -VolumeSetName xxx -RemoveMember -Members testvv3.0
 .EXAMPLE 
-	PS:> SetA9VolumeSet -VolumeSetName, xxx -AddMember -Members testvv3.0
+	PS:> SetA9VolumeSet -VolumeSetName xxx -AddMember -Members testvv3.0
 .EXAMPLE 
-	PS:> Set-A9VolumeSet -VolumeSetName, xxx -ResyncPhysicalCopy -Priority high
+	PS:> Set-A9VolumeSet -VolumeSetName xxx -ResyncPhysicalCopy -Priority high
 .EXAMPLE 
-	PS:> Set-A9VolumeSet -VolumeSetName, xxx -StopPhysicalCopy 
+	PS:> Set-A9VolumeSet -VolumeSetName xxx -StopPhysicalCopy 
 .EXAMPLE 
-	PS:> Set-A9VolumeSet -VolumeSetName, xxx -PromoteVirtualCopy
+	PS:> Set-A9VolumeSet -VolumeSetName xxx -PromoteVirtualCopy
 .EXAMPLE 
-	PS:> Set-A9VolumeSet -VolumeSetName, xxx -StopPromoteVirtualCopy
+	PS:> Set-A9VolumeSet -VolumeSetName xxx -StopPromoteVirtualCopy
 .EXAMPLE 
-	PS:> Set-A9VolumeSet -VolumeSetName, xxx -NewName as-vvSet1 -Comment "Updateing new name"#>
+	PS:> Set-A9VolumeSet -VolumeSetName xxx -NewName as-vvSet1 -Comment "Updateing new name"#>
 [CmdletBinding(DefaultParameterSetName='Default')]
 Param(
 	[Parameter(Mandatory)]									[String]	$VolumeSetName,
