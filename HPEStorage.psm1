@@ -180,7 +180,7 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
                                             Get-A9Version,          Get-A9CapacityInfo,     Open-A9SSE,     Get-A9EventLog,
                                             Get-A9Certificate,      Import-A9Certificate      
             . $PSScriptRoot\A9.scripts\SystemReporter.ps1 
-            Export-ModuleMember -Function   Get-A9IOPsReport,   Get-A9SpaceReport,  Get-A9SystemReportStats
+            Export-ModuleMember -Function   Get-A9SystemReporterIOPs,   Get-A9SystemReporterSpace,  Get-A9SystemReporterStats
             . $PSScriptRoot\A9.Scripts\Task.ps1
             Export-ModuleMember -Function   Get-A9Task,         Stop-A9Task      
             . $PSScriptRoot\A9.scripts\UserRole.ps1
@@ -212,11 +212,10 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             Export-ModuleMember -Function   Get-A9Maintenance, New-A9Maintenance,   Set-A9Maintenance
             . $PSScriptRoot\A9.CLI\NodeSubsystemManagement.ps1
             Export-ModuleMember -Function   Find-A9Node,        Get-A9Node,         Start-A9NodeRescue, Set-A9Battery,      Set-A9NodePowerSupplyId,     Test-A9FCLoopback,
-                    Find-A9System,          Get-A9SystemInfo,   Set-A9SysMgr,       Set-A9Date,         Show-A9iSCSISession,  
-                    Ping-A9RCIPPorts,       Get-A9Target,       Set-A9FCPorts,          Set-A9HostPorts,
-                    Show-A9Portdevices_CLI, Show-A9PortISNS,    Get-A9HostPorts_CLI,    Show-A9PortARP                      
+                    Find-A9System,          Get-A9SystemInfo,   Set-A9SysMgr,       Set-A9Date,         Get-A9iSCSISession,  
+                    Ping-A9RCIPPorts,       Get-A9Target,       Set-A9FCPorts,      Set-A9HostPorts,    Get-A9Portdevice_CLI                   
             . $PSScriptRoot\A9.CLI\PerformanceManagement.ps1
-            Export-ModuleMember -Function           Get-A9Histogram,        Measure-A9System,    Get-A9Statistics,      Set-A9StatisticsChunklets
+            Export-ModuleMember -Function   Get-A9Histogram_CLI,    Measure-A9System_CLI,   Get-A9Statistics_CLI,   Set-A9StatisticsChunklets_CLI
             . $PSScriptRoot\A9.CLI\Replication.ps1
             Export-ModuleMember -Function           New-A9RCopyGroupCPG_CLI,        Add-A9RCopyLink_CLI,    Get-A9StatRCopy_CLI, 
                     Disable-A9RCopylink_CLI,        Disable-A9RCopyVv_CLI,          Remove-A9RCopyHost,     Test-A9RCopyLink_CLI,
@@ -226,22 +225,22 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
                     Invoke-A9CageService,           Set-A9ServiceNodes,         Get-A9ServiceNodes,         Reset-A9System ,        Update-A9PdFirmware,    Get-A9ResetReason,      
                     Set-A9Security,                 Get-A9SecurityFIPS
             . $PSScriptRoot\A9.CLI\SnapShotManagement.ps1
-            Export-ModuleMember -Function           New-A9SnapVolume_CLI,       Push-A9GroupSnapVolume,     Push-A9SnapVolume,      Push-A9VvCopy
+            Export-ModuleMember -Function           Set-A9VolumeCopy,           Set-A9VolumeSnapshot
             . $PSScriptRoot\A9.CLI\Sparing.ps1
             Export-ModuleMember -Function           Get-A9Spare,                New-A9Spare,                Move-A9Chunklet,        Remove-A9Spare,         Restore-A9RelocatedChunklets
             . $PSScriptRoot\A9.CLI\SystemManager.ps1
             Export-ModuleMember -Function           Get-A9Encryption,           Measure-A9Upgrade,          Get-A9Inventory,        Find-A9Command
             . $PSScriptRoot\A9.CLI\SystemReporter.ps1
-            Export-ModuleMember -Function           Get-A9SystemReportDB,       Set-A9SystemReport,        Get-A9SystemReportHistogram,    Get-A9SystemReporterStats_CLI ,    
-                Get-A9SystemReportAlertCrit,        Set-A9SystemReporterAlertCrit,          Remove-A9SystemReporterAlertCrit,           New-A9SystemReporterAlertCrit 
+            Export-ModuleMember -Function           Get-A9SystemReporterDB_CLI,         Get-A9SystemReporterHistogram_CLI,          Get-A9SystemReporterStats_CLI ,    
+                    Set-A9SystemReporter_CLI,       Get-A9SystemReporterAlertCrit_CLI,  Set-A9SystemReporterAlertCrit_CLI,          Remove-A9SystemReporterAlertCrit_CLI,           New-A9SystemReporterAlertCrit_CLI
             . $PSScriptRoot\A9.CLI\TaskManagement.ps1
             Export-ModuleMember -Function   Remove-A9Task,                  Set-A9Task
             . $PSScriptRoot\A9.CLI\UserManagement.ps1
             Export-ModuleMember -Function   Get-A9UserConnection,           Remove-A9UserConnection
             . $PSScriptRoot\A9.CLI\Vasa.ps1
-            Export-ModuleMember -Function   Set-A9VVolStorageContainer,     Get-A9VASAStorageContainer
+            Export-ModuleMember -Function   Set-A9VASAStorageContainer,     Get-A9VASAStorageContainer
             . $PSScriptRoot\A9.CLI\VirtualVolumeManagement.ps1
-            Export-ModuleMember -Function   Set-A9Volume_CLI,    Get-A9Mapping,      Show-A9Peer_CLI,    Show-A9VvScsiReservations,    Update-A9SnapSpace_CLI
+            Export-ModuleMember -Function   Set-A9Volume_CLI,               Get-A9Mapping,          Get-A9Peer_CLI,    Get-A9VvScsiReservations,    Update-A9SnapSpace_CLI
         }
         if ( ($PersistArrayType -like '3Par') )
             {   # Load the 3PAR specific Commands
