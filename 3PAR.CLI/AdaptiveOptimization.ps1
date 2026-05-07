@@ -180,7 +180,7 @@ Function Start-A9AdaptiveOptimizationConfig
 		Performance: Move more regions towards higher performance tier.
 		Balanced:    Balanced between higher performance and lower cost.
 		Cost:        Move more regions towards lower cost tier.
-.PARAMETER Vv
+.PARAMETER Volume
 	Limit the analysis and data movement to VVs with names that match one or more of the specified names or glob-style patterns. VV set names
 	must be prefixed by "set:".  Note that snapshot VVs will not beconsidered since only base VVs have region space. Each VV's
 	user CPG must be part of the specified AOCFG in order to be optimized. Snapshots in a VV's tree will not be optimized.
@@ -240,7 +240,7 @@ param(
 	[Parameter()]	[String]	$Min_iops,
 	[Parameter()]	[ValidateSet('Performance','Balanced','Cost')]
 					[String]	$Mode,
-	[Parameter()]	[String]	$Vv,
+	[Parameter()]	[String]	$Volume,
 	[Parameter()]	[String]	$T0min,
 	[Parameter()]	[String]	$T1min,
 	[Parameter()]	[String]	$T2min,
@@ -261,7 +261,7 @@ process
 		if($Maxrunh)	{	$Cmd += " -maxrunh $Maxrunh " }
 		if($Min_iops)	{	$Cmd += " -min_iops $Min_iops " }
 		if($Mode)		{	$Cmd += " -mode $Mode " }
-		if($Vv)			{	$Cmd += " -vv $Vv " }
+		if($Vv)			{	$Cmd += " -vv $Volume " }
 		if($T0min)		{	$Cmd += " -t0min $T0min " }
 		if($T1min)		{	$Cmd += " -t1min $T1min " }
 		if($T2min)		{	$Cmd += " -t2min $T2min " }
