@@ -217,9 +217,9 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             . $PSScriptRoot\A9.CLI\PerformanceManagement.ps1
             Export-ModuleMember -Function   Get-A9Histogram_CLI,    Measure-A9System_CLI,   Get-A9Statistics_CLI,   Set-A9StatisticsChunklets_CLI
             . $PSScriptRoot\A9.CLI\Replication.ps1
-            Export-ModuleMember -Function           New-A9RCopyGroupCPG_CLI,        Add-A9RCopyLink_CLI,    Get-A9StatRCopy_CLI, 
+            Export-ModuleMember -Function           Add-A9RCopyLink_CLI,    Get-A9StatRCopy_CLI, 
                     Disable-A9RCopylink_CLI,        Disable-A9RCopyVv_CLI,          Remove-A9RCopyHost,     Test-A9RCopyLink_CLI,
-                    Set-A9RCopyGroupPeriod_CLI,     Set-A9RCopyTargetName_CLI,      Set-A9AdmitRCopyHost       
+                    Set-A9RCopyGroup_CLI,     Set-A9RCopyTargetName_CLI,      Set-A9AdmitRCopyHost,   Set-A9RCopyService_CLI  
             . $PSScriptRoot\A9.CLI\ServiceCommands.ps1
             Export-ModuleMember -Function           Add-A9Hardware,             Get-A9SystemPatch,          Get-A9Version ,         Reset-A9SystemNode,     Set-A9Magazines,            
                     Invoke-A9CageService,           Set-A9ServiceNodes,         Get-A9ServiceNodes,         Reset-A9System ,        Update-A9PdFirmware,    Get-A9ResetReason,      

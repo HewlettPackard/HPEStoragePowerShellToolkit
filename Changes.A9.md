@@ -407,6 +407,9 @@ The following Commands were consolidated into parent 'Set' commands
 		Get-A9HostPorts_CLI					-->		Get-A9Port_CLI
 		Show-A9PortiSCS						--> 	Get-A9Port_CLI -ShowiSNS
 		Show-A9PortDevices_CLI				-->		Get-A9PortDevice_CLI
+		New-A9RCopyGroupCPG_CLI				-->		New-A9RCopyGroup_CLI
+		Set-A9RCopyGroupPeriod_CLI			-->		Set-A9RCopyGroup_CLI
+		
 The following Commands were renamed to follow best practices
 		Update-A9Host_CLI 					--> 	Set-A9Host_CLI
 		Get-A9Space 						-->		Get-A9Space_CLI
@@ -449,6 +452,10 @@ The following commands have been removed as they have been retired from the curr
 		Optimize-A9LD		--> The underlying CLI TuneLD no longer exists, was never a supported CLI command.
 
 	The command Set-A9VVSnashot has been expanded to support the creation of single Volume Snapshots, Groups of Snapshots, or complete Volume Sets
+
+	The Following are new commands added to support additional functions.
+		Find-A9Command		--> Helps a user find a CLI call a command uses, or helps find a powershell command that uses a known CLI command.
+		Set-A9RCopyService	--> Allows the starting and stoping of the RCopy Service on the array.
 
 Known Issues
 ------------------------------------------------------------------------------------------------

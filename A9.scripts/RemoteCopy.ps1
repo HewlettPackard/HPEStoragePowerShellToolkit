@@ -8,7 +8,7 @@ Function New-A9RCopyGroup
 	Create a Remote Copy group
 .DESCRIPTION	
     Create a Remote Copy group
-.PARAMETER RcgName
+.PARAMETER Name
 	Specifies the name of the Remote Copy group to create.
 .PARAMETER Domain
 	Specifies the domain in which to create the Remote Copy group.
@@ -20,14 +20,14 @@ Function New-A9RCopyGroup
 	PERIODIC : Remote Copy group mode is periodic. Although WSAPI 1.5 and later supports PERIODIC 2, Hewlett Packard Enterprise recommends using PERIODIC 3.
 	PERIODIC : Remote Copy group mode is periodic.
 	ASYNC : Remote Copy group mode is asynchronous.
-.PARAMETER UserCPG
+.PARAMETER RemoteUserCPG
 	Specifies the user CPG used for autocreated target volumes.(Required if you specify localUserCPG.Otherwise,optional.)
-.PARAMETER SnapCPG
-	Specifies the snap CPG used for auto-created target volumes.(Required if you specify localSnapCPG.Otherwise,optional.)
+.PARAMETER RemoteSnapCPG
+	Specifies the snap CPG used for auto-created target volumes. If unspecified and RemoteUserCPG is set, will use the RemoteUserCPG value
 .PARAMETER LocalUserCPG
 	CPG used for autocreated volumes. (Required if you specify localSnapCPG;Otherwise,optional.)
 .PARAMETER LocalSnapCPG
-	Specifies the local snap CPG used for autocreated volumes.(Optional field. It is required if localUserCPG is specified.)
+	Specifies the local snap CPG used for autocreated volumes. If unspecified and LocalUserCPG is set, will use the LocalUserCPG value
 .EXAMPLE
 	PS:> New-A9RCopyGroup -RcgName xxx -TargetName xxx -Mode SYNC
 .EXAMPLE	
@@ -37,16 +37,15 @@ Function New-A9RCopyGroup
 #>
 [CmdletBinding()]
 Param(
-	[Parameter(Mandatory)]			[String]	$RcgName,
-	[Parameter()]					[String]	$Domain,
-	[Parameter(Mandatory)]			[String]	$TargetName,
+	[Parameter(Mandatory)]								[String]	$Name,
+	[Parameter()]										[String]	$Domain,
+	[Parameter(Mandatory)]								[String]	$Target,
 	[Parameter(Mandatory)]
-	[ValidateSet('SYNC','PERIODIC','ASYNC')]				
-									[String]	$Mode,
-	[Parameter()]					[String]	$UserCPG,
-	[Parameter()]					[String]	$SnapCPG,
-	[Parameter()]					[String]	$LocalUserCPG,
-	[Parameter()]					[String]	$LocalSnapCPG
+		[ValidateSet('SYNC','PERIODIC','ASYNC')]		[String]	$Mode,
+	[Parameter(ParameterSetName='CPG', Mandatory)]		[String]	$LocalUserCPG,
+	[Parameter(ParameterSetName='CPG')]					[String]	$LocalSnapCPG,
+	[Parameter(ParameterSetName='CPG', Mandatory)]		[String]	$RemoteUserCPG,
+	[Parameter(ParameterSetName='CPG')]					[String]	$RemoteSnapCPG
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -55,18 +54,21 @@ Process
 {	$body = @{}	
 	$TargetsObj = @()
 	$TargetsBody = @{}
-	If ($RcgName)				{	$body["name"] = "$($RcgName)"   }  
-	If ($Domain) 				{	$body["domain"] = "$($Domain)"   }
-	If ($TargetName) 			{	$TargetsBody["targetName"] = "$($TargetName)"		    }
-	if($Mode -eq "SYNC")		{	$TargetsBody["mode"] = 1	}
-	if($Mode -eq "PERIODIC")	{	$TargetsBody["mode"] = 3	}
-	if($Mode -eq "ASYNC")		{	$TargetsBody["mode"] = 4	}
-	If ($UserCPG) 				{	$TargetsBody["userCPG"] = "$($UserCPG)"  }
-	If ($SnapCPG) 				{	$TargetsBody["snapCPG"] = "$($SnapCPG)"    }
-	If ($LocalUserCPG) 			{	$body["localUserCPG"] = "$($LocalUserCPG)"    }
-	If ($LocalSnapCPG) 			{	$body["localSnapCPG"] = "$($LocalSnapCPG)"    }
-	if($TargetsBody.Count -gt 0){	$TargetsObj += $TargetsBody 	}
-	if($TargetsObj.Count -gt 0)	{	$body["targets"] = $TargetsObj 	}
+	$body["name"] 	= $Name  
+	If ( $Domain ) 				{	$body["domain"] = $Domain   }
+	if ( $LocalUserCPG ) 		{	$body["localUserCPG"] = $LocalUserCPG 
+									if ( $LocalSnapCPG ){	$body["localSnapCPG"] = $LocalSnapCPG 	}
+									else 				{	$body["localSnapCPG"] = $LocalUserCPG	}									
+								}
+	$TargetsBody["targetName"] = $Target    
+	if ( $Mode -eq "SYNC" )		{	$TargetsBody["mode"] = 1	}
+	if ( $Mode -eq "PERIODIC" )	{	$TargetsBody["mode"] = 3	}
+	if ( $Mode -eq "ASYNC" )	{	$TargetsBody["mode"] = 4	}
+	If ( $RemoteUserCPG ) 		{	$TargetsBody["userCPG"] = $RemoteUserCPG  
+									If ( $RemoteSnapCPG ) 		{	$TargetsBody["snapCPG"] = $RemoteSnapCPG   	}
+									else 						{ 	$TargetsBody["snapCPG"] = $RemoteUserCPG	}
+								}
+	$TargetsObj += $TargetsBody
     $Result = $null	
     $Result = Invoke-A9API -uri '/remotecopygroups' -type 'POST' -body $body 
 	$status = $Result.StatusCode
@@ -311,9 +313,9 @@ Function Add-A9TargetToRCopyGroup
 	PS:> Add-A9TargetToRCopyGroup -GroupName xxx -TargetName xxx -Mode xxx
 .EXAMPLE	
 	PS:> Add-A9TargetToRCopyGroup -GroupName xxx -TargetName xxx -Mode xxx -LocalVolumeName xxx -RemoteVolumeName xxx
-.PARAMETER GroupName
+.PARAMETER Group
 	Remote Copy group Name.
-.PARAMETER TargetName
+.PARAMETER Target
 	Specifies the name of the target to admit to an existing Remote Copy group.
 .PARAMETER Mode
 	Specifies the mode of the target being added.
@@ -321,18 +323,18 @@ Function Add-A9TargetToRCopyGroup
 	PERIODIC : Remote Copy group mode is periodic. Although WSAPI 1.5 and later supports PERIODIC 2, Hewlett Packard Enterprise recommends using PERIODIC 3.
 	PERIODIC : Remote Copy group mode is periodic.
 	ASYNC : Remote Copy group mode is asynchronous.
-.PARAMETER LocalVolumeName
+.PARAMETER LocalVolume
 	Name of the volume on the primary.
-.PARAMETER RemoteVolumeName
+.PARAMETER RemoteVolume
 	Name of the volume on the target.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$GroupName,
-		[Parameter(Mandatory)]	[String]	$TargetName,
-		[Parameter()]
-		[ValidateSet('SYNC','PERIODIC','ASYNC')]				[String]	$Mode,
-		[Parameter()]					[String]	$LocalVolumeName,
-		[Parameter()]					[String]	$RemoteVolumeName
+Param(	[Parameter(Mandatory)]			[String]	$Group,
+		[Parameter(Mandatory)]			[String]	$Target,
+		[Parameter()][ValidateSet('SYNC','PERIODIC','ASYNC')]				
+										[String]	$Mode,
+		[Parameter()]					[String]	$LocalVolume,
+		[Parameter()]					[String]	$RemoteVolume
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -341,16 +343,16 @@ Process
 {	$body = @{}
 	$volumeMappingsObj=@()	
 	$volumeMappingsBody=@{}	
-    If($TargetName) 		{	$body["targetName"] = "$($TargetName)"    }
-	if($Mode -eq "SYNC")	{	$body["mode"] = 1					}
+    If($Target) 		{	$body["targetName"] = $Target   }
+	if($Mode -eq "SYNC")	{	$body["mode"] = 1			}
 	if($Mode -eq "PERIODIC"){	$body["mode"] = 3			}
 	if($Mode -eq "ASYNC")	{	$body["mode"] = 4			}
-	If($LocalVolumeName) 	{	$volumeMappingsBody["localVolumeName"] = "$($LocalVolumeName)" 		}
-	If($RemoteVolumeName) 	{	$volumeMappingsBody["remoteVolumeName"] = "$($RemoteVolumeName)"    }
+	If($LocalVolume) 	{	$volumeMappingsBody["localVolumeName"] = $LocalVolume		}
+	If($RemoteVolume) 	{	$volumeMappingsBody["remoteVolumeName"] = $RemoteVolume    	}
 	if($volumeMappingsBody.Count -gt 0)	{	$volumeMappingsObj += $volumeMappingsBody 	}
-	if($volumeMappingsObj.Count -gt 0)	{	$body["volumeMappings"] = $volumeMappingsObj 	}
+	if($volumeMappingsObj.Count -gt 0)	{	$body["volumeMappings"] = $volumeMappingsObj}
     $Result = $null
-	$uri = "/remotecopygroups/"+$GroupName+"/targets"
+	$uri = "/remotecopygroups/"+$Group+"/targets"
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
 	$status = $Result.StatusCode
 	if($status -eq 200)
@@ -358,7 +360,7 @@ Process
 			return $Result		
 		}
 	else
-		{	Write-Error "Failure:  While admitting a target into a Remote Copy group : TargetName = $TargetName / GroupName = $GroupName " 
+		{	Write-Error "Failure:  While admitting a target into a Remote Copy group : TargetName = $Target / GroupName = $Group " 
 			return $Result.StatusDescription
 		}
 }
@@ -385,20 +387,16 @@ Function Set-A9RCopyGroup
 	Specifies the local snap CPG for use by autocreated volumes.
 	Specify together with:
 	• localSnapCPG
-	• remoteUserCPG
-	• remoteSnapCPG
+	If left unset, it will assume the same CPG as the LocalUserCPG
 .PARAMETER RemoteUserCPG
 	Specifies the user CPG on the target used by autocreated volumes.
 	Specify together with:
-	• localSnapCPG
 	• LocalUserCPG
-	• remoteSnapCPG
 .PARAMETER RemoteSnapCPG
 	Specifies the snap CPG on the target for use by autocreated volumes.
 	Specify together with:
-	• localSnapCPG
 	• remoteUserCPG
-	• LocalSnapCPG
+	If let unset it iwll assume he same CPG as the LocalUserCPG
 .PARAMETER Mode
 	Specifies the volume group mode.
 	SYNC : Remote Copy group mode is synchronous.
@@ -475,9 +473,9 @@ Function Set-A9RCopyGroup
 [CmdletBinding()]
 Param(	[Parameter(Mandatory)]							[String]	$GroupName,
 		[Parameter(Mandatory,ParameterSetName='CPGs')]	[String]	$LocalUserCPG,
-		[Parameter(Mandatory,ParameterSetName='CPGs')]	[String]	$LocalSnapCPG,	  
+		[Parameter(ParameterSetName='CPGs')]			[String]	$LocalSnapCPG,	  
 		[Parameter(Mandatory,ParameterSetName='CPGs')]	[String]	$RemoteUserCPG,
-		[Parameter(Mandatory,ParameterSetName='CPGs')]	[String]	$RemoteSnapCPG,
+		[Parameter(ParameterSetName='CPGs')]			[String]	$RemoteSnapCPG,
 		[Parameter(Mandatory,ParameterSetName='Mode')]
 		[ValidateSet('SYNC','ASYNC','PERIODIC')]		[String]	$Mode,
 		[Parameter(Mandatory,ParameterSetName='policies')]
@@ -518,10 +516,12 @@ Process
 	$TargetsBody=@()
 	switch($PSCmdlet.ParameterSetName)
 		{	'CPGs'	{	$body["localUserCPG"] = "$($LocalUserCPG)"
-						$body["localSnapCPG"] = "$($LocalSnapCPG)"
+						If ( $LocalSnapCPG ) 	{ $body["localSnapCPG"] = $LocalSnapCPG }
+						else					{ $body["localSnapCPG"] = $LocalUserCPG }				
 						$Obj=@{}
 						$Obj["remoteUserCPG"] = "$($RemoteUserCPG)"
-						$Obj["remoteSnapCPG"] = "$($RemoteSnapCPG)"
+						If ( $RemoteSnapCPG ) 	{ $Obj["remoteSnapCPG"] = $RemoteSnapCPG }
+						else 					{ $Obj["remoteSnapCPG"] = $RemoteSnapCPG }
 						$TargetsBody += $Obj
 						$Obj["targets"] = $TargetBody
 					}
@@ -566,91 +566,6 @@ Process
 		}
 	else
 		{	Write-Error "Failure:  While Updating Remote Copy group." 
-			return $Result.StatusDescription
-		}
-}
-}
-
-Function Update-A9RCopyGroupTarget 
-{
-<#
-.SYNOPSIS
-	Modifying a Remote Copy group target.
-.DESCRIPTION
-	Modifying a Remote Copy group target.
-.EXAMPLE
-	PS:> Update-A9RCopyGroupTarget -GroupName xxx -TargetName xxx -Mode SYNC 
-.PARAMETER GroupName
-	Remote Copy group Name
-.PARAMETER TargetName
-	Target Name
-.PARAMETER SnapFrequency
-	Specifies the interval in seconds at which Remote Copy takes coordinated snapshots. Range is 300–31622400 seconds (1 year).Applicable only for Async mode.
-.PARAMETER RmSnapFrequency
-	Enables (true) or disables (false) the snapFrequency interval. If false, and the snapFrequency value is positive, then the snapFrequency value is set.
-.PARAMETER SyncPeriod
-	Specifies that asynchronous periodic mode groups should be periodically synchronized to the<period_value>.Range is 300 –31622400 secs (1yr).
-.PARAMETER RmSyncPeriod
-	Enables (true) or disables (false) the syncPeriod reset time. If false, and syncPeriod value is positive, then set.
-.PARAMETER Mode
-	Specifies the volume group mode.
-	SYNC : Remote Copy group mode is synchronous.
-	PERIODIC : Remote Copy group mode is periodic. Although WSAPI 1.5 and later supports PERIODIC 2, Hewlett Packard Enterprise recommends using PERIODIC 3.
-	PERIODIC : Remote Copy group mode is periodic.
-	ASYNC : Remote Copy group mode is asynchronous.
-.PARAMETER AutoRecover
-	If the Remote Copy is stopped as a result of links going down, the Remote Copy group can be automatically restarted after the links come back up.
-.PARAMETER OverPeriodAlert
-	If synchronization of an asynchronous periodic Remote Copy group takes longer to complete than its synchronization period, an alert is generated.
-.PARAMETER AutoFailover
-	Automatic failover on a Remote Copy group.
-.PARAMETER PathManagement
-	Automatic failover on a Remote Copy group.
-.PARAMETER MultiTargetPeerPersistence
-	Specifies that the group is participating in a Multitarget Peer Persistence configuration. The group must have two targets, one of which must be synchronous. The synchronous group target also requires pathManagement and autoFailover policy settings.
-#>
-[CmdletBinding()]
-Param(
-	[Parameter(Mandatory)]						[String]	$GroupName,
-	[Parameter(Mandatory)]						[String]	$TargetName,
-	[Parameter()]								[int]		$SnapFrequency,
-	[Parameter()]								[Boolean]	$RmSnapFrequency,
-	[Parameter()]								[int]		$SyncPeriod,
-	[Parameter()]								[Boolean]	$RmSyncPeriod,
-	[Parameter()][ValidateSet('SYNC','PERIODIC')][String]	$Mode,
-	[Parameter()]								[int]		$AutoRecover,
-	[Parameter()]								[int]		$OverPeriodAlert,
-	[Parameter()]								[int]		$AutoFailover,
-	[Parameter()]								[int]		$PathManagement,
-	[Parameter()]								[int]		$MultiTargetPeerPersistence
-)
-Begin 
-{	Test-A9Connection -ClientType 'API'
-}
-Process 
-{	$body = @{}	
-	$PoliciesBody=@{}
-	If ($SyncPeriod) 		{	$body["syncPeriod"] = $SyncPeriod    }	
-	If ($RmSyncPeriod) 		{	$body["rmSyncPeriod"] = $RmSyncPeriod					    }
-	If ($SnapFrequency) 	{	$body["snapFrequency"] = $SnapFrequency    }
-	If ($RmSnapFrequency) 	{	$body["rmSnapFrequency"] = $RmSnapFrequency    }
-	if($Mode -eq "SYNC")	{	$body["mode"] = 1	}
-	if($Mode -eq "PERIODIC"){	$body["mode"] = 2	}
-	If ($AutoRecover) 		{	$PoliciesBody["autoRecover"] = $AutoRecover    }
-	If ($OverPeriodAlert) 	{	$PoliciesBody["overPeriodAlert"] = $OverPeriodAlert    }
-	If ($AutoFailover) 		{	$PoliciesBody["autoFailover"] = $AutoFailover    }
-	If ($PathManagement) 	{	$PoliciesBody["pathManagement"] = $PathManagement    }
-	If ($MultiTargetPeerPersistence){	$PoliciesBody["multiTargetPeerPersistence"] = $MultiTargetPeerPersistence    }	
-	if($PoliciesBody.Count -gt 0)	{	$body["policies"] = $PoliciesBody	}
-    $Result = $null
-	$uri = '/remotecopygroups/'+ $GroupName+'/targets/'+$TargetName
-    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 	
-	if($Result.StatusCode -eq 200)
-		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
-			return Get-A9System		
-		}
-	else
-		{	Write-Error "Failure:  While Updating Remote Copy group target." 
 			return $Result.StatusDescription
 		}
 }
