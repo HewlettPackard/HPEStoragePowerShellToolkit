@@ -170,11 +170,12 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             . $PSScriptRoot\A9.scripts\iSCSI.ps1 
             Export-ModuleMember -Function   Get-A9IscsivLan,        Set-A9IscsivLan,    New-A9IscsivLan ,       Remove-A9IscsivLan,    Set-A9ISCSIPort
             . $PSScriptRoot\A9.scripts\RemoteCopy.ps1
-            Export-ModuleMember -Function   Get-A9RCopyGroup,       New-A9RCopyGroup,   Set-A9RCopyGroup,      Remove-A9RCopyGroup,
-                                            Get-A9RCopyTarget,      New-A9RCopyTarget,  Update-A9RCopyTarget,       
+            Export-ModuleMember -Function   Get-A9RCopyGroup,       New-A9RCopyGroup,                           Remove-A9RCopyGroup,
+                                            Get-A9RCopyTarget,      New-A9RCopyTarget,  Set-A9RCopyTarget,      Set-A9RCopyGroup,
                                             Get-A9RCopyInfo,
-                                            Add-A9VvToRCopyGroup,   Remove-A9VvFromRCopyGroup,  Add-A9TargetToRCopyGroup,   Remove-A9TargetFromRCopyGroup,
-                                            New-A9SnapRcGroupVv,    Update-A9RCopyGroupTarget  
+                                            Add-A9VolumeToRCopyGroup,                                           Remove-A9VolumeFromRCopyGroup,  
+                                            Add-A9TargetToRCopyGroup,                                           Remove-A9TargetFromRCopyGroup,
+                                            New-A9RCopyGroupSnapshot 
             . $PSScriptRoot\A9.scripts\System.ps1 
             Export-ModuleMember -Function   Get-A9System,           Set-A9System,           Get-A9WSAPI,          
                                             Get-A9Version,          Get-A9CapacityInfo,     Open-A9SSE,     Get-A9EventLog,
@@ -217,15 +218,15 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             . $PSScriptRoot\A9.CLI\PerformanceManagement.ps1
             Export-ModuleMember -Function   Get-A9Histogram_CLI,    Measure-A9System_CLI,   Get-A9Statistics_CLI,   Set-A9StatisticsChunklets_CLI
             . $PSScriptRoot\A9.CLI\Replication.ps1
-            Export-ModuleMember -Function           Add-A9RCopyLink_CLI,    Get-A9StatRCopy_CLI, 
+            Export-ModuleMember -Function           Add-A9RCopyLink_CLI,            Get-A9StatRCopy_CLI,    Get-A9Peer_CLI,    
                     Disable-A9RCopylink_CLI,        Disable-A9RCopyVv_CLI,          Remove-A9RCopyHost,     Test-A9RCopyLink_CLI,
-                    Set-A9RCopyGroup_CLI,     Set-A9RCopyTargetName_CLI,      Set-A9AdmitRCopyHost,   Set-A9RCopyService_CLI  
+                    Set-A9RCopyGroup_CLI,           Set-A9RCopyTargetName_CLI,      Set-A9AdmitRCopyHost,   Set-A9RCopyService_CLI  
             . $PSScriptRoot\A9.CLI\ServiceCommands.ps1
             Export-ModuleMember -Function           Add-A9Hardware,             Get-A9SystemPatch,          Get-A9Version ,         Reset-A9SystemNode,     Set-A9Magazines,            
                     Invoke-A9CageService,           Set-A9ServiceNodes,         Get-A9ServiceNodes,         Reset-A9System ,        Update-A9PdFirmware,    Get-A9ResetReason,      
                     Set-A9Security,                 Get-A9SecurityFIPS
             . $PSScriptRoot\A9.CLI\SnapShotManagement.ps1
-            Export-ModuleMember -Function           Set-A9VolumeCopy,           Set-A9VolumeSnapshot
+            Export-ModuleMember -Function           Set-A9VolumeCopy,           Set-A9VolumeSnapshot,    Update-A9SnapSpace_CLI
             . $PSScriptRoot\A9.CLI\Sparing.ps1
             Export-ModuleMember -Function           Get-A9Spare,                New-A9Spare,                Move-A9Chunklet,        Remove-A9Spare,         Restore-A9RelocatedChunklets
             . $PSScriptRoot\A9.CLI\SystemManager.ps1
@@ -240,7 +241,7 @@ if ( ($PersistArrayType -like 'Primera') -or ($PersistArrayType -like 'Alletra90
             . $PSScriptRoot\A9.CLI\Vasa.ps1
             Export-ModuleMember -Function   Set-A9VASAStorageContainer,     Get-A9VASAStorageContainer
             . $PSScriptRoot\A9.CLI\VirtualVolumeManagement.ps1
-            Export-ModuleMember -Function   Set-A9Volume_CLI,               Get-A9Mapping,          Get-A9Peer_CLI,    Get-A9VvScsiReservations,    Update-A9SnapSpace_CLI
+            Export-ModuleMember -Function   Set-A9Volume_CLI,               Get-A9Mapping,          Get-A9ScsiReservation
         }
         if ( ($PersistArrayType -like '3Par') )
             {   # Load the 3PAR specific Commands

@@ -1,61 +1,6 @@
 ﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
 ######## Add/New Commands
-Function New-A9RCopyGroup_CLI
-{
-<#
-.SYNOPSIS
-	The New-RCopyGroupCPG command creates a remote-copy volume group.
-.DESCRIPTION
-    The New-RCopyGroupCPG command creates a remote-copy volume group.   
-.PARAMETER LocalCPG
-	Specifies the local user CPG and target user CPG that will be used for volumes that are auto-created. The local CPG will only be used after failover and recovery.
-.PARAMETER TargetCPG
-	Specifies the local user CPG and target user CPG that will be used for volumes that are auto-created. The local CPG will only be used after failover and recovery.
-.PARAMETER domain
-	Creates the Remote Copy group in the specified domain. The volume group must be created by a member of a particular domain with Super or Edit privileges.
-.PARAMETER GroupName
-	Specifies the name of the volume group, using up to 22 characters if the mirror_config policy is set, or up to 31 characters otherwise. This name is assigned with this command.
-.PARAMETER TargetName
-	Specifies the target name associated with this group. This name should already have been assigned using the creatercopytarget command. The <target_name>:<mode> pair can be repeated to specify multiple targets.
-.PARAMETER Mode 	
-	Specifies that the mode of the created group, the available modes are:
-		sync—synchronous replication
-		periodic—periodic asynchronous replication
-	The <target_name>:<mode> pair can be repeated to specify multiple targets
-.EXAMPLE
-	New-A9RCopyGroupCPG_CLI -GroupName ABC -TargetName XYZ -Mode Sync	
-.EXAMPLE  
-	New-A9RCopyGroupCPG_CLI -LocalCpg RaidSet1 -TargetCPG RAIDSet2 -GroupName MyReplGroup -TargetName BellevueArray -Mode Sync
-.NOTES
-	This command utilizes the SSH command 'CreateRCopyGroup'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding(DefaultParameterSetName='simple')]
-param(	[Parameter(Mandatory)]							[String]	$GroupName,
-		[Parameter(Mandatory)]							[String]	$TargetName,
-		[Parameter(Mandatory)][ValidateSet("sync","periodic")]
-														[String]	$Mode,
-		[Parameter()]									[String]	$domain,
-		[Parameter(parametersetname='usr',mandatory)]	[String]	$LocalCPG,
-		[Parameter(parametersetname='usr',mandatory)]	[String]	$TargetCPG
-	)		
-Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{		$cmd= "creatercopygroup"
-		if ($domain )	{	$cmd+=" -domain $domain "		}	
-		if($UsrCpg)		{	$cmd+=" -usr_cpg " + $LocalCPG + ' ' + $TargetName + ':' + $TargetCPG	}
-		$cmd+= $GroupName + ' ' + $TargetName + ':' + $Mode
-		write-verbose "Executing the following SSH command `n`t $cmd"
-		$Result = Invoke-A9CLICommand -cmds  $cmd	
-		if([string]::IsNullOrEmpty($Result))	
-			{	Write-warning "While Executing  $($PSCmdlet.MyInvocation.MyCommand.Name), No Expected Results Found."	} 	
-		else{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green }
-		return $Result
-}
-}
 
 Function Add-A9RCopyLink_CLI
 {
@@ -161,220 +106,44 @@ Process
 }
 }
 
-####### Set Commands
-Function Set-A9RCopyGroup_CLI
+Function Get-A9Peer_CLI
 {
 <#
-.SYNOPSIS
-	Sets a resynchronization period for volume groups in asynchronous periodic mode.
-.DESCRIPTION
-	Sets a resynchronization period for volume groups in asynchronous periodic mode.   
-.PARAMETER PeriodInterval
-	Specifies the increment of the time period in units, can be seconds (s), minutes (m), hours (h), or days (d).
-.PARAMETER PeriodValue
-	Specifies the time period in units specified by the Periodic interval, such as 14 which could be either 14 minutes or 14hours for automatic resynchronization.
-.PARAMETER Target
-	Specifies the target name for the target definition created with the New-A9RCopyGroup command.
-.PARAMETER Group
-	Specifies the name of the RCopy group whose policy is set, or whose target direction is switched.
-.PARAMETER NoStart
-	Specifies that groups are not started after role reversal is completed. This option can be used for failover, recover and restore subcommands.
-.PARAMETER NoSync
-	Specifies that groups are not synced after role reversal is completed through the recover, restore and failover specifiers.
-.PARAMETER Discard
-	Specifies not to check a group's other targets to see if newer data should be pushed from them if the group has multiple targets. The use
-	of this option can result in the loss of the most recent changes to the group's volumes and should be used carefully. This option is only valid for the failover specifier.
-.PARAMETER NoPromote
-	This option is only valid for the failover and reverse specifiers.  When used with the reverse specifier, specifies that the synchronized snapshots
-	of groups that are switched from primary to secondary not be promoted to the base volume. When used with the failover specifier, it indicates that
-	snapshots of groups that are switched from secondary to primary should not be promoted to the base volume in the case where all volumes of the group
-	were not synchronized to the same time point. The incorrect use of this option can lead to the primary secondary volumes not being consistent.
-.PARAMETER NoSnap
-	Specifies that snapshots are not taken of groups that are switched from secondary to primary. Additionally, existing snapshots are deleted
-	if groups are switched from primary to secondary. The use of this option may result in a full synchronization of the secondary volumes. This
-	option can be used for failover, restore, and reverse subcommands.
-.PARAMETER StopGroups
-	Specifies that groups are stopped before running the reverse subcommand.
-.PARAMETER Local
-	The -local option only applies to the "reverse" operation and then only when the -natural or -current options to the "reverse" operation
-	are specified. Specifying -local with the "reverse" operation and an associated -natural or -current option will only affect the array
-	where the command is issued and will not be mirrored to any other arrays in the Remote Copy configuration.
-.PARAMETER Natural
-	Specifying the -natural option with the "reverse" operation changes the role of the groups but not the direction of data flow between the
-	groups on the arrays. For example, if the role of the groups are "primary" and "secondary", issuing the -natural option with the
-	"reverse" operation will result in the role of the groups becoming "primary-rev" and "secondary-rev" respectively. The direction of data
-	flow between the groups is not affected only the roles. Since the -natural option does not change the direction of data flow between
-	groups it does not require the groups be stopped.
-.PARAMETER Current
-	Specifying the -current option with the "reverse" operation changes both the role and the direction of data flow between the groups. For
-	example, if the roles of the groups are "primary" and "secondary", issuing the -current option to the "reverse" operation will result in
-	the roles of the group becoming "secondary-rev" and "primary-rev" respectively and the direction data flow between the groups is
-	reversed. Since the -current option actually reverses the direction of data replication it requires the group be stopped.
-
-	Both the -natural and -current options must be used with care to ensure the Remote Copy groups do not end up in a non-deterministic
-	state (like "secondary", "secondary-rev" for example) and to ensure data loss does not occur by inadvertently changing the direction of
-	data flow and re-syncing old data on top of newer data.
-.PARAMETER LocalCPG 
-	Specifies the local user CPG and target user CPG that will be used for volumes that are auto-created. The local CPG will only be used after failover and recover.
-.PARAMETER TargetCPG
-	Specifies the local snap CPG and target snap CPG that will be used for volumes that are auto-created. The local CPG will only be used after failover and recover.
-.PARAMETER Usr_cpg_unset
-	Unset all user CPGs that are associated with this group..PARAMETER Snp_cpg_unset Unset all snap CPGs that are associated with this group.
-.EXAMPLE
-	PS:> Set-A9RCopyGroup_CLI -PeriodInterval m -PeriodValue 10 -TargetName CHIMERA03 -GroupName AS_TEST
-.EXAMPLE
-	PS:> Set-A9RCopyGroup_CLI -PeriodInterval m -PeriodValue 10 -Force -Target CHIMERA03 -Group AS_TEST
-.EXAMPLE
-.EXAMPLE
-	PS:> Set-A9RCopyGroup_CLI -PeriodInterval m -PeriodValue 10 -Natural -Target CHIMERA03 -Group AS_TEST	
-.NOTES
-	This command utilizes the SSH command 'setrcopygroup'
+.SYNOPSIS   
+	The command displays the arrays connected through the host ports or peer ports over the same fabric.
+.DESCRIPTION  
+	The command displays the arrays connected through the host ports or peer ports over the same fabric. The Type field
+    specifies the connectivity type with the array. The Type value of Slave means the array is acting as a source, the Type value
+    of Master means the array is acting as a destination, the type value of Peer means the array is acting as both source and destination.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE	
+	This command utilizes the SSH command 'showpeer'
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(ParameterSetName='RTest',mandatory)]			[switch]	$RemoveTest,
-
-		[Parameter(ParameterSetName='Policy',mandatory)]				
-			[ValidateSet('auto_failover','no_auto_failover','auto_failover_ext','no_auto_failover_ext','auto_recover','no_auto_recover','auto_synchronize','no_auto_synchronize','over_per_alert','no_over_per_alert','path_management','no_path_management','mt_pp','no_mt_pp','active-active','no_active_active')]	
-																[string]	$Policy,
-		[Parameter(ParameterSetName='Period',mandatory)]
-			[ValidateSet('s','m','h','d')]						[string]	$PeriodInterval,
-		[Parameter(ParameterSetName='Period',mandatory)]		[int]		$PeriodValue,
-
-		[Parameter(ParameterSetName='Mode',mandatory)]
-			[ValidateSet('sync','periodic')]					[string]	$ModeValue,
-
-		[Parameter(ParameterSetName='CPGUn',mandatory)]			[switch]	$UnsetCPG,
-
-		[Parameter(ParameterSetName='CPG',mandatory)]			[string]	$LocalCPG,
-		[Parameter(ParameterSetName='CPG',mandatory)]			[string]	$TargetCPG,
-
-		[Parameter(ParameterSetName='DrOp',Mandatory)]			
-		[Parameter(ParameterSetName='DrOpG',Mandatory)]			
-			[ValidateSet('failover','reverse','switchover','recover','restore','override')]
-																[string]	$DROperation,
-		[Parameter(ParameterSetName='DrOp')]			
-		[Parameter(ParameterSetName='DrOpG')]					[switch]	$NoStart,
-		[Parameter(ParameterSetName='DrOp')]			
-		[Parameter(ParameterSetName='DrOpG')]					[switch]	$NoSync,
-		[Parameter(ParameterSetName='DrOp')]			
-		[Parameter(ParameterSetName='DrOpG')]					[switch]	$NoPromote,
-		[Parameter(ParameterSetName='DrOp')]			
-		[Parameter(ParameterSetName='DrOpG')]					[switch]	$NoSnap,
-		[Parameter(ParameterSetName='DrOp')]			
-		[Parameter(ParameterSetName='DrOpG')]					[switch]	$StopGroups,
-		[Parameter(ParameterSetName='DrOp')]			
-		[Parameter(ParameterSetName='DrOpG')]					[switch]	$Natural,
-		[Parameter(ParameterSetName='DrOp')]			
-		[Parameter(ParameterSetName='DrOpG')]					[switch]	$Current,
-		[Parameter(ParameterSetName='DrOp')]			
-		[Parameter(ParameterSetName='DrOpG')]					[switch]	$Local,
-		[Parameter(ParameterSetName='DrOp')]			
-		[Parameter(ParameterSetName='DrOpG')]					[switch]	$ForceAppFailover,
-		
-		[Parameter(ParameterSetName='DrOp',Mandatory)]
-		[Parameter(ParameterSetName='Period',mandatory)]
-		[Parameter(ParameterSetName='Mode',mandatory)]
-		[Parameter(ParameterSetName='CPG',mandatory)]			[string]	$Target,
-		
-		[Parameter(ParameterSetName='Policy')]	
-		[Parameter(ParameterSetName='Period')]	
-		[Parameter(ParameterSetName='CPGUn',mandatory)]	
-		[Parameter(ParameterSetName='Mode')]	
-		[Parameter(ParameterSetName='CPG',mandatory)]				
-		[Parameter(ParameterSetName='RTest',mandatory)]											
-		[Parameter(ParameterSetName='DrOpG',mandatory)]
-		[Parameter(ParameterSetName='DrOp')]					[string]	$Group
-)	
+param(	[Parameter()] 	[switch]	$ShowRaw 
+	)	
 Begin
-{	Test-A9Connection -ClientType 'SshClient'
-}
-Process	
-{	$cmd= "setrcopygroup "
-	switch -wildcard ($PSCmdlet.ParameterSetName)
-		{
-			'Policy'	{	$cmd+=' pol ' + $Policy
-						}
-			'Period'	{	$cmd+=' period ' + $PeriodValue + $PeriodInterval + ' ' + $Target
-						}
-			'Mode'		{	$cmd+=' mode ' + $ModeValue + ' ' + $Target
-						}
-			'CPG'		{ 	$cmd+=' cpg -usr_cpg ' + $LocalCPG + ' ' + $Target + ':' + $TargetCPG + ' ' + $Group
-						}
-			'CPGun'		{	$cmd+=' cpg -usr_cpg_unset ' + $Group 
-						}
-			'RTest'		{	$cmd+= ' vvol -removetest ' + $Group
-						}
-			"DrO*"		{	$cmd+= $DROperation + ' '
-							if ($NoStart)	
-								{	if ( ( 'failover','recover','restore' ) -contains $DROperation )
-										{	$cmd+='-nostart' 
-										}
-									else{	write-warning 'NoStart value not used unless operation type is Failover, Recover, or Restore'
-										}
-								}
-							if ($NoSync)	
-								{	if ( ( 'failover','recover','restore' ) -contains $DROperation )
-										{	$cmd+='-nosync' 
-										}
-									else{	write-warning 'NoSync value not used unless operation type is Failover, Recover, or Restore'
-										}
-								}
-							if ($Discard)	
-								{	if ( ( 'failover' ) -contains $DROperation )
-										{	$cmd+='-discard' 
-										}
-									else{	write-warning 'Discard value not used unless operation type is Failover'
-										}
-								}
-							if ($NoPromote)	
-								{	if ( ( 'failover','reverse' ) -contains $DROperation )
-										{	$cmd+='-discard' 
-										}
-									else{	write-warning 'discard value not used unless operation type is Failover, Reverse'
-										}
-								}
-							if ($NoSnap)	
-								{	if ( ( 'failover','restore','reverse','switchover' ) -contains $DROperation )
-										{	$cmd+='-nosnap' 
-										}
-									else{	write-warning 'NoSnap value not used unless operation type is Failover, Reverse, or Restore or Switchover'
-										}
-								}
-							if ($StopGroups)	
-								{	if ( ( 'reverse' ) -contains $DROperation )
-										{	$cmd+='-nosnap' 
-										}
-									else{	write-warning 'NoSnap value not used unless operation type is Failover, Reverse, or Restore or Switchover'
-										}
-								}
-							if ($Local)	
-								{	if ( ( 'reverse' ) -contains $DROperation -and ( $natural -or $current) )
-										{	$cmd+='-nosnap' 
-										}
-									else{	write-warning 'Local value not used unless operation type is Reverse and either Natural or Current are set'
-										}
-								}
-							if ($Current)	
-								{	if ( ( 'reverse' ) -contains $DROperation -and ( $natural -or $current) )
-										{	$cmd+='-nosnap' 
-										}
-									else{	write-warning 'Current value not used unless operation type is Reverse'
-										}
-								}
-						}
+{	Test-A9Connection -ClientType 'SshClient' 
+}	
+process	
+{	$cmd = " showpeer"
+	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if(-not ( ($Result -match "No peers") -or $ShowRaw ))
+		{	$tempFile = [IO.Path]::GetTempFileName()
+			foreach ($s in  $Result[0..($Result.count)] )
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','	
+					Add-Content -Path $tempFile -Value $s
+				}
+			$Result = Import-Csv $tempFile 
+			remove-item $tempFile
 		}
-	if ( $Target )	{	$cmd+=' ' + $Target 	}
-	if ( $Group )	{	$cmd+=' ' + $Group 		}
-	$cmd+= ' -f'
-	write-verbose "Executing the following SSH command `n`t $cmd"
-	$Result = Invoke-CLICommand -cmds  $cmd	
-	write-verbose "  Executing Set-RCopyGroupPeriod using cmd   " 
-	if([string]::IsNullOrEmpty($Result))	{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green }
-	else									{	write-warning "FAILURE : While Executing"}
-	return $result 
+	return $Result
 }
-}
+} 
+
+####### Set Commands
 
 Function Set-A9AdmitRCopyHost
 {
@@ -395,14 +164,6 @@ Function Set-A9AdmitRCopyHost
 .EXAMPLE
     The following example adds host1 to group1 with Proximity primary:
     PS:> Get-A9HostSet -proximity primary group1 host1
-
-    The following example shows the Active/Active groups with different proximities set:
-    PS:> Get-A9HostSet_CLI -summary
-
-        Id Name             HOST_Cnt VVOLSC Flashcache QoS RC_host
-        552 RH2_Group0_1            1 NO     NO         NO  All
-        555 RH0_Group0_0            1 NO     NO         NO  Pri
-        556 RH1_Group0_2            1 NO     NO         NO  Sec
 .NOTES
 	This command utilizes the SSH command 'admitrcopyhost'
 	This command requires a SSH type connection.

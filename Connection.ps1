@@ -488,7 +488,7 @@ Function Connect-HPESAN
 		FreeCapacityMiB                14083072
 		You are now connected to the HPE Storage system 4UW0003299_Alletra660
 
-		Attempting to load the HPE 3Par / Primera / Alletra9000 PowerShell Commands that support the WSAPI.
+		Attempting to load the HPE 3Par / Primera / Alletra9000 / AlletraMP-B10000 PowerShell Commands that support the WSAPI.
 
 		IPAddress            : 192.168.20.19
 		SerialNumber         : 4UW0003299
@@ -502,8 +502,7 @@ Function Connect-HPESAN
 		TotalCapacityMiB     : 36608000
 		SystemVersion        : 9.5.4.2
 
-		To View the list of commands available to you that utilize the API please use 'Get-Command -module HPEAlletra9000AndPrimeraAnd3Par_API'.
-		To View the list of commands available to you that utilize the CLI please use 'Get-Command -module HPEAlletra9000AndPrimeraAnd3Par_CLI'.
+
 
 #>
 [CmdletBinding()]
@@ -560,14 +559,16 @@ function Import-HPESANCertificate
 .SYNOPSIS
 	Connect to a HPE SAN Device
 .DESCRIPTION
-	Connect to a HPE SAN Device for the purpose of retrieving the Array Certificate. If the Certificate does not exist on the Cert:\LocalMachine\Root store, it will add it.
-	If the Certificate already exists, it will warn you of this. To run this command you must execute this command with and Administrative PowerShell prompt. 
+	Connect to a HPE SAN Device for the purpose of retrieving the Array Certificate. 
+	If you use an Administrator PowerShell prompt to execute this codebase, it will load the Certificate into the Local Machine certificate store allowing all users to use the certificate.
+	If you use a non-Administrator PowerShell prompt to execute this command, it will load the Certificate into the Current User certificate store, allowing this user only to use the certificate.
+	If the Certificate already exists, it will warn you of this.  
 .PARAMETER ArrayNameOrIPAddress
 	The IP Address or Array name that will resolve via name service to the IP Address of the target device to connect to.
 .PARAMETER PassThruCert
 	This switch is used for troubleshooting and returns the exact certificate that should be imported.
 .EXAMPLE
-	PS C:\Users\chris\Desktop\PowerShell\HPEStoragePowerShellToolkit> Import-HPESANCertificate -ArrayNameOrIPAddress 192.168.1.50
+	PS(admin):> Import-HPESANCertificate -ArrayNameOrIPAddress 192.168.1.50
 	Successfully imported the server certificate
 
 
@@ -575,18 +576,28 @@ function Import-HPESANCertificate
 	----------                               -------
 	069A1B7D854C84718FDE234F894B277C29661FB8 CN=pegasus.lionetti.lab, O=Nimble Storage, OU=Lab, L=San Jose, S=CA, C=US
 .EXAMPLE
-	PS C:\Users\chris\Desktop\PowerShell\HPEStoragePowerShellToolkit> Import-HPESANCertificate -ArrayNameOrIPAddress 192.168.1.50
+.EXAMPLE
+	import-hpesanCertificate -ArrayNameOrIPAddress 192.168.20.19 
+WARNING: When run in non-administrator mode, the importation of a certificate will only import it to the current user.
+        Please re-run an Administrator PowerShell Prompt to import the certificate into the local machine account.
+
+Outputting the Certificate as the return object
+
+Thumbprint                                Subject              EnhancedKeyUsageList
+----------                                -------              --------------------
+CD8236C1969115A415ED91419FF6F05AD7127546  CN=HPE Alletra 9060… Server Authentication
+.EXAMPLE
+	PS:> Import-HPESANCertificate -ArrayNameOrIPAddress 192.168.1.50
 
 	WARNING: The Certificate Already exists, no need to re-import it.
 #>
 param(  [Parameter(Mandatory)]   	[string]	$ArrayNameOrIPAddress,
-		[Parameter()]					[switch]	$PassThruCert
+		[Parameter()]				[switch]	$PassThruCert
 )
 
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if ( -not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) )
-	{ 	write-warning "This command can ONLY be run in Administrator Mode, Please run an Administrator PowerShell Prompt and try this command againt."
-		return
+	{ 	write-warning "When run in non-administrator mode, the importation of a certificate will only import it to the current user. `n`tPlease re-run an Administrator PowerShell Prompt to import the certificate into the local machine account."
 	}
 $Code = @'
 			using System;
@@ -632,9 +643,17 @@ if ($PSEdition -ne 'Core')
 				$tfile=[system.io.path]::getTempFileName()
 				set-content -value $bytes -encoding byte -path $tfile
 				$certdetails = $cert | select-object * | format-table -AutoSize | Out-String
-				$AlreadyExists = [boolean](get-childitem -path cert:\localmachine\root | select-object Thumbprint | where-object { $_.Thumbprint -eq $Certthumb } ) 
+				
+				$AlreadyExistsLM = [boolean](get-childitem -path cert:\localmachine\root | select-object Thumbprint | where-object { $_.Thumbprint -eq $Certthumb } ) 
+				$AlreadyExistsCU = [boolean](get-childitem -path cert:\CurrentUser\Root | select-object Thumbprint | where-object { $_.Thumbprint -eq $Certthumb } ) 
+				$AlreadyExists = $AlreadyExistsLM -or $AlreadyExistsCU
 				if (-not $AlreadyExists)  
-					{   try	{   $output =import-certificate -filepath $tfile -certStoreLocation 'Cert:\localmachine\Root'
+					{   try	{   if ( -not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) )
+									{ 	write-warning "Since a Non-Administrator Account is being used, Attempting to load a Certificate in to the LocalUser Certificate Store."
+										$output =import-certificate -filepath $tfile -certStoreLocation 'Cert:\CurrentUser\Root'
+									}
+								else{	$output =import-certificate -filepath $tfile -certStoreLocation 'Cert:\localmachine\Root'
+									}
 								$certdetails = $output | select-object -Property Thumbprint,subject | format-table -AutoSize | Out-String
 							}
 						catch{  Write-Error "Failed to import the server certificate `n`n $_.Exception.Message"  -ErrorAction Stop
@@ -642,6 +661,10 @@ if ($PSEdition -ne 'Core')
 						Write-Host "Successfully imported the server certificate `n $certdetails"
 					}
 				else{   write-warning "The Certificate Already exists, no need to re-import it."
+						if ( [boolean](get-childitem -path cert:\localmachine\root | select-object Thumbprint | where-object { $_.Thumbprint -eq $Certthumb } )  ) 
+							{ write-warning "The Certificate exists in the Local Machine Account, accessable to all users." } 
+						if ( [boolean](get-childitem -path cert:\CurrentUser\Root | select-object Thumbprint | where-object { $_.Thumbprint -eq $Certthumb } )  )
+							{ write-warning "The Certificate exists in the Current User Account, accessable to this users only."}
 					}
 			}
 		else{   Write-Error "Failed to import the server certificate `n"
@@ -667,23 +690,47 @@ else{   write-verbose "Running Codebase for PowerShell Core."
 		if($null -ne $certs)
 			{   write-verbose "The Certs were not NULL"
 				$certdetails = $cert | select-object -Property Thumbprint,subject | format-table -AutoSize | Out-String
-				$AlreadyExists = [boolean](get-childitem -path cert:\localmachine\root | select-object Thumbprint | where-object { $_.Thumbprint -eq $Certthumb } ) 
+				$AlreadyExistsLM = [boolean](get-childitem -path cert:\localmachine\root | select-object Thumbprint | where-object { $_.Thumbprint -eq $Certthumb } ) 
+				$AlreadyExistsCU = [boolean](get-childitem -path cert:\CurrentUser\Root | select-object Thumbprint | where-object { $_.Thumbprint -eq $Certthumb } ) 
+				$AlreadyExists = $AlreadyExistsLM -or $AlreadyExistsCU
 				if (-not $AlreadyExists)  
 					{   write-verbose "The Certificate Does not already exist."
 						$bytes=$cert.export([security.cryptography.x509certificates.x509contenttype]::cert)
 						$OpenFlags = [System.Security.Cryptography.X509Certificates.OpenFlags]
+						WRITE-VERBOSE "Attemping to store the new certificate Step 1"
+						# $store = new-object system.security.cryptography.X509Certificates.X509Store -argumentlist "Root","LocalMachine"
 						$store = new-object system.security.cryptography.X509Certificates.X509Store -argumentlist "Root","LocalMachine"
-						try	{   $Store.Open($OpenFlags::ReadWrite)
-								$Store.Add($Cert)
-								$Store.Close()
-								Write-Host "Successfully imported the server certificate `n" 
-								return $CertDetails
+						$storeCU = new-object system.security.cryptography.X509Certificates.X509Store -argumentlist "Root","CurrentUser"
+						write-verbose "Attempting to store the new certificate Step 2"
+						if ( -not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) )
+							{ # Is NOT an Admin 
+								try	{   $StoreCU.Open($OpenFlags::ReadWrite)
+										$StoreCU.Add($Cert)
+										$StoreCU.Close()
+										Write-Host "Successfully imported the server certificate `n" 
+										return $CertDetails
+									}
+								catch{  write-error $_
+										Write-Error "Failed to import the server certificate `n`n $_.Exception.Message"  -ErrorAction Stop
+									}
 							}
-						catch{  write-error $_
-								Write-Error "Failed to import the server certificate `n`n $_.Exception.Message"  -ErrorAction Stop
+						else{
+								try	{   $Store.Open($OpenFlags::ReadWrite)
+										$Store.Add($Cert)
+										$Store.Close()
+										Write-Host "Successfully imported the server certificate `n" 
+										return $CertDetails
+									}
+								catch{  write-error $_
+										Write-Error "Failed to import the server certificate `n`n $_.Exception.Message"  -ErrorAction Stop
+									}
 							}
 					}
 				else{   write-warning "The Certificate Already exists, no need to re-import it."
+						if ( [boolean](get-childitem -path cert:\localmachine\root | select-object Thumbprint | where-object { $_.Thumbprint -eq $Certthumb } )  ) 
+							{ write-warning "The Certificate exists in the Local Machine Account, accessable to all users." } 
+						if ( [boolean](get-childitem -path cert:\CurrentUser\Root | select-object Thumbprint | where-object { $_.Thumbprint -eq $Certthumb } )  )
+							{ write-warning "The Certificate exists in the Current User Account, accessable to this users only."}
 					}
 			}
 		else{   Write-Error "Failed to import the server certificate `n`n"  -ErrorAction Stop

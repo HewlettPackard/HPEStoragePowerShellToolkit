@@ -73,6 +73,7 @@ Process
 		if($SubjectAlternateName){	$Cmd += " -SAN $SubjectAlternateName " 				}
 		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green 
 		Return $Result
 	}
 }
@@ -112,6 +113,7 @@ Process
 		if($CertType) 				{	$Cmd += " -type $Type " }
 		write-verbose "Executing the following SSH command `n`t $cmd"
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
+		write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green 
 		Return $Result
 	} 
 }

@@ -57,7 +57,6 @@ Function Get-A9SystemPatch
 .PARAMETER Detailed
 	When used with the -hist option, shows detailed history information including the username who installed each package. If -d is used with a patch specification,
 	it shows detailed patch information. Otherwise it shows detailed information on the currently installed patches.
-
 .Example
 	The following example shows all patches currently installed on the system, with additional detail:
 

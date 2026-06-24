@@ -102,6 +102,7 @@ Process
     if ( $Keep_UI )  { $Cmd+= '-keep_ui'  }
     write-verbose "Executing the following SSH command `n`t $cmd"
     $Result = Invoke-A9CLICommand -cmds  $Cmd
+    write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green 
     Return $Result
   }
 }

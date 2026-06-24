@@ -176,3 +176,31 @@ Process
 	Return $result				
 }
 }
+
+Function Update-A9SnapSpace_CLI
+{
+<#
+.SYNOPSIS
+	Update the snapshot space usage accounting.
+.DESCRIPTION
+	The command starts a non-cancelable task to update the snapshot space usage accounting. The snapshot space usage displayed by
+	"showvv -hist" is not necessarily the current usage and the SpaceCalcTime column will show when it was last calculated.  This command causes the
+	system to start calculating current snapshot space usage. 
+.PARAMETER Volume
+	Specifies the virtual volume name to update. 
+.NOTES
+	This command utilizes the SSH command 'updatesnapspace'
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter(Mandatory)]	[String]	$Volume
+)
+Begin	
+{	Test-A9Connection -ClientType 'SshClient'
+}
+process
+{	$Cmd = " updatesnapspace $Volume " 
+	$Result = Invoke-A9CLICommand -cmds  $Cmd
+	Return $Result
+}
+}

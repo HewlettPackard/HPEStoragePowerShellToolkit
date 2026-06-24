@@ -7,9 +7,9 @@ Function New-A9Snapshot
 	Creating a volume snapshot, or a group of volume snapshots, or a Volume Set snapshot
 .DESCRIPTION	
 	Creating a volume snapshot, or a group of volume snapshots, or a Volume Set snapshot
-.PARAMETER VolumeName
+.PARAMETER Volume
 	The parameter specifies the name of the volume from which you want to create a snapshot for. 
-	This must be a single volumename or you may use volume1,volume2,volume3 style seperation be sure that no spaces exist between the , and the values.
+	This must be a single volume or you may use volume1,volume2,volume3 style seperation be sure that no spaces exist between the , and the values.
 .PARAMETER VolumeSet
 	The parameter specified the name of the volume set to snapshot together. 
 .PARAMETER snpVVName
@@ -28,11 +28,11 @@ Function New-A9Snapshot
 .PARAMETER Match
 	If taking a snapshots of multiple Volumes, the Read-Only or Read-Write value will match the value of the parent volume.
 .EXAMPLE    
-	ps:> New-A9Snapshot -VolumeName $val -snpVVName snpvv1
+	ps:> New-A9Snapshot -Volume $val -snpVVName snpvv1
 
 	SUCCESS: volume snapshot:$snpVVName created successfully
 .EXAMPLE	
-	ps:> New-A9Snapshot -VolumeName Vol1,Vol2,Vol3 -snpVVName snpvv1 
+	ps:> New-A9Snapshot -Volume Vol1,Vol2,Vol3 -snpVVName snpvv1 
 
 	SUCCESS: volume snapshot:$snpVVName created successfully
 .EXAMPLE	
@@ -40,16 +40,16 @@ Function New-A9Snapshot
 
 	SUCCESS: volume snapshot:$snpVVName created successfully
 .EXAMPLE	
-	ps:> New-A9Snapshot -VolumeName $val -snpVVName snpvv1 -Comment hello -ReadOnly -ExpirationHours 10
+	ps:> New-A9Snapshot -Volume $val -snpVVName snpvv1 -Comment hello -ReadOnly -ExpirationHours 10
 
 	SUCCESS: volume snapshot:$snpVVName created successfully
 .EXAMPLE	
-	ps:> New-A9Snapshot -VolumeName $val -snpVVName snpvv1 -AddToSet asvvset
+	ps:> New-A9Snapshot -Volume $val -snpVVName snpvv1 -AddToSet asvvset
 
 	SUCCESS: volume snapshot:$snpVVName created successfully
 #>
 [CmdletBinding(DefaultParameterSetName='SingleVVs')]
-Param(	[Parameter(Mandatory,ParameterSetName='SingleVVs')]		[String[]]	$VolumeName,
+Param(	[Parameter(Mandatory,ParameterSetName='SingleVVs')]		[String[]]	$Volume,
 		[Parameter(Mandatory,ParameterSetName='VVSet')]			[String]	$VolumeSet,
 		[Parameter()]											[String]	$snpVVName,
 		[Parameter()]											[String]	$Comment,
@@ -66,15 +66,15 @@ Begin
 Process 
 {	$body = @{}	
 	$ParameterBody = @{}
-	if ( ($VolumeName).count -gt 1 )	{	$uri = '/volumes/'
+	if ( ($Volume).count -gt 1 )		{	$uri = '/volumes/'
 											$body["action"] = 8
 											$VolumeGroup=@()
-											foreach ($Vname in $VolumeName)
+											foreach ($Vname in $Volume)
 												{	$VItem = @{	$VItem = @{ 'volumeName' = $Vname}	}
 													$VolumeGroup += $VItem
 												}
 										}
-	elseif( $VolumeName )				{	$uri = '/volumes/'+$VolumeName
+	elseif( $Volume )					{	$uri = '/volumes/'+$Volume
 											$body["action"] = "createSnapshot"						}
 	elseIf ( $VolumeSet)				{	$uri = '/volumesets/'+$VolumeSet
 											$body["action"] = "createSnapshot"						}
@@ -87,7 +87,7 @@ Process
 	If ( $RetentionHours ) 				{	$ParameterBody["retentionHours"]	= $RetentionHours	}
 	If ( $AddToSet ) 					{	$ParameterBody["addToSet"] 			= "$($AddToSet)"	}
 	if ( $ParameterBody.Count -gt 0 )	{	$body["parameters"] 				= $ParameterBody 	}
-	if ( $VolumeNames )					{	$ParameterBody["volumeGroup"] 		= "$($VolumeGroup)"	} 	   	
+	if ( $Volume )					{	$ParameterBody["volumeGroup"] 		= "$($VolumeGroup)"	} 	   	
 	if ( $ParameterBody.Count -gt 0 )	{	$body["parameters"] = $ParameterBody 					}
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
 	if ( $Result.StatusCode -eq 201 )
@@ -108,8 +108,8 @@ Function New-A9VolumeCopy
 	Create a physical copy of a volume.
 .DESCRIPTION
     Create a physical copy of a volume.
-.PARAMETER VolumeName
-	The <VolumeName> parameter specifies the name of the volume to copy.
+.PARAMETER Volume
+	Specifies the name of the volume to copy.
 .PARAMETER DestVolume
 	Specifies the destination volume.
 .PARAMETER DestCPG
@@ -139,28 +139,28 @@ Function New-A9VolumeCopy
 	MED : Medium priority.
 	LOW : Low priority.
 .EXAMPLE    
-	PS:> New-A9VvCopy -VolumeName xyz -DestVolume Test1
+	PS:> New-A9VolumeCopy -Volume xyz -DestVolume Test1
 .EXAMPLE
-    PS:> New-A9VvCopy -VolumeName xyz -DestVolume Test -DestCPG as_cpg
+    PS:> New-A9VolumeCopy -Volume xyz -DestVolume Test -DestCPG as_cpg
 .EXAMPLE
-	PS:> New-A9VvCopy -VolumeName xyz -DestVolume Test -Online
+	PS:> New-A9VolumeCopy -Volume xyz -DestVolume Test -Online
 .EXAMPLE
-	PS:> New-A9VvCopy -VolumeName xyz -DestVolume Test -WWN "60002AC0000000000101142300018F8D"    
+	PS:> New-A9VolumeCopy -Volume xyz -DestVolume Test -WWN "60002AC0000000000101142300018F8D"    
 .EXAMPLE
-	PS:> New-A9VvCopy -VolumeName xyz -DestVolume Test -TPVV
+	PS:> New-A9VolumeCopy -Volume xyz -DestVolume Test -TPVV
 .EXAMPLE
-	PS:> New-A9VvCopy -VolumeName xyz -DestVolume Test -SnapCPG as_cpg
+	PS:> New-A9VolumeCopy -Volume xyz -DestVolume Test -SnapCPG as_cpg
 .EXAMPLE
-	PS:> New-A9VvCopy -VolumeName xyz -DestVolume Test -SkipZero
+	PS:> New-A9VolumeCopy -Volume xyz -DestVolume Test -SkipZero
 .EXAMPLE
-	PS:> New-A9VvCopy -VolumeName xyz -DestVolume Test -Compression
+	PS:> New-A9VolumeCopy -Volume xyz -DestVolume Test -Compression
 .EXAMPLE
-	PS:> New-A9VvCopy -VolumeName xyz -DestVolume Test -SaveSnapshot
+	PS:> New-A9VolumeCopy -Volume xyz -DestVolume Test -SaveSnapshot
 .EXAMPLE
-	PS:> New-A9VvCopy -VolumeName $val -DestVolume Test -Priority high
+	PS:> New-A9VolumeCopy -Volume $val -DestVolume Test -Priority high
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$VolumeName,
+Param(	[Parameter(Mandatory)]	[String]	$Volume,
 		[Parameter(Mandatory)]	[String]	$DestVolume,
 		[Parameter()]			[String]	$DestCPG,
 		[Parameter()]			[switch]	$Online,
@@ -210,15 +210,15 @@ Process
 		{	$body["parameters"] = $ParameterBody 
 		}
     $Result = $null
-	Write-Verbose "Request: Request to New-A9VvCopy : $VolumeName (Invoke-A9API)." 
-	$uri = '/volumes/'+$VolumeName
+	Write-Verbose "Request: Request to New-A9VvCopy : $Volume (Invoke-A9API)." 
+	$uri = '/volumes/'+$Volume
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
 	if( $Result.StatusCode -eq 201)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $Result
 		}
 	else
-		{	Write-error "FAILURE : While creating Physical copy of a volume : $VolumeName " 
+		{	Write-error "FAILURE : While creating Physical copy of a volume : $Volume " 
 			return $Result.StatusDescription
 		}
 }
@@ -231,8 +231,8 @@ Function Set-A9VolumeCopy
 	Allows you to Reset(Resynchronizing), Stop, Move(Promote) a Volume copy to its parent volume
 .DESCRIPTION
 	Allows you to Reset(Resynchronizing), Stop, Move(Promote) a Volume copy to its parent volume
-.PARAMETER VolumeName 
-	The <VolumeName> parameter specifies the name of the destination volume you want to resynchronize.
+.PARAMETER Volume
+	Specifies the name of the destination volume you want to resynchronize.
 .PARAMETER Online	
 	Enables (true) or disables (false) executing the promote operation on an online volume. The default setting for this switch is off (false).
 .PARAMETER Priority
@@ -240,7 +240,7 @@ Function Set-A9VolumeCopy
 .PARAMETER AllowRemoteCopyParent
 	Allows the promote operation to proceed even if the RW parent volume is currently in a Remote Copy volume group, if that group has not been started. If the Remote Copy group has been started, this command fails.
 .EXAMPLE    
-	PS:> Set-A9VolumeCopy -VolumeName xxx -resync
+	PS:> Set-A9VolumeCopy -Volume xxx -resync
 
 	Resynchronizing a physical copy to its parent volume	
 #>
@@ -248,7 +248,7 @@ Function Set-A9VolumeCopy
 Param(	[Parameter(Mandatory,ParameterSetName='Resync')]
 		[Parameter(Mandatory,ParameterSetName='Stop')]
 		[Parameter(Mandatory,ParameterSetName='Promote')]
-		[Parameter(Mandatory,ParameterSetName='StopPromote')]	[String]	$VolumeName,
+		[Parameter(Mandatory,ParameterSetName='StopPromote')]	[String]	$Volume,
 
 		[Parameter(ParameterSetName='Promote')]
 		[Parameter(ParameterSetName='StopPromote')]				[Switch]	$Online,
@@ -269,8 +269,8 @@ Begin
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
-{	$body = @{}	
-	$uri = "/volumes/" + $VolumeName
+{	$body = @{}
+	$uri = "/volumes/" + $Volume
 	$Result = $null			
 	if ( $Online )			{	$body["online"] = $true	}	
 	elseif ( $Priority )	{	if($Priority -eq "HIGH")	{	$body["priority"] = 1	}
@@ -291,7 +291,7 @@ Process
 			return $Result		
 		}
 	else
-		{	write-error "FAILURE : While stopping a physical copy : $VolumeName "
+		{	write-error "FAILURE : While stopping a physical copy : $Volume "
 			return $Result.StatusDescription
 		}
 }
@@ -304,8 +304,8 @@ Function New-A9VolumeSetCopy
 	Create a VV-set snapshot.
 .DESCRIPTION	
     Create a VV-set snapshot. Any user with the Super or Edit role or any role granted sv_create permission (for snapshots) can create a VV-set snapshot.
-.PARAMETER VolumeSetName
-	The <VolumeSetName> parameter specifies the name of the VV set to copy.
+.PARAMETER VolumeSet
+	Specifies the name of the VV set to copy.
 .PARAMETER DestVolume
 	Specifies the destination volume set.
 .PARAMETER SaveSnapshot
@@ -316,7 +316,7 @@ Function New-A9VolumeSetCopy
 	PS:> New-A9VvSetPhysicalCopy -VolumeSetName Test_delete -DestVolume PERF_AIX38 	
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$VolumeSetName,
+Param(	[Parameter(Mandatory)]	[String]	$VolumeSet,
 		[Parameter(Mandatory)]	[String]	$DestVolume,
 		[Parameter()]			[boolean]	$SaveSnapshot,
 		[Parameter()]
@@ -339,10 +339,10 @@ Process
 		{	$body["parameters"] = $ParameterBody 
 		}
     $Result = $null	
-	$uri = '/volumesets/'+$VolumeSetName
+	$uri = '/volumesets/'+$VolumeSet
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body	
 	if ( $Result.StatusCode -ne 201 )
-		{	write-error "FAILURE : While creating Physical copy of a VV set : $VolumeSetName "
+		{	write-error "FAILURE : While creating Physical copy of a VV set : $VolumeSet "
 			return $Result.StatusDescription
 		}
 	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
@@ -357,8 +357,8 @@ Function Set-A9VolumeSetCopy
 	Modify a VV set physical copy either via a Reset (Resync), a Stop, a Move(Promote), or an Update
 .DESCRIPTION
 	Modify a VV set physical copy either via a Reset (Resync), a Stop, a Move(Promote), or an Update
-.PARAMETER VolumeSetName 
-	The <VolumeSetName> specifies the name of the destination VV set to initiate action upon.
+.PARAMETER VolumeSet
+	Specifies the name of the destination VV set to initiate action upon.
 .PARAMETER Priority
 	Task priority which can be set to HIGH (High priority), MED (Medium priority), LOW (Low priority) or left unset.
 .PARAMETER Online	
@@ -372,20 +372,20 @@ Function Set-A9VolumeSetCopy
 .PARAMETER Priority
 	Task priority which can be set to HIGH (High priority), MED (Medium priority), LOW (Low priority) or left unset.
 .EXAMPLE 
-	PS:> Set-A9VolumeSetCopy -VolumeSetName xxx -Priority HIGH -reset
+	PS:> Set-A9VolumeSetCopy -VolumeSet xxx -Priority HIGH -reset
 .EXAMPLE	
-	PS:> Set-A9VolumeSetCopy -VVSetName xyz
+	PS:> Set-A9VolumeSetCopy -VolumeSet xyz
 .EXAMPLE	
-	PS:> Set-A9VolumeSetCopy -VVSetName xyz -Online -move
+	PS:> Set-A9VolumeSetCopy -VolumeSet xyz -Online -move
 .EXAMPLE	
-	PS:> Set-A9VolumeSetCopy -VVSetName xyz -Priority HIGH -stop
+	PS:> Set-A9VolumeSetCopy -VolumeSet xyz -Priority HIGH -stop
 .EXAMPLE	
-	PS:> Set-A9VolumeSetCopy -VVSetName xyz -AllowRemoteCopyParent -move
+	PS:> Set-A9VolumeSetCopy -VolumeSet xyz -AllowRemoteCopyParent -move
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory,ParameterSetName='Reset')]
 		[Parameter(Mandatory,ParameterSetName='Stop')]
-		[Parameter(Mandatory,ParameterSetname='Move')]     	[String]  	$VolumeSetName,
+		[Parameter(Mandatory,ParameterSetname='Move')]     	[String]  	$VolumeSet,
 
 		[Parameter(Mandatory,ParameterSetName='Update')]	[String[]]	$VolumeSnapshotList,
 
@@ -416,7 +416,7 @@ Process
 							elseif	($Priority -eq "LOW")	{	$body["priority"] = 3	}
 						}
 					$Result = $null	
-					$uri = "/volumesets/" + $VolumeSetName
+					$uri = "/volumesets/" + $VolumeSet
 					$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 				}
 		'Move'
@@ -429,7 +429,7 @@ Process
 						}
 					if($AllowRemoteCopyParent)	{	$body["allowRemoteCopyParent"] = $true	}
 					$Result = $null	
-					$uri = "/volumesets/" + $VolumeSetName
+					$uri = "/volumesets/" + $VolumeSet
 					$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
 				}
 		'Stop'	
@@ -440,7 +440,7 @@ Process
 							if		($Priority -eq "LOW")	{	$body["priority"] = 3	}
 						}
 					$Result = $null	
-					$uri = "/volumesets/" + $VolumeSetName
+					$uri = "/volumesets/" + $VolumeSet
 					$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 				}
 		'Update'

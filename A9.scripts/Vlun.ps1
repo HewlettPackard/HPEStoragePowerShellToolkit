@@ -10,7 +10,7 @@ Function Get-A9vLun
 	Get Single or list of VLun.  This command incorporates both the API method as well as the CLI method of removing a Vv. 
 	If the only argument used is the VVName, the command will attempt to use the API to accomplish the task, if the API is unavalable or other parameters 
 	are used, the command will attempt to fail back to a SSH type connection to accomplish the goal. 
-.PARAMETER VolumeName
+.PARAMETER Volume
 	Name of the volume to filter the results. may be prefixed with 'set:', the name is a volume set name. Displays only VLUNs of virtual volumes that match <VV_name> or 
 	glob-style patterns, or to the vv sets that match <VV-set> or glob-style patterns (see help on sub,globpat). The VV set name must start with "set:". Multiple volume names, vv sets or patterns can be
 	repeated using a comma-separated list (for example -v <VV_name>, <VV_name>...).
@@ -19,31 +19,31 @@ Function Get-A9vLun
 .PARAMETER HostName
 	Name of the host to which the volume is to be exported.  The host set name must start with "set:". 
 .EXAMPLE	
-	PS:> Get-A9vLun_CLI -volumeName XYZ 
+	PS:> Get-A9vLun_CLI -volume XYZ 
 
-	List vlun details for all hosts connected to volumename XYZ
+	List vlun details for all hosts connected to volume XYZ
 .EXAMPLE	
-	PS:> Get-A9vLun_CLI -volumeName XYZ -hostname abc
+	PS:> Get-A9vLun_CLI -volume XYZ -hostname abc
 
 	List vlun details for the specific host connected to a specific lun
 .EXAMPLE	
-	PS:> Get-A9vLun -volumename MyTestVol | where-object {$.serial -like "123456" }
+	PS:> Get-A9vLun -volume MyTestVol | where-object {$.serial -like "123456" }
 	
 	This is an example of how to replicate the functionality of the serial cli option. This command will return only vLuns that match that serial number
 .EXAMPLE	
-	PS:> Get-A9vLun -volumename MyTestVol | where-object {$.active -like "True" }
+	PS:> Get-A9vLun -volume MyTestVol | where-object {$.active -like "True" }
 	
 	This is an example of how to replicate the functionality of the active cli option. This command will return only vLuns that are active
 .EXAMPLE	
-	PS:> Get-A9vLun -volumename MyTestVol | where-object {$.portPos.node -like 3 }
+	PS:> Get-A9vLun -volume MyTestVol | where-object {$.portPos.node -like 3 }
 	
 	This is an example of how to replicate the functionality of the ports cli option. This command will return all vLuns that match the other parameters as well as match the port posistion of 3
 .EXAMPLE	
-	PS:> Get-A9vLun -volumename MyTestVol | where-object {$.portPos.slot -like 4 }
+	PS:> Get-A9vLun -volume MyTestVol | where-object {$.portPos.slot -like 4 }
 	
 	This is an example of how to replicate the functionality of the slots cli option. This command will return all vLuns that match the other parameters as well as match the slot posistion of 4
 .EXAMPLE	
-	PS:> Get-A9vLun -volumename MyTestVol | where-object {$.portPos.card -like 0 }
+	PS:> Get-A9vLun -volume MyTestVol | where-object {$.portPos.card -like 0 }
 	
 	This is an example of how to replicate the functionality of the card cli option. This command will return all vLuns that match the other parameters as well as match the node value of 0
 .NOTES 
@@ -52,8 +52,8 @@ Function Get-A9vLun
 #>
 [CmdletBinding(DefaultParameterSetName='None')]
 Param(	
-		[Parameter(Mandatory, ParameterSetName='ByVolumeName')]
-		[Parameter(Mandatory, ParameterSetName='ByBoth')]			[String]	$VolumeName,
+		[Parameter(Mandatory, ParameterSetName='ByVolume')]
+		[Parameter(Mandatory, ParameterSetName='ByBoth')]			[String]	$Volume,
 		
 		[Parameter(ParameterSetName='ByBoth')]	
 		[Parameter(ParameterSetName='ByHostName')]					[int]		$LUNID,
@@ -65,17 +65,14 @@ Begin
 {	Test-A9Connection -CLientType 'API' 
 }
 Process 
-{	
-	Write-Verbose "Request: Request to Get-A9vLun [ VolumeName : $VolumeName | LUNID : $LUNID | HostName : $HostName ] (Invoke-A9API)."
-	$Result = $null
-	$dataPS = $null		
+{	$dataPS = $null		
 	write-verbose "Making URL call to /vluns"
 	$Result = Invoke-A9API -uri '/vluns' -type 'GET' 
 	If($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members			
 		}		
 	If($Result.StatusCode -eq 200)
-		{	if ( $VolumeName )	{	$dataPS = $dataPS | where-object {$_.volumeName -like $VolumeName }		}
+		{	if ( $Volume )		{	$dataPS = $dataPS | where-object {$_.volumeName -like $Volume }		}
 			if ( $LUNID )		{	$dataPS = $dataPS | where-object {$_.lun -like $LUNID }					}
 			if ( $HostName )	{	$dataPS = $dataPS | where-object {$_.hostname -like $HostName }			}
 			if($dataPS.Count -gt 0)
@@ -147,14 +144,14 @@ Function Remove-A9vLun
 	Removing a VLUN (mapping between a Host/HostSet and a Volume/VolumeSet).
 .DESCRIPTION
 	Removing a VLUN mapping for a Volume (or VolumeSet) to connect to a Host (or HostSet).
-.PARAMETER VolumeName
+.PARAMETER Volume
 	Name of the volume which is exported which will be removed.
 .PARAMETER VolumeSetName
 	Name of the volumeset is be exported which will be removed.
 	The VV set should be in set:<volumeset_name> format.
 .PARAMETER LUNID
 	Lun Id that is used for the mapping operation. If no LUN Is given, the command will try and detect the missing LUN by 
-	searching the Array for the Volumename(set) and Hostname(set). 
+	searching the Array for the Volume(set) and Hostname(set). 
 .PARAMETER HostName
 	Name of the host record to which the volume (or VolumeSet) is exported that should be removed.
 .PARAMETER HostSetName
@@ -165,11 +162,11 @@ Function Remove-A9vLun
 .PARAMETER Novcn
 	Specifies that a VLUN Change Notification (VCN) not be issued after removal of the VLUN.
 .EXAMPLE    
-	Remove-A9vLun -VolumeName xxx -LUNID xx -HostName xxx
+	Remove-A9vLun -Volume xxx -LUNID xx -HostName xxx
 .EXAMPLE    
 	Remove-A9vLun -VolumeSetName xxx -HostName xxx
 .EXAMPLE    
-	Remove-A9vLun -VolumeName xxx -LUNID xx -HostName xxx -NSP x.x.x	
+	Remove-A9vLun -Volume xxx -LUNID xx -HostName xxx -NSP x.x.x	
 .NOTES
 	This command only uses WSAPI as the SSH version offers no extra options.
 .
@@ -215,7 +212,7 @@ Process
 	if ($Volume)		{ $uri = $uri + $Volume 			}
 	if ($VolumeSet)		{ $uri = $uri + "set:"+$VolumeSet 	}
 	if ($LUNID)			{ $uri = $uri + ","+$LUNID 			}
-	else 	{	# we need to detect the LUN ID given the Hostname and Volumename
+	else 	{	# we need to detect the LUN ID given the Hostname and Volume
 				if ($Volume) 	{ $VX = $Volume  } else { $VX = 'set:'+$VolumeSet }
 				if ($Hostname)	{ $HX = $Hostname} else { $HX = 'set:'+$HostSetName }
 				write-verbose "No LUN ID Given, detected the LUN ID from the array."
@@ -237,11 +234,11 @@ Process
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
-			Write-verbose "SUCCESS: VLUN Successfully removed with Given Values [ VolumeName : $VolumeName $VolumeSetName | LUNID : $LUNID | HostName : $HostName $HostSetName | NSP : $NSP ]." 
+			Write-verbose "SUCCESS: VLUN Successfully removed with Given Values [ Volume : $Volume $VolumeSet | LUNID : $LUNID | HostName : $HostName $HostSetName | NSP : $NSP ]." 
 			return $Result		
 		}
 	else
-		{	write-error "While Removing VLUN with Given Values [ VolumeName : $VolumeName $VolumeSetName | LUNID : $LUNID | HostName : $HostName $HostSetName | NSP : $NSP ]. "
+		{	write-error "While Removing VLUN with Given Values [ Volume : $Volume $VolumeSet | LUNID : $LUNID | HostName : $HostName $HostSetName | NSP : $NSP ]. "
 			return $Result.StatusDescription
 		}    	
 }		
@@ -255,7 +252,7 @@ Function New-A9vLun
 .DESCRIPTION
 	Creating a VLUN. Any user with Super or Edit role, or any role granted vlun_create permission, can perform this operation. 
 	The command will only use the API to accomplish the task, if the API is unavalable this command will fail. 
-.PARAMETER VolumeName
+.PARAMETER Volume
 	Name of the volume or VV set to export.
 .PARAMETER LUN
 	Will assign the LUN ID number specified, however if LUN is not specified, then Autolun is assumed.	
@@ -273,9 +270,6 @@ Function New-A9vLun
 	If no host or hostname is specified, the exported LUN will be visible to all devices on those ports
 .PARAMETER NoVcn
 	Specifies that a VCN not be issued after export (-novcn). Default: false.
-.PARAMETER volumeName 
-	Specifies the virtual volume or virtual volume set name, using up to 31 characters in length. 
-	The volume name is provided in the syntax of basename. Ether a Volume or Volume Set can be specified but not both.
 .PARAMETER volumeSet 
 	Specifies the virtual volume or virtual volume set name, using up to 31 characters in length. The volume name is provided in the syntax of basename.
 	Ether a Volume or Volume Set can be specified but not both.
@@ -289,11 +283,11 @@ Function New-A9vLun
 .PARAMETER OverRide
 	Specifies that existing lower priority VLUNs will be overridden, if necessary. Can only be used when exporting to a specific host.
 .EXAMPLE
-	PS:> New-A9vLun -VolumeName MyVolume1 -LUN 2 -HostName MyServer1 -NSP 1:3:1
+	PS:> New-A9vLun -Volume MyVolume1 -LUN 2 -HostName MyServer1 -NSP 1:3:1
 
 	This command will connect the host record with the name MyServer to the MyVolume1 voolume using the array port 1:3:1, and will assign the LUN number 2
 .EXAMPLE
-	PS:> New-A9vLun -VolumeName MyVolume2 -HostSet MyServerCluster -NSP 1:3:1
+	PS:> New-A9vLun -Volume MyVolume2 -HostSet MyServerCluster -NSP 1:3:1
 
 	This command will connect the hostset with the record with the name MyServerCluster to the MyVolume2 voolume using the array port 1:3:1, and will assign the next available LUN
 .NOTES
@@ -303,7 +297,7 @@ Function New-A9vLun
 
 Param(	[Parameter(Mandatory, ParameterSetName='APIvvName_NSP')		]
 		[Parameter(Mandatory, ParameterSetName='APIvvName_HostSet')	]
-		[Parameter(Mandatory, ParameterSetName='APIvvName_HostName')]		[String]	$VolumeName,
+		[Parameter(Mandatory, ParameterSetName='APIvvName_HostName')]		[String]	$Volume,
 
 		[Parameter(Mandatory, ParameterSetName='APIvvSet_NSP')		]
 		[Parameter(Mandatory, ParameterSetName='APIvvSet_HostSet')	]
@@ -336,7 +330,7 @@ Process
 	if( $VolumeSet -match "^set:") 	{ 	$VolumeSet = $VolumeSet.substring(4)}
 	write-verbose "API operational State Detected"
 	$body = [ordered]@{}    
-	if ( $VolumeName){	$body["volumeName"] ="$($VolumeName)"}
+	if ( $Volume)	{	$body["volumeName"] ="$($Volume)"}
 	if ( $VolumeSet){	$body["volumeName"] ="set:$($VolumeSet)"} 
 	if ( $LUN ) 	{	$body["lun"] = $LUN 				}
 	if ($HostName)	{ 	$body["hostname"] = "$($HostName)" 	}
@@ -362,7 +356,7 @@ Process
 	$status = $Result.StatusCode	
 	if($status -eq 201)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
-			return Get-A9vLun -VolumeName $VolumeName -LUNID $LUNID -HostName $HostName
+			return Get-A9vLun -Volume $Volume -LUNID $LUNID -HostName $HostName
 		}
 	else
 		{	write-error "FAILURE : While Creating a VLUN" 

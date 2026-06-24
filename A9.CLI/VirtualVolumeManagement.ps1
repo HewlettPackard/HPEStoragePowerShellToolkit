@@ -70,7 +70,7 @@ Function Get-A9Mapping
 	--------------------------------------------------------------------------------------
 	xxx total                                                                5   97   203
 .EXAMPLE
-	PS:> Show-A9VvpDistribution -VolumeName Zertobm9 -ShowVolumeToPhysicalDiskMap
+	PS:> Show-A9VvpDistribution -Volume Zertobm9 -ShowVolumeToPhysicalDiskMap
 
 	Id                          Cage_Pos SA SD usr total
 	--                          -------- -- -- --- -----
@@ -140,7 +140,7 @@ process
 }
 }
 
-Function Get-A9VvScsiReservations
+Function Get-A9ScsiReservation
 {
 <#
 .SYNOPSIS
@@ -160,19 +160,24 @@ Function Get-A9VvScsiReservations
 .PARAMETER ShowRaw
 	This option will show the raw returned data instead of returning a proper PowerShell object. 
 .EXAMPLE
-	PS:> Get-A9VvScsiReservations -Hostname virt-r-node1
+	PS:> Get-A9VvScsiReservation
 
-	no reservations found
+	VVname               Host            Owner            ReservationType
+	------               ----            -----            ---------------
+	gfs2-1               --              172.17.10.77     SCSI-3(5)
+	gfs2-2               --              172.17.12.77     SCSI-3(5)
+	AzureLocalPool2      AzureLocalNode2 51402EC001178F72 SCSI-3(5)
+	AzurelocalPoolVol6TB AzureLocalNode2 51402EC001178F70 SCSI-3(5)
 .NOTES
 	This command utilizes the SSH command 'showrsv'
 	This command requires a SSH type connection.
 #>
-[CmdletBinding()]
-param(	[Parameter()]	[switch]	$SCSI3,
-		[Parameter()]	[switch]	$SCSI2,
-		[Parameter()]	[String]	$Hostname,
-		[Parameter()]	[String]	$Volume,
-		[Parameter()]	[switch]	$ShowRaw
+[CmdletBinding(DefaultParameterSetName='Both')]
+param(	[Parameter(ParameterSetName='Three')]	[switch]	$SCSI3,
+		[Parameter(ParameterSetName='Two')]		[switch]	$SCSI2,
+		[Parameter()]							[String]	$Hostname,
+		[Parameter()]							[String]	$Volume,
+		[Parameter()]							[switch]	$ShowRaw
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
@@ -193,39 +198,24 @@ process
 					Add-Content -Path $tempfile -Value $s				
 				}
 			$Result = Import-Csv $tempFile 
-			Remove-Item $tempFile	
+			Remove-Item $tempFile
+			$NewObj = @(    foreach( $Item in $Result)	
+                                        {   $NewItem=@{PSTypeName = "HPE.A9Storage.SCSIReservation"}
+                                            $Item.psobject.properties | foreach-object { $NewItem[$_.Name] = $_.Value }
+											$DataSetType = "HPE.A9Storage.SCSIReservation"
+											$NewItem.PSTypeNames.Insert(0,$DataSetType)
+											$DataSetType = $DataSetType + ".TypeName"
+											$NewItem.PSObject.TypeNames.Insert(0,$DataSetType)
+											[PSCustomObject]$NewItem
+										}
+						)
+			$Result = $NewObj	
 		}
+	
 	Return  $Result
 }
 }
 
-Function Update-A9SnapSpace_CLI
-{
-<#
-.SYNOPSIS
-	Update the snapshot space usage accounting.
-.DESCRIPTION
-	The command starts a non-cancelable task to update the snapshot space usage accounting. The snapshot space usage displayed by
-	"showvv -hist" is not necessarily the current usage and the SpaceCalcTime column will show when it was last calculated.  This command causes the
-	system to start calculating current snapshot space usage.  If one or more VV names or patterns are specified, only the specified VVs will be updated.
-.PARAMETER VolumeName
-	Specifies the virtual volume name to update. 
-.NOTES
-	This command utilizes the SSH command 'updatesnapspace'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter(Mandatory)]	[String]	$VolumeName
-)
-Begin	
-{	Test-A9Connection -ClientType 'SshClient'
-}
-process
-{	$Cmd = " updatesnapspace $VolumeName " 
-	$Result = Invoke-A9CLICommand -cmds  $Cmd
-	Return $Result
-}
-}
 
 Function Set-A9Volume_CLI
 {
@@ -235,7 +225,7 @@ Function Set-A9Volume_CLI
 .DESCRIPTION
 	The command changes the properties associated with a virtual volume. Use the Update-VvProperties to modify volume 
 	names, volume policies, allocation warning and limit levels, and the volume's controlling common provisioning group (CPG).
-.PARAMETER VolumeName  
+.PARAMETER Volume 
 	Specifies the virtual volume name or all virtual volumes that match the pattern specified, using up to 31 characters. The patterns are glob-
 	style patterns (see help on sub, globpat). Valid characters include alphanumeric characters, periods, dashes, and underscores.
 .PARAMETER Wwn
@@ -264,7 +254,7 @@ Function Set-A9Volume_CLI
 .PARAMETER Offline
 	Only Valid if testing a VV. Specifies that VVs specified by <VV_name> be offlined before validating the VV administration information. The entire VV tree will be offlined if this option is specified.
 .PARAMETER FixSD
-	Only Valid if testing a VV. Specifies that VVs specified by <VolumeName> be checked for compressed data consistency. The entire tree will not be checked; only those VVs
+	Only Valid if testing a VV. Specifies that VVs specified by <Volume> be checked for compressed data consistency. The entire tree will not be checked; only those VVs
 	specified in the list will be checked.
 .PARAMETER FreeSpace
 	Will try and free unused SA (Administrative) and SS (Snapshot) space from a Volume.
@@ -273,14 +263,11 @@ Function Set-A9Volume_CLI
 .PARAMETER SUBCommand
 	usr_cpg <cpg>
 		Moves the logical disks being used for user space to the specified CPG.
-		
 	snp_cpg <cpg>
 		Moves the logical disks being used for snapshot space to the specified CPG.
-		
 	restart
 		Restarts a tunevv command call that was previously interrupted because of component failure, or because of user initiated cancellation. This
 		cannot be used on TPVVs or TDVVs.
-		
 	rollback
 		Returns to a previously issued tunevv operation call that was interrupted. The canceltask command needs to run before the rollback.
 		This cannot be used on TPVVs or TDVVs.
@@ -375,7 +362,7 @@ Function Set-A9Volume_CLI
 .EXAMPLE
 	The following example frees administration and snapshot space from a volume if that space is no longer being used.
 
-	PS:> Set-A9Volume_CLI -VolumeName vv1
+	PS:> Set-A9Volume_CLI -Volume vv1
 .EXAMPLE	
 	PS:> Set-A9Volume_CLI -CompressVolume -SUBCommand usr_cpg -CPGName XYZ
 .EXAMPLE
@@ -387,62 +374,59 @@ Function Set-A9Volume_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory, ParameterSetName='Start')]	[switch]	$Start,
+param(	[Parameter(Mandatory,ParameterSetName='Start')]		[switch]	$Start,
 		[Parameter(Mandatory,ParameterSetName='Test')]		[Switch]	$Test,
 		[Parameter(Mandatory,ParameterSetName='Freespace')]	[switch]	$FreeSpace,
 		[Parameter(Mandatory,ParameterSetName='Compress')]	[Switch]	$CompressVolume,
 		[Parameter(Mandatory,ParameterSetName="admit")]		[switch]	$Admit,
 		[Parameter(Mandatory,ParameterSetName="import")]	[switch]	$Import,
-		[Parameter(mandatory, ParameterSetName='Set')]	
-		[Parameter(mandatory, ParameterSetName='Start')]
-		[Parameter(mandatory, ParameterSetName='Test')]
-		[Parameter(mandatory, ParameterSetName='Cpompress')]
+		[Parameter(mandatory,ParameterSetName='Set')]	
+		[Parameter(mandatory,ParameterSetName='Start')]
+		[Parameter(mandatory,ParameterSetName='Test')]
+		[Parameter(mandatory,ParameterSetName='Cpompress')]
 		[Parameter(Mandatory,ParameterSetName="admit")]
-		[Parameter(ParameterSetName='import')]				[String]	$VolumeName,
+		[Parameter(			 ParameterSetName='import')]	[String]	$Volume,
 		[Parameter(ParameterSetName='Set')]			
-		[Parameter(Mandatory,ParameterSetName="admit")]	[String]	$Wwn,
-		[Parameter(ParameterSetName='Set')]				[String]	$Udid,
-		[Parameter(ParameterSetName='Set')]				[switch]	$Clrrsv,
-		[Parameter(ParameterSetName='Set')]				[switch]	$Clralua,
-		[Parameter(ParameterSetName='Set')]				[String]	$Spt,
-		[Parameter(ParameterSetName='Set')]				[String]	$Hpc,
-		[Parameter(ParameterSetName='Start')]			[switch] 	$Override,
-		[Parameter(ParameterSetName='Test')]
-		[ValidateSet('Yes','No')]						[switch]	$Modify,
-		[Parameter(ParameterSetName='Test')]			[switch]	$No,
-		[Parameter(ParameterSetName='Test')]			[switch]	$Offline,
-		[Parameter(ParameterSetName='Test')]			[switch]	$FixSD,
-		# compress
+		[Parameter(Mandatory,ParameterSetName="admit")]		[String]	$Wwn,
+		[Parameter(ParameterSetName='Set')]					[String]	$Udid,
+		[Parameter(ParameterSetName='Set')]					[switch]	$Clrrsv,
+		[Parameter(ParameterSetName='Set')]					[switch]	$Clralua,
+		[Parameter(ParameterSetName='Set')]					[String]	$Spt,
+		[Parameter(ParameterSetName='Set')]					[String]	$Hpc,
+		[Parameter(ParameterSetName='Start')]				[switch] 	$Override,
+		[Parameter(ParameterSetName='Test')]	
+		[ValidateSet('Yes','No')]							[switch]	$Modify,
+		[Parameter(ParameterSetName='Test')]				[switch]	$No,
+		[Parameter(ParameterSetName='Test')]				[switch]	$Offline,
+		[Parameter(ParameterSetName='Test')]				[switch]	$FixSD,
 		[Parameter(Mandatory,ParameterSetName='Compress')][ValidateSet('usr_cpg','snp_cpg','restart','rollback')]
-														[String]	$SUBCommand ,
-		[Parameter(ParameterSetName='Compress')]		[String]	$CPGName ,	
-		[Parameter(ParameterSetName='Compress')]		[String]	$Count ,
-		[Parameter(ParameterSetName='Compress')]
-		[Parameter(ParameterSetName='import')]			[switch]	$TPVV ,
-		[Parameter(ParameterSetName='Compress')]
-		[Parameter(ParameterSetName='import')]			[switch]	$TDVV ,
-		[Parameter(ParameterSetName='Compress')]
-		[Parameter(ParameterSetName='import')]			[switch]	$DeDup ,
-		[Parameter(ParameterSetName='Compress')]		[switch]	$Full ,
+															[String]	$SUBCommand ,
+		[Parameter(ParameterSetName='Compress')]			[String]	$CPGName ,	
+		[Parameter(ParameterSetName='Compress')]			[String]	$Count ,
 		[Parameter(ParameterSetName='Compress')]	
-		[Parameter(ParameterSetName='import')]			[switch]	$Compr ,
-		[Parameter(ParameterSetName='Compress')]		[String]	$KeepVV ,		
-		[Parameter(ParameterSetName='Compress')]		[String]	$Threshold , 
-		[Parameter(ParameterSetName='Compress')]		[String]	$SliceSize , 		
-		[Parameter(ParameterSetName='Compress')]		[String]	$Src_Cpg,
-		# admit
-		[Parameter(ParameterSetName="admin")]			[String]	$Domain ,						
-		[Parameter(ParameterSetName="admit")]			[String] 	$NewWWN,
-		# import
-		[Parameter(Mandatory,ParameterSetName='import')][String]	$Usrcpg ,
-		[Parameter(ParameterSetName='import')]			[String]	$Snapname ,		
-		[Parameter(ParameterSetName='import')]			[String]	$Snp_cpg ,		
-		[Parameter(ParameterSetName='import')]			[switch]	$NoCons ,
+		[Parameter(ParameterSetName='import')]				[switch]	$TPVV ,
+		[Parameter(ParameterSetName='Compress')]
+		[Parameter(ParameterSetName='import')]				[switch]	$TDVV ,
+		[Parameter(ParameterSetName='Compress')]
+		[Parameter(ParameterSetName='import')]				[switch]	$DeDup ,
+		[Parameter(ParameterSetName='Compress')]			[switch]	$Full ,
+		[Parameter(ParameterSetName='Compress')]		
+		[Parameter(ParameterSetName='import')]				[switch]	$Compr ,
+		[Parameter(ParameterSetName='Compress')]			[String]	$KeepVV ,		
+		[Parameter(ParameterSetName='Compress')]			[String]	$Threshold , 
+		[Parameter(ParameterSetName='Compress')]			[String]	$SliceSize , 		
+		[Parameter(ParameterSetName='Compress')]			[String]	$Src_Cpg,
+		[Parameter(ParameterSetName="admin")]				[String]	$Domain ,						
+		[Parameter(ParameterSetName="admit")]				[String] 	$NewWWN,
+		[Parameter(Mandatory,ParameterSetName='import')]	[String]	$Usrcpg ,
+		[Parameter(ParameterSetName='import')]				[String]	$Snapname ,		
+		[Parameter(ParameterSetName='import')]				[String]	$Snp_cpg ,		
+		[Parameter(ParameterSetName='import')]				[switch]	$NoCons ,
 		[Parameter(ParameterSetName='import')]	
-		[ValidateSet('high','med','low')]				[String]	$Job_ID ,		
-		[Parameter(ParameterSetName='import')]			[switch]	$NoTask ,		
-		[Parameter(ParameterSetName='import')]			[switch]	$Cleanup ,
-		[Parameter(ParameterSetName='import')]			[String]	$MinAlloc 
+		[ValidateSet('high','med','low')]					[String]	$Job_ID ,		
+		[Parameter(ParameterSetName='import')]				[switch]	$NoTask ,		
+		[Parameter(ParameterSetName='import')]				[switch]	$Cleanup ,
+		[Parameter(ParameterSetName='import')]				[String]	$MinAlloc 
 )
 Begin	
 {	Test-A9Connection -ClientType 'SshClient'
@@ -452,7 +436,7 @@ process
 		{	'Start'	
 					{	$Cmd = " startvv "
 						if($Override)	{	$Cmd += " -ovrd "	}
-						$Cmd += " $VolumeName "	
+						$Cmd += " $Volume "	
 					}
 			'Set'	
 					{	$Cmd = " setvv -f "
@@ -462,7 +446,7 @@ process
 						if($Clralua)	{	$Cmd += " -clralua " 		}
 						if($Spt)		{	$Cmd += " -spt $Spt " 		}
 						if($Hpc)		{	$Cmd += " -hpc $Hpc " 		}
-						$Cmd += " $VolumeName "
+						$Cmd += " $Volume "
 					}
 			'Test'	
 					{	$cmd = "checkvv -f "	
@@ -470,10 +454,10 @@ process
 						if($Modify -eq 'No')	{	$cmd += " -n "	}
 						if($Offline)			{	$cmd += " -offline "}
 						if($FixsSD)				{	$cmd += " -fixsd "}
-						$cmd += " $VolumeName"
+						$cmd += " $Volume "
 					}
 			'freespace'
-					{	$Cmd = " freespace -f $VolumeName "
+					{	$Cmd = " freespace -f $Volume "
 					}
 			'compress'
 					{	$Cmd = " tunevv "
@@ -495,12 +479,12 @@ process
 						if($Src_Cpg)	{	$Cmd += " -src_cpg $Src_Cpg"	}
 						if($Threshold)	{	$Cmd += " -slth $Threshold"	}
 						if($SliceSize)	{	$Cmd += " -slsz $SliceSize"	}
-						if($VolumeName)	{	$Cmd += " $VolumeName"	}
+						if($Volume)	{	$Cmd += " $Volume"	}
 					}
 			"admit"
 					{	$cmd = "admitvv"
 						if ( $DomainName ) 	{	$Cmd+= " -domain $DomainName"	}
-						$cmd += $VolumeName + ":" + $WWN
+						$cmd += $Volume + ":" + $WWN
 						if ( $NewWWN )		{	$cmd += ":" + $VV_WWN_NewWWN	}	
 					}
 			'import'
@@ -518,7 +502,7 @@ process
 						if($Compr)		{	$Cmd+= " -compr "	}
 						if($MinAlloc)	{	$Cmd+= " -minalloc $MinAlloc"	}
 						if($Usrcpg)		{	$Cmd += " $Usrcpg "	}
-						if($VolumeName)		{	$Cmd += " $VolumeName"	}	
+						if($Volume)		{	$Cmd += " $Volume "	}	
 					}
 		}
 	$Result = Invoke-A9CLICommand -cmds  $Cmd
@@ -527,39 +511,3 @@ process
 }
 }
 
-Function Get-A9Peer_CLI
-{
-<#
-.SYNOPSIS   
-	The command displays the arrays connected through the host ports or peer ports over the same fabric.
-.DESCRIPTION  
-	The command displays the arrays connected through the host ports or peer ports over the same fabric. The Type field
-    specifies the connectivity type with the array. The Type value of Slave means the array is acting as a source, the Type value
-    of Master means the array is acting as a destination, the type value of Peer means the array is acting as both source and destination.
-.PARAMETER ShowRaw
-	This option will show the raw returned data instead of returning a proper PowerShell object. 
-.EXAMPLE	
-	This command utilizes the SSH command 'showpeer'
-	This command requires a SSH type connection.
-#>
-[CmdletBinding()]
-param(	[Parameter()] 	[switch]	$ShowRaw 
-	)	
-Begin
-{	Test-A9Connection -ClientType 'SshClient' 
-}	
-process	
-{	$cmd = " showpeer"
-	$Result = Invoke-A9CLICommand -cmds  $cmd
-	if(-not ( ($Result -match "No peers") -or $ShowRaw ))
-		{	$tempFile = [IO.Path]::GetTempFileName()
-			foreach ($s in  $Result[0..($Result.count)] )
-				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','	
-					Add-Content -Path $tempFile -Value $s
-				}
-			$Result = Import-Csv $tempFile 
-			remove-item $tempFile
-		}
-	return $Result
-}
-} 

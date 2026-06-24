@@ -154,7 +154,7 @@ Process
 }
 }
 
-Function New-A9SnapRcGroupVv 
+Function New-A9RCopyGroupSnapshot
 {
 <#      
 .SYNOPSIS	
@@ -164,16 +164,16 @@ Function New-A9SnapRcGroupVv
 .EXAMPLE	
 	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -Comment "Hello"
 .EXAMPLE	
-	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -VolumeName Test -Comment "Hello"
+	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -Volume Test -Comment "Hello"
 .EXAMPLE	
 	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -Comment "Hello" -RetentionHours 1
 .EXAMPLE	
-	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -Comment "Hello" -VolumeName Test -RetentionHours 1
-.PARAMETER GroupName
+	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -Comment "Hello" -Volume Test -RetentionHours 1
+.PARAMETER Group
 	Group Name
-.PARAMETER VolumeName
+.PARAMETER Volume
 	The <volume-name> is the name of the volume to be captured (not the name of the new snapshot volume).
-.PARAMETER VVNmae
+.PARAMETER Snapshot
 	Specifies a snapshot VV name up to 31 characters in length. 
 .PARAMETER Comment
 	Specifies any additional information up to 511 characters for the volume.
@@ -187,9 +187,9 @@ Function New-A9SnapRcGroupVv
 #>
 [CmdletBinding()]
 Param(
-		[Parameter(Mandatory)]	[String]	$GroupName,
-		[Parameter()]		[String]	$VolumeName,
-		[Parameter(Mandatory)]	[String]	$NewVvNmae,
+		[Parameter(Mandatory)]			[String]	$Group,
+		[Parameter()]					[String]	$Volume,
+		[Parameter(Mandatory)]			[String]	$Snapshot,
 		[Parameter()]					[String]	$Comment,
 		[Parameter()]					[int]		$ExpirationHous,
 		[Parameter()]					[int]		$RetentionHours,
@@ -202,15 +202,15 @@ Process
 {	$body = @{}
 	$ParametersBody=@{}	
 	$body["action"] = 1   
-	If($NewVvNmae) 		{	$ParametersBody["name"] = "$($NewVvNmae)"	}
-	If($Comment) 		{	$ParametersBody["comment"] = "$($Comment)"	}
-	If($ExpirationHous) {	$ParametersBody["expirationHous"] = $ExpirationHous	}
-	If($RetentionHours) {	$ParametersBody["retentionHours"] = $RetentionHours	}
-	If($SkipBlock) 		{	$ParametersBody["skipBlock"] = $true		}
-	if($ParametersBody.Count -gt 0)	{	$body["parameters"] = $ParametersBody 	}
+	If($Snapshot) 		{	$ParametersBody["name"] 			= "$($Snapshot)"	}
+	If($Comment) 		{	$ParametersBody["comment"] 			= "$($Comment)"	}
+	If($ExpirationHous) {	$ParametersBody["expirationHous"] 	= $ExpirationHous	}
+	If($RetentionHours) {	$ParametersBody["retentionHours"] 	= $RetentionHours	}
+	If($SkipBlock) 		{	$ParametersBody["skipBlock"] 		= $true		}
+	$body["parameters"] = $ParametersBody
     $Result = $null
-	if($VolumeName)		{	$uri = "/remotecopygroups/"+$GroupName+"/volumes/"+$VolumeName	}
-	else				{	$uri = "/remotecopygroups/"+$GroupName+"/volumes"	}
+	if($Volume)			{	$uri = "/remotecopygroups/"+$Group+"/volumes/"+$Volume	}
+	else				{	$uri = "/remotecopygroups/"+$Group+"/volumes"	}
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body	
 	$status = $Result.StatusCode
 	if($status -eq 201)
@@ -225,7 +225,7 @@ Process
 }
 
 ######### Add Commands
-Function Add-A9VvToRCopyGroup
+Function Add-A9VolumeToRCopyGroup
 {
 <#      
 .SYNOPSIS	
@@ -233,12 +233,12 @@ Function Add-A9VvToRCopyGroup
 .DESCRIPTION	
     Admit a volume into a Remote Copy group
 .EXAMPLE	
-	PS:> Add-A9VvToRCopyGroup -GroupName xxx -VolumeName xxx -TargetName xxx -SecVolumeName xxx
-.PARAMETER GroupName
+	PS:> Add-A9VvToRCopyGroup -GroupName xxx -Volume xxx -TargetName xxx -SecVolume xxx
+.PARAMETER Group
 	Remote Copy group Name.
-.PARAMETER VolumeName
+.PARAMETER Volume
 	Specifies the name of the existing virtual volume to be admitted to an existing Remote Copy group.
-.PARAMETER SnapshotName
+.PARAMETER Snapshot
 	The optional read-only snapshotName is a starting snapshot when the group is started without performing a full resynchronization.
 	Instead, for synchronized groups,the volume synchronizes deltas between this snapshotName and the base volume. For periodic groups, the volume synchronizes deltas between this snapshotName and a snapshot of the base.
 .PARAMETER VolumeAutoCreation
@@ -247,20 +247,20 @@ Function Add-A9VvToRCopyGroup
 	If skipInitialSync is set to true, the volume should skip the initial sync. This is for the admission of volumes that have been presynced with the target volume. This cannot be set to true if the snapshot name is specified.
 .PARAMETER DifferentSecondaryWWN
 	Setting differentSecondary WWN to true, ensures that the system uses a different WWN on the secondary volume. Defaults to false. Use with volumeAutoCreation
-.PARAMETER TargetName
-	Specify at least one pair of targetName and secVolumeName.
-.PARAMETER SecVolumeName
+.PARAMETER Target
+	Specify at least one pair of targetName and secVolume.
+.PARAMETER SecVolume
 	Specifies the name of the secondary volume on the target system.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]				[String]	$GroupName,
-		[Parameter(Mandatory)]	[String]	$VolumeName,
-		[Parameter()]								[String]	$SnapshotName,
+Param(	[Parameter(Mandatory)]				[String]	$Group,
+		[Parameter(Mandatory)]	[String]	$Volume,
+		[Parameter()]								[String]	$Snapshot,
 		[Parameter()]								[boolean]	$VolumeAutoCreation,
 		[Parameter()]								[boolean]	$SkipInitialSync,
 		[Parameter()]								[boolean]	$DifferentSecondaryWWN,
-		[Parameter(Mandatory)]				[String]	$TargetName,
-		[Parameter(Mandatory)]				[String]	$SecVolumeName
+		[Parameter(Mandatory)]				[String]	$Target,
+		[Parameter(Mandatory)]				[String]	$SecVolume
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -269,24 +269,24 @@ Process
 {	$body = @{}
 	$TargetsBody=@{}	
 	$body["action"] = 1   
-    If ($VolumeName) 			{	$body["volumeName"] = "$($VolumeName)"    }
-	If ($SnapshotName) 			{	$body["snapshotName"] = "$($SnapshotName)"    }
-	If ($VolumeAutoCreation) 	{	$body["volumeAutoCreation"] = $VolumeAutoCreation    }
-	If ($SkipInitialSync) 		{	$body["skipInitialSync"] = $SkipInitialSync }
-	If ($DifferentSecondaryWWN) {	$body["differentSecondaryWWN"] = $DifferentSecondaryWWN    }
-	If ($TargetName) 
+    If ( $Volume ) 					{	$body["volumeName"] 			= "$($Volume)"   	 	}
+	If ( $Snapshot ) 				{	$body["snapshotName"] 			= "$($Snapshot)"    	}
+	If ( $VolumeAutoCreation ) 		{	$body["volumeAutoCreation"] 	= $VolumeAutoCreation   }
+	If ( $SkipInitialSync ) 		{	$body["skipInitialSync"] 		= $SkipInitialSync 		}
+	If ( $DifferentSecondaryWWN ) 	{	$body["differentSecondaryWWN"] 	= $DifferentSecondaryWWN}
+	If ( $Target ) 
 		{	$Obj=@{}
-			$Obj["targetName"] = "$($TargetName)"
+			$Obj["targetName"] = "$($Target)"
 			$TargetsBody += $Obj
 		}	
-	If ($SecVolumeName) 
+	If ($SecVolume) 
 		{	$Obj=@{}
-			$Obj["secVolumeName"] = "$($SecVolumeName)"
+			$Obj["secVolumeName"] = "$($SecVolume)"
 			$TargetsBody += $Obj		
 		}	
 	if($TargetsBody.Count -gt 0)	{	$body["targets"] = $TargetsBody 	}
     $Result = $null
-	$uri = "/remotecopygroups/"+$GroupName+"/volumes"
+	$uri = "/remotecopygroups/"+$Group+"/volumes"
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
@@ -294,13 +294,13 @@ Process
 		return $Result
 	}
 	else
-	{	Write-Error "Failure:  While Admitting a volume into a Remote Copy group : $VolumeName " 
+	{	Write-Error "Failure:  While Admitting a volume into a Remote Copy group : $Volume " 
 		return $Result.StatusDescription
 	}
 }
 }
 
-Function Add-A9TargetToRCopyGroup 
+Function Add-A9RCopyTargetToGroup 
 {
 <#      
 .SYNOPSIS	
@@ -312,7 +312,7 @@ Function Add-A9TargetToRCopyGroup
 .EXAMPLE	
 	PS:> Add-A9TargetToRCopyGroup -GroupName xxx -TargetName xxx -Mode xxx
 .EXAMPLE	
-	PS:> Add-A9TargetToRCopyGroup -GroupName xxx -TargetName xxx -Mode xxx -LocalVolumeName xxx -RemoteVolumeName xxx
+	PS:> Add-A9TargetToRCopyGroup -GroupName xxx -TargetName xxx -Mode xxx -LocalVolume xxx -RemoteVolume xxx
 .PARAMETER Group
 	Remote Copy group Name.
 .PARAMETER Target
@@ -343,14 +343,14 @@ Process
 {	$body = @{}
 	$volumeMappingsObj=@()	
 	$volumeMappingsBody=@{}	
-    If($Target) 		{	$body["targetName"] = $Target   }
-	if($Mode -eq "SYNC")	{	$body["mode"] = 1			}
-	if($Mode -eq "PERIODIC"){	$body["mode"] = 3			}
-	if($Mode -eq "ASYNC")	{	$body["mode"] = 4			}
-	If($LocalVolume) 	{	$volumeMappingsBody["localVolumeName"] = $LocalVolume		}
-	If($RemoteVolume) 	{	$volumeMappingsBody["remoteVolumeName"] = $RemoteVolume    	}
-	if($volumeMappingsBody.Count -gt 0)	{	$volumeMappingsObj += $volumeMappingsBody 	}
-	if($volumeMappingsObj.Count -gt 0)	{	$body["volumeMappings"] = $volumeMappingsObj}
+    If( $Target ) 						{	$body["targetName"] = $Target   }
+	if( $Mode -eq "SYNC" )				{	$body["mode"] = 1				}
+	if( $Mode -eq "PERIODIC" )			{	$body["mode"] = 3				}
+	if( $Mode -eq "ASYNC" )				{	$body["mode"] = 4				}
+	If( $LocalVolume ) 					{	$volumeMappingsBody["localVolumeName"] = $LocalVolume		}
+	If( $RemoteVolume ) 				{	$volumeMappingsBody["remoteVolumeName"] = $RemoteVolume    	}
+	if( $volumeMappingsBody.Count -gt 0 ){	$volumeMappingsObj += $volumeMappingsBody 	}
+	if( $volumeMappingsObj.Count -gt 0 ){	$body["volumeMappings"] = $volumeMappingsObj}
     $Result = $null
 	$uri = "/remotecopygroups/"+$Group+"/targets"
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
@@ -374,7 +374,7 @@ Function Set-A9RCopyGroup
 	Modify a Remote Copy group properties, or issue commands to sync or start a copy group
 .DESCRIPTION
 	Modify a Remote Copy group.
-.PARAMETER GroupName
+.PARAMETER Group
 	Remote Copy group to update. You can choose to reset the LocalUserCPG/LocalSnapCPG/RemoteUserCPG/RemoteSnapCPG, or unset either the Local/RemoteUserCPG, 
 	or unset the LocalRemoteSnapCPG, or modofiy a default policy, or change the mode of the replication.
 .PARAMETER LocalUserCPG
@@ -400,7 +400,7 @@ Function Set-A9RCopyGroup
 .PARAMETER Mode
 	Specifies the volume group mode.
 	SYNC : Remote Copy group mode is synchronous.
-	PERIODIC : Remote Copy group mode is periodic. Although WSAPI 1.5 and later supports PERIODIC 2, Hewlett Packard Enterprise recommends using PERIODIC 3.
+	PERIODIC : Remote Copy group mode is periodic. Hewlett Packard Enterprise recommends using PERIODIC.
 	PERIODIC : Remote Copy group mode is periodic.
 	ASYNC : Remote Copy group mode is asynchronous.
 .PARAMETER Policies
@@ -411,7 +411,7 @@ Function Set-A9RCopyGroup
 .PARAMETER NoResyncSnapshot
 	Enables (true) or disables (false) saving the resynchronization snapshot. Applicable only to Remote Copy groups in asynchronous periodic mode.
 	Defaults to false.
-.PARAMETER TargetName
+.PARAMETER Target
 	The target name associated with this group.
 .PARAMETER FullSync
 	Enables (true) or disables (false)forcing a full synchronization of the Remote Copy group, even if the volumes are already synchronized.
@@ -420,8 +420,6 @@ Function Set-A9RCopyGroup
 .PARAMETER NoResyncSnapshot
 	Enables (true) or disables (false) saving the resynchronization snapshot. Applicable only to Remote Copy groups in asynchronous periodic mode.
 	Defaults to false.
-.PARAMETER TargetName
-	The target name associated with this group.
 .PARAMETER FullSync
 	Enables (true) or disables (false)forcing a full synchronization of the Remote Copy group, even if the volumes are already synchronized.
 	Applies only to volume groups in synchronous mode, and can be used to resynchronize volumes that have become inconsistent.
@@ -429,14 +427,14 @@ Function Set-A9RCopyGroup
 .PARAMETER NoSnapshot
 	If true, this option turns off creation of snapshots in synchronous and periodic modes, and deletes the current synchronization snapshots.
 	The default setting is false.
-.PARAMETER GroupName
+.PARAMETER Group
 	Group Name.
 .PARAMETER SkipInitialSync
 	If true, the volume should skip the initial synchronization and sets the volumes to a synchronized state.
 	The default setting is false.
-.PARAMETER VolumeName
+.PARAMETER Volume
 	volume name.
-.PARAMETER SnapshotName
+.PARAMETER Snapshot
 	Snapshot name.	
 	Note : When used, you must specify all the volumes in the group. While specifying the pair, the starting snapshot is optional.
 	When not used, the system performs a full resynchronization of the volume.
@@ -471,7 +469,7 @@ Function Set-A9RCopyGroup
 
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]							[String]	$GroupName,
+Param(	[Parameter(Mandatory)]							[String]	$Group,
 		[Parameter(Mandatory,ParameterSetName='CPGs')]	[String]	$LocalUserCPG,
 		[Parameter(ParameterSetName='CPGs')]			[String]	$LocalSnapCPG,	  
 		[Parameter(Mandatory,ParameterSetName='CPGs')]	[String]	$RemoteUserCPG,
@@ -488,13 +486,13 @@ Param(	[Parameter(Mandatory)]							[String]	$GroupName,
 		[Parameter(ParameterSetName='Sync')]
 		[Parameter(ParameterSetName='Stop')]
 		[Parameter(ParameterSetName='Start')]
-		[Parameter(ParameterSetName='Restore')]			[String]	$TargetName,
+		[Parameter(ParameterSetName='Restore')]			[String]	$Target,
 		[Parameter(ParameterSetName='Sync')]			[switch]	$FullSync,
 		[Parameter(ParameterSetName='Restore')]	
 		[Parameter(ParameterSetName='Stop')]			[switch]	$NoSnapshot,
 		[Parameter(ParameterSetName='Start')]			[switch]	$SkipInitialSync,
-		[Parameter(ParameterSetName='Start')]			[String]	$VolumeName,
-		[Parameter(ParameterSetName='Start')]			[String]	$SnapshotName,
+		[Parameter(ParameterSetName='Start')]			[String]	$Volume,
+		[Parameter(ParameterSetName='Start')]			[String]	$Snapshot,
 
 		[Parameter(ParameterSetName='Restore')]			[Switch]	$SkipStart,
 		[Parameter(ParameterSetName='Restore')]			[Switch]	$SkipSync,
@@ -534,31 +532,31 @@ Process
 					}
 			'Sync'	{	$body["action"] = 5		
 						If ($NoResyncSnapshot) 	{	$body["noResyncSnapshot"] = $true    }	
-						If ($TargetName) 		{	$body["targetName"] = "$($TargetName)" }
+						If ($TargetName) 		{	$body["targetName"] = "$($Target)" }
 						If ($FullSync) 			{	$body["fullSync"] = $true    }	
 					}
 			'Stop'	{
 						$body = @{}
 						$body["action"] = 4			
 						If ($NoSnapshot) 	{	$body["noSnapshot"] = $true	    }	
-						If ($TargetName) 	{	$body["targetName"] = "$($TargetName)"    }		
+						If ($Target) 	{	$body["targetName"] = "$($Target)"    }		
 					}
 			'Start'	{	$ObjStartingSnapshots=@{}
 						$body["action"] = 3		
 						If ($SkipInitialSync){	$body["skipInitialSync"] = $true	    }	
-						If ($TargetName) 	{	$body["targetName"] = "$($TargetName)"}	
-						If ($VolumeName)	{	$Obj=@{}
-												$Obj["volumeName"] = "$($VolumeName)"
+						If ($Target) 	{	$body["targetName"] = "$($Target)"}	
+						If ($Volume)	{	$Obj=@{}
+												$Obj["volumeName"] = "$($Volume)"
 												$ObjStartingSnapshots += $Obj				
 											}
-						If ($SnapshotName)	{	$Obj=@{}
-												$Obj["snapshotName"] = "$($SnapshotName)"
+						If ($Snapshot)	{	$Obj=@{}
+												$Obj["snapshotName"] = "$($Snapshot)"
 												$ObjStartingSnapshots += $Obj				
 											}
 						if($ObjStartingSnapshots.Count -gt 0)	{	$body["startingSnapshots"] = $ObjStartingSnapshots 	}
 					}
 		}
-	$uri = '/remotecopygroups/'+ $GroupName
+	$uri = '/remotecopygroups/'+ $Group
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
@@ -772,11 +770,11 @@ Function Get-A9RCopyGroup
 .DESCRIPTION
 	Get all or single Remote Copy Group, or Remote Copy Group Targets, or Remote Copy Group Volumes
 	If used without any parameters, it will return all the Copy Groups.
-.PARAMETER GroupName	
+.PARAMETER Group	
     Remote Copy Group Name
-.PARAMETER TargetName	
+.PARAMETER Target
     Target Name
-.PARAMETER VolumeName	
+.PARAMETER Volume
     Remote Copy Volume Name
 .PARAMETER ReturnTargets
 	A Switch to return all Targets
@@ -799,23 +797,23 @@ Function Get-A9RCopyGroup
 
 	Return all Target names 
 .EXAMPLE
-	PS:> Get-A9RCopyGroup -VolumeName XXX
+	PS:> Get-A9RCopyGroup -Volume XXX
 
 	Get a single Volume from the complete list of Volumes
 .EXAMPLE
-	PS:> Get-A9RCopyGroup -ReturnVolumeNames
+	PS:> Get-A9RCopyGroup -ReturnVolume
 
 	Get All Volume 
 #>
-[CmdletBinding(DefaultParameterSetName='ByGroupName')]
-Param(	[Parameter(ParameterSetName='ByGroupName')]		
-		[Parameter(Mandatory,ParameterSetName='ByTargetName')]	
-		[Parameter(Mandatory,ParameterSetName='ByVolumeName')]	[String]	$GroupName,
+[CmdletBinding(DefaultParameterSetName='ByGroup')]
+Param(	[Parameter(ParameterSetName='ByGroup')]		
+		[Parameter(Mandatory,ParameterSetName='ByTarget')]	
+		[Parameter(Mandatory,ParameterSetName='ByVolume')]	[String]	$Group,
 
-		[Parameter(ParameterSetName='ByTargetName')]			[String]	$TargetName,
-		[Parameter(ParameterSetName='ByVolumeName')]			[String]	$VolumeName,
-		[Parameter(parameterSetname='ByTargetName')]			[Switch]	$ReturnTargets,
-		[Parameter(parameterSetname='ByVolumeName')]			[Switch]	$ReturnVolumes
+		[Parameter(ParameterSetName='ByTarget')]			[String]	$Target,
+		[Parameter(ParameterSetName='ByVolume')]			[String]	$Volume,
+		[Parameter(parameterSetname='ByTarget')]			[Switch]	$ReturnTarget,
+		[Parameter(parameterSetname='ByVolume')]			[Switch]	$Return
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -825,13 +823,13 @@ Process
 	$dataPS = $null	
 	$uri = '/remotecopygroups'						
 	Switch($PSCmdlet.ParameterSetName)
-	{	'ByGroupName'	{	if ($GroupName) { $uri = $uri + '/' + $GroupName } 
+	{	'ByGroup'	{	if ($Group) { $uri = $uri + '/' + $Group } 
 						}
-		'ByTargetName'	{	$uri = $uri + '/' + $GroupName + '/targets'
-							if($TargetName)		{	$uri = $uri + '/' + $TargetName	}
+		'ByTarget'	{	$uri = $uri + '/' + $Group + '/targets'
+							if($Target)		{	$uri = $uri + '/' + $Target	}
 						}
-		'ByVolumeName'	{	$uri = $uri + '/' + $GroupName + '/volumes'	
-							if($VolumeName)		{	$uri = $uri+'/'+$VolumeName	}
+		'ByVolume'	{	$uri = $uri + '/' + $Group + '/volumes'	
+							if($Volume)		{	$uri = $uri+'/'+$Volume	}
 						}
 	}
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
@@ -842,12 +840,12 @@ Process
 					return $dataPS
 				}
 			else
-				{	Write-Error "Failure:  While executing Get-A9RCopyGroup. Expected result not found with given filter option ." 
+				{	Write-Error "Failure:  While executing $($PSCmdlet.MyInvocation.MyCommand.Name). Expected result not found with given filter option ." 
 					return 
 				}	
 		}
 	else
-		{	Write-Error "Failure:  While Executing Get-A9RCopyGroupTarget." 
+		{	Write-Error "Failure:  While Executing $($PSCmdlet.MyInvocation.MyCommand.Name)." 
 			return $Result.StatusDescription
 		}	
 }	
@@ -861,7 +859,7 @@ Function Remove-A9RCopyGroup
 	Remove a Remote Copy group.
 .DESCRIPTION
 	Remove a Remote Copy group.
-.PARAMETER GroupName 
+.PARAMETER Group
 	Group Name.
 .PARAMETER KeepSnap 
 	To remove a Remote Copy group with the option of retaining the local volume resynchronization snapshot
@@ -874,14 +872,14 @@ Function Remove-A9RCopyGroup
 	PS:> Remove-A9RCopyGroup -GroupName xxx -KeepSnap $false
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$GroupName,		
+Param(	[Parameter(Mandatory)]	[String]	$Group,		
 		[Parameter()]			[boolean]	$KeepSnap	
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
-{	$uri = '/remotecopygroups/'+ $GroupName
+{	$uri = '/remotecopygroups/'+ $Group
 	if($keepSnap)	{	$uri = $uri + "?keepSnap=true"	}
 	if(!$keepSnap)	{	$uri = $uri + "?keepSnap=false"	}
 	$Result = $null
@@ -892,7 +890,7 @@ Process
 			return
 		}
 	else
-		{	Write-Error "Failure:  While Removing a Remote Copy group : $GroupName " 
+		{	Write-Error "Failure:  While Removing a Remote Copy group : $Group " 
 			return $Result.StatusDescription
 		}    
 }	
@@ -905,9 +903,9 @@ Function Remove-A9TargetFromRCopyGroup
 	Remove a target from a Remote Copy group
 .DESCRIPTION	
     Remove a target from a Remote Copy group
-.PARAMETER GroupName
+.PARAMETER Group
 	Remote Copy group Name.
-.PARAMETER TargetName
+.PARAMETER Target
 	Target Name to be removed.  
 .EXAMPLE	
 	PS:> Remove-A9TargetFromRCopyGroup
@@ -916,15 +914,15 @@ Function Remove-A9TargetFromRCopyGroup
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$GroupName,
-		[Parameter(Mandatory)]	[String]	$TargetName
+Param(	[Parameter(Mandatory)]	[String]	$Group,
+		[Parameter(Mandatory)]	[String]	$Target
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
-	$uri = "/remotecopygroups/"+$GroupName+"/targets/"+$TargetName
+	$uri = "/remotecopygroups/" + $Group + "/targets/" + $Target
 	$Result = Invoke-A9API -uri $uri -type 'PUT' 
 	$status = $Result.StatusCode
 	if($status -eq 201)
@@ -932,22 +930,22 @@ Process
 		return $Result
 	}
 	else
-	{	Write-Error "Failure:  While removing  a target from a Remote Copy group : TargetName = $TargetName / GroupName = $GroupName " 
+	{	Write-Error "Failure:  While removing  a target from a Remote Copy group : TargetName = $Target / GroupName = $Group " 
 		return $Result.StatusDescription
 	}
 }
 }
 
-Function Remove-A9VvFromRCopyGroup
+Function Remove-A9VolumeFromRCopyGroup
 {
 <#      
 .SYNOPSIS	
 	Dismiss a volume from a Remote Copy group
 .DESCRIPTION	
     Dismiss a volume from a Remote Copy group
-.PARAMETER GroupName
+.PARAMETER Group
 	Remote Copy group Name.
-.PARAMETER VolumeName
+.PARAMETER Volume
 	Specifies the name of the existing virtual volume to be admitted to an existing Remote Copy group.
 .PARAMETER KeepSnap
 	Enables (true) or disables (false) retention of the local volume resynchronization snapshot. Defaults to false. Do not use with removeSecondaryVolu me.
@@ -955,10 +953,10 @@ Function Remove-A9VvFromRCopyGroup
 	Enables (true) or disables (false) deletion of the remote volume on the secondary array from the system. Defaults to false. Do not use with keepSnap.
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$GroupName,
-		[Parameter(Mandatory)]	[String]	$VolumeName,
-		[Parameter()]					[boolean]	$KeepSnap,
-		[Parameter()]					[boolean]	$RemoveSecondaryVolume
+Param(	[Parameter(Mandatory)]	[String]	$Group,
+		[Parameter(Mandatory)]	[String]	$Volume,
+		[Parameter()]			[boolean]	$KeepSnap,
+		[Parameter()]			[boolean]	$RemoveSecondaryVolume
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -966,11 +964,11 @@ Begin
 Process 
 {	$body = @{}
 	$body["action"] = 1   
-    If ($VolumeName) 	{	$body["volumeName"] = "$($VolumeName)"  }
+    If ($Volume) 	{	$body["volumeName"] = "$($Volume)"  }
 	If ($KeepSnap) 		{	$body["keepSnap"] = $KeepSnap		 	}
 	If ($RemoveSecondaryVolume) 	{	$body["removeSecondaryVolume"] = $RemoveSecondaryVolume	}
     $Result = $null
-	$uri = "/remotecopygroups/"+$GroupName+"/volumes/"+$VolumeName
+	$uri = "/remotecopygroups/" + $Group + "/volumes/" + $Volume
     $Result = Invoke-A9API -uri $uri -type 'DELETE' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
@@ -978,7 +976,7 @@ Process
 			return $Result
 		}
 	else
-		{	Write-Error "Failure:  While Dismissing a volume from a Remote Copy group : $VolumeName " 
+		{	Write-Error "Failure:  While Dismissing a volume from a Remote Copy group : $Volume " 
 			return $Result.StatusDescription
 		}
 }

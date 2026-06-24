@@ -74,7 +74,7 @@ Function Get-A9HostSet
 .DESCRIPTION
 	Get Single or list of Hotes Set.  the command will attempt to use the API to accomplish the task, 
     if the API is unavalable or other parameters are used, the command will attempt to fail back to a SSH type connection to accomplish the goal.  
-.PARAMETER HostSetName
+.PARAMETER HostSet
 	Specify name of the Hotes Set. This Parameter is valid for API and SSH type connections.
 .EXAMPLE
     PS:> Get-A9HostSet | format-table
@@ -86,7 +86,7 @@ Function Get-A9HostSet
     25 9377a9b4-e1c3-445f-a34d-c6d571ba5c82 tmaas_cluster1   {ftc-tmaas-cl1-esx1, ftc-tmaas-cl1-esx2, ftc-tmaas-cl1-esx3, ftc-tmaas-cl1-esx4…}
     28 9a8fc3dc-30c6-4c95-a8b0-bc3437217a6c Veeambkpsrv      {veeam12bkpsrv}
 .EXAMPLE
-	PS:> Get-A9HostSet -HostSetName MyHostSet
+	PS:> Get-A9HostSet -HostSet MyHostSet
 
 	Get the information of given Hotes Set.
 .EXAMPLE
@@ -105,7 +105,7 @@ Function Get-A9HostSet
     CLI Options such as -D or Members can be derived directly from the returned objects, as such they are not valid parameteres to include in the command.
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
-Param(	[Parameter(ParameterSetName='API')]	    [String]	$HostSetName
+Param(	[Parameter(ParameterSetName='API')]	    [String]	$HostSet
     )
 Begin 
     {	Test-A9Connection -CLientType 'API'
@@ -130,7 +130,7 @@ Process
                                     )
 						write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
                         if ( $HostSetName ) 
-                            {   return ($NewObj | where-object {$_.name -like $HostSetName } )
+                            {   return ($NewObj | where-object {$_.name -like $HostSet } )
                             }
                         else
                             {   return $NewObj
@@ -155,7 +155,7 @@ Function New-A9HostSet
 	Creates a new host Set.
 .DESCRIPTION
 	Creates a new host Set record. This HostSet record will contain properties of the host set as well as the hosts that are its members.   
-.PARAMETER HostSetName
+.PARAMETER HostSet
 	Name of the host set to be created.
 .PARAMETER Comment
 	Comment for the host set.
@@ -164,19 +164,19 @@ Function New-A9HostSet
 .PARAMETER Members
 	The host to be added to the set. 
 .EXAMPLE
-	PS:> New-A9HostSet -HostSetName MyHostSet
+	PS:> New-A9HostSet -HostSet MyHostSet
 
 	Creates a new host Set with name MyHostSet.
 .EXAMPLE
-	PS:> New-A9HostSet -HostSetName MyHostSet -Comment "this Is Test Set" -Domain MyDomain
+	PS:> New-A9HostSet -HostSet MyHostSet -Comment "this Is Test Set" -Domain MyDomain
 
 	Creates a new host Set with name MyHostSet.
 .EXAMPLE
-	PS:> New-A9HostSet -HostSetName MyHostSet -Comment "this Is Test Set" -Domain MyDomain -SetMembers MyHost
+	PS:> New-A9HostSet -HostSet MyHostSet -Comment "this Is Test Set" -Domain MyDomain -SetMembers MyHost
 
 	Creates a new host Set with name MyHostSet with Set Members MyHost.	
 .EXAMPLE	
-	PS:> New-A9HostSet -HostSetName MyHostSet -SetMembers AzureLocalNode1A, AzureLocalNode1B, AzureLocalNode2A, AzureLocalNode2B
+	PS:> New-A9HostSet -HostSet MyHostSet -SetMembers AzureLocalNode1A, AzureLocalNode1B, AzureLocalNode2A, AzureLocalNode2B
 	Cmdlet executed successfully
 
 	 id uuid                                 name              setmembers
@@ -186,7 +186,7 @@ Function New-A9HostSet
 	Creates a new host Set with name MyHostSet with Set Members AzureLocalNode**.	
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$HostSetName,	  
+Param(	[Parameter(Mandatory)]	[String]	$HostSet,	  
 		[Parameter()]			[String]	$Comment,	
 		[Parameter()]			[String]	$Domain, 
 		[Parameter()]			[String[]]	$Members
@@ -196,7 +196,7 @@ Begin
 }
 Process 
 {	$body = @{}    
-    $body["name"] = "$($HostSetName)"
+    $body["name"] = "$($HostSet)"
 	If ($Comment) 	{	$body["comment"] = "$($Comment)"}  
 	If ($Domain) 	{	$body["domain"] = "$($Domain)"    }	
 	If ($SetMembers){	$body["setmembers"] = $Members    }
@@ -205,10 +205,10 @@ Process
 	$status = $Result.StatusCode	
 	if($status -eq 201)
 	{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
-		return Get-A9HostSet -HostSetName $HostSetName
+		return Get-A9HostSet -HostSetName $HostSet
 	}
 	else
-	{	Write-Error "Failure:  While creating Host Set:$HostSetName " 
+	{	Write-Error "Failure:  While creating Host Set:$HostSet " 
 		return $Result.StatusDescription
 	}	
 }

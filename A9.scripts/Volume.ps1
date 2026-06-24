@@ -7,7 +7,7 @@ Function New-a9Volume
 	Creates a vitual volume
 .DESCRIPTION
 	Creates a vitual volume
-.PARAMETER VolumeName
+.PARAMETER Volume
 	Specifies a volume name up to 31 characters in length.
 .PARAMETER CpgName
 	Specifies the name of the CPG from which the volume user space will be allocated.
@@ -56,12 +56,12 @@ Function New-a9Volume
 .PARAMETER Compression   
 	Enables (true) or disables (false) creating thin provisioned volumes with compression. Defaults to false (create volume without compression).
 .EXAMPLE    
-	PS:> New-a9Volume -VolumeName xxx -CpgName xxx -SizeMiB 1024 -SpaceSaving DeduplicateionCompression
+	PS:> New-a9Volume -Volume xxx -CpgName xxx -SizeMiB 1024 -SpaceSaving DeduplicateionCompression
 .EXAMPLE                         
-	PS:> New-A9Volume -VolumeName xxx -CpgName xxx -SizeMiB 1024 -SpaceSaving DeduplicateionCompression -Comment "This is test vv"
+	PS:> New-A9Volume -Volume xxx -CpgName xxx -SizeMiB 1024 -SpaceSaving DeduplicateionCompression -Comment "This is test vv"
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$VolumeName,
+Param(	[Parameter(Mandatory)]	[String]	$Volume,
 		[Parameter(Mandatory)]	[String]	$CpgName,
 		[Parameter(Mandatory)]
 		[ValidateRange(256,[int]::MaxValue)]	
@@ -98,7 +98,7 @@ Begin
 }
 Process 
 {	$body = [ordered]@{}	
-	$body["name"] 		= "$($VolumeName)"
+	$body["name"] 		= "$($Volume)"
 	$body["cpg"] 		= "$($CpgName)"
     $body["sizeMiB"] 	= $SizeMiB
     If ($Id) 		{	$body["id"] = $Id }
@@ -133,10 +133,10 @@ Process
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
-			return ( Get-A9Vv | where-object { $_.name -like $VolumeName} ) 
+			return ( Get-A9Vv | where-object { $_.name -like $Volume} ) 
 		}
 	else
-		{	Write-Error "Failure:  While creating Volumes: $VolumeName " 
+		{	Write-Error "Failure:  While creating Volumes: $Volume " 
 			return $Result.StatusDescription
 		}
 }
@@ -214,13 +214,13 @@ Function Set-A9Volume
 .PARAMETER RmUsrSpcAllocLimit
 	Enables (false) or disables (true)false) the allocation limit. If false, and limit value is a positive number, then set. 
 .EXAMPLE 
-	PS:> Update-A9Volume -VVName xxx -NewName zzz
+	PS:> Update-A9Volume -Volume xxx -NewName zzz
 .EXAMPLE 
-	PS:> Update-A9Volume -VVName xxx -ExpirationHours 2
+	PS:> Update-A9Volume -Volume xxx -ExpirationHours 2
 .EXAMPLE 
-	PS:> Update-A9Volume -VVName xxx -OneHost $true
+	PS:> Update-A9Volume -Volume xxx -OneHost $true
 .EXAMPLE 
-	PS:> Update-A9Volume -VVName xxx -SnapCPG xxx
+	PS:> Update-A9Volume -Volume xxx -SnapCPG xxx
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
 Param(
@@ -229,7 +229,7 @@ Param(
 	[Parameter(Mandatory,parameterSetName='CompressTPVV')]
 	[Parameter(Mandatory,parameterSetName='CompressFPVV')]
 	[Parameter(Mandatory,parameterSetName='CompressTDVV')]
-	[Parameter(Mandatory,parameterSetName='Grow')]			[String]	$VolumeName ,		
+	[Parameter(Mandatory,parameterSetName='Grow')]			[String]	$Volume ,		
 	[Parameter(ParameterSetName='Grow',mandatory)]	
 		[ValidateRange(256,[int]::MaxValue)]				[int]		$SizeMiB ,
 	[Parameter(ParameterSetName='API')]						[String]	$NewName,
@@ -336,15 +336,15 @@ Process
 					}
 		}	
 	$Result = $null
-	$uri = '/volumes/'+$VolumeName 
+	$uri = '/volumes/'+$Volume 
 	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $Body
 	if($Result.StatusCode -eq 200)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
-			if($NewName)	{	return Get-A9Vv -VVName $NewName	}
-			else			{	return Get-A9Vv -VVName $VolumeName		}
+			if($NewName)	{	return Get-A9Volume -Volume $NewName	}
+			else			{	return Get-A9Volume -Volume $Volume		}
 		}
 	else
-		{	Write-Error "Failure:  While Updating Volumes: $VolumeName " 
+		{	Write-Error "Failure:  While Updating Volumes: $Volume " 
 			return $Result.StatusDescription
 		}
 }
@@ -368,7 +368,7 @@ Function Get-A9Volume
 
 	Get the list of virtual volumes using a SSH methof
 .EXAMPLE
-	PS:> Get-A9Vv -Volume MyVV
+	PS:> Get-A9Volume -Volume MyVV
 
 	Get the detail of given VV	
 .EXAMPLE
@@ -570,10 +570,10 @@ Function Remove-A9Volume
 .DESCRIPTION
 	Delete virtual volumes. This command incorporates both the API method as well as the CLI method of removing a Vv. If the only argument used is the VVName, the command will attempt to use the API
 	to accomplish the task, if the API is unavalable or other parameters are used, the command will attempt to fail back to a SSH type connection to accomplish the goal.          
-.PARAMETER VolumeName
+.PARAMETER Volume
     Specify name of the volume to be removed. This parrameter is the only allowed parameter if using the API. All other variables require the usage of a SSH type connection
 .PARAMETER Stale
-	Specifies that all stale VVs can be removed. Only valid for SSH type connections	     
+	Specifies that all stale Volumes can be removed. Only valid for SSH type connections	     
 .PARAMETER Expired
 	Remove specified expired volumes. Only valid for SSH type connections	
 .PARAMETER Snaponly
@@ -581,18 +581,18 @@ Function Remove-A9Volume
 .PARAMETER Cascade
 	Remove specified volumes and their descendent volumes as long as none has an active VLUN. 
 .EXAMPLE	
-	PS:> Remove-A9Volume -VolumeName PassThru-Disk
+	PS:> Remove-A9Volume -Volume PassThru-Disk
 
 	Delete operation on Volume named PassThru-Disk
 .EXAMPLE	
-	PS:> Remove-A9Volume -VolumeName VV1 -Snaponly
+	PS:> Remove-A9Volume -Volume VV1 -Snaponly
 .EXAMPLE	
 	PS:> Remove-A9Volume -Expired	
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
 	param(
 		[Parameter(Mandatory, ParameterSetName='API')]
-		[Parameter(Mandatory, ParameterSetName='SSHV')]			[String]	$VolumeName,
+		[Parameter(Mandatory, ParameterSetName='SSHV')]			[String]	$Volume,
 
 		[Parameter(ParameterSetName='SSHV')]					[Switch]	$Stale, 
 
@@ -626,7 +626,7 @@ Begin
 }	
 process	
 {	switch -wildcard ($PSetName )
-		{	'API'		{	$uri = '/volumes/'+$VolumeName
+		{	'API'		{	$uri = '/volumes/'+$Volume
 							$Result = $null
 							if ($cascade) { $uri = $uri + "?cascade=true"}
 							$Result = Invoke-A9API -uri $uri -type 'DELETE' 
@@ -636,7 +636,7 @@ process
 									return
 								}
 							else
-								{	Write-Error "Failure:  While Removing Volume:$VolumeName " 
+								{	Write-Error "Failure:  While Removing Volume:$Volume " 
 									return $Result.StatusDescription
 								}    	
 						}
@@ -645,16 +645,16 @@ process
 							if ($Cascade)	{	$ActionCmd += "-cascade "	}
 							if ($Snaponly)	{	$ActionCmd += "-snaponly "	}
 							if ($Stale)		{	$ActionCmd += "-stale "		}
-							$ActionCmd += $Volumename + " -f"
+							$ActionCmd += $Volume + " -f"
 							$Result1 = Invoke-A9CLICommand -cmds $ActionCmd
 							write-verbose "The command to be run is : $ActionCmd"			
 							if([string]::IsNullOrEmpty($Result1))
-								{	if($vvName)	{	return  "Success : Removed Volume $VolumeName "	}
+								{	if($Volume)	{	return  "Success : Removed Volume $Volume "	}
 									write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 									return  "Success : Removed Volume "
 								}
 							else
-								{	return "FAILURE : While removing Volume Result1"
+								{	return "FAILURE : While removing Volume"
 								}
 						}
 		}

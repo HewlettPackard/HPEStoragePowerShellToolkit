@@ -21,26 +21,36 @@ Begin
 	{	Test-A9Connection -ClientType 'SshClient'
 	}
 Process	
-	{	$cmd = $PSCmdlet.ParameterSetName + ' '
-		$LastItem = $Fcnt = 0
-		if($Detailed)	{	$Cmd += " -d "
-							$Fcnt = 4
-							$LastItem = $Result.Count -2 
-						}
+	{	$cmd = 'showencryption -d'
 		$Result = Invoke-A9CLICommand -cmds  $Cmd
-	}
-End
-	{	if ($ShowRaw -or $Result.count -lt 2) { Return $Result }
+		if ($ShowRaw) { Return $Result }
+		# if ($ShowRaw -or $Result.count -lt 2) { Return $Result }
+		$Title=$False
+		$VData=$False
 		$tempFile = [IO.Path]::GetTempFileName	
-		foreach ($s in  $Result[$Fcnt..$LastItem] )
-			{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
-				$s = $s -replace 'AdmissionTime','Date,Time,Zone'
-				Add-Content -Path $tempfile -Value $s				
+		foreach ($s in  $Result )
+			{	if ( -not $Title )
+					{	$t=$s.split(' ') | where-object { $_ -ne ' '} | where-object {$_ -ne '' }
+						$Title = $true
+					}
+				else{	$v=$s.split(' ') | where-object { $_ -ne ' ' } | where-object {$_ -ne ''}	
+					}
 			}
-		$returndata = Import-Csv $tempFile 
-		Remove-Item  $tempFile
+		$vx=@()
+		$c1=0
+		$c2=$T.count
+		while ( $c1 -lt $c2)
+			{	write-host " $($T[$c1]) = $($v[$c1])"
+				$h1+= @{ $($T[$c1]) = $($v[$c1]) }
+				$C1+=1
+			}
+		$Vx += ,$h1
+		# $vx | out-string
+		#$returndata = Import-Csv $tempFile 
+		#Remove-Item  $tempFile
 		write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
-		return $returndata	
+		$result = $Vx | convertto-json | convertfrom-json
+		return $vx	
 	}
 }
 

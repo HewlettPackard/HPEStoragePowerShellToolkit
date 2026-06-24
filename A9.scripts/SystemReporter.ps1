@@ -469,7 +469,7 @@ Process
 												if ( $SnapCPG ) 		{ 	$uri = $uri+";snapCPG:$SnapCPG"		}
 												if ( $ProvType ) 		{ 	$uri = $uri+";provType:$ProvType"	}
 											}
-					else 					{	if ( $VVName -or $VVSetName -or $UserCPG -or $SnapCPG -or $ProvType)	{	write-host "The Values VolumeName, VolumeSet, UserCPG, SnapCPG, or ProvisingType are not used when using AT Time and will be ignored."	}
+					else 					{	if ( $VVName -or $VVSetName -or $UserCPG -or $SnapCPG -or $ProvType)	{	write-host "The Values Volume, VolumeSet, UserCPG, SnapCPG, or ProvisingType are not used when using AT Time and will be ignored."	}
 											}	
 					if ( $VolumeGroupby ) 		{ 	$uri = $uri+";groupby:$VolumeGroupby"	}
 					if ( $VolumeComparebyField ){	$CompareByField = $VolumeCompareByField }							
@@ -587,7 +587,7 @@ Function Get-A9SystemReporterIOPs
 .PARAMETER VlunId
 	Requests data for the specified VLUNs only. For example, specify lun:1,2,4. With no lun specified, the system calculates performance data for all VLUNs in the system
 .PARAMETER Volume
-	Retrieves data for the specified volume or volumeset only. Specify the volumeset as volumeName:set:<vvset_name>. With no volumeName specified, the system calculates VLUN performance data for all the VLUNs in the system.
+	Retrieves data for the specified volume or volumeset only. Specify the volumeset as volume:set:<vvset_name>. With no volume specified, the system calculates VLUN performance data for all the VLUNs in the system.
 .PARAMETER HostName
 	Retrieves data for the specified host or hostset only. Specify the hostset as hostname:set:<hostset_name>. With no hostname specified, the system calculates VLUN performance data for all the hosts in the system.
 .PARAMETER VolumeSet
@@ -699,8 +699,8 @@ Param(	[Parameter(Mandatory, ParameterSetName='Disk')]	[switch]	$DiskIOPsReport,
 		[Parameter(Mandatory, ParameterSetName='CPG')]	[switch]	$CPGIOPsReport,
 		[Parameter(Mandatory, ParameterSetName='vLun')]	[switch]	$vLunIOPsReport,
 		[Parameter(Mandatory, ParameterSetName='QoS')]	[switch]	$QoSIOPsReport,
-		[Parameter(Mandatory, ParameterSetName='RCopy')]	[switch]	$RCopyIOPsReport,
-		[Parameter(Mandatory, ParameterSetName='RCopyVol')]	[switch]	$RCopyVolumeIOPsReport,
+		[Parameter(Mandatory, ParameterSetName='RCopy')][switch]	$RCopyIOPsReport,
+		[Parameter(Mandatory, ParameterSetName='RCopyVol')][switch]	$RCopyVolumeIOPsReport,
 		
 		[Parameter()]									[Switch]	$AtTime,
 		[Parameter()]
@@ -731,8 +731,7 @@ Param(	[Parameter(Mandatory, ParameterSetName='Disk')]	[switch]	$DiskIOPsReport,
 														[String]	$PortGroupby,
 		[Parameter(ParameterSetName='Port')][ValidateSet('totalIOPs')]
 														[String]	$PortComparebyField,
-		[Parameter(ParameterSetName='QoS')]				[String[]]	$VolumeName,
-		[Parameter(ParameterSetName='QoS')]				[String[]]	$VolumeSetName,
+
 		[Parameter(ParameterSetName='QoS')]				[String]	$Domain,
 		[Parameter(ParameterSetName='QoS')]				[Switch]	$All_Others,
 		[Parameter(ParameterSetName='QoS')]	
@@ -742,9 +741,11 @@ Param(	[Parameter(Mandatory, ParameterSetName='Disk')]	[switch]	$DiskIOPsReport,
 		'readWaitTimeMS','writeWaitTimeMS','totalWaitTimeMS','IOLimit','BWLimit','IOGuarantee','BWGuarantee','busyPct','queueLength','waitQueueLength','IORejection','latencyMS','latencyTargetMS')]	
 														[String]	$QoSComparebyField,
 		[Parameter(ParameterSetName='vLun')]			[int]		$VlunId,
+		[Parameter(ParameterSetName='QoS')]				
 		[Parameter(ParameterSetName='RCopyVol')]
 		[Parameter(ParameterSetName='vLun')]			[String]	$Volume,
 		[Parameter(ParameterSetName='vLun')]			[String]	$HostName,
+		[Parameter(ParameterSetName='QoS')]
 		[Parameter(ParameterSetName='vLun')]			[String]	$VolumeSet,
 		[Parameter(ParameterSetName='vLun')]			[String]	$HostSetName,
 		[Parameter(ParameterSetName='vLun')][ValidateSet('domain','volumeName','hostname','lun','hostWWN','node','slot','vvsetName','hostsetName','cardPort')]
@@ -752,12 +753,12 @@ Param(	[Parameter(Mandatory, ParameterSetName='Disk')]	[switch]	$DiskIOPsReport,
 		[Parameter(ParameterSetName='vLun')][ValidateSet('totalIOPs')]			
 														[String]	$vLunComparebyField,
 		[Parameter(ParameterSetName='RCopyVol')]	
-		[Parameter(ParameterSetName='RCopy')]			[String]	$TargetName,
+		[Parameter(ParameterSetName='RCopy')]			[String]	$Target,
 		[Parameter(ParameterSetName='RCopy')][ValidateSet('targetName','linkId','linkAddr','node','slotPort','cardPort')]
 														[String]	$RCopyGroupby,
 		[Parameter(ParameterSetName='RCopy')][ValidateSet('kbs','kbps','hbrttms','targetName','linkId','linkAddr','node','slotPort','cardPort')]	
 														[String]	$RCopyComparebyField,
-		[Parameter(ParameterSetName='CPG')]				[String]	$CpgName,
+		[Parameter(ParameterSetName='CPG')]				[String]	$Cpg,
 		[Parameter(ParameterSetName='CPG')][ValidateSet('name','domain')]		
 														[String]	$CPGGroupby,
 		[Parameter(ParameterSetName='CPG')][ValidateSet('totalIOPs')]
@@ -833,9 +834,9 @@ Process
 			'vLun'	
 					{	$uri = $uri + 'vlunstatistics/'+$Frequency
 						if ( -not $AtTime )			{	if ( $VlunId ) 		{ 	$uri = $uri+";lun:$VlunId"				}
-														if ( $VvName ) 		{ 	$uri = $uri+";volumeName:$VvName"		}
+														if ( $Volume ) 		{ 	$uri = $uri+";volumeName:$Volume"		}
 														if ( $HostName ) 	{ 	$uri = $uri+";hostname:$HostName"		}
-														if ( $VvSetName ) 	{ 	$uri = $uri+";volumeName:set:$VvSetName"}
+														if ( $VolumeSet ) 	{ 	$uri = $uri+";volumeName:set:$VolumeSet"}
 														if ( $HostSetName ) { 	$uri = $uri+";hostname:set:$HostSetName"}
 														if ( $NSP )			{ 	$uri = $uri+";portPos:$NSP"				}									
 													}
@@ -846,7 +847,7 @@ Process
 					}	
 			'Rcopy'	
 					{	$uri = $uri + 'remotecopystatistics/'+$Frequency
-						if ( -not $AtTime )			{	if ( $TargetName )		{ 	$uri = $uri+";targetName:$TargetName"	}
+						if ( -not $AtTime )			{	if ( $Target )			{ 	$uri = $uri+";targetName:$Target"	}
 														if ( $NSP )				{ 	$uri = $uri+";portPos:$NSP" 			}
 													}		
 						if ( $RCopyGroupby ) 		{  	$uri = $uri+";groupby:$RCopyGroupby"		}
@@ -855,7 +856,7 @@ Process
 					}
 			'CPG'	
 					{	$uri = $uri + 'cpgstatistics/'+$Frequency
-						if ( -not $AtTime )			{	if ( $CpgName) 		{ 	$uri = $uri+";name:$CpgName"	}	
+						if ( -not $AtTime )			{	if ( $Cpg) 		{ 	$uri = $uri+";name:$Cpg"	}	
 													}	
 						if ( $CPGGroupby) 			{  	$uri = $uri+";groupby:$CPGGroupby"	}
 						if ( $Summary) 				{ 	$uri = $uri+";summary:$Summary"	}
@@ -864,7 +865,7 @@ Process
 			'RCopyVol'
 					{	$uri = $uri + 'remotecopyvolumestatistics/'+$Frequency
 						if ( -not $AtTime )			{	if ( $Volume )				{ 	$uri = $uri+";volumeName:"+$Volume 			}
-														if ( $TargetName )			{ 	$uri = $uri+";targetName:"+$TargetName 		}
+														if ( $Target )				{ 	$uri = $uri+";targetName:"+$Target 		}
 														If ( $Mode -eq "SYNC" ) 	{ 	$uri = $uri+";mode:1" 						}
 														If ( $Mode -eq "PERIODIC" ) { 	$uri = $uri+";mode:3" 						}
 														If ( $Mode -eq "ASYNC" ) 	{ 	$uri = $uri+";mode:4" 						}						

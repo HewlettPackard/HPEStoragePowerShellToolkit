@@ -358,8 +358,8 @@ Function Remove-A9Spare
 	
 	Example removes a spare chuklet from  the position in a drive cage, drive magazine, physical disk,and chunklet number. –pos 1:0.2:3:121, where 1 is the drive cage, 0.2 is the drive magazine, 3 is the physical disk, and 121 is the chunklet number. 	
 .NOTES
+	This command utilizes the SSH command 'removespare'
 	This command requires a SSH type connection.
-	- If a wildcard ("a") is used or the -p flag is specified, prints the number of spares removed. Otherwise, if all the explicitly specified spares could not be removed, prints an error message.
 #>
 [CmdletBinding()]
 param(	[Parameter(ParameterSetName='pdid', mandatory)]		[String]	$Pdid_chunkNumber,	
