@@ -302,6 +302,7 @@ Below are the specfic commands
 		Update-A9System						-->		Set-A9System
 		Set-A9Host_CLI						-->		Set-A9Host
 		New-A9HostSet_CLI					-->		New-A9HostSet
+		New-A9RCopyGroupCPG_CLI				-->		New-A9RCopyGroup
 
 The Following commands were removed and that functionality was added to the command on the right using the specfic parameter
 		Get-A9SystemReporterStatLink		--> 	Get-A9SystemReport -CacheReport
@@ -407,9 +408,10 @@ The following Commands were consolidated into parent 'Set' commands
 		Get-A9HostPorts_CLI					-->		Get-A9Port_CLI
 		Show-A9PortiSCS						--> 	Get-A9Port_CLI -ShowiSNS
 		Show-A9PortDevices_CLI				-->		Get-A9PortDevice_CLI
-		New-A9RCopyGroupCPG_CLI				-->		New-A9RCopyGroup_CLI
-		Set-A9RCopyGroupPeriod_CLI			-->		Set-A9RCopyGroup_CLI
-		
+		Set-A9RCopyGroupPeriod_CLI			-->		Set-A9RCopyGroup
+		Update-A9RCopyGroupTarget			-->		Set-A9RCopyGroup
+		Set-A9RCopyGroup_CLI				-->		Set-A9RCopyGroup
+
 The following Commands were renamed to follow best practices
 		Update-A9Host_CLI 					--> 	Set-A9Host_CLI
 		Get-A9Space 						-->		Get-A9Space_CLI
@@ -430,7 +432,8 @@ The following Commands were renamed to follow best practices
 		Push-A9GroupSnapVolume				-->		Set-A9VolumeSnapshot -PromoteGroupSnapVolume
 		Push-A9SnapVolume					-->		Set-A9VolumeSnapshot -PromoteSnapVolume
 		Push-A9VolumeCopy					-->		Set-A9VolumeCopy -PromoteVolume
-
+		Add-A9TargetToRCopyGroup 			-->		Add-A9RCopyTargetToGroup
+		
 The Following Commands have been relegated to only 3Par devices and no longer appear for other platforms.
 		Join-A9Federation
 		New-A9Federation, 
