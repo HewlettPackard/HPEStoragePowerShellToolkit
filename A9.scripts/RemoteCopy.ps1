@@ -12,7 +12,7 @@ Function New-A9RCopyGroup
 	Specifies the name of the Remote Copy group to create.
 .PARAMETER Domain
 	Specifies the domain in which to create the Remote Copy group.
-.PARAMETER TargetName
+.PARAMETER Target
 	Specifies the target name associated with the Remote Copy group to be created.
 .PARAMETER Mode
 	Specifies the volume group mode.
@@ -29,11 +29,11 @@ Function New-A9RCopyGroup
 .PARAMETER LocalSnapCPG
 	Specifies the local snap CPG used for autocreated volumes. If unspecified and LocalUserCPG is set, will use the LocalUserCPG value
 .EXAMPLE
-	PS:> New-A9RCopyGroup -RcgName xxx -TargetName xxx -Mode SYNC
+	PS:> New-A9RCopyGroup -Name MyCopy -Target xxx -Mode SYNC
 .EXAMPLE	
-	PS:> New-A9RCopyGroup -RcgName xxx -TargetName xxx -Mode PERIODIC -Domain xxx
+	PS:> New-A9RCopyGroup -Name MyCopy -Target xxx -Mode PERIODIC -Domain xxx
 .EXAMPLE	
-	PS:> New-A9RCopyGroup -RcgName xxx -TargetName xxx -Mode ASYNC -UserCPG xxx -LocalUserCPG xxx -SnapCPG xxx -LocalSnapCPG xxx
+	PS:> New-A9RCopyGroup -Name MyCopy -Target xxx -Mode ASYNC -RemoteUserCPG xxx -LocalUserCPG xxx -RemoteSnapCPG xxx -LocalSnapCPG xxx
 #>
 [CmdletBinding()]
 Param(
@@ -90,11 +90,7 @@ Function New-A9RCopyTarget
 	Creating a Remote Copy target
 .DESCRIPTION	
     Creating a Remote Copy target
-.EXAMPLE	
-	PS:> New-A9RCopyTarget -TargetName xxx -IP
-.EXAMPLE	
-	PS:> New-A9RCopyTarget -TargetName xxx  -NodeWWN xxx -FC
-.PARAMETER TargetName
+.PARAMETER Target
 	Specifies the name of the target definition to create, up to 24 characters.
 .PARAMETER IP
 	IP : IP Target Type	
@@ -108,9 +104,13 @@ Function New-A9RCopyTarget
 	Specifies the link for system2. If the linkProtocolType , is IP, specify an IP address for the corresponding port on system2. If the linkProtocolType is FC, specify the WWN of the peer port on system2.
 .PARAMETER Disabled
 	Using this switch will create the target but it will be initially disabled instead of the default behaviour of enabled.
+.EXAMPLE	
+	PS:> New-A9RCopyTarget -Target xxx -IP
+.EXAMPLE	
+	PS:> New-A9RCopyTarget -Target xxx  -NodeWWN xxx -FC
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]							[String]	$TargetName,
+Param(	[Parameter(Mandatory)]							[String]	$Target,
 		[Parameter(Mandatory, ParameterSetName = "IP")]	[Switch]	$IP,
 		[Parameter(Mandatory, ParameterSetName = "FC")]	[Switch]	$FC,
 		[Parameter(ParameterSetName = "FC")]			[String]	$NodeWWN,
@@ -161,14 +161,6 @@ Function New-A9RCopyGroupSnapshot
 	Create coordinated snapshots across all Remote Copy group volumes.
 .DESCRIPTION	
     Create coordinated snapshots across all Remote Copy group volumes.
-.EXAMPLE	
-	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -Comment "Hello"
-.EXAMPLE	
-	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -Volume Test -Comment "Hello"
-.EXAMPLE	
-	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -Comment "Hello" -RetentionHours 1
-.EXAMPLE	
-	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -Comment "Hello" -Volume Test -RetentionHours 1
 .PARAMETER Group
 	Group Name
 .PARAMETER Volume
@@ -184,6 +176,14 @@ Function New-A9RCopyGroupSnapshot
 .PARAMETER SkipBlock
 	Enables (true) or disables (false) whether the storage system blocks host i/o to the parent virtual volume during the creation of a readonly snapshot.
 	Defaults to false.
+.EXAMPLE	
+	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -Comment "Hello"
+.EXAMPLE	
+	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -Volume Test -Comment "Hello"
+.EXAMPLE	
+	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -Comment "Hello" -RetentionHours 1
+.EXAMPLE	
+	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -Comment "Hello" -Volume Test -RetentionHours 1
 #>
 [CmdletBinding()]
 Param(
@@ -232,8 +232,6 @@ Function Add-A9VolumeToRCopyGroup
 	Admit a volume into a Remote Copy group
 .DESCRIPTION	
     Admit a volume into a Remote Copy group
-.EXAMPLE	
-	PS:> Add-A9VvToRCopyGroup -GroupName xxx -Volume xxx -TargetName xxx -SecVolume xxx
 .PARAMETER Group
 	Remote Copy group Name.
 .PARAMETER Volume
@@ -251,14 +249,16 @@ Function Add-A9VolumeToRCopyGroup
 	Specify at least one pair of targetName and secVolume.
 .PARAMETER SecVolume
 	Specifies the name of the secondary volume on the target system.
+.EXAMPLE	
+	PS:> Add-A9VvToRCopyGroup -Group xxx -Volume xxx -Target xxx -SecVolume xxx
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory)]				[String]	$Group,
-		[Parameter(Mandatory)]	[String]	$Volume,
-		[Parameter()]								[String]	$Snapshot,
-		[Parameter()]								[boolean]	$VolumeAutoCreation,
-		[Parameter()]								[boolean]	$SkipInitialSync,
-		[Parameter()]								[boolean]	$DifferentSecondaryWWN,
+		[Parameter(Mandatory)]				[String]	$Volume,
+		[Parameter()]						[String]	$Snapshot,
+		[Parameter()]						[boolean]	$VolumeAutoCreation,
+		[Parameter()]						[boolean]	$SkipInitialSync,
+		[Parameter()]						[boolean]	$DifferentSecondaryWWN,
 		[Parameter(Mandatory)]				[String]	$Target,
 		[Parameter(Mandatory)]				[String]	$SecVolume
 	)
@@ -307,12 +307,6 @@ Function Add-A9RCopyTargetToGroup
 	Admitting a target into a Remote Copy group
 .DESCRIPTION	
     Admitting a target into a Remote Copy group
-.EXAMPLE	
-	PS:> Add-A9TargetToRCopyGroup -GroupName xxx -TargetName xxx
-.EXAMPLE	
-	PS:> Add-A9TargetToRCopyGroup -GroupName xxx -TargetName xxx -Mode xxx
-.EXAMPLE	
-	PS:> Add-A9TargetToRCopyGroup -GroupName xxx -TargetName xxx -Mode xxx -LocalVolume xxx -RemoteVolume xxx
 .PARAMETER Group
 	Remote Copy group Name.
 .PARAMETER Target
@@ -327,6 +321,12 @@ Function Add-A9RCopyTargetToGroup
 	Name of the volume on the primary.
 .PARAMETER RemoteVolume
 	Name of the volume on the target.
+.EXAMPLE	
+	PS:> Add-A9TargetToRCopyGroup -Group xxx -Target xxx
+.EXAMPLE	
+	PS:> Add-A9TargetToRCopyGroup -Group xxx -Target xxx -Mode xxx
+.EXAMPLE	
+	PS:> Add-A9TargetToRCopyGroup -Group xxx -Target xxx -Mode xxx -LocalVolume xxx -RemoteVolume xxx
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory)]			[String]	$Group,
@@ -466,7 +466,6 @@ Function Set-A9RCopyGroup
 .PARAMETER Start
 	Start a Remote Copy group.
 .PARAMETER Restart
-
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory)]							[String]	$Group,
@@ -675,12 +674,12 @@ Function Get-A9RCopyInfo
 	Get overall Remote Copy information unless a LINKname or returnlinks is specified.
 .DESCRIPTION
 	Get overall Remote Copy information unless a LINKname or returnlinks is specified.
-.PARAMETER LinkName
+.PARAMETER Link
 	if Specified, the command will return only the Link name given
 .PARAMETER ReturnLinks
 	If specified, the command will return all links.
 .EXAMPLE
-	PS:> Get-A9RCopyLink -LinkName xxx
+	PS:> Get-A9RCopyLink -Link xxx
 	
 	Get Single Remote Copy Link
 .EXAMPLE
@@ -694,7 +693,7 @@ Function Get-A9RCopyInfo
 #>
 [CmdletBinding(DefaultParameterSetName='Info')]
 Param(
-	[Parameter(ParameterSetName='Link')]	[String]	$LinkName,
+	[Parameter(ParameterSetName='Link')]	[String]	$Link,
 	[Parameter(ParameterSetName='Link')]	[switch]	$ReturnLinks
 )
 Begin 
@@ -731,15 +730,15 @@ Function Get-A9RCopyTarget
 	Get all or single Remote Copy targets
 .DESCRIPTION
 	Get all or single Remote Copy targets
+.PARAMETER Target
+    Remote Copy Target Name
 .EXAMPLE
 	PS:> Get-A9RCopyTarget
 .EXAMPLE
-	PS:> Get-A9RCopyTarget -TargetName xxx		
-.PARAMETER TargetName	
-    Remote Copy Target Name
+	PS:> Get-A9RCopyTarget -Target xxx		
 #>
 [CmdletBinding()]
-Param(	[Parameter()]	[String]	$TargetName
+Param(	[Parameter()]	[String]	$Target
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -751,7 +750,11 @@ Process
 	if($TargetName)	{	$uri = $uri+'/'+$TargetName	}
 	$Result = Invoke-A9API -uri $uri -type 'GET' 		  
 	if($Result.StatusCode -eq 200)
-		{	$dataPS = ($Result.content | ConvertFrom-Json).members
+		{	if ( ($Result.content | ConvertFrom-Json).members  )
+				{	$dataPS = ($Result.content | ConvertFrom-Json).members
+				}
+			else{	$dataPS = ($Result.content | ConvertFrom-Json)
+				}
 			write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $dataPS
 		}
@@ -785,15 +788,15 @@ Function Get-A9RCopyGroup
 
 	Get List of Groups
 .EXAMPLE
-	PS:> Get-A9RCopyGroup -GroupName XXX
+	PS:> Get-A9RCopyGroup -Group XXX
 
 	Get a single Groups of given name
 .EXAMPLE
-	PS:> Get-A9RCopyGroup -TargetName XXX
+	PS:> Get-A9RCopyGroup -Target XXX
 
 	Get a single Target name from the complete list of target names
 .EXAMPLE
-	PS:> Get-A9RCopyGroup -ReturnTargetNames
+	PS:> Get-A9RCopyGroup -ReturnTarget
 
 	Return all Target names 
 .EXAMPLE
@@ -809,7 +812,6 @@ Function Get-A9RCopyGroup
 Param(	[Parameter(ParameterSetName='ByGroup')]		
 		[Parameter(Mandatory,ParameterSetName='ByTarget')]	
 		[Parameter(Mandatory,ParameterSetName='ByVolume')]	[String]	$Group,
-
 		[Parameter(ParameterSetName='ByTarget')]			[String]	$Target,
 		[Parameter(ParameterSetName='ByVolume')]			[String]	$Volume,
 		[Parameter(parameterSetname='ByTarget')]			[Switch]	$ReturnTarget,
@@ -834,14 +836,18 @@ Process
 	}
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
-		{	$dataPS = ($Result.content | ConvertFrom-Json).members
+		{	if ( ($Result.content | ConvertFrom-Json).members  )
+				{	$dataPS = ($Result.content | ConvertFrom-Json).members
+				}
+			else{	$dataPS = ($Result.content | ConvertFrom-Json)
+				}
 			if($dataPS.Count -gt 0)
 				{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 					return $dataPS
 				}
 			else
 				{	Write-Error "Failure:  While executing $($PSCmdlet.MyInvocation.MyCommand.Name). Expected result not found with given filter option ." 
-					return 
+					return $dataPS
 				}	
 		}
 	else
@@ -867,9 +873,9 @@ Function Remove-A9RCopyGroup
 	• keepSnap = $true
 	• keepSnap = $false
 .EXAMPLE    
-	PS:> Remove-A9RCopyGroup -GroupName xxx -KeepSnap $true 
+	PS:> Remove-A9RCopyGroup -Group xxx -KeepSnap $true 
 .EXAMPLE    
-	PS:> Remove-A9RCopyGroup -GroupName xxx -KeepSnap $false
+	PS:> Remove-A9RCopyGroup -Group xxx -KeepSnap $false
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory)]	[String]	$Group,		
