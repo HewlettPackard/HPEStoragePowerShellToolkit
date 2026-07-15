@@ -710,7 +710,7 @@ Function Remove-A9SystemReporterAlertCrit_CLI
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]	$Name
+param(	[Parameter(Mandatory)]	[String]	$Name
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'
@@ -866,7 +866,7 @@ param(	[Parameter(Mandatory)][ValidateSet("port","vlun","pd","ld","cmp","cpu","l
 		[Parameter()]	[String]    $Duration     
 	)
 Begin
-{	Test-A9Connection -ClientType 'SshClient' -MinimumVersion '3.1.2'
+{	Test-A9Connection -ClientType 'SshClient'
 }
 Process
 {	$srinfocmd = "createsralertcrit "	

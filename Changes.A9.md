@@ -218,6 +218,7 @@ Thes changes fall into a number of categoriesd.
 	10: Long running commands such as get-A9Event will now include status bars to warn the user of the expected longer timeframe.
 	11: In many commands that return proper objects, there are parameters that are only used for filtering. That filtering type of operation if more easily done from the powershell command line and for simplicity those unneeded parameters have been removed.
 	12: Some feature have been depreciated on all platforms, those commands have been removed.
+	13: Support for NQN (NVMe Qualified Names) has been added to support NVMe connections. 
 
 Below are the specfic commands
 		New-A9Host_CLI,						--> 	New-A9Host

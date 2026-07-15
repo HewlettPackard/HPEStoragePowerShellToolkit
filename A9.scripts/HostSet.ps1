@@ -29,14 +29,14 @@ Function Set-A9HostTargetZoneingWWN
 	PS:> Add-A9RemoveHostWWN -HostName MyHost -FCWWNs "$wwn" -RemoveWwnFromHost
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory=$true)]				[String]	$HostName,
-		[Parameter(Mandatory=$true)]				[String[]]	$FCWWNs,
+Param(	[Parameter(Mandatory)]				[String]	$HostName,
+		[Parameter(Mandatory)]				[String[]]	$FCWWNs,
 		[Parameter(ParameterSetName='AddZone')]
 		[Parameter(ParameterSetName='RemZone')]		[String[]]	$Port,
-		[Parameter(ParameterSetName='AddHost', Mandatory=$true)]	[switch]	$AddWwnToHost,
-		[Parameter(ParameterSetName='RemHost', Mandatory=$true)]	[switch]	$RemoveWwnFromHost,
-		[Parameter(ParameterSetName='AddZone', Mandatory=$true)]	[switch]	$AddWwnToTZone,
-		[Parameter(ParameterSetName='RemZone', Mandatory=$true)]	[switch]	$RemoveWwnFromTZone
+		[Parameter(ParameterSetName='AddHost', Mandatory)]	[switch]	$AddWwnToHost,
+		[Parameter(ParameterSetName='RemHost', Mandatory)]	[switch]	$RemoveWwnFromHost,
+		[Parameter(ParameterSetName='AddZone', Mandatory)]	[switch]	$AddWwnToTZone,
+		[Parameter(ParameterSetName='RemZone', Mandatory)]	[switch]	$RemoveWwnFromTZone
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'

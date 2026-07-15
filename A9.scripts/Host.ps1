@@ -212,10 +212,12 @@ Function New-A9Host
 	Create the host in the specified domain, or in the default domain, if unspecified.
 .PARAMETER FCWWN
 	Set WWNs for the host.
-.PARAMETER ISCSINames
-	Set one or more iSCSI names for the host.
-.PARAMETER NQNNames
-	Set one or more NQN names for the host.
+.PARAMETER IQN
+	Set one or more iSCSI IQN (iSCSI Qualified Name) for the host.
+.PARAMETER NQN
+	Set one or more NQN (NVMe Qualified Name) for the host.
+.PARAMETER NQNTransportType
+    This parameter is required when setting a NQN type host record, and can be either FC or TCP types. 
 .PARAMETER ForceTearDown
 	If set to true, forces tear down of low-priority VLUN exports.
 .PARAMETER Comment
@@ -235,30 +237,43 @@ Function New-A9Host
 	11	WindowsServer
 	12	AIX_ALUA
 .PARAMETER Port
-	Specifies the desired relationship between the array ports and the host for target-driven zoning. Use this option when the Smart SAN license is installed only.
+    You must pass in a Port type object. which will look like this @( @{node=1}; @{slot=3}; @{cardPort=2} )	
+    Specifies the desired relationship between the array ports and the host for target-driven zoning. Use this option when the Smart SAN license is installed only.
 .EXAMPLE
-	New-A9Host -HostName MyHost
+	New-A9Host -HostName MyHost -Persona WINDOWS -IQN 'iqn.1995-05.com.microsoft:hera.lionetti.lab'
 
-	Creates a new host.
+	Creates a new host of type Windows Server with the given iSCSI IQN.
 .EXAMPLE
-	PS:> New-A9Host -HostName MyHost -FCWWN 51aCaEC0CABBFA6F -Persona GENERIC_ALUA
+	New-A9Host -HostName MyHost -Persona WINDOWS -WWPN '51402ec001178f6f'
+
+	Creates a new host of type Windows Server with the give Fibre Channel World Wide Name.
+.EXAMPLE
+	New-A9Host -HostName MyHost -persona GENERIC_ALUA -NQN 'nqn.2016-06.lab.lionetti.zeus:zeus' -NQNtransportType TCP
+
+	Creates a new host of type Generic_ALUA which supports Linux with the given NVMe Qualified Name using a TCP based transport type.
+.Example 
+	New-A9Host -HostName MyHost -Persona WINDOWS -IQN 'iqn.1995-05.com.microsoft:hera.lionetti.lab' -ports @(@(@{node=0};@{slot=3};@{cardPort=3}),@(@{node=1};@{slot=3};@{cardPort=3}))
+    
+	Creates a new host of type Windows Server but only expose that device on the following ports (0,3,3) and (1,3,3), and please be aware that cardPort is case sensitive.
 #>
-[CmdletBinding()]
-Param(	[Parameter()]							[String]	$HostName,
-		[Parameter()]							[String]	$IPAddr,
-		[Parameter(ParameterSetName='FC')]		[String[]]	$FCWWN,
-		[Parameter(ParameterSetName='iSCSI')]	[String[]]	$ISCSINames,
-		[Parameter(ParameterSetName='NQN')]		[String[]]	$NQNNames,
+[CmdletBinding(DefaultParameterSetName='None')]
+Param(	[Parameter(Mandatory)]							[String]	$HostName,
+		[Parameter()]							        [String]	$IPAddr,
+		[Parameter(ParameterSetName='FC',mandatory)]	[String[]]	$WWPN,
+		[Parameter(ParameterSetName='iSCSI',mandatory)]	[String[]]	$IQN,
+		[Parameter(ParameterSetName='NQN',mandatory)]	[String[]]	$NQN,
+        [Parameter(ParameterSetName='NQN',mandatory)]   [ValidateSet('FC','TCP')]					
+                                                        [String]    $NQNTransferType,
 		[Parameter()][ValidateSet('WINDOWS','GENERIC','GENERIC_ALUA','GENERIC_LEGACY','HPUX_LEGACY','AIX_LEGACY','EGENERA','ONTAP_LEGACY','VMWARE','OPENVMS','HPUX')]
-												[String]	$Persona,
-		[Parameter()]							[object[]]	$Port,
-		[Parameter()]							[String]	$OS,
-		[Parameter()]							[String]	$Model,
-		[Parameter()]							[String]	$Contact,
-		[Parameter()]							[String]	$Location,
-		[Parameter()]							[String]	$Comment,		
-		[Parameter()]							[String]	$Domain,
-		[Parameter()]							[Boolean]	$ForceTearDown
+												        [String]	$Persona,
+		[Parameter()]							        [object[]]	$Port,
+		[Parameter()]							        [String]	$OS,
+		[Parameter()]							        [String]	$Model,
+		[Parameter()]							        [String]	$Contact,
+		[Parameter()]							        [String]	$Location,
+		[Parameter()]							        [String]	$Comment,		
+		[Parameter()]							        [String]	$Domain,
+		[Parameter()]							        [Boolean]	$ForceTearDown
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -267,14 +282,16 @@ Process
 {	$body = @{}    
     $body["name"] = "$($HostName)"
     If ($Domain)  		{	$body["domain"] = "$($Domain)"    	}
-	If ($FCWWN)    		{	$body["FCWWNs"] = @($FCWWN)    		} 
-	# If ($Port)     		{	$body["port"] = @("0:3:3") }
-	
+	If ($WWPN)    		{	$body["FCWWNs"] = @($WWPN)    		} 
+	If ($NQN)    		{	$body["NQNs"] = @($NQN)    		    
+                            $NQNHash = @{'FC' = 1;'TCP'=2}
+                            $body["transportType"] = $NQNHash[$NQNTransferType]
+                        } 
 	If ($ForceTearDown)	{	$body["forceTearDown"] = $ForceTearDown}
-	If ($ISCSINames)	{	$body["iSCSINames"] = $ISCSINames	}
+	If ($IQN)	        {  	$body["iSCSINames"] = $IQN	        }
 	$PersonaHash = @{ 'GENERIC' = 1;'GENERIC_ALUA'=2;'GENERIC_LEGACY'=3;'HPUX_LEGACY'=4;'AIX_LEGACY'=5;'EGENERA'=6;'ONTAP_LEGACY'=7;'VMWARE'=8;'OPENVMS'=9;'HPUX'=10; 'WINDOWS'=11}
 	if ($Persona)		{	$body['persona'] = $PersonaHash[$Persona] }
-	# If ($Port)     		{	$body["port"] = $Port    			}
+	If ($Port)     		{	$body["port"] = $Port    			}
 	# BElow are the Descriptors
 	
 	$DescriptorsBody = @{}   
@@ -304,13 +321,14 @@ Function Remove-A9Host
 {
 <#
 .SYNOPSIS
-	Remove a Host.
+	Remove a Host record from the array.
 .DESCRIPTION
-	Remove a Host. Any user with Super or Edit role, or any role granted host_remove permission, can perform this operation. Requires access to all domains.
-.EXAMPLE    
-	PS:> Remove-Host -HostName MyHost
+	Remove a Host record from the array. 
+    Any user with Super or Edit role, or any role granted host_remove permission, can perform this operation. Requires access to all domains.
 .PARAMETER HostName 
 	Specify the name of Host to be removed.
+.EXAMPLE    
+	PS:> Remove-Host -HostName MyHost
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory)]	[String]	$HostName
@@ -341,8 +359,6 @@ Function Set-A9Host
 	Modify a Single Host record.
 .DESCRIPTION
 	This comamnd will let you add or remove paths from a single host, or add or remove Chap secrets from a single host record, or change the persona, name, or description of a host record.. 
-.EXAMPLE
-	PS:> Set-a9host 
 .PARAMETER HostName
 	Specify name of the Host record that is to be modified, this is a required parameter.
 .PARAMETER AddInitiator
@@ -370,6 +386,18 @@ Function Set-A9Host
     This is the string value of the Chap secret to be installed if a Chap relationship is being added.
 .PARAMETER ChapSecretHex    
     The string given for the Chap Secret is in hex, otherwise it is expected to be alphanumeric
+.EXAMPLE
+	PS:> Set-a9host -hostname CurrentHostName -newName MyHost1
+
+    This example renames a host record from 'CurrentHostName' to 'MyHost1'
+.EXAMPLE 
+	PS:> Set-a9host -hostname CurrentHostName -AddInitiator -InitiatorWWNorIQN 'iqn.1995-05.com.microsoft:hera.lionetti.lab' 
+
+    This example adds an iSCSI IQN 'iqn.1995-05.com.microsoft:hera.lionetti.lab' to the Host record, note that you can use the command "Get-Initiator | format-table NodeAddress" to obtain your host iSCSI.
+.EXAMPLE
+	PS:> Set-a9host -hostname CurrentHostName -AddInitiator -InitiatorWWNorIQN '51402ec001178f6f' 
+
+    This example adds a World Wide Port Name '51402ec001178f6f' to the Host record, note that you can use the command "Get-Initiator | format-table PortAddress" to obtain your host World Wide Port Address.
 #>
 [CmdletBinding(DefaultParameterSetName="Add")]
 Param(	[Parameter(mandatory, ParameterSetName='Add')]

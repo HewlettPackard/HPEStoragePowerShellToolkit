@@ -216,7 +216,7 @@ param(	[Parameter(Mandatory, ParameterSetName='Allocate')]
 		[Parameter(ParameterSetName='OptimizeM')]			[switch]	$Chstat,
 		[Parameter(ParameterSetName='OptimizeA')]
 		[Parameter(ParameterSetName='OptimizeM')]			[String]	$Maxpd,
-		[Parameter(Mandatory=$true)]
+		[Parameter(Mandatory)]
 		[ValidateSet('auto','manual')]						[switch]	$Movech,
 		[Parameter(Mandatory, ParameterSetName='OptimizeM')][String]	$MaxSvct,
 		[Parameter(Mandatory, ParameterSetName='OptimizeA')][String]	$AvgSvct

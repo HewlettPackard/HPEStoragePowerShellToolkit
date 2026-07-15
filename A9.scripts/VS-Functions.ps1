@@ -35,6 +35,21 @@ Param(	[Parameter(Mandatory)]	[string]	$Cmds
 
 function Invoke-A9API 
 {
+<# 
+.SYNOPSIS
+	This is an internal command that is used to actually issue an API call. 
+.DESCRIPTION
+	This is an internal command that is used to actually issue an API call. This command acts as a wrapper for the Invoke-RestAPI command but adds all the needed logic and headers to make connections successful.
+.PARAMETER uri
+	The command automatically adds the appropriate HTTPS: to the front as well as the IP Address currently connected to and the port number as dictated by the array type.
+	So the 'HTTPS://IPAddress:Port/api/v1' is prefixed to each URI, so a command might only have to send a '/volumes/vol1' to complete a call.
+.PARAMETER type
+	This allow a call to prescribe what type of call is being made, either a Get, Put, Delete or Post which match the restAPI CRUD (Create Update Read and Delete)
+.PARAMETER body
+	If a body needs to be sent, this is included in this parameter.
+.PARAMETER WsapiConnection
+	By default this uses the currently open connected object. 
+#>
 [CmdletBinding()]
 Param (	[parameter(Mandatory, HelpMessage = "Enter the resource URI (ex. /volumes)")]
 		[ValidateScript( { if ($_.startswith('/')) { $true } else { throw "-URI must begin with a '/' (eg. /volumes) in its value. Correct the value and try again." } })]

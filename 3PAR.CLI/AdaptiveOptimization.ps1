@@ -65,7 +65,7 @@ param(	[Parameter()]	[String]	$T0cpg,
 		[Parameter()]	[String]	$T0max,
 		[Parameter()]	[String]	$T1max,
 		[Parameter()]	[String]	$T2max,
-		[Parameter(Mandatory=$True)]	[String]	$AOConfigurationName
+		[Parameter(Mandatory)]	[String]	$AOConfigurationName
 )
 begin
 	{	Test-A9Connection -ClientType 'SshClient' 
@@ -341,7 +341,7 @@ param(
 	[Parameter()]	[String]	$T1max,
 	[Parameter()]	[String]	$T2max,
 	[Parameter()]	[String]	$NewName,
-	[Parameter(Mandatory=$True)][String]	$AOConfigurationName
+	[Parameter(Mandatory)][String]	$AOConfigurationName
 )
 begin
 	{	Test-A9Connection -ClientType 'SshClient' 

@@ -1052,7 +1052,7 @@ Function Start-A9NodeRescue
 	This command requires a SSH type connection.
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$True)]	[String]	$Node
+param(	[Parameter(Mandatory)]	[String]	$Node
 )
 Begin
 {	Test-A9Connection -ClientType 'SshClient'

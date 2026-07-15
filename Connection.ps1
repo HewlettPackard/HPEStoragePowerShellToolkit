@@ -12,19 +12,15 @@ Function Test-A9Connection
 .SYNOPSIS
     Validate CLI connection object. For Internal Use only.
 .DESCRIPTION
-	Validates if CLI connection object for VC and OA are null/empty
-.EXAMPLE
-    Test-Connection -ClientType SshClient -MinimumVersion 3.2.1
+	This is an internal command used by other commnads to ensure that a connection exists and is open before attempting to send a RestPI command.
+	If the call is made, you must specify if the connection to be tested is the RestAPI based connection or a SSH type connection. If that type of connection in functional it will return a true, otherwise it will return a false or throw an error.
 .EXAMPLE
     Test-Connection -ClientType SshClient 
 .EXAMPLE
     Test-Connection -ClientType API
-	
-.Notes
 #>
 [CmdletBinding()]
 Param(	[ValidateSet('SshClient','API')]	[String]	$ClientType,
-											[Version]	$MinimumVersion,
 											[switch]	$ReturnBoolean
 	)
 Process
@@ -33,15 +29,6 @@ Process
 			if ( -not ($SANConnection.UserName)  ) 			{	if ($ReturnBoolean) { return $false} else { Throw "Connection object usernameis null or empty. Create a valid connection object and retry"	}}
 			if ( -not ($SANConnection.IPAddress) ) 			{ 	if ($ReturnBoolean) { return $false} else { Throw "Connection IP address is null/empty. Create a valid connection object and retry"			}}
 			if ( $SANConnection.CLIType -ne 'SshClient' ) 	{	if ($ReturnBoolean) { return $false} else { Throw "Connection Client Type is wrong. Create a valid SSH connection object and retry"			}}
-			If ( $ClientType -eq 'SshClient'	)			
-				{ 	if ($MinimumVersion)	
-						{	[Version]$DetectedVersion = ( Get-A9Version_CLI -S ) 
-							if ( -not ($DetectedVersion -ge $MinimumVersion) )
-								{	if ($ReturnBoolean) { return $false} 
-									else { Throw "The Detecte Array Version OS is less than the required version need to run this command. `nThe detected version is $DetectedVersion but the required version is $MinimumVersion."}
-								}
-						}
-				}
 			if ($ReturnBoolean) { return $true} else { return }
 		}
 	elseif ($ClientType -eq 'API')
@@ -234,7 +221,7 @@ Function Show-HPESANArrayCommandSet
 	This command will reset any global variables and reset the Module to only show the connectivity commands. 
 	You must use the Connect-HPESAN command to reconnect to a valid array to continue. 
 #>
-Param(	[Parameter(Mandatory=$true)]	[ValidateSet('AlletraMP-B10000', 'Alletra9000','Primera','3PAR','Nimble','Alletra6000','MSA')]	
+Param(	[Parameter(Mandatory)]	[ValidateSet('AlletraMP-B10000', 'Alletra9000','Primera','3PAR','Nimble','Alletra6000','MSA')]	
 									[String]    $ArrayType
 	)
 process
@@ -506,11 +493,11 @@ Function Connect-HPESAN
 
 #>
 [CmdletBinding()]
-param(	[Parameter(Mandatory=$true)]	[String]    $ArrayNameOrIPAddress,
-		[Parameter(Mandatory=$true)]
+param(	[Parameter(Mandatory)]	[String]    $ArrayNameOrIPAddress,
+		[Parameter(Mandatory)]
 		[ValidateSet('AlletraMP-B10000', 'Alletra9000','Primera','3PAR','Nimble','Alletra6000','MSA')]	
 										[String]    $ArrayType,
-		[Parameter(Mandatory=$true)]	[System.Management.Automation.PSCredential] $Credential
+		[Parameter(Mandatory)]	[System.Management.Automation.PSCredential] $Credential
 		)
 Process
 {	if ( $psversiontable.PSversion -ge 7)
@@ -555,7 +542,7 @@ Process
 
 function Import-HPESANCertificate 
 {
-	<#
+<#
 .SYNOPSIS
 	Connect to a HPE SAN Device
 .DESCRIPTION
@@ -576,16 +563,16 @@ function Import-HPESANCertificate
 	----------                               -------
 	069A1B7D854C84718FDE234F894B277C29661FB8 CN=pegasus.lionetti.lab, O=Nimble Storage, OU=Lab, L=San Jose, S=CA, C=US
 .EXAMPLE
-.EXAMPLE
-	import-hpesanCertificate -ArrayNameOrIPAddress 192.168.20.19 
-WARNING: When run in non-administrator mode, the importation of a certificate will only import it to the current user.
-        Please re-run an Administrator PowerShell Prompt to import the certificate into the local machine account.
+	PS:> import-hpesanCertificate -ArrayNameOrIPAddress 192.168.20.19 
 
-Outputting the Certificate as the return object
+	WARNING: When run in non-administrator mode, the importation of a certificate will only import it to the current user.
+    Please re-run an Administrator PowerShell Prompt to import the certificate into the local machine account.
 
-Thumbprint                                Subject              EnhancedKeyUsageList
-----------                                -------              --------------------
-CD8236C1969115A415ED91419FF6F05AD7127546  CN=HPE Alletra 9060… Server Authentication
+	Outputting the Certificate as the return object
+
+	Thumbprint                                Subject              EnhancedKeyUsageList
+	----------                                -------              --------------------
+	CD8236C1969115A415ED91419FF6F05AD7127546  CN=HPE Alletra 9060… Server Authentication
 .EXAMPLE
 	PS:> Import-HPESANCertificate -ArrayNameOrIPAddress 192.168.1.50
 
