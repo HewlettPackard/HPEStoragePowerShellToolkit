@@ -15,6 +15,9 @@ Function Get-A9Host
 	Specify ISCSI of the Host.
 .PARAMETER ListPersona
     This option allows you to interrogate the array to determine which host personas are supported.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE
 	PS:> get-a9host | format-table
     Cmdlet executed successfully
@@ -66,23 +69,20 @@ Function Get-A9Host
 Param(	[Parameter(mandatory, ParameterSetName='ByHostname')]       [String]	$HostName,
         [Parameter(ParameterSetName='ByFilter')]                    [String[]]	$ISCSI,
         [Parameter(ParameterSetName='ByFilter')]                    [String[]]	$WWN,
-        [Parameter(mandatory, ParameterSetName='Persona')]          [switch]	$ListPersona        
+        [Parameter(mandatory, ParameterSetName='Persona')]          [switch]	$ListPersona,
+        [Parameter()]                                               [switch]    $ShowAPI
     )
 Begin 
     {	Test-A9Connection -CLientType 'API'
     }
 Process 
-    {	$Result = $null
+    {	
+        $Result = $null
         $dataPS = $null	
-        $Query="?query=""  """	                    
+        $Query="?query=""  """	
+        $uri = '/hosts'                    
         switch($PSCmdlet.ParameterSetName)
-            {   'none'      
-                            {   $uri = '/hosts'
-                            }
-                'ByHostname'
-                            {   $uri = '/hosts/'+$HostName                
-                            }
-                'ByFilter'  
+            {   'ByFilter'  
                             {   if($WWN)
                                     {	$Query = $Query.Insert($Query.Length-3," FCPaths[ ]")
                                         $count = 1
@@ -121,7 +121,11 @@ Process
                                 $uri = '/hosts/'+$Query
                             }
                 'Persona'   
-                            {   $Result = Invoke-A9API -uri '/hostpersonas' -type 'GET' 
+                            {   if ( $ShowAPI )
+                                    {   $Result = Invoke-A9API -uri '/hostpersonas' -type 'GET' -whatif
+                                        return 
+                                    }
+                                $Result = Invoke-A9API -uri '/hostpersonas' -type 'GET'
                                 If($Result.StatusCode -eq 200)
                                     {	$dataPS = ($Result.content | ConvertFrom-Json).members	
                                         write-host "Cmdlet executed successfully" -foreground green
@@ -145,7 +149,11 @@ Process
             
                             }
             }
-        $Result = Invoke-A9API -uri $uri -type 'GET' 
+        if ( $ShowAPI ) 
+            {   $Result = Invoke-A9API -uri $uri -type 'GET' -WhatIf 
+                return 
+            }
+        $Result = Invoke-A9API -uri $uri -type 'GET'
         If($Result.StatusCode -eq 200)
             {	$dataPS = ($Result.content | ConvertFrom-Json).members
                 if($dataPS.Count -gt 0)
@@ -181,8 +189,10 @@ Process
 											[PSCustomObject]$NewItem
 										}
 						            )
-
                         write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+                        if ( $PSCmdlet.ParameterSetName -like 'ByHostName' )
+                            {   $NewObj = $NewObj | where-object{ $_.name -like $Hostname }   
+                            }
                         return $NewObj
                     }
                 else
@@ -239,6 +249,9 @@ Function New-A9Host
 .PARAMETER Port
     You must pass in a Port type object. which will look like this @( @{node=1}; @{slot=3}; @{cardPort=2} )	
     Specifies the desired relationship between the array ports and the host for target-driven zoning. Use this option when the Smart SAN license is installed only.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE
 	New-A9Host -HostName MyHost -Persona WINDOWS -IQN 'iqn.1995-05.com.microsoft:hera.lionetti.lab'
 
@@ -273,7 +286,8 @@ Param(	[Parameter(Mandatory)]							[String]	$HostName,
 		[Parameter()]							        [String]	$Location,
 		[Parameter()]							        [String]	$Comment,		
 		[Parameter()]							        [String]	$Domain,
-		[Parameter()]							        [Boolean]	$ForceTearDown
+		[Parameter()]							        [Boolean]	$ForceTearDown,
+        [Parameter()]                                   [switch]    $ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -304,7 +318,11 @@ Process
 	if($DescriptorsBody.Count -gt 0){	$body["descriptors"] = $DescriptorsBody}
     
 	$Result = $null
-    $Result = Invoke-A9API -uri '/hosts' -type 'POST' -body $body 
+    if ( $ShowAPI )
+        {   $Result = Invoke-A9API -uri '/hosts' -type 'POST' -body $body -whatif
+            return 
+        }
+    $Result = Invoke-A9API -uri '/hosts' -type 'POST' -body $body
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
@@ -327,11 +345,15 @@ Function Remove-A9Host
     Any user with Super or Edit role, or any role granted host_remove permission, can perform this operation. Requires access to all domains.
 .PARAMETER HostName 
 	Specify the name of Host to be removed.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE    
 	PS:> Remove-Host -HostName MyHost
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$HostName
+Param(	[Parameter(Mandatory)]	[String]	$HostName,
+        [Parameter()]           [switch]    $ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -339,8 +361,12 @@ Begin
 Process 
 {	$uri = '/hosts/'+$HostName
 	$Result = $null
-	$Result = Invoke-A9API -uri $uri -type 'DELETE' 
-	$status = $Result.StatusCode
+	if ( $ShowAPI )
+        {   $Result = Invoke-A9API -uri $uri -type 'DELETE'  -whatif
+            return 
+        }
+    $Result = Invoke-A9API -uri $uri -type 'DELETE'  $body
+    $status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return
@@ -385,7 +411,10 @@ Function Set-A9Host
 .PARAMETER CHAPSecret
     This is the string value of the Chap secret to be installed if a Chap relationship is being added.
 .PARAMETER ChapSecretHex    
-    The string given for the Chap Secret is in hex, otherwise it is expected to be alphanumeric
+    The string given for the Chap Secret is in hex, otherwise it is expected to be alphanumeric.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE
 	PS:> Set-a9host -hostname CurrentHostName -newName MyHost1
 
@@ -424,7 +453,8 @@ Param(	[Parameter(mandatory, ParameterSetName='Add')]
         [validateset('Initiator','Target')]                     [String]    $CHAPOperationMode,
         [Parameter(ParameterSetName='ChapAddRemove')]           [String]	$CHAPSecret,
         [Parameter(ParameterSetName='ChapAddRemove')]    		[Switch]	$ChapSecretHex,
-        [Parameter(ParameterSetName='Modify')]          		[Switch]	$ChapRemoveTargetOnly
+        [Parameter(ParameterSetName='Modify')]          		[Switch]	$ChapRemoveTargetOnly,
+        [Parameter()]                                           [switch]    $ShowAPI
 )
 Begin 
 {	Test-A9Connection -CLientType 'API'
@@ -490,8 +520,12 @@ Process
         }
     $Result = $null
     $uri = $uri + '/hosts/' + $hostname
-    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
-	if ( $Result.StatusCode -eq 201 )
+    if ( $ShowAPI ) 
+        {   $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body -WhatIf 
+            return 
+        }
+    else{ 	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body          }
+    if ( $Result.StatusCode -eq 201 )
 		{	Write-Error "Failure:  While creating Host:$HostName " 
 			return $Result.StatusDescription
 		}	

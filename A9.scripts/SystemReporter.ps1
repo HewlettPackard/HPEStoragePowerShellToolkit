@@ -80,6 +80,9 @@ Function Get-A9SystemReporterStats
 .PARAMETER LETime
 	Lase than time For At Time query expressions, you can use the sampleTime parameter
 	Time format should be like this: 2018-07-18T13:25:00+05:30
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE 
 	PS:> Get-A9SystemReporterStats -AtTime -Frequency hires -CPUReport
 .EXAMPLE  
@@ -146,7 +149,8 @@ Param(	[Parameter(Mandatory, ParameterSetName='Cache')]	[switch]	$CacheReport,
 		[ValidateSet('userPct','systemPct','idlePct','interruptsPerSec','contextSwitchesPerSec')]
 															[String]	$CPUComparebyField,
 		[Parameter()]										[String]	$GETime,
-		[Parameter()]										[String]	$LETime					
+		[Parameter()]										[String]	$LETime,
+		[Parameter()]										[switch]	$ShowAPI				
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -182,6 +186,10 @@ Process
 									$uri = $uri+$ComparebyField			
 								}			
 	if ( ( $LETime -or $GETime) -and $ATTime )		{	$uri = $uri+$Query	}
+	if ( $ShowAPI )
+		{	$Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+			return
+		}
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
@@ -343,6 +351,9 @@ Function Get-A9SystemReporterSpace
 .PARAMETER LETime
 	Lase than time For At Time query expressions, you can use the sampleTime parameter
 	Time format should be like this: 2018-07-18T13:25:00+05:30
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9SpaceReport -VersusTime -Frequency hires -cpgSpaceReport
 	Cmdlet executed successfully
@@ -416,7 +427,8 @@ Param(
 															[String]	$LogicalDiskCompareByField,
 		[Parameter(ParameterSetName='LD')]					[String]	$LogicalDiskName,
 		[Parameter(ParameterSetName='LD')][ValidateRange(0,7)][String]	$OwnerNode,
-		[Parameter(ParameterSetName='LD')]					[switch]	$ShowRaw													
+		[Parameter(ParameterSetName='LD')]					[switch]	$ShowRaw,
+		[Parameter()]										[Switch]	$ShowAPI													
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -519,6 +531,10 @@ Process
 								$uri = $uri+$ComparebyField	
 							}
 	if ( ($LETime -or $GETime) -and $AtTime )	{	$uri = $uri+$Query	}
+	if ( $ShowAPI )
+		{	$Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+			return
+		}
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if ( $Result.StatusCode -eq 200 )
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
@@ -690,6 +706,9 @@ Function Get-A9SystemReporterIOPs
 	Time format should be like this: 2018-07-18T13:25:00+05:30
 
 	PS:> Get-A9PDIOPsReport -CPGIOPsReport -AtTime -Frequency daily -Compareby top -NoOfRecords 10 -ComparebyField totalSpaceMiB
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9PDIOPsReport -CPGIOPsReport -AtTime -Frequency hires -GETime "2018-04-09T09:20:00+05:30" -LETime "2018-04-09T12:20:00+05:30"	
 #>
@@ -769,7 +788,8 @@ Param(	[Parameter(Mandatory, ParameterSetName='Disk')]	[switch]	$DiskIOPsReport,
 		[Parameter(ParameterSetName='RCopyVol')][ValidateSet('volumeName','volumeSetName','domain','targetName','mode','remoteCopyGroup','remoteCopyGroupRole','node','slot','cardPort','portType')]
 														[String]	$RCopyVolGroupby,
 		[Parameter(ParameterSetName='RCopyVol')][ValidateSet('readIOLocal','writeIOLocal','IOLocal','readKBytesLocal','writeKBytesLocal','KBytesLocal','readServiceTimeMSLocal','writeServiceTimeMSLocal','ServiceTimeMSLocal','readIOSizeKBLocal','writeIOSizeKBLocal','IOSizeKBLocal','busyPctLocal','queueLengthLocal','readIORemote','wirteIORemote','IORemote','readKBytesRemote','writeKBytesRemote','KBytesRemote','readServiceTimeMSRemote','writeServiceTimeMSRemote','ServiceTimeMSRemote','readIOSizeKBRemote','writeIOSizeKBRemote','IOSizeKBRemote','busyPctRemote','queueLengthRemote','RPO')]
-														[String]	$RCopyVolComparebyField
+														[String]	$RCopyVolComparebyField,
+		[Parameter()]									[switch]	$ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -882,6 +902,10 @@ Process
 								else				{	$uri = $uri+"1,"+$ComparebyField					}
 							}	
 	if($LETime -or $GETime)		{	$uri = $uri+$Query	}
+	if ( $ShowAPI )
+		{	$Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+			return
+		}
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members

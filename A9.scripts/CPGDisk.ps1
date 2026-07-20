@@ -8,7 +8,10 @@ Function Remove-A9CPG
 .DESCRIPTION
 	Removes a Common Provisioning Group(CPG)
 .PARAMETER cpgName 
-    Specify name of the CPG. This is a required Parameter for both a SSH and API connection. If this i the only parameter, it will be attempted via API first
+    Specify name of the CPG. This is a required Parameter for both a SSH and API connection. If this i the only parameter, it will be attempted via API first.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE
     Remove-A9CPG -cpgName "MyCPG" 
 	
@@ -16,15 +19,19 @@ Function Remove-A9CPG
 .NOTES
 	This command requires an API type connection.
 #>
-[CmdletBinding(DefaultParameterSetName='API')]
-param(	[Parameter(Mandatory,ParameterSetName='API')]	[String]	$cpgName
+[CmdletBinding()]
+param(	[Parameter(Mandatory)]	[String]	$cpgName,
+        [parameter()]           [switch]    $ShowAPI
 	)
 Begin 
     {	Test-A9Connection -CLientType 'API'
     }
 Process
 {	$uri = '/cpgs/'+$CPGName
-    write-verbose "Executing the following API DELETE command `n $url" 
+    if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'DELETE' -whatif
+			return 
+		}
     $Result = Invoke-A9API -uri $uri -type 'DELETE'
     if ( $Result.StatusCode -eq 200 )
         {	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
@@ -61,6 +68,9 @@ Function Get-A9CPG
     This will show the raw output of the SSH connection instead of a PowerShell object, only valid when using a SSH type connection
 .PARAMETER UseSSH
     This will force the command to use the SSH type connection instead of an API type connection.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE
     PS:> get-A9CPG -cpgName SSD_r6 -sdg
 
@@ -150,7 +160,8 @@ param(
         [Parameter(ParameterSetName='SSHAlert')]
 		[Parameter(parametersetname='SSHu')]	             [Switch]	$ShowRaw,
 
-        [Parameter(parametersetname='SSHu')]                 [Switch]    $useSSH
+        [Parameter(parametersetname='SSHu')]                 [Switch]   $useSSH,
+        [parameter(parameterSetname='API')]                  [switch]   $ShowAPI
 
 	)		
 Begin 
@@ -162,7 +173,11 @@ Begin
 Process
 {	switch -wildcard ($PsCmdlet.ParameterSetName)
     {   'API'   {   $uri = '/cpgs'
-                    if($CPGName)                {	$uri = $uri + '/'+$CPGName    }        
+                    if($CPGName)                {	$uri = $uri + '/'+$CPGName    }    
+                    if ( $ShowAPI )
+                        {   $Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+                            return 
+                        }    
                     $Result = Invoke-A9API -uri $uri -type 'GET' 
                     $dataPS = $Result.content
                     if ( $DataPs.members )      {   $DataPS = $DataPS.members    }
@@ -333,6 +348,9 @@ Function New-A9Cpg
 	Specifies the step size from 32 KB to 512 KB. The step size should be a power of 2 and a multiple of 32. The default value depends on raid type and
 	device type used. If no value is entered and FC or NL drives are used, the step size defaults to 256 KB for RAID-0 and RAID-1, and 128 KB for RAID-5.
 	If SSD drives are used, the step size defaults to 32 KB for RAID-0 and RAID-1, and 64 KB for RAID-5. For RAID-6, the default is a function of the set size.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE
     New-A9CPG_CLI -cpgName "MyCPG" -RAIDType R6
 
@@ -370,7 +388,8 @@ Param(
 	[Parameter(ParameterSetName='API')]    	        [int]		$TotalChunkletsGreaterThan,
 	[Parameter(ParameterSetName='API')]    	        [int]		$TotalChunkletsLessThan,
 	[Parameter(ParameterSetName='API')]		        [int]		$FreeChunkletsGreaterThan,
-	[Parameter(ParameterSetName='API')]         	[int]		$FreeChunkletsLessThan
+	[Parameter(ParameterSetName='API')]         	[int]		$FreeChunkletsLessThan,
+    [parameter(parameterSetname='API')]             [switch]    $ShowAPI
 )
 Begin 
     {	Test-A9Connection -CLientType 'API' 
@@ -474,6 +493,10 @@ Process
                             }	
     if ( $LDLayoutDiskPatternsBody.Count -gt 0 )	{	$LDLayoutBody["diskPatterns"] = $LDLayoutDiskPatternsBody		}		
     if ( $LDLayoutBody.Count -gt 0 )				{	$body["LDLayout"] = $LDLayoutBody 	}	
+    if ( $ShowAPI )
+        {   $Result = Invoke-A9API -uri '/cpgs' -type 'POST' -body $body -whatif
+            return 
+        } 
     $Result = Invoke-A9API -uri '/cpgs' -type 'POST' -body $body 
     if ( $Result.StatusCode -ne 201 )  {	write-error "FAILURE : While creating CPG:$CPGName "
                                 return $Result.StatusDescription
@@ -589,6 +612,9 @@ Function Set-A9Cpg
 .PARAMETER Nomatch
 	Removes only unused logical disks whose characteristics do not match the growth characteristics of the CPG. Must be used with the -trimonly
 	option. If all logical disks match the CPG growth characteristics, this option has no effect.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE   
 	PS:> Set-A9Cpg -CPGName ascpg -NewName as_cpg
 .EXAMPLE 	
@@ -638,7 +664,8 @@ Param(  [Parameter(Mandatory,ParameterSetName='API')][String]	$CPGname,
         [Parameter(Mandatory,ParameterSetName='Compress')]
                                                     [switch]    $Compress,
         [Parameter(ParameterSetName='Compress')]	[switch]	$Trimonly,
-        [Parameter(ParameterSetName='Compress')]    [switch]	$Nomatch
+        [Parameter(ParameterSetName='Compress')]    [switch]	$Nomatch,
+        [Parameter(ParameterSetName='API')]         [switch]    $ShowAPI
 )
 Begin 
     {	Test-A9Connection -CLientType 'API'
@@ -742,6 +769,10 @@ Process
                                                 }
                         }
         }
+     if ( $ShowAPI )
+        {   $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body -whatif
+            return 
+        } 
     $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body	
     if ( $Result.StatusCode -ne 200 )
         {	write-error "FAILURE : While Updating CPG:$CPGName " 
@@ -782,6 +813,9 @@ Function Get-A9PhysicalDisk
 	Show disk capacity usage information (in MB).
 
 	The following columns are shown: Id CagePos Type State Size_MB Volume_MB Spare_MB Free_MB Unavail_MB Failed_MB.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE  
 	PS:> Get-A9Disk
 
@@ -856,7 +890,8 @@ param(	[Parameter(ParameterSetName='sshErrors')]	[switch]	$ErrorInfo,
 		[Parameter(ParameterSetName='sshSpace')]	[switch]	$Space,
 		[Parameter()]                               [String]	$PD_ID ,
         [Parameter(ParameterSetName='ssh')]	        [switch]	$UseSSH,
-        [Parameter(ParameterSetName='ssh')]         [switch]    $ShowRaw
+        [Parameter(ParameterSetName='ssh')]         [switch]    $ShowRaw,
+        [Parameter(ParameterSetName='API')]         [Switch]    $ShowAPI
 )		
 Begin 
     {	if ( ($PSCmdlet.ParameterSetName -eq 'ssh') -or ($PSCmdlet.ParameterSetName -eq 'ssPattern') -and -not (Test-A9COnnection -ClientType 'SshClient' -returnBoolean) )	
@@ -868,6 +903,10 @@ Process
 {	switch -wildcard ($PSCmdlet.ParameterSetName)
     {   'API'   
                 {   $uri = '/disks/'	
+                    if ( $ShowAPI )
+                        {   $Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+                            return 
+                        } 
                     $Result = Invoke-A9API -uri $uri -type 'GET'		
                     If($Result.StatusCode -eq 200)
                         {	$dataPS = ($Result.content | ConvertFrom-Json).members

@@ -22,6 +22,9 @@ Function Get-A9Task
     To see the detail you will likely need to pipe the output to format-list as the table view cannot show this level of detail.
 .PARAMETER HOURS
     Show events that have happened in the last number of hours specified.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
     PS:> Get-A9Task
 	
@@ -59,7 +62,8 @@ param(	[Parameter(Parametersetname='API')]
         [VAlidateSet('DONE','ACTIVE','CANCELLED','FAILED')]	        
                                                         [string]	$Status,
         [Parameter(parametersetname='API')]             [Switch]    $Detailed,
-        [Parameter(parametersetname='API')]             [int]       $Hours
+        [Parameter(parametersetname='API')]             [int]       $Hours,
+        [Parameter()]                                   [Switch]    $ShowAPI
 	)		
 Begin
     {   Test-A9Connection -CLientType 'API' 
@@ -67,6 +71,10 @@ Begin
 Process
     {	$uri='/tasks'
         if($TaskID)		{	$uri = $uri+'/'+$TaskID		}
+        if ( $ShowAPI )
+            {   $Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+                return
+            }
         $Result = Invoke-A9API -uri $uri -type 'GET' 
         if ($Detailed -and (-not $TaskId) )
             {   if($Result.StatusCode -eq 200)
@@ -204,6 +212,9 @@ Function Stop-A9Task
     The Stop Task command cancels a task.
 .PARAMETER TaskID
     Cancels only tasks identified by their task IDs. TaskID must be an unsigned integer within 1-29999 range. If this is unset, then ALL must be set.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
     Cancel a task using the task ID
 
@@ -219,7 +230,8 @@ Function Stop-A9Task
     Usage:
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
-Param(	[Parameter(Mandatory)][String]	$TaskID
+Param(	[Parameter(Mandatory)]  [String]	$TaskID,
+        [Parameter()]           [Switch]    $ShowAPI
 	)
 Begin 
     {	Test-A9Connection -CLientType 'API' 
@@ -229,13 +241,16 @@ Process
         $body["action"] = 1
         $Result = $null	
         $uri = "/tasks/" + $TaskID
+        if ( $ShowAPI )
+        {   $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body -whatif
+            return
+        } 
         $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
         if($Result.StatusCode -eq 200)
             {	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
                 return $Result		
             }
-        else
-            {	Write-Error "Failure:  While Cancelling the ongoing task : $TaskID " 
+        else{	Write-Error "Failure:  While Cancelling the ongoing task : $TaskID " 
                 return $Result.StatusDescription
             }
     }

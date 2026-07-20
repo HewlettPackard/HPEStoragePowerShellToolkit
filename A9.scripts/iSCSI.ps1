@@ -19,6 +19,9 @@ Function Set-A9IscsivLan
 	MTU size in bytes
 .PARAMETER STGT
 	Send targets group tag of the iSCSI target.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE    
 	PS:> Set-A9IscsivLan -NSP 1:2:3 -IPAdr 1.1.1.1 -Netmask xxx -Gateway xxx -MTU xx -STGT xx 
 
@@ -34,7 +37,8 @@ Param(	[Parameter(Mandatory)]
 		[Parameter()]			[String]	$Gateway,
 		[Parameter()][ValidateRange(1501,9202)]
 								[Int]		$MTU,
-		[Parameter()]			[Int]		$STGT
+		[Parameter()]			[Int]		$STGT,
+        [Parameter()]           [switch]    $ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -49,7 +53,11 @@ Process
 
     $Result = $null	
 	$uri = "/ports/" + $NSP + "/iSCSIVlans/" + $VlanTag 
-    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
+    if ( $ShowAPI )
+        {   $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body -whatif
+            return 
+        }
+	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
 	if($Result.StatusCode -eq 200)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $Result		
@@ -76,18 +84,26 @@ Function Remove-A9IscsivLan
 	The <n:s:p> parameter identifies the port you want to configure.
 .PARAMETER VlanTag 
 	VLAN tag.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 #>
 [CmdletBinding()]
 Param(	[Parameter()]	
 		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
 								[String]	$NSP,
-		[Parameter(Mandatory)]	[int]		$VlanTag
+		[Parameter(Mandatory)]	[int]		$VlanTag,
+        [Parameter()]           [switch]    $ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$uri = "/ports/"+$NSP+"/iSCSIVlans/"+$VlanTag 
+	if ( $ShowAPI )
+        {   $Result = Invoke-A9API -uri $uri -type 'DELETE' -whatif
+            return 
+        }
 	$Result = Invoke-A9API -uri $uri -type 'DELETE'
 	if ( $Result.StatusCode -ne 200 )
 		{	Write-Error "Failure:  While Removing an iSCSI port VLAN : $NSP " 
@@ -108,6 +124,9 @@ Function Get-A9IscsivLan
 .PARAMETER NSP
 	The <n:s:p> variable identifies the node, slot, and port of the device. if not given, the command will attempt to run 
 	the command on all host target ports. 
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9IscsivLans
 
@@ -118,7 +137,8 @@ Function Get-A9IscsivLan
 [CmdletBinding()]
 Param(	[Parameter()]	
 		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
-		[String]	$NSP
+								[String]	$NSP,
+        [Parameter()]           [switch]    $ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -142,6 +162,10 @@ Process
 			return $NewObjB
 		}
 	$uri = '/ports/'+$NSP+'/iSCSIVlans/'
+	if ( $ShowAPI )
+        {   $Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+            return 
+        }
 	$Result = Invoke-A9API -uri $uri -type 'GET'
 	if($Result.StatusCode -eq 200)
 		{	if ( $dataPS.members ) 	{	$dataPS = ($Result.content | ConvertFrom-Json).members }
@@ -227,7 +251,7 @@ Process
 					return 
 				}
 		}
-	else{	Write-Error "Failure:  While Executing Get-A9IscsivLans." 
+	else{	Write-Error "Failure:  While Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" 
 			return $Result.StatusDescription
 		}
 }	
@@ -255,7 +279,10 @@ Function Set-A9ISCSIPort
 .PARAMETER ISNSAddr
 	iSNS server IP address
 .PARAMETER Reset
-	Will reset the iSCSI Port specified by the NSP value
+	Will reset the iSCSI Port specified by the NSP value.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE    
 	PS:> Set-A9ISCSIPort -NSP 1:2:3 -IPAdr 1.1.1.1 -Netmask xxx -Gateway xxx -MTU xx -ISNSPort xxx -ISNSAddr xxx
 	
@@ -274,7 +301,8 @@ Param(	[Parameter(ParameterSetName='set',Mandatory)]
 		[ValidateRange(1502,9202)]							[Int]		$MTU,
 		[Parameter(ParameterSetName='set')]					[Int]		$ISNSPort,
 		[Parameter(ParameterSetName='set')]					[String]	$ISNSAddr,
-		[Parameter(ParameterSetName='reset',mandatory)]		[switch]	$Reset
+		[Parameter(ParameterSetName='reset',mandatory)]		[switch]	$Reset,
+        [Parameter()]          							 	[switch]    $ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -291,12 +319,18 @@ Process
 						If ($ISNSPort) 		{ 	$iSCSIPortInfobody["iSNSPort"] 	=	$ISNSPort			}
 						If ($ISNSAddr) 		{ 	$iSCSIPortInfobody["iSNSAddr"] 	=	"$($ISNSAddr)" 		}	
 						if($iSCSIPortInfobody.Count -gt 0){	$body["iSCSIPortInfo"] = $iSCSIPortInfobody }
-						$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
+						$Meth = 'PUT'
+
 					}
 			'reset'	{	$body["action"] = 2
-						$Result = Invoke-A9API -uri $uri -type 'POST' -body $body	
+						$Meth = 'POST'
 					}
 		}
+	if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type $Meth -body $body -whatif
+			return 
+		}
+	$Result = Invoke-A9API -uri $uri -type $Meth -body $body 	
 	if($Result.StatusCode -ne 200)
 		{	Write-Error "Failure:  While Configuring iSCSI ports: $NSP " 
 			return $Result.StatusDescription
@@ -314,10 +348,6 @@ Function New-A9IscsivLun
 	Creates a VLAN on an iSCSI port.
 .DESCRIPTION    
 	Creates a VLAN on an iSCSI port.
-.EXAMPLE
-	PS:> New-A9IscsivLun -NSP 1:1:1 -IPAddress x.x.x.x -Netmask xx -VlanTag xx
-
-	a VLAN on an iSCSI port	
 .PARAMETER NSP
 	The <n:s:p> parameter identifies the port you want to configure.
 .PARAMETER IPAddress
@@ -325,7 +355,14 @@ Function New-A9IscsivLun
 .PARAMETER Netmask
 	Netmask for Ethernet
 .PARAMETER VlanTag
-	VLAN tag
+	VLAN tag.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
+.EXAMPLE
+	PS:> New-A9IscsivLun -NSP 1:1:1 -IPAddress x.x.x.x -Netmask xx -VlanTag xx
+
+	a VLAN on an iSCSI port	
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory)]
@@ -333,7 +370,8 @@ Param(	[Parameter(Mandatory)]
 								[String]	$NSP,
 		[Parameter(Mandatory)]	[String]	$IPAddress,	  
 		[Parameter(Mandatory)]	[String]	$Netmask,	
-		[Parameter(Mandatory)]	[int]		$VlanTag
+		[Parameter(Mandatory)]	[int]		$VlanTag,
+        [Parameter()]           [switch]    $ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -344,6 +382,10 @@ Process
 	$body["netmask"] 	= "$($Netmask)"
 	$body["vlanTag"] 	= $VlanTag   
 	$uri = "/ports/"+$NSP+"/iSCSIVlans/"
+	if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'POST' -body $body -whatif
+			return 
+		}
 	$Result = Invoke-A9API -uri $uri -type 'POST' -body $body 	
 	if ( $Result.StatusCode -ne 201 )
 		{	Write-Error "Failure:  While creating VLAN on an iSCSI port : $NSP" 

@@ -9,6 +9,9 @@ Function Get-A9User
 	Get all or single WSAPI users information.
 .PARAMETER UserName
 	Name Of The User.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9User
 
@@ -31,13 +34,18 @@ Function Get-A9User
 	adminsvc         all                    super
 #>
 [CmdletBinding()]
-Param(	[Parameter()]	[String]	$UserName		
+Param(	[Parameter()]	[String]	$UserName,
+		[Parameter()]	[switch]	$ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API' 
 }
 Process 
 {	$uri = '/users'	
+	if ( $ShowAPI )
+		{	$Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+			return
+		}
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if ( $Result.StatusCode -ne 200 )
 		{	write-error "FAILURE : While Executing Get-A9Users." 
@@ -73,6 +81,9 @@ Function Get-A9Role
 	Get all or single WSAPI role information.
 .PARAMETER RoleName 
 	Name of the Role.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9Roles
 
@@ -100,7 +111,8 @@ Function Get-A9Role
 	audit          For security scanners to perform a scan of the OS file system. An audit user has no access to the CLI.                                 {@{right=audit_chroot; rightDescription=Secu…
 #>
 [CmdletBinding()]
-Param(	[Parameter()]	[String]	$RoleName
+Param(	[Parameter()]	[String]	$RoleName,
+		[Parameter()]	[switch]	$ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API' 
@@ -108,6 +120,10 @@ Begin
 Process 
 {	$uri = '/roles'
 	if($RoleName)	{	$uri = '/roles/'+$RoleName	}	
+	if ( $ShowAPI )
+		{	$Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+			return
+		}
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -ne 200)
 		{	write-error "FAILURE : While Executing Get-A9Roles."

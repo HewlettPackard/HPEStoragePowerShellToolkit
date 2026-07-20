@@ -27,7 +27,10 @@ Function New-A9RCopyGroup
 .PARAMETER LocalUserCPG
 	CPG used for autocreated volumes. (Required if you specify localSnapCPG;Otherwise,optional.)
 .PARAMETER LocalSnapCPG
-	Specifies the local snap CPG used for autocreated volumes. If unspecified and LocalUserCPG is set, will use the LocalUserCPG value
+	Specifies the local snap CPG used for autocreated volumes. If unspecified and LocalUserCPG is set, will use the LocalUserCPG value.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> New-A9RCopyGroup -Name MyCopy -Target xxx -Mode SYNC
 .EXAMPLE	
@@ -45,7 +48,8 @@ Param(
 	[Parameter(ParameterSetName='CPG', Mandatory)]		[String]	$LocalUserCPG,
 	[Parameter(ParameterSetName='CPG')]					[String]	$LocalSnapCPG,
 	[Parameter(ParameterSetName='CPG', Mandatory)]		[String]	$RemoteUserCPG,
-	[Parameter(ParameterSetName='CPG')]					[String]	$RemoteSnapCPG
+	[Parameter(ParameterSetName='CPG')]					[String]	$RemoteSnapCPG,
+	[Parameter()]										[switch]	$ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -70,6 +74,10 @@ Process
 								}
 	$TargetsObj += $TargetsBody
     $Result = $null	
+	if ( $ShowAPI )
+		{    $Result = Invoke-A9API -uri '/remotecopygroups' -type 'POST' -body $body -whatif
+			return
+		}
     $Result = Invoke-A9API -uri '/remotecopygroups' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
@@ -104,6 +112,9 @@ Function New-A9RCopyTarget
 	Specifies the link for system2. If the linkProtocolType , is IP, specify an IP address for the corresponding port on system2. If the linkProtocolType is FC, specify the WWN of the peer port on system2.
 .PARAMETER Disabled
 	Using this switch will create the target but it will be initially disabled instead of the default behaviour of enabled.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE	
 	PS:> New-A9RCopyTarget -Target xxx -IP
 .EXAMPLE	
@@ -116,7 +127,8 @@ Param(	[Parameter(Mandatory)]							[String]	$Target,
 		[Parameter(ParameterSetName = "FC")]			[String]	$NodeWWN,
 		[Parameter()]									[String]	$PortPos,
 		[Parameter()]									[String]	$Link, 
-		[Parameter()]									[Switch]	$Disabled
+		[Parameter()]									[Switch]	$Disabled,
+		[Parameter()]									[Switch]	$ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -141,6 +153,10 @@ Process
 	If($Disabled) 	{	$body["disabled"] = $true	 }
 	if($PortPosAndLinkBody.Count -gt 0)	{	$body["portPosAndLink"] = $PortPosAndLinkBody 	}
     $Result = $null
+	if ( $ShowAPI )
+		{    $Result = Invoke-A9API -uri '/remotecopytargets' -type 'POST' -body $body  -whatif
+			return
+		}
     $Result = Invoke-A9API -uri '/remotecopytargets' -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 201)
@@ -176,6 +192,9 @@ Function New-A9RCopyGroupSnapshot
 .PARAMETER SkipBlock
 	Enables (true) or disables (false) whether the storage system blocks host i/o to the parent virtual volume during the creation of a readonly snapshot.
 	Defaults to false.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE	
 	PS: New-A9SnapRcGroupVv -GroupName xxx -NewVvNmae xxx -Comment "Hello"
 .EXAMPLE	
@@ -193,7 +212,8 @@ Param(
 		[Parameter()]					[String]	$Comment,
 		[Parameter()]					[int]		$ExpirationHous,
 		[Parameter()]					[int]		$RetentionHours,
-		[Parameter()]					[Switch]	$SkipBlock
+		[Parameter()]					[Switch]	$SkipBlock,
+		[Parameter()]									[Switch]	$ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -211,7 +231,11 @@ Process
     $Result = $null
 	if($Volume)			{	$uri = "/remotecopygroups/"+$Group+"/volumes/"+$Volume	}
 	else				{	$uri = "/remotecopygroups/"+$Group+"/volumes"	}
-    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body	
+    if ( $ShowAPI )
+		{    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body -whatif
+			return
+		}
+	$Result = Invoke-A9API -uri $uri -type 'POST' -body $body	
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
@@ -249,6 +273,9 @@ Function Add-A9VolumeToRCopyGroup
 	Specify at least one pair of targetName and secVolume.
 .PARAMETER SecVolume
 	Specifies the name of the secondary volume on the target system.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE	
 	PS:> Add-A9VvToRCopyGroup -Group xxx -Volume xxx -Target xxx -SecVolume xxx
 #>
@@ -260,7 +287,8 @@ Param(	[Parameter(Mandatory)]				[String]	$Group,
 		[Parameter()]						[boolean]	$SkipInitialSync,
 		[Parameter()]						[boolean]	$DifferentSecondaryWWN,
 		[Parameter(Mandatory)]				[String]	$Target,
-		[Parameter(Mandatory)]				[String]	$SecVolume
+		[Parameter(Mandatory)]				[String]	$SecVolume,
+		[Parameter()]						[Switch]	$ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -287,7 +315,11 @@ Process
 	if($TargetsBody.Count -gt 0)	{	$body["targets"] = $TargetsBody 	}
     $Result = $null
 	$uri = "/remotecopygroups/"+$Group+"/volumes"
-    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
+    if ( $ShowAPI )
+		{    $Result =  Invoke-A9API -uri $uri -type 'POST' -body $body -whatif
+			return
+		}
+	$Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 	{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
@@ -321,6 +353,9 @@ Function Add-A9RCopyTargetToGroup
 	Name of the volume on the primary.
 .PARAMETER RemoteVolume
 	Name of the volume on the target.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE	
 	PS:> Add-A9TargetToRCopyGroup -Group xxx -Target xxx
 .EXAMPLE	
@@ -334,8 +369,9 @@ Param(	[Parameter(Mandatory)]			[String]	$Group,
 		[Parameter()][ValidateSet('SYNC','PERIODIC','ASYNC')]				
 										[String]	$Mode,
 		[Parameter()]					[String]	$LocalVolume,
-		[Parameter()]					[String]	$RemoteVolume
-)
+		[Parameter()]					[String]	$RemoteVolume,
+		[Parameter()]									[Switch]	$ShowAPI
+	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
@@ -353,6 +389,10 @@ Process
 	if( $volumeMappingsObj.Count -gt 0 ){	$body["volumeMappings"] = $volumeMappingsObj}
     $Result = $null
 	$uri = "/remotecopygroups/"+$Group+"/targets"
+	if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'POST' -body $body -whatif
+			return
+		}
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
 	$status = $Result.StatusCode
 	if($status -eq 200)
@@ -466,6 +506,9 @@ Function Set-A9RCopyGroup
 .PARAMETER Start
 	Start a Remote Copy group.
 .PARAMETER Restart
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory)]							[String]	$Group,
@@ -503,8 +546,9 @@ Param(	[Parameter(Mandatory)]							[String]	$Group,
 		[Parameter(Mandatory,ParameterSetName='Sync')]	[switch]	$Sync,
 		[Parameter(Mandatory,ParameterSetName='Stop')]	[switch]	$Stop,
 		[Parameter(Mandatory,ParameterSetName='Start')]	[switch]	$Start,
-		[Parameter(Mandatory,Parametersetname='Restore')][switch]	$restore
-	)
+		[Parameter(Mandatory,Parametersetname='Restore')][switch]	$restore,
+		[Parameter()]									[Switch]	$ShowAPI
+)
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
@@ -556,7 +600,11 @@ Process
 					}
 		}
 	$uri = '/remotecopygroups/'+ $Group
-    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
+    if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body -whatif
+			return
+		}
+	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return Get-A9System				
@@ -592,6 +640,9 @@ Function Set-A9RCopyTarget
 	Can be used to stop a quorum witness
 .PARAMETER CheckQuorumWitness
 	Can be used to check the Quorum Witness you will also need to specify a WitnessIP and optionally if it should use SSL, and if it should use a non-default SSL port or Node.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Set-A9RCopyTarget -TargetName xxx
 .EXAMPLE
@@ -613,7 +664,8 @@ Param(	[Parameter(Mandatory)]								[String]	$TargetName,
 		[Parameter(ParameterSetName='Createq')]
 		[Parameter(PArameterSetName='Checkq')]				[int]		$SSLPort,
 		[Parameter(PArameterSetName='Checkq')]
-		[ValidateRange(0,7)]								[int]		$NodeId	
+		[ValidateRange(0,7)]								[int]		$NodeId	,
+		[Parameter()]										[Switch]	$ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -654,7 +706,11 @@ Process
     $Result = $null
 	$uri = '/remotecopytargets/'+ $TargetName
 	Write-Verbose "Request: Request to Update-A9RCopyTarget (Invoke-A9API)." 
-    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
+    if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body -whatif
+			return
+		}
+	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 	{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 	}
@@ -678,6 +734,9 @@ Function Get-A9RCopyInfo
 	if Specified, the command will return only the Link name given
 .PARAMETER ReturnLinks
 	If specified, the command will return all links.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9RCopyLink -Link xxx
 	
@@ -694,7 +753,8 @@ Function Get-A9RCopyInfo
 [CmdletBinding(DefaultParameterSetName='Info')]
 Param(
 	[Parameter(ParameterSetName='Link')]	[String]	$Link,
-	[Parameter(ParameterSetName='Link')]	[switch]	$ReturnLinks
+	[Parameter(ParameterSetName='Link')]	[switch]	$ReturnLinks,
+	[Parameter()]							[Switch]	$ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -709,6 +769,10 @@ Process
 			'Link'	{	$uri = $uri + 'links'	
 						if($LinkName)	{	$uri = $uri+'/'+$LinkName	}
 					}
+		}
+    if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+			return
 		}
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
@@ -731,14 +795,18 @@ Function Get-A9RCopyTarget
 .DESCRIPTION
 	Get all or single Remote Copy targets
 .PARAMETER Target
-    Remote Copy Target Name
+    Remote Copy Target Name.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9RCopyTarget
 .EXAMPLE
 	PS:> Get-A9RCopyTarget -Target xxx		
 #>
 [CmdletBinding()]
-Param(	[Parameter()]	[String]	$Target
+Param(	[Parameter()]	[String]	$Target,
+		[Parameter()]	[Switch]	$ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -748,6 +816,10 @@ Process
 	$dataPS = $null	
 	$uri = '/remotecopytargets'
 	if($TargetName)	{	$uri = $uri+'/'+$TargetName	}
+    if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+			return
+		}
 	$Result = Invoke-A9API -uri $uri -type 'GET' 		  
 	if($Result.StatusCode -eq 200)
 		{	if ( ($Result.content | ConvertFrom-Json).members  )
@@ -782,7 +854,10 @@ Function Get-A9RCopyGroup
 .PARAMETER ReturnTargets
 	A Switch to return all Targets
 .PARAMETER ReturnVolumes
-	A Switch to return all Volumes	
+	A Switch to return all Volumes.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.	
 .EXAMPLE
 	PS:> Get-A9RCopyGroup
 
@@ -815,7 +890,8 @@ Param(	[Parameter(ParameterSetName='ByGroup')]
 		[Parameter(ParameterSetName='ByTarget')]			[String]	$Target,
 		[Parameter(ParameterSetName='ByVolume')]			[String]	$Volume,
 		[Parameter(parameterSetname='ByTarget')]			[Switch]	$ReturnTarget,
-		[Parameter(parameterSetname='ByVolume')]			[Switch]	$Return
+		[Parameter(parameterSetname='ByVolume')]			[Switch]	$Return,
+		[Parameter()]										[Switch]	$ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -834,6 +910,10 @@ Process
 							if($Volume)		{	$uri = $uri+'/'+$Volume	}
 						}
 	}
+	if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+			return
+		}
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	if($Result.StatusCode -eq 200)
 		{	if ( ($Result.content | ConvertFrom-Json).members  )
@@ -872,6 +952,9 @@ Function Remove-A9RCopyGroup
 	The parameter uses one of the following, case-sensitive values:
 	• keepSnap = $true
 	• keepSnap = $false
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE    
 	PS:> Remove-A9RCopyGroup -Group xxx -KeepSnap $true 
 .EXAMPLE    
@@ -879,7 +962,8 @@ Function Remove-A9RCopyGroup
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory)]	[String]	$Group,		
-		[Parameter()]			[boolean]	$KeepSnap	
+		[Parameter()]			[boolean]	$KeepSnap	,
+		[Parameter()]										[Switch]	$ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -889,6 +973,10 @@ Process
 	if($keepSnap)	{	$uri = $uri + "?keepSnap=true"	}
 	if(!$keepSnap)	{	$uri = $uri + "?keepSnap=false"	}
 	$Result = $null
+    if ( $ShowAPI )
+		{   $Result =  Invoke-A9API -uri $uri -type 'DELETE' -whatif
+			return
+		}
 	$Result = Invoke-A9API -uri $uri -type 'DELETE' 
 	$status = $Result.StatusCode
 	if($status -eq 202)
@@ -913,6 +1001,9 @@ Function Remove-A9TargetFromRCopyGroup
 	Remote Copy group Name.
 .PARAMETER Target
 	Target Name to be removed.  
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE	
 	PS:> Remove-A9TargetFromRCopyGroup
 .NOTES
@@ -921,7 +1012,8 @@ Function Remove-A9TargetFromRCopyGroup
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory)]	[String]	$Group,
-		[Parameter(Mandatory)]	[String]	$Target
+		[Parameter(Mandatory)]	[String]	$Target,
+		[Parameter()]			[Switch]	$ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -929,6 +1021,10 @@ Begin
 Process 
 {	$Result = $null
 	$uri = "/remotecopygroups/" + $Group + "/targets/" + $Target
+    if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'PUT' -whatif
+			return
+		}
 	$Result = Invoke-A9API -uri $uri -type 'PUT' 
 	$status = $Result.StatusCode
 	if($status -eq 201)
@@ -957,12 +1053,16 @@ Function Remove-A9VolumeFromRCopyGroup
 	Enables (true) or disables (false) retention of the local volume resynchronization snapshot. Defaults to false. Do not use with removeSecondaryVolu me.
 .PARAMETER RemoveSecondaryVolume
 	Enables (true) or disables (false) deletion of the remote volume on the secondary array from the system. Defaults to false. Do not use with keepSnap.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 #>
 [CmdletBinding()]
 Param(	[Parameter(Mandatory)]	[String]	$Group,
 		[Parameter(Mandatory)]	[String]	$Volume,
 		[Parameter()]			[boolean]	$KeepSnap,
-		[Parameter()]			[boolean]	$RemoveSecondaryVolume
+		[Parameter()]			[boolean]	$RemoveSecondaryVolume,
+		[Parameter()]			[Switch]	$ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -975,7 +1075,11 @@ Process
 	If ($RemoveSecondaryVolume) 	{	$body["removeSecondaryVolume"] = $RemoveSecondaryVolume	}
     $Result = $null
 	$uri = "/remotecopygroups/" + $Group + "/volumes/" + $Volume
-    $Result = Invoke-A9API -uri $uri -type 'DELETE' -body $body 
+    if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'DELETE' -body $body -whatif
+			return
+		}
+	$Result = Invoke-A9API -uri $uri -type 'DELETE' -body $body 
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green

@@ -18,6 +18,9 @@ Function Get-A9vLun
 	The LUN ID of the volume to filter the results, since a LUN number is seen by a host, you must specify the Hostname parameter also.
 .PARAMETER HostName
 	Name of the host to which the volume is to be exported.  The host set name must start with "set:". 
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE	
 	PS:> Get-A9vLun_CLI -volume XYZ 
 
@@ -59,7 +62,8 @@ Param(
 		[Parameter(ParameterSetName='ByHostName')]					[int]		$LUNID,
 		
 		[Parameter(Mandatory, ParameterSetName='ByBoth')]	
-		[Parameter(Mandatory, ParameterSetName='ByHostName')]		[String]	$HostName
+		[Parameter(Mandatory, ParameterSetName='ByHostName')]		[String]	$HostName,
+		[Parameter()]												[Switch]	$ShowAPI
 	)
 Begin 
 {	Test-A9Connection -CLientType 'API' 
@@ -67,6 +71,10 @@ Begin
 Process 
 {	$dataPS = $null		
 	write-verbose "Making URL call to /vluns"
+	if ( $ShowAPI )
+		{	$Result = Invoke-A9API -uri '/vluns' -type 'GET' -whatif
+			return
+		}
 	$Result = Invoke-A9API -uri '/vluns' -type 'GET' 
 	If($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members			
@@ -161,6 +169,9 @@ Function Remove-A9vLun
 	card in the format:<node>.<slot>.<port> 
 .PARAMETER Novcn
 	Specifies that a VLUN Change Notification (VCN) not be issued after removal of the VLUN.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE    
 	Remove-A9vLun -Volume xxx -LUNID xx -HostName xxx
 .EXAMPLE    
@@ -200,7 +211,8 @@ Param(	[Parameter(Mandatory, ParameterSetName='APIvh')]
 		[Parameter(ParameterSetName='APIvh')]
 		[Parameter(ParameterSetName='APIvhs')]
 		[Parameter(ParameterSetName='APIvsh')]
-		[Parameter(ParameterSetName='APIvshs')]				[boolean]	$NoVcn
+		[Parameter(ParameterSetName='APIvshs')]				[boolean]	$NoVcn,
+		[Parameter()]										[Switch]	$ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API' 
@@ -229,7 +241,10 @@ Process
 	if ($NSP)			{ $uri = $uri + ","+$NSP			}	
 	if ($NoVcn)			{ $uri = $uri + "?noVcn=$NoVCN"}
 	$Result = $null
-	Write-verbose "Request: Request to Remove-A9vLun : $CPGName (Invoke-A9API)." 
+	if ( $ShowAPI )
+		{	$Result = Invoke-A9API -uri $uri -type 'DELETE' -whatif
+			return
+		}
 	$Result = Invoke-A9API -uri $uri -type 'DELETE'
 	$status = $Result.StatusCode
 	if($status -eq 200)
@@ -282,6 +297,9 @@ Function New-A9vLun
 	Notification (RSCN) that is sent to the fabric controller.
 .PARAMETER OverRide
 	Specifies that existing lower priority VLUNs will be overridden, if necessary. Can only be used when exporting to a specific host.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> New-A9vLun -Volume MyVolume1 -LUN 2 -HostName MyServer1 -NSP 1:3:1
 
@@ -319,7 +337,8 @@ Param(	[Parameter(Mandatory, ParameterSetName='APIvvName_NSP')		]
 																			[String]	$NSP,
 
 		[Parameter()]														[Boolean]	$NoVcn,
-		[Parameter()]														[int]		$LUN
+		[Parameter()]														[int]		$LUN,
+		[Parameter()]														[Switch]	$ShowAPI
 		)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -351,8 +370,11 @@ Process
 	$Result = $null
 	$x = $body
 	$x = $x | ConvertTo-Json
-	write-verbose "The Body of the command will be `n $x"
-	$Result = Invoke-A9API -uri '/vluns' -type 'POST' -body $body -verbose
+	if ( $ShowAPI )
+		{	$Result = Invoke-A9API -uri '/vluns' -type 'POST' -body $body -whatif
+			return
+		}
+	$Result = Invoke-A9API -uri '/vluns' -type 'POST' -body $body
 	$status = $Result.StatusCode	
 	if($status -eq 201)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green

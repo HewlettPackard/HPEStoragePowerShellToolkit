@@ -19,7 +19,10 @@ Function New-A9VolumeSet
 .PARAMETER apptype
 	The appyType for which the volume set will be created.
 .PARAMETER businessUnit
-	The business unit to which the volume iwll be used.
+	The business unit to which the volume will be used.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> New-A9VolumeSet -VolumeSetName MyVVSet
 
@@ -35,7 +38,8 @@ Param(	[Parameter(Mandatory)]	[String]	$VolumeSetName,
 		[Parameter()]			[String]	$Comment,	
 		[Parameter()]			[String]	$Domain, 
 		[Parameter()]			[String]	$appType,
-		[Parameter()]			[String]	$buisnessUnit
+		[Parameter()]			[String]	$buisnessUnit,
+		[Parameter()]			[switch]	$ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -49,16 +53,19 @@ Process
 	If ($appType)			{	$body["appType"] 		= $appType   		}
 	If ($businessUnit)		{	$body["businessUnit"] 	= $businessUnit   	}
     $Result = $null
-    $Result = Invoke-A9API -uri '/volumesets' -type 'POST' -body $body 
+    if ( $ShowAPI )
+		{	$Result = Invoke-A9API -uri '/volumesets' -type 'POST' -body $body -whatif
+			return
+		}
+	$Result = Invoke-A9API -uri '/volumesets' -type 'POST' -body $body 
 	$status = $Result.StatusCode	
 	if($status -eq 201)
-	{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
-		return ( Get-a9VvSet | where-object {$_.name -like $VolumeSetName})
-	}
-	else
-	{	Write-Error "Failure:  While creating virtual volume Set:$VolumeSetName " 
-		return $Result.StatusDescription
-	}	
+		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+			return ( Get-a9VvSet | where-object {$_.name -like $VolumeSetName})
+		}
+	else{	Write-Error "Failure:  While creating virtual volume Set:$VolumeSetName " 
+			return $Result.StatusDescription
+		}	
 }
 }
 
@@ -93,6 +100,9 @@ Function Set-A9VolumeSet
 	Stops the promote virtual copy operations in a virtual volume set.
 .PARAMETER Priority
 	May be high, medium or low, and only used when resyncing a volume set. The default value of medium is used if not specified.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Set-A9VolumeSet -VolumeSetName xxx -RemoveMember -Members testvv3.0
 .EXAMPLE 
@@ -121,7 +131,8 @@ Param(
 	[Parameter(Mandatory, ParameterSetName='AddMember')]
 	[Parameter(Mandatory, ParameterSetName='RemoveMember')]	[String[]]	$Members,
 	[Parameter(ParameterSetName='Resync')]
-	[ValidateSet('high','medium','low')]					[String]	$Priority
+	[ValidateSet('high','medium','low')]					[String]	$Priority,
+	[Parameter()]											[Switch]	$ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -142,10 +153,13 @@ Process
 	if ($Priority -eq "high")	{	$body["priority"] = 1			 }	
 	if ($Priority -eq "medium")	{	$body["priority"] = 2			 }
 	if ($Priority -eq "low")	{	$body["priority"] = 3			 }
-	
     $Result = $null	
 	$uri = '/volumesets/'+$VolumeSetName 
-    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
+    if ( $ShowAPI )
+		{	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body -whatif	
+			return
+		}
+	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
 	if($Result.StatusCode -eq 200)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			if($NewName)
@@ -172,6 +186,9 @@ Function Get-A9VolumeSet
 	Get Single or list of virtual volume Set.
 .PARAMETER VolumeSetName
 	Specify name of the virtual volume Set.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9VvSet
 
@@ -190,7 +207,8 @@ Function Get-A9VolumeSet
 	This command will gather all of the VolumeSets and filter to only show the volumeset with the ID of 853
 #>
 [CmdletBinding()]
-Param(	[Parameter()]	[String]	$VolumeSetName
+Param(	[Parameter()]	[String]	$VolumeSetName,
+		[Parameter()]	[switch]	$ShowAPI
 	 )
 Begin 
 {	Test-A9Connection -ClientType 'API'	 
@@ -199,6 +217,10 @@ Process
 {	$Result = $null
 	$dataPS = $null		
 	$uri = '/volumesets/'
+	if ( $ShowAPI )
+		{	$Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+			return
+		}
 	$Result = Invoke-A9API -uri $uri -type 'GET'		 
 	If($Result.StatusCode -eq 200)
 		{	$dataPS = $Result.content | ConvertFrom-Json
@@ -236,6 +258,9 @@ Function Remove-A9VolumeSet
 	Removes a Volume set. If you need to remove a single (or multiple) Volumes from a VolumeSet, use the Set-A9VvSet command.
 .PARAMETER VolumeSet
     Specify name of the Volumeset.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
     PS:> Remove-A9VolumeSet -VolumeSet "MyVVSet"
 
@@ -246,7 +271,8 @@ Function Remove-A9VolumeSet
 	This command requires an API type connection.
 #>
 [CmdletBinding(DefaultParameterSetName='API')]
-param(	[Parameter(ParameterSetName='API', Mandatory)]	[String]	$VolumeSet
+param(	[Parameter(ParameterSetName='API', Mandatory)]	[String]	$VolumeSet,
+		[Parameter()]									[Switch]	$ShowAPI
 	)	
 Begin	
 {	Test-A9Connection -CLientType 'API' 
@@ -254,6 +280,10 @@ Begin
 process
 {	$uri = '/volumesets/'+$VolumeSet
 	$Result = $null
+	if ( $ShowAPI )
+		{	$Result = Invoke-A9API -uri $uri -type 'DELETE' -WhatIf
+			return
+		}	
 	$Result = Invoke-A9API -uri $uri -type 'DELETE'
 	$status = $Result.StatusCode
 	if($status -eq 200)

@@ -28,7 +28,10 @@ Function Get-A9System
     This parameter will force the SSH type command to return the raw data instead of the proper PowerShell object
 .PARAMETER UseSSL
     This option will force the command to use an SSH connection type even if no other paramters are selected.
-    .EXAMPLE
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
+.EXAMPLE
     PS:> Get-A9System_CLI 
 
 	Command displays the Storage system information.such as system name, model, serial number, and system capacity information.
@@ -77,7 +80,8 @@ Param(
         [Parameter(ParameterSetName='SSH')]   [switch]    $Descriptor,
         [Parameter(ParameterSetName='SSH')]   [String]    $DevType,
         [Parameter(ParameterSetName='SSH')]   [Switch]    $ShowRaw,
-        [Parameter(ParameterSetName='SSH')]   [Switch]    $UseSSL
+        [Parameter(ParameterSetName='SSH')]   [Switch]    $UseSSL,
+		[Parameter(ParameterSetName='API')]	  [switch]	  $ShowAPI
 )
 Begin 
     {	if ( $PSCmdlet.ParameterSetName -eq 'API' )
@@ -220,6 +224,9 @@ Function Set-A9System
 	Enable (true) or disable (false) support for RAID-5 on FC drives.
 .PARAMETER ComplianceOfficerApproval
 	Enable (true) or disable (false) compliance officer approval mode.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Set-A9System -RemoteSyslog $true
 .EXAMPLE
@@ -245,7 +252,8 @@ Param(	[Parameter()]	[boolean]	$RemoteSyslog,
 		[Parameter()]	[int]		$OverProvRatioWarning,
 		[Parameter()]	[boolean]	$AllowR5OnNLDrives,
 		[Parameter()]	[boolean]	$AllowR5OnFCDrives,
-		[Parameter()]	[boolean]	$ComplianceOfficerApproval
+		[Parameter()]	[boolean]	$ComplianceOfficerApproval,
+		[Parameter()]	[switch]	$ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -272,6 +280,10 @@ Process
 	If ( $ComplianceOfficerApproval ) 	{	$Obj["complianceOfficerApproval"]= $ComplianceOfficerApproval }
 	if ( $ObjMain.Count -gt 0 )			{	$body["parameters"] 			= $ObjMain 					}	
 	$ObjMain += $Obj
+	if ( $ShowAPI)
+		{    $Result = Invoke-A9API -uri '/system' -type 'PUT' -body $body -whatif
+			return
+		}
     $Result = Invoke-A9API -uri '/system' -type 'PUT' -body $body 
 	if ( $Result.StatusCode -eq 200 )
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
@@ -291,6 +303,9 @@ Function Get-A9Version
 	Get version information.
 .DESCRIPTION
 	Get version information.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9Version
 	
@@ -357,6 +372,9 @@ Function Get-A9Certificate
 	Get the Array Certificates.
 .DESCRIPTION
 	Get the Array Certificates.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	S:> Get-A9Certificate
 	Cmdlet executed successfully
@@ -376,7 +394,6 @@ Function Get-A9Certificate
 					MIIFVD...G7GTJBSt
 					-----END CERTIFICATE-----
 
-
 	service        : dscc
 	commonName     : HPE Nimble Storage Intermediate CA
 	type           : intca
@@ -393,7 +410,7 @@ Function Get-A9Certificate
 					-----END CERTIFICATE-----
 #>
 [CmdletBinding()]
-Param()
+Param(	[Parameter()]	  [switch]	  $ShowAPI)
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
@@ -436,6 +453,9 @@ Function Import-A9Certificate
 	Specifies the CA bundle in PEM format.
 	At least one parameter, certificate or authorityChain is required.
 	The Certtificate should be a very large object that follows this format; "-----BEGIN CERTIFICATE-----\n...your certificate...\n-----END CERTIFICATE-----"
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE    
 	PS:> Import-A9Certificate -
 #>
@@ -448,7 +468,8 @@ Param(	[Parameter(Mandatory)]
 															[String]	$Certificate,
 		[Parameter(Mandatory,ParameterSetName='AuthOnly')]
 		[Parameter(Mandatory,ParameterSetName='BertOnly')]
-															[String]	$AuthorityChain
+															[String]	$AuthorityChain,
+		[Parameter()]	 								 	[switch]	$ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -481,6 +502,9 @@ Function Get-A9CapacityInfo
 	Overall system capacity.
 .DESCRIPTION
 	Overall system capacity.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
   PS:> Get-A9CapacityInfo
   
@@ -497,7 +521,8 @@ Function Get-A9CapacityInfo
   overProvisionedFreeMiB        : 14083072
 #>
 [CmdletBinding()]
-Param()
+Param( 
+		[Parameter()]	  [switch]	  $ShowAPI)
 Begin
 { Test-A9Connection -ClientType 'API' 
 }
@@ -519,17 +544,24 @@ Function Open-A9SSE
 	Establishing a communication channel for Server-Sent Event (SSE).
 .DESCRIPTION
 	Establishing a communication channel for Server-Sent Event (SSE) 
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Open-A9SSE
 #>
 [CmdletBinding()]
-Param()
+Param( 	[Parameter()]	  [switch]	  $ShowAPI	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$Result = $null
 	$dataPS = $null	
+	if ( $ShowAPI )
+		{	$Result = Invoke-A9API -uri '/eventstream' -type 'GET' -whatif
+			return
+		}	
 	$Result = Invoke-A9API -uri '/eventstream' -type 'GET' 
 	if($Result.StatusCode -ne 200)
 		{	write-error "FAILURE : While Executing Open-A9SSE."
@@ -547,12 +579,15 @@ Function Get-A9EventLog
 .SYNOPSIS	
 	Get all past events from system event logs or a logged event information for the available resources. 
 .DESCRIPTION
-	Get all past events from system event logs or a logged event information for the available resources. 
+	Get all past events from system event logs or a logged event information for the available resources.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions. 
 .EXAMPLE
 	PS:> Get-A9EventLogs
 #>
 [CmdletBinding()]
-Param()
+Param(	[Parameter()]	  [switch]	  $ShowAPI )
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
@@ -560,8 +595,11 @@ Process
 {	$Result = $null
 	$dataPS = $null	
 	Write-Progress -Activity "Invoke RestAPI Call (May take 30 seconds)" -status "10% Complete" -PercentComplete 10
-	$Result = Invoke-A9API -uri '/eventlog' -type 'GET'
-	
+	if ( $ShowAPI )
+		{	$Result = Invoke-A9API -uri '/eventlog' -type 'GET' -whatif
+			return
+		}
+	$Result = Invoke-A9API -uri '/eventlog' -type 'GET'	
 	if($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members
 			$ItemCount = $dataPS.count
@@ -683,6 +721,9 @@ Function Get-A9WSAPI
     Will return the list of all outstanding WSAPI sessions from a CLI interrogation.
 .PARAMETER ShowRaw
     This outputs the returned data without any formatting. Only available with CLI options of ServiceStatus and Sessions.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9WSAPI -ConfigurationInformation
 
@@ -717,7 +758,8 @@ Param(  [Parameter(Mandatory, ParameterSetName='default')]      [switch]    $Ser
         [Parameter(Mandatory, ParameterSetName='Session')]      [switch]    $Session,
         [Parameter(Mandatory, ParameterSetName='Config')]       [switch]    $ConfigurationInformation,
         [Parameter(ParameterSetname='default')]
-        [Parameter(ParameterSetname='Session')]                 [switch]    $ShowRaw
+        [Parameter(ParameterSetname='Session')]                 [switch]    $ShowRaw,
+		[Parameter(ParameterSetName='Config')]	  				[switch]	$ShowAPI
      )
 
 Process 
@@ -725,7 +767,11 @@ Process
 	$dataPS = $null	
     switch($PSCmdlet.ParameterSetName)
         {   'Config'    {   Test-A9Connection -ClientType 'API'
-                            $Result = Invoke-A9API -uri '/wsapiconfiguration' -type 'GET' 
+                            if ( $ShowAPI)
+								{	$Result = Invoke-A9API -uri '/wsapiconfiguration' -type 'GET' -whatif 	
+									return
+								}
+							$Result = Invoke-A9API -uri '/wsapiconfiguration' -type 'GET' 
                             if($Result.StatusCode -eq 200)
                                 {	$dataPS = $Result.content | ConvertFrom-Json
                                     write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green

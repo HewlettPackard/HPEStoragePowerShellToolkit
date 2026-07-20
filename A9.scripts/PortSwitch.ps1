@@ -9,6 +9,9 @@ Function Get-A9Port
 	Get a single or List ports in the storage system.
 .PARAMETER NSP
 	Get a single or List ports in the storage system depanding upon the given type.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9Port
 
@@ -33,7 +36,8 @@ Function Get-A9Port
 [CmdletBinding(DefaultParameterSetName='Default')]
 Param(	[Parameter(Mandatory,ParameterSetName='NSP')]	
 		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
-		[String]	$NSP
+						[String]	$NSP,
+		[Parameter()]	[switch]	$ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -43,6 +47,10 @@ Process
 	$dataPS = $null	
 	$uri = '/ports'
 	if($NSP)	{	$uri = '/ports/'+$NSP	}
+	if ( $ShowAPI )
+		{   $Result =Invoke-A9API -uri $uri -type 'GET' -whatif
+			return 
+		}
 	$Result = Invoke-A9API -uri $uri -type 'GET' 
 	If($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members			
@@ -171,6 +179,9 @@ Function Get-A9PortDevice
 	Get single or list of port devices in the storage system.
 .PARAMETER NSP
 	The <n:s:p> variable identifies the node, slot, and port of the device. If undeclared it will return all valid NSP combination values.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9PortDevices -NSP 1:1:1
 
@@ -183,7 +194,8 @@ Function Get-A9PortDevice
 [CmdletBinding()]
 Param(	[Parameter(mandatory)]	
 		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
-									[String]	$NSP	
+									[String]	$NSP,
+		[Parameter()]				[Switch]	$ShowAPI	
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -192,6 +204,10 @@ Process
 {	if ( $NSP)	
 		{	$dataPS = $null	
 			$uri = '/portdevices/all/'+$NSP
+			if ( $ShowAPI )
+				{   $Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+					return 
+				}
 			$Result = Invoke-A9API -uri $uri -type 'GET' 
 			If($Result.StatusCode -eq 200)
 				{	$dataPS = ($Result.content | ConvertFrom-Json).members			
@@ -241,6 +257,11 @@ Function Get-A9PortDeviceTDZ
 	Get Single or list of port device target-driven zones.
 .DESCRIPTION
 	Get Single or list of port device target-driven zones.
+.PARAMETER NSP
+	The <n:s:p> variable identifies the node, slot, and port of the device.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9PortDeviceTDZ
 	
@@ -249,13 +270,12 @@ Function Get-A9PortDeviceTDZ
 	PS:> Get-A9PortDeviceTDZ -NSP 0:0:0
 
 	Get the information of given port device target-driven zones.
-.PARAMETER NSP
-	The <n:s:p> variable identifies the node, slot, and port of the device.
 #>
 [CmdletBinding()]
 Param(	[Parameter()]
 		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]		
-		[String] 	$NSP
+						[String] 	$NSP,
+		[Parameter()]	[Switch]	$ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'	 
@@ -265,6 +285,10 @@ Process
 	$dataPS = $null
 	$uri = '/portdevices/targetdrivenzones/'
 	if ( $NSP )	{	$uri = $uri + $NSP }	
+	if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+			return 
+		}
 	$Result = Invoke-A9API -uri $uri -type 'GET' 	
 	If($Result.StatusCode -eq 200)
 		{	$dataPS = ($Result.content | ConvertFrom-Json).members			
@@ -291,7 +315,10 @@ Function Get-A9FcSwitch
 	Get a list of all FC switches connected to a specified port.
 .PARAMETER NSP
 	The <n:s:p> variable identifies the node, slot, and port of the device. 
-	If unset, it will return all the valid NSP combinations
+	If unset, it will return all the valid NSP combinations.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9FcSwitches -NSP 0:0:0
 	
@@ -300,7 +327,8 @@ Function Get-A9FcSwitch
 [CmdletBinding()]
 Param(	[Parameter()]	
 		[ValidateScript({ 	if ( $_ -match '^[0-7]:[0-9]:[1-4]') 	{ $true } 	else{ throw "You must use the Node:Slot:Port format, where Node can be a number from 0 to 7, Slot can be a number from 0 to 9, and Port can be a number from 1 to 4."} })]
-		[String]	$NSP
+						[String]	$NSP,
+		[Parameter()]	[switch]	$ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'	 
@@ -319,13 +347,19 @@ Process
 						$ValidNSPs += $NSPDisco
 					}
 			$NewObjB = $(	foreach ( $NSPCombo in $ValidNSPs )
-								{	Get-A9FcSwitch -NSP $NSPCombo 
+								{	if ($ShowAPI) 
+										{	Get-A9FcSwitch -NSP $NSPCombo -whatif 	}
+									else{	Get-A9FcSwitch -NSP $NSPCombo			} 
 								}	
 						)
 			return $NewObjB
 	}
 	else
 	{	$uri = '/portdevices/fcswitch/'+$NSP
+		if ( $ShowAPI )
+			{   $Result = Invoke-A9API -uri $uri -type 'GET' -whatif
+				return 
+			}
 		$Result = Invoke-A9API -uri $uri -type 'GET'
 		If($Result.StatusCode -eq 200)
 		{	if($dataPS.Count -gt 0)

@@ -219,6 +219,8 @@ Thes changes fall into a number of categoriesd.
 	11: In many commands that return proper objects, there are parameters that are only used for filtering. That filtering type of operation if more easily done from the powershell command line and for simplicity those unneeded parameters have been removed.
 	12: Some feature have been depreciated on all platforms, those commands have been removed.
 	13: Support for NQN (NVMe Qualified Names) has been added to support NVMe connections. 
+	14: To all RestAPI based commands, a new parameter called 'ShowAPI' has been added that shows what restAPI call WOULD be called instead of actually making the call. 
+	
 
 Below are the specfic commands
 		New-A9Host_CLI,						--> 	New-A9Host

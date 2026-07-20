@@ -62,7 +62,10 @@ Param (	[parameter(Mandatory, HelpMessage = "Enter the resource URI (ex. /volume
 		[array]		$body,
 		
 		[Parameter()]
-		$WsapiConnection = $global:WsapiConnection
+		$WsapiConnection = $global:WsapiConnection,
+
+		[parameter()]
+		[switch]	$WhatIf
 	)
 	 
 	$ip = $WsapiConnection.IPAddress
@@ -89,7 +92,21 @@ Param (	[parameter(Mandatory, HelpMessage = "Enter the resource URI (ex. /volume
 	$headers["Content-Type"] = "application/json"
 	$headers["X-HP3PAR-WSAPI-SessionKey"] = $key
 	$data = $null
-
+	if ( $WhatIf )
+		{	Write-host "The What-IF option was used, so instead of running this API command, I will simply display the API command that would have been used instead." -ForegroundColor green
+			write-host "The URL that the command was going to be sent to was;`n`t " -ForegroundColor green -nonewline
+			write-host $url -ForegroundColor yellow
+			$OutHeader = $headers | convertto-json -depth 5 
+			write-host "The Header of attached to the RestAPI call was going to be; `n`t" -nonewline -foregroundcolor green 
+			write-host $OutHeader -foregroundcolor yellow
+			write-host "The type of operation being sent was going to be a " -nonewline -foregroundcolor green 
+			write-host $type -foregroundcolor yellow -nonewline 
+			write-host " Operation;" -foregroundcolor green
+			$OutBody = $Body | convertto-json -depth 5 | out-string
+			write-host "The BODY of the RestAPI call was going to be; `n`t " -nonewline -foregroundcolor green 
+			write-host $OutBody -foregroundcolor yellow
+			return
+		}
 	write-verbose "Request: URL Header is as follows $headers"
 	If ($type -eq 'GET') 
 		{	Try 	{	if ($PSEdition -eq 'Core') 

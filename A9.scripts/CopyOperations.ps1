@@ -27,6 +27,9 @@ Function New-A9Snapshot
 	The name of the volume set to which the system adds your created group of snapshots will be added, if the volume set does not exist, it will be created. 
 .PARAMETER Match
 	If taking a snapshots of multiple Volumes, the Read-Only or Read-Write value will match the value of the parent volume.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE    
 	ps:> New-A9Snapshot -Volume $val -snpVVName snpvv1
 
@@ -58,7 +61,8 @@ Param(	[Parameter(Mandatory,ParameterSetName='SingleVVs')]		[String[]]	$Volume,
 		[Parameter()][ValidateRange(1,43800)]					[int]		$ExpirationHours,
 		[Parameter()][ValidateRange(1,43800)]					[int]		$RetentionHours,
 		[Parameter()]											[String]	$AddToSet,
-		[Parameter(ParameterSetName='SingleVVs')]				[switch]	$Match
+		[Parameter(ParameterSetName='SingleVVs')]				[switch]	$Match,
+        [Parameter()]         									[switch]    $ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -89,6 +93,10 @@ Process
 	if ( $ParameterBody.Count -gt 0 )	{	$body["parameters"] 				= $ParameterBody 	}
 	if ( $Volume )					{	$ParameterBody["volumeGroup"] 		= "$($VolumeGroup)"	} 	   	
 	if ( $ParameterBody.Count -gt 0 )	{	$body["parameters"] = $ParameterBody 					}
+	if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'POST' -body $body -whatif
+			return 
+		}
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
 	if ( $Result.StatusCode -eq 201 )
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
@@ -118,19 +126,15 @@ Function New-A9VolumeCopy
 	Enables (true) or disables (false) whether to perform the physical copy online. Defaults to false.
 .PARAMETER WWN
 	Specifies the WWN of the online copy virtual volume.
-.PARAMETER TDVV
-	Enables (true) or disables (false) whether the online copy is a TDVV. Defaults to false. tpvv and tdvv cannot be set to true at the same time.
 .PARAMETER Reduce
-	Enables (true) or disables (false) a thinly deduplicated and compressed volume.
+	Enables (true) or disables (false) a thinly deduplicated and compressed volume, cannot be used with TPVV.
 .PARAMETER TPVV
-	Enables (true) or disables (false) whether the online copy is a TPVV. Defaults to false. tpvv and tdvv cannot be set to true at the same time.
+	Enables (true) or disables (false) whether the online copy is a TPVV. Defaults to false. tpvv and reduce cannot be set to true at the same time.
 .PARAMETER SnapCPG
 	Specifies the snapshot CPG for an online copy.
 .PARAMETER SkipZero
-	Enables (true) or disables (false) copying only allocated portions of the source VV from a thin provisioned source. Use only on a newly created destination, or if the destination was re-initialized to zero. Does not overwrite preexisting data on the destination VV to match the source VV unless the same offset is allocated in the source.
-.PARAMETER Compression
-	For online copy only:
-	Enables (true) or disables (false) compression of the created volume. Only tpvv or tdvv are compressed. Defaults to false.
+	Enables (true) or disables (false) copying only allocated portions of the source VV from a thin provisioned source. Use only on a newly created destination, 
+	or if the destination was re-initialized to zero. Does not overwrite preexisting data on the destination VV to match the source VV unless the same offset is allocated in the source.
 .PARAMETER SaveSnapshot
 	Enables (true) or disables (false) saving the the snapshot of the source volume after completing the copy of the volume. Defaults to false
 .PARAMETER Priority
@@ -138,6 +142,9 @@ Function New-A9VolumeCopy
 	HIGH : High priority.
 	MED : Medium priority.
 	LOW : Low priority.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE    
 	PS:> New-A9VolumeCopy -Volume xyz -DestVolume Test1
 .EXAMPLE
@@ -159,21 +166,30 @@ Function New-A9VolumeCopy
 .EXAMPLE
 	PS:> New-A9VolumeCopy -Volume $val -DestVolume Test -Priority high
 #>
-[CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$Volume,
-		[Parameter(Mandatory)]	[String]	$DestVolume,
-		[Parameter()]			[String]	$DestCPG,
-		[Parameter()]			[switch]	$Online,
-		[Parameter()]			[String]	$WWN,
-		[Parameter()]			[switch]	$TPVV,
-		[Parameter()]			[switch]	$TDVV,
-		[Parameter()]			[switch]	$Reduce,
-		[Parameter()]			[String]	$SnapCPG,
-		[Parameter()]			[switch]	$SkipZero,
-		[Parameter()]			[switch]	$Compression,
-		[Parameter()]			[switch]	$SaveSnapshot,
-		[Parameter()]	[ValidateSet('HIGH','MED','LOW')]						
-								[String]	$Priority
+[CmdletBinding(defaultparametersetname='offline')]
+Param(	[Parameter(Mandatory)]									[String]	$Volume,
+		[Parameter(parametersetname='online',mandatory)]	
+		[Parameter(parametersetname='onlineTPVV',mandatory)]
+		[Parameter(parametersetname='onlineREDUCE',mandatory)]	[String]	$DestVolume,
+		[Parameter(parametersetname='online',mandatory)]	
+		[Parameter(parametersetname='onlineTPVV',mandatory)]
+		[Parameter(parametersetname='onlineREDUCE',mandatory)]	[String]	$DestCPG,
+		[Parameter(parametersetname='online',mandatory)]	
+		[Parameter(parametersetname='onlineTPVV',mandatory)]	
+		[Parameter(parametersetname='onlineREDUCE',mandatory)]	[switch]	$Online,
+		[Parameter(parametersetname='online')]	
+		[Parameter(parametersetname='onlineTPVV')]				
+		[Parameter(parametersetname='onlineREDUCE')]			[String]	$WWN,
+		[Parameter(parametersetname='onlineTPVV',mandatory)]	[switch]	$TPVV,
+		[Parameter(parametersetname='onlineREDUCE',mandatory)]	[switch]	$Reduce,
+		[Parameter(parametersetname='online')]	
+		[Parameter(parametersetname='onlineTPVV')]
+		[Parameter(parametersetname='onlineREDUCE')]			[String]	$SnapCPG,
+		[Parameter()]											[switch]	$SkipZero,
+		[Parameter()]											[switch]	$SaveSnapshot,
+		[Parameter(parametersetname='offline')]	[ValidateSet('HIGH','MED','LOW')]						
+																[String]	$Priority,
+        [Parameter()]          								 	[switch]    $ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -210,15 +226,18 @@ Process
 		{	$body["parameters"] = $ParameterBody 
 		}
     $Result = $null
-	Write-Verbose "Request: Request to New-A9VvCopy : $Volume (Invoke-A9API)." 
 	$uri = '/volumes/'+$Volume
+	if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'POST' -body $body -whatif
+			return 
+		}
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body
 	if( $Result.StatusCode -eq 201)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $Result
 		}
 	else
-		{	Write-error "FAILURE : While creating Physical copy of a volume : $Volume " 
+		{	Write-error "FAILURE : Executing $($PSCmdlet.MyInvocation.MyCommand.Name) creating Physical copy of a volume : $Volume " 
 			return $Result.StatusDescription
 		}
 }
@@ -239,6 +258,9 @@ Function Set-A9VolumeCopy
 	Task priority which can be set to HIGH (High priority), MED (Medium priority), LOW (Low priority) or left unset.
 .PARAMETER AllowRemoteCopyParent
 	Allows the promote operation to proceed even if the RW parent volume is currently in a Remote Copy volume group, if that group has not been started. If the Remote Copy group has been started, this command fails.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE    
 	PS:> Set-A9VolumeCopy -Volume xxx -resync
 
@@ -263,7 +285,8 @@ Param(	[Parameter(Mandatory,ParameterSetName='Resync')]
 		[Parameter(Mandatory,ParameterSetName='Resync')]		[Switch]	$ResyncCopy,
 		[Parameter(Mandatory,ParameterSetName='Stop')]			[Switch]	$StopCopy,
 		[Parameter(Mandatory,ParameterSetName='Promote')]		[Switch]	$Promote,
-		[Parameter(Mandatory,ParameterSetName='StopPromote')]	[Switch]	$StopPromote
+		[Parameter(Mandatory,ParameterSetName='StopPromote')]	[Switch]	$StopPromote,
+        [Parameter()]          									[switch]    $ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -284,7 +307,10 @@ Process
 			'Promote'	{	$body["action"] = 4	}
 			'StopPromote'{	$body["action"] = 5	}
 		}
-	Write-Verbose "The Command Executed was an HTTP Put to $uri with a body of $body"
+	if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body -whatif
+			return 
+		}
 	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
 	if ( $Result.StatusCode -eq 200 )
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
@@ -312,6 +338,9 @@ Function New-A9VolumeSetCopy
 	Enables (true) or disables (false) whether to save the source volume snapshot after completing VV set copy.
 .PARAMETER Priority
 	Task priority which can be set to HIGH (High priority), MED (Medium priority), LOW (Low priority) or left unset.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE    
 	PS:> New-A9VvSetPhysicalCopy -VolumeSetName Test_delete -DestVolume PERF_AIX38 	
 #>
@@ -320,7 +349,8 @@ Param(	[Parameter(Mandatory)]	[String]	$VolumeSet,
 		[Parameter(Mandatory)]	[String]	$DestVolume,
 		[Parameter()]			[boolean]	$SaveSnapshot,
 		[Parameter()]
-		[ValidateSet('HIGH','MED','LOW')][String]	$Priority
+		[ValidateSet('HIGH','MED','LOW')][String]	$Priority,
+        [Parameter()]           [switch]    $ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API' 
@@ -340,6 +370,10 @@ Process
 		}
     $Result = $null	
 	$uri = '/volumesets/'+$VolumeSet
+	if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type 'POST' -body $body -whatif
+			return 
+		}
     $Result = Invoke-A9API -uri $uri -type 'POST' -body $body	
 	if ( $Result.StatusCode -ne 201 )
 		{	write-error "FAILURE : While creating Physical copy of a VV set : $VolumeSet "
@@ -371,6 +405,9 @@ Function Set-A9VolumeSetCopy
 	To promote the changes from a vv set virtual copy back onto the base volume, thereby overwriting the base volume with the virtual copy.
 .PARAMETER Priority
 	Task priority which can be set to HIGH (High priority), MED (Medium priority), LOW (Low priority) or left unset.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE 
 	PS:> Set-A9VolumeSetCopy -VolumeSet xxx -Priority HIGH -reset
 .EXAMPLE	
@@ -400,65 +437,50 @@ Param(	[Parameter(Mandatory,ParameterSetName='Reset')]
 		[Parameter(Mandatory,ParameterSetName='Reset')]		[Switch]	$Reset,
 		[Parameter(Mandatory,ParameterSetName='Stop')]		[Switch]	$Stop,
 		[Parameter(Mandatory,ParameterSetName='Move')]		[Switch]	$Move,
-		[Parameter(Mandatory,ParameterSetName='Update')]	[Switch]	$Update
+		[Parameter(Mandatory,ParameterSetName='Update')]	[Switch]	$Update,
+        [Parameter()]         								[switch]    $ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$body = @{}	
+	$Result = $NULL
+	$Meth = 'PUT'
+	$uri = "/volumesets/" + $VolumeSet
+	$PriVal = @{'HIGH'=1;'MED'=2;'LOW'=3}
 	Switch ( $PSCmdlet.ParameterSetName )
-	{	'Reset'	
-				{	$body["action"] = 3
-					if($Priority)	
-						{	if		($Priority -eq "HIGH")	{	$body["priority"] = 1	}
-							elseif	($Priority -eq "MED")	{	$body["priority"] = 2	}
-							elseif	($Priority -eq "LOW")	{	$body["priority"] = 3	}
-						}
-					$Result = $null	
-					$uri = "/volumesets/" + $VolumeSet
-					$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
+	{	'Reset'	{	$body["action"] = 3
+					if($Priority)					{	$body["priority"] = $PriVal[$Priority]	}
 				}
-		'Move'
-				{	$body["action"] = 4
-					if($Online)					{	$body["online"] = $true	}	
-					if($Priority)	
-						{	if		($Priority -eq "HIGH")	{	$body["priority"] = 1	}
-							elseif	($Priority -eq "MED")	{	$body["priority"] = 2	}
-							elseif	($Priority -eq "LOW")	{	$body["priority"] = 3	}
-						}
-					if($AllowRemoteCopyParent)	{	$body["allowRemoteCopyParent"] = $true	}
-					$Result = $null	
-					$uri = "/volumesets/" + $VolumeSet
-					$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body
+		'Move'	{	$body["action"] = 5
+					if($Online)						{	$body["online"] = $true	}	
+					if($Priority)					{	$body["priority"] = $PriVal[$Priority]	}
+					if($AllowRemoteCopyParent)		{	$body["allowRemoteCopyParent"] = $true	}
 				}
-		'Stop'	
-				{	$body["action"] = 4
-					if($Priority)	
-						{	if		($Priority -eq "HIGH")	{	$body["priority"] = 1	}
-							elseif	($Priority -eq "MED")	{	$body["priority"] = 2	}
-							if		($Priority -eq "LOW")	{	$body["priority"] = 3	}
-						}
-					$Result = $null	
-					$uri = "/volumesets/" + $VolumeSet
-					$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
+		'Stop'	{	$body["action"] = 4
+					if($Priority)					{	$body["priority"] = $PriVal[$Priority]	}
 				}
-		'Update'
-				{	$ParameterBody = @{}
-					$body["action"] = 7   
+		'Update'{	$ParameterBody = @{}
+					$body["action"] = 6   
 					If ($VolumeSnapshotList) 		{	$ParameterBody["volumeSnapshotList"] = $VolumeSnapshotList    }    
 					If ($ReadOnly) 					{	$ParameterBody["readOnly"] = $ReadOnly		 }
 					if($ParameterBody.Count -gt 0)	{	$body["parameters"] = $ParameterBody 	}
-					$Result = $null	
-					$Result = Invoke-A9API -uri '/volumes/' -type 'POST' -body $body 
+					$Meth = 'POST'
+					$uri = '/volumes/' 
 				}
 	}
+	if ( $ShowAPI )
+		{   $Result = Invoke-A9API -uri $uri -type $Meth -body $body -whatif
+			return 
+		}
+	$Result = Invoke-A9API -uri $uri -type $Meth -body $body 
 	if ( $Result.StatusCode -eq 200 )
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			return $Result			
 		}
 	else
-		{	write-error "FAILURE : While Updating virtual copies or VV-sets : $VolumeSnapshotList " 
+		{	write-error "FAILURE : While Executing $($PSCmdlet.MyInvocation.MyCommand.Name) Updating virtual copies or VV-sets : $VolumeSnapshotList " 
 			return $Result.StatusDescription
 		}
 }

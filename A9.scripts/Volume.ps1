@@ -55,6 +55,9 @@ Function New-a9Volume
 	Specifies the amount of time relative to the current time that the volume is retained. Value is a positive integer with a range of 1– 43,800 hours (1825 days).
 .PARAMETER Compression   
 	Enables (true) or disables (false) creating thin provisioned volumes with compression. Defaults to false (create volume without compression).
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE    
 	PS:> New-a9Volume -Volume xxx -CpgName xxx -SizeMiB 1024 -SpaceSaving DeduplicateionCompression
 .EXAMPLE                         
@@ -91,7 +94,8 @@ Param(	[Parameter(Mandatory)]	[String]	$Volume,
 		[Parameter()]
 		[ValidateRange(1,43800)][int]		$ExpirationHours,
 		[Parameter()]
-		[ValidateRange(1,43800)][int]		$RetentionHours
+		[ValidateRange(1,43800)][int]		$RetentionHours,
+        [Parameter()]           [switch]    $ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -127,13 +131,15 @@ Process
 	If ($ExpirationHours) 		{ 	$body["expirationHours"] 		= $ExpirationHours	}
 	If ($RetentionHours) 		{	$body["retentionHours"] 		= $RetentionHours	}
 	$Result = $null
-	# write-verbose "The call will be made to /volumes and contain the body;"
-	#$body | convertto-json
-    $Result = Invoke-A9API -uri '/volumes' -type 'POST' -body $body 
+	if ( $ShowAPI ) 
+        {   $Result = Invoke-A9API -uri '/volumes' -type 'POST' -body $body -WhatIf 
+            return 
+        }
+    $Result = Invoke-A9API -uri '/volumes' -type 'POST' -body $body
 	$status = $Result.StatusCode
 	if($status -eq 201)
 		{	write-host "Cmdlet executed successfully" -foreground green
-			return ( Get-A9Vv | where-object { $_.name -like $Volume} ) 
+			return ( Get-A9Volume | where-object { $_.name -like $Volume} ) 
 		}
 	else
 		{	Write-Error "Failure:  While creating Volumes: $Volume " 
@@ -213,6 +219,9 @@ Function Set-A9Volume
 	Enables (false) or disables (true) removing the snapshot space allocation limit. If false, and limit value is 0, setting ignored. If false, and limit value is a positive number, then set. 
 .PARAMETER RmUsrSpcAllocLimit
 	Enables (false) or disables (true)false) the allocation limit. If false, and limit value is a positive number, then set. 
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE 
 	PS:> Update-A9Volume -Volume xxx -NewName zzz
 .EXAMPLE 
@@ -282,7 +291,8 @@ Param(
 		
 	[Parameter(			 parameterSetName='CompressTDVV')]
 	[Parameter(			 parameterSetName='CompressFPVV')]
-	[Parameter(			 ParameterSetName='CompressTPVV')]	[String]	$KeepVV
+	[Parameter(			 ParameterSetName='CompressTPVV')]	[String]	$KeepVV,
+    [Parameter()]                                          	[switch]    $ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API' 
@@ -298,29 +308,29 @@ Process
 						If ($ExpirationHours) 	{ 	$body["expirationHours"] = $ExpirationHours	}
 						If ($RetentionHours) 	{	$body["retentionHours"] = $RetentionHours	}
 						$VvPolicies = @{}
-						If (test-path Variable:$StaleSS) 				{	$VvPolicies["staleSS"] 	= $StaleSS		}
-						If (test-path Variable:$OneHost) 				{	$VvPolicies["oneHost"] 	= $OneHost    	}
-						If (test-path Variable:$ZeroDetect) 			{	$VvPolicies["zeroDetect"]=$ZeroDetect	}	
-						If (test-path Variable:$System) 				{	$VvPolicies["system"] 	= $System    	} 
-						If (test-path Variable:$Caching) 				{	$VvPolicies["caching"] 	= $Caching    	}	
-						If (test-path Variable:$Fsvc) 					{	$VvPolicies["fsvc"] 	= $Fsvc    		}
-						If (test-path Variable:$HostDIF) 
-							{	if($HostDIF -eq "3PAR_HOST_DIF")		{	$VvPolicies["hostDIF"] = 1	}
-								elseif($HostDIF -eq "STD_HOST_DIF")		{	$VvPolicies["hostDIF"] = 2	}
-								elseif($HostDIF -eq "NO_HOST_DIF")		{	$VvPolicies["hostDIF"] = 3	}
+						If ($PSBoundParameters.ContainsKey('StaleSS') )				{	$VvPolicies["staleSS"] 	= $StaleSS		}
+						If ($PSBoundParameters.ContainsKey('OneHost')) 				{	$VvPolicies["oneHost"] 	= $OneHost    	}
+						If ($PSBoundParameters.ContainsKey('ZeroDetect')) 			{	$VvPolicies["zeroDetect"]=$ZeroDetect	}	
+						If ($PSBoundParameters.ContainsKey('System')) 				{	$VvPolicies["system"] 	= $System    	} 
+						If ($PSBoundParameters.ContainsKey('Caching')) 				{	$VvPolicies["caching"] 	= $Caching    	}	
+						If ($PSBoundParameters.ContainsKey('Fsvc')) 				{	$VvPolicies["fsvc"] 	= $Fsvc    		}
+						If ($PSBoundParameters.ContainsKey('HostDIF')) 
+							{	if($HostDIF -eq "3PAR_HOST_DIF")					{	$VvPolicies["hostDIF"] = 1	}
+								elseif($HostDIF -eq "STD_HOST_DIF")					{	$VvPolicies["hostDIF"] = 2	}
+								elseif($HostDIF -eq "NO_HOST_DIF")					{	$VvPolicies["hostDIF"] = 3	}
 							} 	   
-						If (test-path Variable:$SnapCPG) 				{ 	$body["snapCPG"] 				= $SnapCPG 				}
-						If (test-path Variable:$SsSpcAllocWarningPct) 	{ 	$body["ssSpcAllocWarningPct"] 	= $SsSpcAllocWarningPct }
-						If (test-path Variable:$SsSpcAllocLimitPct) 	{  	$body["ssSpcAllocLimitPct"] 	= $SsSpcAllocLimitPct 	}	
-						If (test-path Variable:$UserCPG) 				{	$body["userCPG"] 				= $UserCPG				}
-						If (test-path Variable:$UsrSpcAllocWarningPct) 	{	$body["usrSpcAllocWarningPct"] 	= $UsrSpcAllocWarningPct}
-						If (test-path Variable:$UsrSpcAllocLimitPct) 	{	$body["usrSpcAllocLimitPct"] 	= $UsrSpcAllocLimitPct	}	
-						If (test-path Variable:$RmSsSpcAllocWarning) 	{	$body["rmSsSpcAllocWarning"] 	= $RmSsSpcAllocWarning  }
-						If (test-path Variable:$RmUsrSpcAllocWarning) 	{	$body["rmUsrSpcAllocWarning"] 	= $RmUsrSpcAllocWarning	} 
-						If (test-path Variable:$RmExpTime) 				{	$body["rmExpTime"] 				= $RmExpTime			} 
-						If (test-path Variable:$RmSsSpcAllocLimit) 		{	$body["rmSsSpcAllocLimit"] 		= $RmSsSpcAllocLimit 	}
-						If (test-path Variable:$RmUsrSpcAllocLimit) 	{	$body["rmUsrSpcAllocLimit"] 	= $RmUsrSpcAllocLimit 	}
-						if($VvPolicies.Count -gt 0)						{	$body["policies"] 				= $VvPolicies 			}
+						If ($PSBoundParameters.ContainsKey('SnapCPG')) 					{ 	$body["snapCPG"] 				= $SnapCPG 				}
+						If ($PSBoundParameters.ContainsKey('SsSpcAllocWarningPct')) 	{ 	$body["ssSpcAllocWarningPct"] 	= $SsSpcAllocWarningPct }
+						If ($PSBoundParameters.ContainsKey('SsSpcAllocLimitPct')) 		{  	$body["ssSpcAllocLimitPct"] 	= $SsSpcAllocLimitPct 	}	
+						If ($PSBoundParameters.ContainsKey('UserCPG')) 					{	$body["userCPG"] 				= $UserCPG				}
+						If ($PSBoundParameters.ContainsKey('UsrSpcAllocWarningPct')) 	{	$body["usrSpcAllocWarningPct"] 	= $UsrSpcAllocWarningPct}
+						If ($PSBoundParameters.ContainsKey('UsrSpcAllocLimitPct')) 		{	$body["usrSpcAllocLimitPct"] 	= $UsrSpcAllocLimitPct	}	
+						If ($PSBoundParameters.ContainsKey('RmSsSpcAllocWarning')) 		{	$body["rmSsSpcAllocWarning"] 	= $RmSsSpcAllocWarning  }
+						If ($PSBoundParameters.ContainsKey('RmUsrSpcAllocWarning')) 	{	$body["rmUsrSpcAllocWarning"] 	= $RmUsrSpcAllocWarning	} 
+						If ($PSBoundParameters.ContainsKey('RmExpTime')) 				{	$body["rmExpTime"] 				= $RmExpTime			} 
+						If ($PSBoundParameters.ContainsKey('RmSsSpcAllocLimit')) 		{	$body["rmSsSpcAllocLimit"] 		= $RmSsSpcAllocLimit 	}
+						If ($PSBoundParameters.ContainsKey('RmUsrSpcAllocLimit')) 		{	$body["rmUsrSpcAllocLimit"] 	= $RmUsrSpcAllocLimit 	}
+						if($VvPolicies.Count -gt 0)										{	$body["policies"] 				= $VvPolicies 			}
 					}
 			"Comp*"	{	$body = @{} 	
 						$body["action"] = 6	
@@ -337,7 +347,11 @@ Process
 		}	
 	$Result = $null
 	$uri = '/volumes/'+$Volume 
-	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $Body
+	if ( $ShowAPI ) 
+        {   $Result = Invoke-A9API -uri $uri -type 'PUT' -body $Body -WhatIf 
+            return 
+        }
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $Body
 	if($Result.StatusCode -eq 200)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			if($NewName)	{	return Get-A9Volume -Volume $NewName	}
@@ -363,6 +377,9 @@ Function Get-A9Volume
 	Display volume space distribution for all virtual volumes or for a single Volume defined by the volume parameter.
 .PARAMETER Statistics
 	Display volume space distribution for all virtual volumes or for a single Volume defined by the volume parameter.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE
 	PS:> Get-A9Volume
 
@@ -401,7 +418,8 @@ Param(	[Parameter(ParameterSetName='Base')]
 		[Parameter(ParameterSetName='Stats')]
 		[Parameter(ParameterSetName='SpaceDistro')]					[String]	$Volume,
 		[Parameter(Mandatory, ParameterSetName='Stats')]			[Switch]	$Statistics,
-		[Parameter(Mandatory, ParameterSetName='SpaceDistro')]		[Switch]	$SpaceDistribution
+		[Parameter(Mandatory, ParameterSetName='SpaceDistro')]		[Switch]	$SpaceDistribution,
+        [Parameter()]                                               [switch]    $ShowAPI
 	)
 Begin 
 	{	Test-A9Connection -CLientType 'API' 
@@ -410,7 +428,11 @@ Process
 {	Switch ($PSCmdlet.ParameterSetName)
 	{	'Base'	
 				{	$uri = '/volumes'
-					$Result = Invoke-A9API -uri $uri -type 'GET' 
+					if ( $ShowAPI ) 
+        				{   $Result = Invoke-A9API -uri $uri -type 'GET'  -WhatIf 
+            				return 
+        				}
+				    $Result = Invoke-A9API -uri $uri -type 'GET'
 					If($Result.StatusCode -eq 200)
 						{	$dataPS = ($Result.content | ConvertFrom-Json).members
 							if ($ProvisioningType)
@@ -509,7 +531,11 @@ Process
 				}
 		'Stats'	
 				{	$uri = '/statistics/volumes'
-					$Result = Invoke-A9API -uri $uri -type 'GET' 
+					if ( $ShowAPI ) 
+        				{   $Result = Invoke-A9API -uri $uri -type 'GET'  -WhatIf 
+            				return 
+        				}
+				    $Result = Invoke-A9API -uri $uri -type 'GET'
 					If($Result.StatusCode -eq 200)
 						{	$dataPS = ($Result.content | ConvertFrom-Json).members
 							if ($ProvisioningType)
@@ -540,17 +566,16 @@ Process
 						}
 				}
 		'SpaceDistro'
-				{	if($Volume)
-						{	$uri = '/volumespacedistribution/'+$Volume
-							$Result = Invoke-A9API -uri $uri -type 'GET' 
-							if($Result.StatusCode -eq 200)	{	$dataPS = ($Result.content | ConvertFrom-Json).members	}
-						}
-					else
-						{	$Result = Invoke-A9API -uri '/volumespacedistribution' -type 'GET' 
-							if($Result.StatusCode -eq 200)	{	$dataPS = ($Result.content | ConvertFrom-Json).members 	}			
-						}
-					If($Result.StatusCode -eq 200)
-						{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
+				{	$uri =  '/volumespacedistribution'
+					if($Volume)	{	$uri = '/volumespacedistribution/'+$Volume	}	
+					if ( $ShowAPI ) 
+		        		{   $Result = Invoke-A9API -uri $uri -type 'GET' -WhatIf 
+    		        		return 
+        				}
+					$Result = Invoke-A9API -uri $uri -type 'GET'
+					if($Result.StatusCode -eq 200)	
+						{	$dataPS = ($Result.content | ConvertFrom-Json).members 	
+							write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 							return $dataPS
 						}
 					else
@@ -580,6 +605,9 @@ Function Remove-A9Volume
 	Remove the snapshot copies only. Only valid for SSH type connections	
 .PARAMETER Cascade
 	Remove specified volumes and their descendent volumes as long as none has an active VLUN. 
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. 
+	This can be used for debugging as well as a method to learn how the RestAPI functions.
 .EXAMPLE	
 	PS:> Remove-A9Volume -Volume PassThru-Disk
 
@@ -603,7 +631,8 @@ Function Remove-A9Volume
 
 		[Parameter(ParameterSetName='API')]		
 		[Parameter(ParameterSetName='SSHV')]
-		[Parameter(ParameterSetName='SSHE')]					[Switch]	$Cascade
+		[Parameter(ParameterSetName='SSHE')]					[Switch]	$Cascade,
+        [Parameter(ParameterSetName='API')]                     [switch]    $ShowAPI
 	)		
 Begin
 {	if ( $PSCmdlet.ParameterSetName -eq 'API' )
@@ -629,7 +658,11 @@ process
 		{	'API'		{	$uri = '/volumes/'+$Volume
 							$Result = $null
 							if ($cascade) { $uri = $uri + "?cascade=true"}
-							$Result = Invoke-A9API -uri $uri -type 'DELETE' 
+							if ( $ShowAPI ) 
+								{   $Result = Invoke-A9API -uri $uri -type 'DELETE' -WhatIf 
+									return 
+								}
+						    $Result = Invoke-A9API -uri $uri -type 'DELETE'
 							$status = $Result.StatusCode
 							if($status -eq 200)
 								{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green

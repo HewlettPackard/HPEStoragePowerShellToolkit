@@ -23,20 +23,24 @@ Function Set-A9HostTargetZoneingWWN
 	Adds WWN to target driven zone. Creates the target driven zone if it does not exist, and adds the WWN to the host if it does not exist.
 .PARAMETER RemoveWwnFromTZone
 	Removes WWN from the targetzone. Removes the target driven zone unless it is the last WWN. Does not remove the last WWN from the host.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE
 	PS:> Add-A9RemoveHostWWN -HostName MyHost -FCWWNs "$wwn" -AddWwnToHost
 .EXAMPLE	
 	PS:> Add-A9RemoveHostWWN -HostName MyHost -FCWWNs "$wwn" -RemoveWwnFromHost
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]				[String]	$HostName,
-		[Parameter(Mandatory)]				[String[]]	$FCWWNs,
+Param(	[Parameter(Mandatory)]								[String]	$HostName,
+		[Parameter(Mandatory)]								[String[]]	$FCWWNs,
 		[Parameter(ParameterSetName='AddZone')]
-		[Parameter(ParameterSetName='RemZone')]		[String[]]	$Port,
+		[Parameter(ParameterSetName='RemZone')]				[String[]]	$Port,
 		[Parameter(ParameterSetName='AddHost', Mandatory)]	[switch]	$AddWwnToHost,
 		[Parameter(ParameterSetName='RemHost', Mandatory)]	[switch]	$RemoveWwnFromHost,
 		[Parameter(ParameterSetName='AddZone', Mandatory)]	[switch]	$AddWwnToTZone,
-		[Parameter(ParameterSetName='RemZone', Mandatory)]	[switch]	$RemoveWwnFromTZone
+		[Parameter(ParameterSetName='RemZone', Mandatory)]	[switch]	$RemoveWwnFromTZone,
+        [Parameter()]           							[switch]    $ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -53,7 +57,11 @@ Process
 	if($ParametersBody.Count -gt 0){$body["parameters"] = $ParametersBody 	}
     $Result = $null
 	$uri = '/hosts/'+$HostName
-    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body 
+	if ( $ShowAPI ) 
+        {   $Result = Invoke-A9API -uri $uri -type 'POST' -body $body -WhatIf 
+            return 
+        }
+    $Result = Invoke-A9API -uri $uri -type 'POST' -body $body      
 	$status = $Result.StatusCode
 	if($status -eq 200)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
@@ -76,6 +84,9 @@ Function Get-A9HostSet
     if the API is unavalable or other parameters are used, the command will attempt to fail back to a SSH type connection to accomplish the goal.  
 .PARAMETER HostSet
 	Specify name of the Hotes Set. This Parameter is valid for API and SSH type connections.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE
     PS:> Get-A9HostSet | format-table
     
@@ -104,15 +115,20 @@ Function Get-A9HostSet
 .NOTES
     CLI Options such as -D or Members can be derived directly from the returned objects, as such they are not valid parameteres to include in the command.
 #>
-[CmdletBinding(DefaultParameterSetName='API')]
-Param(	[Parameter(ParameterSetName='API')]	    [String]	$HostSet
+[CmdletBinding()]
+Param(	[Parameter()]	    [String]	$HostSet,
+        [Parameter()]     	[switch]    $ShowAPI
     )
 Begin 
     {	Test-A9Connection -CLientType 'API'
     }
 Process 
     {	$uri = '/hostsets'
-       $Result = Invoke-A9API -uri $uri -type 'GET'
+		if ( $ShowAPI ) 
+			{   $Result = Invoke-A9API -uri $uri -type 'GET' -WhatIf 
+				return 
+			}
+	    $Result = Invoke-A9API -uri $uri -type 'GET' $body
         If ($Result.StatusCode -eq 200)
             {	$dataPS1 = ($Result.content | ConvertFrom-Json)
                 if ($dataPS1.members) { $dataPS = $dataPS1.members }
@@ -137,12 +153,12 @@ Process
                             }
                     }
                 else
-                    {	Write-Error "Failure:  While Executing Get-A9HostSet. Expected Result Not Found." 
+                    {	Write-Error "Failure:  While Executing $($PSCmdlet.MyInvocation.MyCommand.Name). Expected Result Not Found." 
                         return 
                     }		
             }
         else
-            {	Write-Error "Failure:  While Executing Get-A9HostSet." 
+            {	Write-Error "Failure:  While Executing $($PSCmdlet.MyInvocation.MyCommand.Name)." 
                 return $Result.StatusDescription
             }
     }
@@ -163,6 +179,9 @@ Function New-A9HostSet
 	The domain in which the host set will be created.
 .PARAMETER Members
 	The host to be added to the set. 
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE
 	PS:> New-A9HostSet -HostSet MyHostSet
 
@@ -189,7 +208,8 @@ Function New-A9HostSet
 Param(	[Parameter(Mandatory)]	[String]	$HostSet,	  
 		[Parameter()]			[String]	$Comment,	
 		[Parameter()]			[String]	$Domain, 
-		[Parameter()]			[String[]]	$Members
+		[Parameter()]			[String[]]	$Members,
+        [Parameter()]     		[switch]    $ShowAPI
 )
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -201,6 +221,10 @@ Process
 	If ($Domain) 	{	$body["domain"] = "$($Domain)"    }	
 	If ($SetMembers){	$body["setmembers"] = $Members    }
     $Result = $null
+	if ( $ShowAPI ) 
+        {   $Result = Invoke-A9API -uri '/hostsets' -type 'POST' -body $body -WhatIf 
+            return 
+        }
     $Result = Invoke-A9API -uri '/hostsets' -type 'POST' -body $body 
 	$status = $Result.StatusCode	
 	if($status -eq 201)
@@ -234,6 +258,9 @@ Function Set-A9HostSet
 	To remove the comment, use “”.
 .PARAMETER Members
 	The volume or host to be added to or removed from the set.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE    
 	PS:> Set-A9HostSet -HostSetName xxx -NewName yyy
 .EXAMPLE    
@@ -252,7 +279,8 @@ Param(
 		[Parameter(Mandatory, ParameterSetName='Default')]		[String]	$NewName,
 		[Parameter(Mandatory, ParameterSetName='Default')]		[String]	$Comment,
 		[Parameter(Mandatory, ParameterSetName='AddMember')]	
-		[Parameter(Mandatory, ParameterSetName='RemoveMember')] [String[]]	$Members
+		[Parameter(Mandatory, ParameterSetName='RemoveMember')] [String[]]	$Members,
+        [Parameter()]     										[switch]    $ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
@@ -272,7 +300,11 @@ Process
 			}
 	$Result = $null	
 	$uri = '/hostsets/'+$HostSetName 
-    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
+	if ( $ShowAPI ) 
+        {   $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body -WhatIf 
+            return 
+        }
+	$Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
 	if($Result.StatusCode -eq 200)
 		{	write-host "Success : Executing $($PSCmdlet.MyInvocation.MyCommand.Name)" -ForegroundColor Green
 			if($NewName)	{	Get-A9HostSet -HostSetName $NewName	}	
@@ -294,17 +326,25 @@ Function Remove-A9HostSet
 	Remove a Host Set.
 .PARAMETER HostSetName 
 	Specify the name of Host Set to be removed.
+.PARAMETER ShowAPI 
+    This option will show you the API call that would be made instead of making the API call. This can be used for debugging as well as a method to learn how the
+    RestAPI functions.
 .EXAMPLE    
 	PS:> Remove-A9HostSet -HostSetName MyHostSet
 #>
 [CmdletBinding()]
-Param(	[Parameter(Mandatory)]	[String]	$HostSetName
+Param(	[Parameter(Mandatory)]	[String]	$HostSetName,
+        [Parameter()]     		[switch]    $ShowAPI
 	)
 Begin 
 {	Test-A9Connection -ClientType 'API'
 }
 Process 
 {	$uri = '/hostsets/'+$HostSetName
+	if ( $ShowAPI ) 
+        {   $Result = Invoke-A9API -uri $uri -type 'DELETE' -WhatIf 
+            return 
+        }
 	$Result = Invoke-A9API -uri $uri -type 'DELETE'
 	if ( $Result.StatusCode -ne 200 )
 		{	Write-Error "Failure:  While Removing Host Set:$HostSetName " 
