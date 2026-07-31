@@ -425,8 +425,7 @@ $global:cert_hostname = ($CertSubject.split(',') | where-object { $_ -match '^s\
                 # we could do this with either cert hostname or ibput hostname(IP), but cert hostname has better chance of getting resolved.
                 
                 try
-                {
-                    $resolved_name = [System.Net.DNS]::GetHostEntry($cert_hostname).AddressList 
+                {   $resolved_name = [System.Net.DNS]::GetHostEntry($cert_hostname).AddressList 
                     $resolved_name = $resolved_name | select -ExpandProperty IPAddressToString
                    # $Group = $resolved_name
                     # will come here if the host got resolved.
