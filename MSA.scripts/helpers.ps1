@@ -23,15 +23,15 @@ function Connect-MSAGroup {
 .PARAMETER IgnoreServerCertificate
     Ignore the server SSL certificate.
 .EXAMPLE
-     Connect-MSAGroup -FQDNofIP MSA01.yourdns.local -Username chris -Password Pa55w0rd! -IgnoreServerCertificate
+    Connect-MSAGroup -FQDNofIP MSA01.yourdns.local -Username chris -Password Pa55w0rd! -IgnoreServerCertificate
 
      *Note: IgnoreServerCertificate parameter is not available with PowerShell Core
 .EXAMPLE
-     Connect-MSAGroup -FQDNofIP 192.168.100.98 -Username chris -Password Pa55w0rd! -IgnoreServerCertificate
+    Connect-MSAGroup -FQDNofIP 192.168.100.98 -Username chris -Password Pa55w0rd! -IgnoreServerCertificate
 
      *Note: IgnoreServerCertificate parameter is not available with PowerShell Core
 .EXAMPLE
-     Connect-MSAGroup -FQDNorIP MSA01.yourdns.local -Username Chris -Password Pa55w0rd! -ImportServerCertificate
+    Connect-MSAGroup -FQDNorIP MSA01.yourdns.local -Username Chris -Password Pa55w0rd! -ImportServerCertificate
 #>
 [cmdletbinding(DefaultParameterSetName='IgnoreServerCertificate')]
 param(  [Parameter(Mandatory)]                                  [string]    $FQDNorIP,
@@ -54,7 +54,7 @@ Process
             ValidateServerCertificate $FQDNorIP 
         }
     # Import-LocalizedData -BaseDirectory (Split-Path $PSScriptRoot -parent) -FileName "HPENimblePowerShellToolkit.psd1" -BindingVariable "ModuleData"
-    #if ( [bool]( $FQDNorIP -as [ipaddress] ) )
+    # if ( [bool]( $FQDNorIP -as [ipaddress] ) )
     #    {   write-host "You entered an IP Address instead of a FQDN (Fully Qualified Domain Name), but to use the certificate we will extract the FQDN. This will require DNS Resolution"
     #        try {   $FQDNorIP = (Resolve-DnsName $FQDN).NameHost
     #            }
@@ -118,28 +118,24 @@ function IgnoreServerCertificate
             [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
                 write-verbose 'Server certificate ignored'
                 #>
-     if (-not ([System.Management.Automation.PSTypeName]'CustomCertificateValidationCallback').Type)
+    if (-not ([System.Management.Automation.PSTypeName]'CustomCertificateValidationCallback').Type)
     {
 
-      add-type @"
-      using System.Net;
+add-type @"
+    using System.Net;
     using System.Net.Security;
     using System.Security.Cryptography.X509Certificates;
 
     public static class CustomCertificateValidationCallback {
         public static void Install()
-        {
-            ServicePointManager.ServerCertificateValidationCallback += CustomCertificateValidationCallback.CheckValidationResult;
+        {   ServicePointManager.ServerCertificateValidationCallback += CustomCertificateValidationCallback.CheckValidationResult;
         }
-
-
         public static bool CheckValidationResult(
             object sender,
             X509Certificate certificate,
             X509Chain chain,
             SslPolicyErrors sslPolicyErrors)
-        {
-            // please don't do this. do some real validation with explicit exceptions.
+        {   // please don't do this. do some real validation with explicit exceptions.
             return true;
         }
     }
@@ -166,20 +162,20 @@ process
         }
     write-verbose "RegisterMSAOBjectType: The Subobjectname = $SubobjectName"
     if ( $ObjectToModify."$SubObjectName" )
-    {   write-verbose "RegisterMSAOBjectType: In object modification if"
-        foreach( $I in $ObjectToModify."$SubObjectname" )
-        {   if ( $ObjectTypeName -eq 'undefined' )
-                {   $NewTypeName = $I.'object-name'
-                }
-            else{   $NewTypeName = $ObjectTypeName 
-                }
-            $DataSetType = "MSAStorage.$NewTypeName"
-            $DataSetTypeExt = $DataSetType + ".TypeName"
-            write-verbose "RegisterMSAOBjectType: In object assert loop, setting for each object: type = $NewTypeName"
-            $I.PSTypeNames.Insert(0,$DataSetType)
-            $I.PSObject.TypeNames.Insert(0,$DataSetTypeExt)
-        }            
-    }
+        {   write-verbose "RegisterMSAOBjectType: In object modification if"
+            foreach( $I in $ObjectToModify."$SubObjectname" )
+                {   if ( $ObjectTypeName -eq 'undefined' )
+                        {   $NewTypeName = $I.'object-name'
+                        }
+                    else{   $NewTypeName = $ObjectTypeName 
+                        }
+                    $DataSetType = "MSAStorage.$NewTypeName"
+                    $DataSetTypeExt = $DataSetType + ".TypeName"
+                    write-verbose "RegisterMSAOBjectType: In object assert loop, setting for each object: type = $NewTypeName"
+                    $I.PSTypeNames.Insert(0,$DataSetType)
+                    $I.PSObject.TypeNames.Insert(0,$DataSetTypeExt)
+                }            
+        }
     return $ObjectToModify."$SubobjectName"
 }
 }
@@ -199,11 +195,10 @@ process
         {   Write-Error -Message "Authentication Info missing. Please use Connect-MSAGroup to login." -ErrorAction Stop
         }
     if ( $MSAIgnoreServerCertificate ) { IgnoreServerCertificate }
-
     switch($Verb)
-    {   'show'      {   $Method = 'GET' }
-        default     {   $Method = 'GET' } 
-    }
+        {   'show'      {   $Method = 'GET' }
+            default     {   $Method = 'GET' } 
+        }
     # Form the parameters to Invoke-RestMethod call.
     $WebRequestParams = @{
         Uri = "$MSABaseUri/$Verb/$Noun"
@@ -212,88 +207,70 @@ process
     }
     # Copy request params to different variable. We may need to specifically process few of them.
     $RequestData = @{}
-<#    foreach ($key in $RequestParams.keys)
-        {   # PowerShell serializes Booleans in JSON as True/False. We need all lowercase for Nimble Array's REST Server.
-            if ($RequestParams.$key.getType() -eq [bool])
-                {   $RequestData.Add($key, $RequestParams.$key.ToString().ToLower())
-                }
-            else
-                {   $RequestData.Add($key, $RequestParams.$key);
-                }
-        }
-#>
-<#    switch($Method) {
-        'GET' {
-            # Hashmap supplied in Body for GET request gets converted to query params automatically.
-            $WebRequestParams.Add('Body',$RequestData)
-        }
-
-        'POST' {
-            # Encapsulate request payload in 'data'..
-            $RequestDataForNimbleAPI = @{
-                data = $RequestData
+    <#    foreach ($key in $RequestParams.keys)
+            {   # PowerShell serializes Booleans in JSON as True/False. We need all lowercase for Nimble Array's REST Server.
+                if ($RequestParams.$key.getType() -eq [bool])
+                    {   $RequestData.Add($key, $RequestParams.$key.ToString().ToLower())
+                    }
+                else
+                    {   $RequestData.Add($key, $RequestParams.$key);
+                    }
+            }
+    #>
+    <#    switch($Method) {
+            'GET' {
+                # Hashmap supplied in Body for GET request gets converted to query params automatically.
+                $WebRequestParams.Add('Body',$RequestData)
             }
 
-            $WebRequestParams.Add('Body',($RequestDataForNimbleAPI | ConvertTo-Json -Depth 10))
-        }
+            'POST' {
+                # Encapsulate request payload in 'data'..
+                $RequestDataForNimbleAPI = @{
+                    data = $RequestData
+                }
 
-        'PUT'{
-            $RequestDataForNimbleAPI = @{
-                data = $RequestData
+                $WebRequestParams.Add('Body',($RequestDataForNimbleAPI | ConvertTo-Json -Depth 10))
             }
 
-            $WebRequestParams.Add('Body',($RequestDataForNimbleAPI | ConvertTo-Json -Depth 10))
-        }
+            'PUT'{
+                $RequestDataForNimbleAPI = @{
+                    data = $RequestData
+                }
 
-        'DELETE' {
-            # Do nothing. No Body expected/required for delete request.
+                $WebRequestParams.Add('Body',($RequestDataForNimbleAPI | ConvertTo-Json -Depth 10))
+            }
+
+            'DELETE' {
+                # Do nothing. No Body expected/required for delete request.
+            }
         }
-    }
-#>
+    #>
     Write-Verbose ($WebRequestParams | ConvertTo-Json -Depth 50)
     $max_retry_count = 5
     $retry_count = 0
-
-    do {
-        try
-            {
-          
-              if ($retry_count -ne 0)
-              {
-                Start-Sleep -Milliseconds 30
-              }
-              $JsonResponse = (Invoke-RestMethod @WebRequestParams -SkipCertificateCheck | ConvertTo-Json -Depth 50)
-              Write-Verbose "Server Response: $JsonResponse"
-
-              #
-              #  The Invoke-Restmethod was successful we should exit the retry loop. 
-              #  To do that we will force the retry count max surpass the max.
-              #
-              $retry_count  = $max_retry_count  + 1
-            }
-        catch
-        {
-            if ($_.Exception.Response -ne $null) 
-            {
-               # APIExceptionHandler
-            }
-            else
-            {     
-                # if the Error response buffer is null then we will go for retries.
-                # if we exhaust the retries we will thrown and error.
-                $retry_count = $retry_count + 1
-                
-                if ($retry_count -gt $max_retry_count)
-                {
-                    Write-Verbose $_.exception
-                    Write-Error "Error occoured while invoking restapi method, Please retry" -ErrorAction Stop 
+    do  {   try {   if ($retry_count -ne 0)
+                        {   Start-Sleep -Milliseconds 30
+                        }
+                    $JsonResponse = (Invoke-RestMethod @WebRequestParams -SkipCertificateCheck | ConvertTo-Json -Depth 50)
+                    Write-Verbose "Server Response: $JsonResponse"
+                    #  The Invoke-Restmethod was successful we should exit the retry loop. 
+                    #  To do that we will force the retry count max surpass the max.
+                    $retry_count  = $max_retry_count  + 1
                 }
-
-            }
-        }
-      
-   }until ($retry_count -gt $max_retry_count) 
-   
+            catch
+                {   if ($_.Exception.Response -ne $null) 
+                        {    # APIExceptionHandler
+                        }
+                    else{   # if the Error response buffer is null then we will go for retries.
+                            # if we exhaust the retries we will thrown and error.
+                            $retry_count = $retry_count + 1
+                            if ($retry_count -gt $max_retry_count)
+                                {   Write-Verbose $_.exception
+                                    Write-Error "Error occoured while invoking restapi method, Please retry" -ErrorAction Stop 
+                                }
+                        }
+                }
+        }   until ($retry_count -gt $max_retry_count) 
     return ($JsonResponse | ConvertFrom-Json)
 }
 }
@@ -312,8 +289,7 @@ param(  [Parameter(Mandatory,Position=0)]    [string]$Group )
         namespace CertificateCapture
         {
             public class Utility
-            {
-                 public static Func<HttpRequestMessage,X509Certificate2,X509Chain,SslPolicyErrors,Boolean> ValidationCallback = 
+            {   public static Func<HttpRequestMessage,X509Certificate2,X509Chain,SslPolicyErrors,Boolean> ValidationCallback = 
                     (message, cert, chain, errors) => {
                         var newCert = new X509Certificate2(cert);
                         var newChain = new X509Chain();
@@ -420,24 +396,18 @@ $global:cert_hostname = ($CertSubject.split(',') | where-object { $_ -match '^s\
 # check if the input and cert hostname matches, if yes we are good to go
             # Else the input must have ben the IP address, we will if cert hostname can be resolved to match the input hostname (IP).
             if ($Group -ne $cert_hostname)
-            {
-                # we will look up the DNS to resolve the cert_hostname. 
+            {   # we will look up the DNS to resolve the cert_hostname. 
                 # we could do this with either cert hostname or ibput hostname(IP), but cert hostname has better chance of getting resolved.
-                
                 try
                 {   $resolved_name = [System.Net.DNS]::GetHostEntry($cert_hostname).AddressList 
                     $resolved_name = $resolved_name | select -ExpandProperty IPAddressToString
-                   # $Group = $resolved_name
+                    # $Group = $resolved_name
                     # will come here if the host got resolved.
-                    
-                     Write-Verbose " $cert_hostname is host-name for provided input $Group IP address"
-                    
+                    Write-Verbose " $cert_hostname is host-name for provided input $Group IP address"
                     if ($resolved_name -ne $Group)             
-                    {
-                        # most probably this will not happen, just to be defensive adding this code.
+                    {   # most probably this will not happen, just to be defensive adding this code.
                         # this is the same host as the certificate hostname got resolved to the input hostname(IP)
                         # we  will start using the cert hostname for all the calls from this point in this session.
-                        
                         Write-Error "Unable to resolve the certificate hostname to match the provided input hostname/IP. `n`n $_.Exception.Message"  -ErrorAction Stop
                     }
                     else
@@ -460,43 +430,32 @@ $global:cert_hostname = ($CertSubject.split(',') | where-object { $_ -match '^s\
 
 Function APIExceptionHandler
 {
-   #Exception message handle differently for core and non core environment
-   #GetResponseStream method does not work in core environment
+# Exception message handle differently for core and non core environment
+# GetResponseStream method does not work in core environment
 
-   if(Get-Member -inputobject $_.Exception.Response -name "GetResponseStream" -Membertype Method)
-   {
-       $JsonResponse = $_.Exception.Response.GetResponseStream()
-       $reader = New-Object System.IO.StreamReader($JsonResponse)
-       $reader.BaseStream.Position = 0
-       $reader.DiscardBufferedData()
-       $responseBody = $reader.ReadToEnd();
-       if (($responseBody | ConvertFrom-Json).messages -ne $null)
-       {
-           foreach( $errorMsg in ($responseBody | ConvertFrom-Json).messages) {
-           if($errorMsg.text -ne $null) {$exceptionString += $errorMsg.text + "  "}
-       }
-       throw [System.Exception] $exceptionString
-       }
-       else
-       {
-           throw $_.Exception
-       }
-   }
-   else
-   {
-        
-        $responseBody = $_.ErrorDetails
-       if (($responseBody | ConvertFrom-Json).messages -ne $null)
-       {
-           foreach( $errorMsg in ($responseBody | ConvertFrom-Json).messages) {
-           if($errorMsg.text -ne $null) {$exceptionString += $errorMsg.text + "  "}
-       }
-       throw [System.Exception] $exceptionString
-       }
-       else
-       {
-           throw $_.Exception
-       }
-   }       
+if(Get-Member -inputobject $_.Exception.Response -name "GetResponseStream" -Membertype Method)
+    {   $JsonResponse = $_.Exception.Response.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($JsonResponse)
+        $reader.BaseStream.Position = 0
+        $reader.DiscardBufferedData()
+        $responseBody = $reader.ReadToEnd();
+        if (($responseBody | ConvertFrom-Json).messages -ne $null)
+            {   foreach( $errorMsg in ($responseBody | ConvertFrom-Json).messages) 
+                    {    if($errorMsg.text -ne $null) {$exceptionString += $errorMsg.text + "  "}
+                    }
+                throw [System.Exception] $exceptionString
+            }
+        else{   throw $_.Exception
+            }
+    }
+else{   $responseBody = $_.ErrorDetails
+        if (($responseBody | ConvertFrom-Json).messages -ne $null)  
+            {   foreach( $errorMsg in ($responseBody | ConvertFrom-Json).messages) 
+                    {   if($errorMsg.text -ne $null) {$exceptionString += $errorMsg.text + "  "}        
+                    }
+                throw [System.Exception] $exceptionString
+            }
+        else{   throw $_.Exception
+            }
+    }       
 }
-
