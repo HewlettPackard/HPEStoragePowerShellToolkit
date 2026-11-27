@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Expired Link | Hewlett Packard Enterprise</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 504 144'%3E%3Cpath fill='%2301A982' d='M0,0v144h504V0H0z M475.2,115.2H28.8V28.8h446.4V115.2z'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --hpe-green: #01a982;
+      --hpe-black: #000000;
+      --hpe-text: #333333;
+      --hpe-muted: #7D8A92;
+      --hpe-light-gray: #E6E8E9;
+      --hpe-border: #D4D8DB;
+      --hpe-white: #ffffff;
+      --container-max: 1200px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'MetricHPE', 'Metric', Arial, Helvetica, sans-serif;
+      color: var(--hpe-text);
+      background: var(--hpe-white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .header {
+      background: var(--hpe-white);
+      border-bottom: 1px solid var(--hpe-border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-inner {
+      width: 100%;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+    }
+
+
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+
+    .logo svg {
+      height: 36px;
+      width: auto;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 32px;
+      background: linear-gradient(to bottom, var(--hpe-white) 0%, var(--hpe-light-gray) 100%);
+    }
+
+    .content {
+      max-width: 680px;
+      text-align: center;
+    }
+
+    .element-bar {
+      width: 80px;
+      height: 8px;
+      background: var(--hpe-green);
+      margin: 0 auto 32px;
+      border-radius: 4px;
+    }
+
+    .error-code {
+      font-size: clamp(120px, 25vw, 220px);
+      font-weight: 100;
+      line-height: 0.9;
+      color: var(--hpe-green);
+      margin: 0 0 24px;
+      letter-spacing: -6px;
+    }
+
+    .error-title {
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 300;
+      color: var(--hpe-black);
+      margin: 0 0 24px;
+      line-height: 1.2;
+    }
+
+    .error-description {
+      font-size: 18px;
+      color: var(--hpe-muted);
+      line-height: 1.7;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .footer {
+      background: var(--hpe-light-gray);
+      border-top: 1px solid var(--hpe-border);
+      padding: 28px 32px;
+    }
+
+    .footer-inner {
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--hpe-muted);
+    }
+
+    @media (max-width: 768px) {
+      .header-inner {
+        padding: 16px 20px;
+      }
+
+      .main {
+        padding: 60px 20px;
+      }
+
+      .footer-inner {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <a class="logo" aria-label="HPE Logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 504 144" xmlns:v="https://vecta.io/nano">
+          <path d="M391.2 81.27v35.46H504V144H362.4V54H504v27.27H391.2z" fill="#01a982"></path>
+          <path
+            d="M276.673 0h-89.254v144h28.8v-36.607h60.008c37.914 0 59.692-21.59 59.692-53.395C335.918 21.985 314.14 0 276.673 0zm-1.881 79.793h-58.573V27.27h58.573c22.679 0 31.281 10.484 31.281 26.728 0 16.079-8.602 25.795-31.281 25.795zM391.2 40.63h-28.8V0H504v27.27H391.2v13.36zM151.2 0v144h-28.8V84.984H28.8V144H0V0h28.8v57.384h93.6V0h28.8z">
+          </path>
+        </svg>
+      </a>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="content">
+      <p class="error-code" aria-hidden="true">Expired</p>
+      <div class="element-bar" aria-hidden="true"></div>
+      <p class="error-description">
+        This download link has expired.<br />For security reasons, download links are only valid for a limited time.
+        <br />Please request a fresh link to download this file.
+      </p>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <span>© <span id="year">2026</span> Hewlett Packard Enterprise</span>
+    </div>
+  </footer>
+  <script>document.getElementById('year').textContent = String(new Date().getFullYear());</script>
+
+
+</body>
+
+</html>

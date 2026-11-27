@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hpsum_fchba_reference version="1.1.0.0">
+    <discover_app_path><![CDATA[]]></discover_app_path>
+    <installer_app_path><![CDATA[]]></installer_app_path>
+    <devices>
+        <device>
+            <type value="qlogic"/>
+            <device_id value="1077.2261.1590.00F9"/>
+            <model value="HPE SN1100Q 16Gb Single Port Fibre Channel Host Bus Adapter"/>
+            <firmware value="9.15.05"/>
+            <bios value="3.68"/>
+            <boot value="02.05.01"/>
+            <duration value="60"/>
+        </device>
+        <device>
+            <type value="qlogic"/>
+            <device_id value="1077.2261.1590.00FA"/>
+            <model value="HPE SN1100Q 16Gb Dual Port Fibre Channel Host Bus Adapter"/>
+            <firmware value="9.15.05"/>
+            <bios value="3.68"/>
+            <boot value="02.05.01"/>
+            <duration value="60"/>
+        </device>
+        <device>
+            <type value="qlogic"/>
+            <device_id value="1077.2261.1590.0203"/>
+            <model value="HPE SN1600Q 32Gb Single Port Fibre Channel Host Bus Adapter"/>
+            <firmware value="9.15.05"/>
+            <bios value="3.68"/>
+            <boot value="02.05.01"/>
+            <duration value="60"/>
+        </device>
+        <device>
+            <type value="qlogic"/>
+            <device_id value="1077.2261.1590.0204"/>
+            <model value="HPE SN1600Q 32Gb Dual Port Fibre Channel Host Bus Adapter"/>
+            <firmware value="9.15.05"/>
+            <bios value="3.68"/>
+            <boot value="02.05.01"/>
+            <duration value="60"/>
+        </device>
+        <device>
+            <type value="qlogic"/>
+            <device_id value="1077.2281.1590.02D3"/>
+            <model value="HPE SN1610Q 32Gb Single Port Fibre Channel Host Bus Adapter"/>
+            <firmware value="09.15.15"/>
+            <bios value="0.00"/>
+            <boot value="02.11.11"/>
+            <duration value="60"/>
+        </device>
+        <device>
+            <type value="qlogic"/>
+            <device_id value="1077.2281.1590.02D4"/>
+            <model value="HPE SN1610Q 32Gb Dual Port Fibre Channel Host Bus Adapter"/>
+            <firmware value="09.15.15"/>
+            <bios value="0.00"/>
+            <boot value="02.11.11"/>
+            <duration value="60"/>
+        </device>
+        <device>
+            <type value="qlogic"/>
+            <device_id value="1077.2281.1590.0369"/>
+            <model value="HPE SN1700Q 64Gb Single Port Fibre Channel Host Bus Adapter"/>
+            <firmware value="09.15.15"/>
+            <bios value="0.00"/>
+            <boot value="02.11.11"/>
+            <duration value="60"/>
+        </device>
+        <device>
+            <type value="qlogic"/>
+            <device_id value="1077.2281.1590.036A"/>
+            <model value="HPE SN1700Q 64Gb Dual Port Fibre Channel Host Bus Adapter"/>
+            <firmware value="09.15.15"/>
+            <bios value="0.00"/>
+            <boot value="02.11.11"/>
+            <duration value="60"/>
+        </device>
+    </devices>
+</hpsum_fchba_reference>

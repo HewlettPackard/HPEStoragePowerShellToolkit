@@ -1,0 +1,140 @@
+{
+    "Type": "ComboFirmware",
+    "UpdatableBy": [
+        "Uefi",
+        "RuntimeAgent"
+    ],
+    "DeviceClass": "79F0C163-0C13-4662-9DEA-09235FEF90CB",
+    "Devices": {
+        "Device": [
+            {
+                "DeviceName": "HPE SN1700Q 64Gb Dual Port Fibre Channel Host Bus Adapter",
+                "Target": "a6b1a447-382a-5a4f-1077-22811590036A",
+                "Version": "02.11.11",
+                "FirmwareImages": [
+                    {
+                        "FileName": ".//mh021111.bin",
+                        "Order": 1,
+                        "UefiFlashable": true,
+                        "Type": "Firmware",
+                        "ResetRequired": true,
+                        "DelayAfterInstallSec": 1,
+                        "InstallDurationSec": 250
+                    }
+                ]
+            },
+            {
+                "DeviceName": "HPE SN1700Q 64Gb Single Port Fibre Channel Host Bus Adapter",
+                "Target": "a6b1a447-382a-5a4f-1077-228115900369",
+                "Version": "02.11.11",
+                "FirmwareImages": [
+                    {
+                        "FileName": ".//mh021111.bin",
+                        "Order": 1,
+                        "UefiFlashable": true,
+                        "Type": "Firmware",
+                        "ResetRequired": true,
+                        "DelayAfterInstallSec": 1,
+                        "InstallDurationSec": 250
+                    }
+                ]
+            },
+            {
+                "DeviceName": "HPE SN1100Q 16Gb Dual Port Fibre Channel Host Bus Adapter",
+                "Target": "a6b1a447-382a-5a4f-1077-2261159000FA",
+                "Version": "02.05.01",
+                "FirmwareImages": [
+                    {
+                        "FileName": ".//bk020501.bin",
+                        "Order": 1,
+                        "UefiFlashable": true,
+                        "Type": "Firmware",
+                        "ResetRequired": true,
+                        "DelayAfterInstallSec": 1,
+                        "InstallDurationSec": 250
+                    }
+                ]
+            },
+            {
+                "DeviceName": "HPE SN1100Q 16Gb Single Port Fibre Channel Host Bus Adapter",
+                "Target": "a6b1a447-382a-5a4f-1077-2261159000F9",
+                "Version": "02.05.01",
+                "FirmwareImages": [
+                    {
+                        "FileName": ".//bk020501.bin",
+                        "Order": 1,
+                        "UefiFlashable": true,
+                        "Type": "Firmware",
+                        "ResetRequired": true,
+                        "DelayAfterInstallSec": 1,
+                        "InstallDurationSec": 250
+                    }
+                ]
+            },
+            {
+                "DeviceName": "HPE SN1600Q 32Gb Dual Port Fibre Channel Host Bus Adapter",
+                "Target": "a6b1a447-382a-5a4f-1077-226115900204",
+                "Version": "02.05.01",
+                "FirmwareImages": [
+                    {
+                        "FileName": ".//bk020501.bin",
+                        "Order": 1,
+                        "UefiFlashable": true,
+                        "Type": "Firmware",
+                        "ResetRequired": true,
+                        "DelayAfterInstallSec": 1,
+                        "InstallDurationSec": 250
+                    }
+                ]
+            },
+            {
+                "DeviceName": "HPE SN1600Q 32Gb Single Port Fibre Channel Host Bus Adapter",
+                "Target": "a6b1a447-382a-5a4f-1077-226115900203",
+                "Version": "02.05.01",
+                "FirmwareImages": [
+                    {
+                        "FileName": ".//bk020501.bin",
+                        "Order": 1,
+                        "UefiFlashable": true,
+                        "Type": "Firmware",
+                        "ResetRequired": true,
+                        "DelayAfterInstallSec": 1,
+                        "InstallDurationSec": 250
+                    }
+                ]
+            },
+            {
+                "DeviceName": "HPE SN1610Q 32Gb 1-port Fibre Channel Host Bus Adapter",
+                "Target": "a6b1a447-382a-5a4f-1077-2281159002D3",
+                "Version": "02.11.11",
+                "FirmwareImages": [
+                    {
+                        "FileName": ".//mh021111.bin",
+                        "Order": 1,
+                        "UefiFlashable": true,
+                        "Type": "Firmware",
+                        "ResetRequired": true,
+                        "DelayAfterInstallSec": 1,
+                        "InstallDurationSec": 250
+                    }
+                ]
+            },
+            {
+                "DeviceName": "HPE SN1610Q 32Gb 2-port Fibre Channel Host Bus Adapter",
+                "Target": "a6b1a447-382a-5a4f-1077-2281159002D4",
+                "Version": "02.11.11",
+                "FirmwareImages": [
+                    {
+                        "FileName": ".//mh021111.bin",
+                        "Order": 1,
+                        "UefiFlashable": true,
+                        "Type": "Firmware",
+                        "ResetRequired": true,
+                        "DelayAfterInstallSec": 1,
+                        "InstallDurationSec": 250
+                    }
+                ]
+            }
+        ]
+    }
+}

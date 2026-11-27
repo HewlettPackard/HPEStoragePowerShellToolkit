@@ -1,0 +1,19 @@
+                QLAFWUPDATE Error Codes               
+       
+0   = Good. All upgrades completed successfully
+1   = No HBAs needed to be updated
+2   = All HBAs that could be upgraded failed
+3   = Some HBAs that could be upgraded failed
+4   = Property file not found (hpqlafwupdate.properties)
+5   = Property file not found (adapters.properties)
+6   = Adapter not supported 
+7   = Invalid command line option
+8   = No adapter found
+9   = Unknown adapter (ssdid/ssvid)
+10  = Memory allocation error
+14  = Flash Update Not Support
+16  = Serial number missing in VPD
+17  = Incorrect flash image file
+24  = Flash update lockdown enabled
+201 = All upgrades completed successfully, reboot required.
+
