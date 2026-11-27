@@ -1,0 +1,213 @@
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
+Function Set-A9FlashCache 
+{
+<#
+.SYNOPSIS
+	Setting Flash Cache policy
+.DESCRIPTION
+	Setting Flash Cache policy
+.EXAMPLE
+	PS:> Set-A9FlashCache -Enable
+
+	Enable Flash Cache policy
+.EXAMPLE
+	PS:> Set-A9FlashCache -Disable
+
+	Disable Flash Cache policy
+.PARAMETER Enable
+	Enable Flash Cache policy
+.PARAMETER Disable
+	Disable Flash Cache policy
+.NOTES
+	This command utilizes the API Endpoint '/system'
+	This command requires a API type connection.
+#>
+[CmdletBinding()]
+Param(	[Parameter(ParameterSetName = "Enabled",  Mandatory, ValueFromPipeline=$true)]	[switch]	$Enable,
+		[Parameter(ParameterSetName = "disabled", Mandatory, ValueFromPipeline=$true)]	[switch]	$Disable
+)
+Begin 
+{	Test-A9Connection -ClientType 'API'
+}
+Process 
+{	$body = @{}	
+	If ($Enable) 	{	$body["flashCachePolicy"] = 1	}
+	If ($Disable)	{	$body["flashCachePolicy"] = 2	}
+    $Result = $null	
+    $Result = Invoke-A9API -uri '/system' -type 'PUT' -body $body 
+	if($Result.StatusCode -eq 200)
+		{	write-host "Cmdlet executed successfully" -foreground green
+			return $Result		
+		}
+	else
+		{	write-error "FAILURE : While Setting Flash Cache policy." 
+			return $Result.StatusDescription
+		}
+}
+}
+
+Function New-A9FlashCache
+{
+<#      
+.SYNOPSIS	
+	Creating a Flash Cache.
+.DESCRIPTION	
+    Creating a Flash Cache.
+.EXAMPLE	
+	PS:> New-A9FlashCache -SizeGiB 64 -Mode 1 -RAIDType R1
+.EXAMPLE	
+	PS:> New-A9FlashCache -SizeGiB 64 -Mode 1 -RAIDType R0
+.EXAMPLE	
+	PS:> New-A9FlashCache -NoCheckSCMSize "true"
+.EXAMPLE	
+	PS:> New-A9FlashCache -NoCheckSCMSize "false"
+.PARAMETER SizeGiB
+	Specifies the node pair size of the Flash Cache on the system.
+.PARAMETER Mode
+	Can be set to Simulator or Real (default)
+.PARAMETER RAIDType  
+	Raid Type of the logical disks for flash cache. When unspecified, storage system chooses the default(R0 Level0,R1 Level1).
+.PARAMETER NoCheckSCMSize
+	Overrides the size comparison check to allow Adaptive Flash Cache creation with mismatched SCM device sizes.
+#>
+[CmdletBinding()]
+Param(	[Parameter()]	[int]		$SizeGiB,
+		[Parameter()]
+		[ValidateSet('Simulator','Real')]		[string]	$Mode='Real',
+		[Parameter()]	
+		[ValidateSet("R0","R1")]				[String]	$RAIDType,
+		[Parameter()]	[boolean]	$NoCheckSCMSize
+	)
+Begin 
+{	Test-A9Connection -ClientType 'API' 
+}
+Process 
+{	$body = @{}
+	$FlashCacheBody = @{} 
+	If($SizeGiB) 				{	$FlashCacheBody["sizeGiB"] = $SizeGiB }
+	If($Mode -eq 'Simulator')	{	$FlashCacheBody["mode"] = 1    }
+	If($Mode -eq 'Real')		{	$FlashCacheBody["mode"] = 2    }
+	if($RAIDType -eq "R0")		{	$FlashCacheBody["RAIDType"] = 1	}
+	if($RAIDType -eq "R1")		{	$FlashCacheBody["RAIDType"] = 2	}		
+	If($NoCheckSCMSize) 		{	$FlashCacheBody["noCheckSCMSize"] = $NoCheckSCMSize }
+	if($FlashCacheBody.Count -gt 0){$body["flashCache"] = $FlashCacheBody }
+    $Result = $null
+    $Result = Invoke-A9API -uri '/' -type 'POST' -body $body 
+	$status = $Result.StatusCode
+	if($status -eq 201)
+	{	write-host "Cmdlet executed successfully" -foreground green
+		return $Result
+	}
+	else
+	{	write-error "FAILURE : While creating a Flash Cache." 
+		return $Result.StatusDescription
+	}
+}
+}
+
+Function Remove-A9FlashCache
+{
+<#      
+.SYNOPSIS	
+	Removing a Flash Cache.
+.DESCRIPTION	
+    Removing a Flash Cache.
+.EXAMPLE	
+	PS:> Remove-A9FlashCache
+#>
+[CmdletBinding()]
+Param()
+Begin 
+{	Test-A9Connection -ClientType 'API'
+}
+Process 
+{	$Result = Invoke-A9API -uri '/flashcache' -type 'DELETE' 
+	$status = $Result.StatusCode
+	if($status -eq 200)
+	{	write-host "Cmdlet executed successfully" -foreground green
+		return $Result
+	}
+	else
+	{	write-Error "FAILURE : While Removing Flash Cache." 
+		return $Result.StatusDescription
+	}
+}
+}
+
+Function Get-FlashCache
+{
+<#
+.SYNOPSIS	
+	Get Flash Cache information.
+.DESCRIPTION
+	Get Flash Cache information.
+.EXAMPLE
+	PS:> Get-A9FlashCache
+
+	Get Flash Cache information.
+#>
+[CmdletBinding()]
+Param()
+Begin 
+{	Test-A9Connection -ClientType 'API'
+}
+Process 
+{	$Result = $null
+	$dataPS = $null
+	$Result = Invoke-A9API -uri '/flashcache' -type 'GET' 
+	if($Result.StatusCode -eq 200)
+		{	$dataPS = $Result.content | ConvertFrom-Json
+		}
+	if($Result.StatusCode -eq 200)
+		{	write-host "Cmdlet executed successfully" -foreground green
+			return $dataPS		
+		}
+	else
+		{	write-error "FAILURE : While Executing Get-A9FlashCache." 
+			return $Result.StatusDescription
+		}
+}	
+}
+
+Function Set-A9VvSetFlashCachePolicy
+{
+<#      
+.SYNOPSIS	
+	Setting a VV-set Flash Cache policy.
+.DESCRIPTION	
+    Setting a VV-set Flash Cache policy.
+.EXAMPLE	
+	PS:> Set-A9VvSetFlashCachePolicy
+.PARAMETER VvSet
+	Name Of the VV-set to Set Flash Cache policy.
+.PARAMETER Enable
+	To Enable VV-set Flash Cache policy
+.PARAMETER Disable
+	To Disable VV-set Flash Cache policy
+#>
+[CmdletBinding()]
+Param(	[Parameter(Mandatory)]	[String]	$VvSet,
+		[Parameter()]					[Switch]	$Enable,
+		[Parameter()]					[Switch]	$Disable
+	)
+Begin 
+{	Test-A9Connection -ClientType 'API'
+}
+Process 
+{	$body = @{}		
+	If($Enable) 		{	$body["flashCachePolicy"] = 1	}		
+	elseIf($Disable) 	{	$body["flashCachePolicy"] = 2 	}
+	else				{	$body["flashCachePolicy"] = 2 	}		
+    $Result = $null
+	$uri = '/volumesets/'+$VvSet
+    $Result = Invoke-A9API -uri $uri -type 'PUT' -body $body 
+	$status = $Result.StatusCode
+	if($status -eq 200)
+		{	write-host "Cmdlet executed successfully" -foreground green
+			return $Result
+		}
+	else{	Write-Error "Failure:  While Setting Flash Cache policy (1 = enable, 2 = disable) $body to vv-set $VvSet." 
+			return $Result.StatusDescription
+		}
+}
+}

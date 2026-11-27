@@ -1,0 +1,237 @@
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
+Function Join-A9Federation
+{
+<#
+.SYNOPSIS  
+	The Join-Federation command makes the StoreServ system a member of the Federation identified by the specified name and UUID.
+.DESCRIPTION
+	The Join-Federation command makes the StoreServ system a member of the Federation identified by the specified name and UUID.
+.PARAMETER Force
+	If the StoreServ system is already a member of a Federation, the option forcefully removes the system from the current Federation and makes it a
+	member of the new Federation identified by the specified name and UUID.
+.PARAMETER Comment
+	Specifies any additional textual information.
+.PARAMETER Setkv
+	Sets or resets key/value pairs on the federation. <key> is a string of alphanumeric characters. <value> is a string of characters other than "=", "," or ".".
+.PARAMETER Setkvifnotset
+	Sets key/value pairs on the federation if not already set. A key/value pair is not reset on a federation if it already
+	exists.  If a key already exists, it is not treated as an error and the value is left as it is.
+.PARAMETER UUID
+	Specifies the UUID of the Federation to be joined.
+.PARAMETER FedName
+	Specifies the name of the Federation to be joined.
+.EXAMPLE
+	PS:> Join-A9Federation -FedName test -UUID 12345
+.EXAMPLE
+	PS:> Join-A9Federation -Comment hello -UUID 12345
+.EXAMPLE
+	PS:> Join-A9Federation -Comment hello -UUID 12345 -FedName test
+.EXAMPLE
+	PS:> Join-A9Federation -Setkv 10 -UUID 12345 -FedName test
+.EXAMPLE
+	PS:> Join-A9Federation -Setkvifnotset 20  -UUID 12345 -FedName test
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[Switch]	$Force ,
+		[Parameter()]	[String]	$UUID ,
+		[Parameter()]	[String]	$FedName ,
+		[Parameter()]	[String]	$Comment ,
+		[Parameter()]	[String]	$Setkv ,
+		[Parameter()]	[String]	$Setkvifnotset 
+)		
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process
+{	if($FedName )
+		{	if($UUID )
+				{	$Cmd = "joinfed "
+					if($Force)	{	$Cmd+= " -force "	}
+					if($Comment){	$Cmd+= " -comment $Comment"	}
+					if($Setkv)	{	$Cmd+= " -setkv $Setkv"		}
+					if($Setkvifnotset)	{	$Cmd+= " -setkvifnotset $Setkvifnotset"	}			
+					$Cmd += " $UUID $FedName "
+					$Result = Invoke-A9CLICommand -cmds  $Cmd
+					return  "$Result"	
+				}
+			else{	return "FAILURE : UUID Not specified."	}
+		}
+	else	{	return "FAILURE : Federation Name Not specified"	}
+}
+}
+
+Function New-A9Federation
+{
+<#
+.SYNOPSIS
+	The New-Federation command generates a UUID for the named Federation and makes the StoreServ system a member of that Federation.
+.DESCRIPTION
+	The New-Federation command generates a UUID for the named Federation and makes the StoreServ system a member of that Federation.
+.PARAMETER comment
+	Specifies any additional textual information.
+.PARAMETER Setkv 
+	Sets or resets key/value pairs on the federation. <key> is a string of alphanumeric characters. <value> is a string of characters other than "=", "," or ".".
+.PARAMETER Setkvifnotset
+	Sets key/value pairs on the federation if not already set. A key/value pair is not reset on a federation if it already exists.
+.PARAMETER Fedname
+	Specifies the name of the Federation to be created. The name must be between 1 and 31 characters in length
+	and must contain only letters, digits, or punctuation characters '_', '-', or '.'
+.EXAMPLE
+	PS:> New-A9Federation -Fedname XYZ
+.EXAMPLE
+	PS:> New-A9Federation –CommentString XYZ -Fedname XYZ
+.EXAMPLE
+	PS:> New-A9Federation -Setkv TETS -Fedname XYZ
+.EXAMPLE
+	PS:> New-A9Federation -Setkvifnotset TETS -Fedname XYZ
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter(Mandatory)]	[String]	$Fedname ,
+		[Parameter()]	[String]	$Comment ,
+		[Parameter()]	[String]	$Setkv ,
+		[Parameter()]	[String]	$Setkvifnotset
+)		
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process	
+{	$cmd = "createfed"
+	if($Comment)	{	$cmd+= " -comment $Comment" }
+	if($Setkv)		{	$cmd+= " -setkv $Setkv"		}
+	if($Setkvifnotset){	$cmd+= " -setkvifnotset $Setkvifnotset"	}
+	$cmd += " $Fedname"
+	$Result = Invoke-A9CLICommand -cmds  $cmd
+	return  "$Result"				
+}
+}
+
+Function Set-A9Federation
+{
+<#
+.SYNOPSIS
+	The command modifies name, comment, or key/value attributes of the Federation of which the StoreServ system is member.
+.DESCRIPTION 
+	The command modifies name, comment, or key/value attributes of the Federation of which the StoreServ system is member.
+.PARAMETER Comment
+	Specifies any additional textual information.
+.PARAMETER Setkv
+	Sets or resets key/value pairs on the federation. <key> is a string of alphanumeric characters. <value> is a string of characters other than "=", "," or ".".
+.PARAMETER Setkvifnotset
+	Sets key/value pairs on the federation if not already set. A key/value pair is not reset on a federation if it already
+	exists.  If a key already exists, it is not treated as an error and the value is left as it is.
+.PARAMETER ClrallKeys
+	Clears all key/value pairs on the federation.
+.PARAMETER ClrKey
+	Clears key/value pairs, regardless of the value. If a specified key does not exist, this is not treated as an error.
+.PARAMETER ClrKV
+	Clears key/value pairs only if the value matches the given key. Mismatches or keys that do not exist are not treated as errors.
+.PARAMETER IfKV
+	Checks whether given key/value pairs exist. If not, any subsequent key/value options on the command line will be ignored for the federation.
+.PARAMETER FedName
+	Specifies the new name of the Federation.
+.EXAMPLE
+	PS:> Set-A9Federation -FedName test
+.EXAMPLE
+	PS:> Set-A9Federation -Comment hello
+.EXAMPLE
+	PS:> Set-A9Federation -ClrAllKeys
+.EXAMPLE
+	PS:> Set-A9Federation -Setkv 1
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[String]	$FedName ,
+		[Parameter()]	[String]	$Comment ,
+		[Parameter()]	[String]	$Setkv ,	
+		[Parameter()]	[String]	$Setkvifnotset ,
+		[Parameter()]	[switch]	$ClrAllKeys ,
+		[Parameter()]	[String]	$ClrKey ,
+		[Parameter()]	[String]	$ClrKV ,
+		[Parameter()]	[String]	$IfKV 
+)		
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process
+{	$cmd = "setfed"	
+	if($FedName)	{	$cmd += " -name $FedName "		}
+	if($Comment)	{	$cmd += " -comment $Comment "	}
+	if($Setkv)		{	$cmd += " -setkv $Setkv "		}
+	if($Setkvifnotset){	$cmd += " -setkvifnotset $Setkvifnotset "}
+	if($ClrAllKeys)	{	$cmd += "  -clrallkeys "		}
+	if($ClrKey)		{	$cmd += " -clrkey $ClrKey "		}
+	if($ClrKV)		{	$cmd += " -clrkv $ClrKV "		}
+	if($IfKV)		{	$cmd += " -ifkv $IfKV "			}
+	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if([string]::IsNullOrEmpty($Result))	{	return "Success : Set-Federation command executed successfully."}
+	else									{	return $Result	}	
+}
+}
+
+Function Remove-A9Federation
+{
+<#
+.SYNOPSIS
+	The command removes the StoreServ system from Federation membership.
+.DESCRIPTION 
+	The command removes the StoreServ system from Federation membership.
+.EXAMPLE	
+	PS:> Remove-A9Federation	
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param()		
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process
+{	$cmd = " removefed -f"
+	$Result = Invoke-A9CLICommand -cmds  $cmd
+	return  "$Result"				
+}
+}
+
+Function Show-A9Federation
+{
+<#
+.SYNOPSIS 
+	The Show Federation command displays the name, UUID, and comment of the Federation of which the StoreServ system is member.
+.DESCRIPTION 
+	The Show Federation command displays the name, UUID, and comment
+	of the Federation of which the StoreServ system is member.
+.PARAMETER ShowRaw
+	This option will show the raw returned data instead of returning a proper PowerShell object. 
+.EXAMPLE	
+	PS:> Show-A9Federation
+.NOTES
+	This command requires a SSH type connection.
+#>
+[CmdletBinding()]
+param(	[Parameter()]	[switch]	$ShowRaw
+
+)		
+Begin
+{	Test-A9Connection -ClientType 'SshClient'
+}
+Process
+{	$cmd = " showfed"
+	$Result = Invoke-A9CLICommand -cmds  $cmd
+	if (-not $ShowRaw)
+		{	$tempFile = [IO.Path]::GetTempFileName()
+			foreach ($s in  $Result[0..($Result.count-1)] )
+				{	$s = ( ($s.split(' ')).trim() | where-object { $_ -ne '' } ) -join ','
+					Add-Content -Path $tempFile -Value $s
+				}
+			$Result = Import-Csv $tempFile 
+			Remove-Item  $tempFile
+		}
+	if($Result -match "Name")	{	write-host " Success : Executing Show-Federation "	-ForegroundColor green }
+	return $Result		
+}
+} 

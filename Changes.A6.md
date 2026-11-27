@@ -7,17 +7,30 @@ README
 Table of Contents
 =================
 
-* New Features in the HPE Storage PowerShell Toolkit 4.0.0.0
+* New Features in the HPE Storage PowerShell Toolkit 4.2
 * Installing the HPE Storage PowerShell Toolkit
 * Getting help with the HPE Storage PowerShell Toolkit
 * Tips and Tricks 
 * Resolved Issues
+* Detailed List of Changes
 * Known Issues
 1. The New PowerShell Toolkit is primarily testetd against PowerShel Version 7.2 and newer. Please use the following PowerShell command to download the latest version of PowerShell to your platform and run these commands from that newer PowerShell version. <code>iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"</code>
 
 
+New Features in the HPE Toolkit 4.2.0.0
+=======================================
+The following command was added to the toolkit to assist customers in connecting to all array types.
+
+Import-HPESANCertificate : 
+        This command allows you to download the arrays Certificate to the local certificate store to allow SSH and HTTPS connectivity. 
+        The PowerShell window must be an adminstrative window as adding a certificate to the local store requires this authority. This only needs to be done once
+        and your array connection commands will continue to use the localled saved certificate to connect.
+                PS:> import-hpesanCertificate -ArrayNameOrIPAddress 192.168.20.19 
+
+
+
 New Features in the HPE Toolkit 4.0.0.0
-=================================================================================
+=======================================
 
 The following features were added in the 4.0.0.0 version of the toolkit:
 
@@ -111,7 +124,6 @@ Instead, you might find it useful to embed a "get-ns" type command in your "set-
 Alternately, if you wanted to issue this same command from a single line, you could use the following:
 
 	set-nsvolume -id $(get-nsvolume -name "MyTestVolume").id -description "My Test Volume"
-
 
 Resolved Issues in HPE Alletra 6000 and Nimble Storage PowerShell Toolkit 4.0.0
 ================================================================================

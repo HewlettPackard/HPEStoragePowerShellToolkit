@@ -1,29 +1,4 @@
-﻿####################################################################################
-## 	© 2019,2020 Hewlett Packard Enterprise Development LP
-##
-##	File Name:		VS-Functions.psm1
-##	Description: 	Common Module functions.
-##		
-##	Pre-requisites: Needs POSH SSH Module for New-PoshSshConnection
-##					WSAPI uses array based HPE WSAPI service.
-##					
-##					Starting the WSAPI server    : The WSAPI server does not start automatically.
-##					Using SSH, enter startwsapi to manually start the WSAPI server.
-## 					Configuring the WSAPI server: To configure WSAPI, enter set-A9wsapi in the SSH command set.
-##
-##	Created:		June 2015
-##	Last Modified:	March 2024
-##
-##	History:		v1.0 - Created
-##					v2.0 - Added support for HP3PAR CLI
-##                     v2.1 - Added support for POSH SSH Module
-##					v2.2 - Added support for WSAPI
-##                  v2.3 - Added Support for all CLI cmdlets
-##                     v2.3.1 - Added support for primara array with wsapi
-##                  v3.0 - Added Support for wsapi 1.7 
-##                  v3.0 - Modularization
-##                  v3.0.1 (07/30/2020) - Fixed the Show-RequestException function to show the actual error message
-##					v3.5.0 (03/17/2024) - Refactored all commands. Removed CLI access. only uses SSH or WSAPI now.
+﻿## 	©2025 Hewlett Packard Enterprise Development LP
 
 Function Invoke-A9CLICommand 
 {
@@ -60,33 +35,56 @@ Param(	[Parameter(Mandatory)]	[string]	$Cmds
 
 function Invoke-A9API 
 {
+<# 
+.SYNOPSIS
+	This is an internal command that is used to actually issue an API call. 
+.DESCRIPTION
+	This is an internal command that is used to actually issue an API call. This command acts as a wrapper for the Invoke-RestAPI command but adds all the needed logic and headers to make connections successful.
+.PARAMETER uri
+	The command automatically adds the appropriate HTTPS: to the front as well as the IP Address currently connected to and the port number as dictated by the array type.
+	So the 'HTTPS://IPAddress:Port/api/v1' is prefixed to each URI, so a command might only have to send a '/volumes/vol1' to complete a call.
+.PARAMETER type
+	This allow a call to prescribe what type of call is being made, either a Get, Put, Delete or Post which match the restAPI CRUD (Create Update Read and Delete)
+.PARAMETER body
+	If a body needs to be sent, this is included in this parameter.
+.PARAMETER WsapiConnection
+	By default this uses the currently open connected object. 
+#>
 [CmdletBinding()]
-Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex. /volumes)")]
+Param (	[parameter(Mandatory, HelpMessage = "Enter the resource URI (ex. /volumes)")]
 		[ValidateScript( { if ($_.startswith('/')) { $true } else { throw "-URI must begin with a '/' (eg. /volumes) in its value. Correct the value and try again." } })]
 		[string]	$uri,
 		
-		[parameter(Mandatory = $true)][ValidateSet('GET','POST','DELETE')]
+		[parameter(Mandatory)][ValidateSet('GET','POST','DELETE','PUT')]
 		[string]	$type,
 		
 		[parameter()]
 		[array]		$body,
 		
 		[Parameter()]
-		$WsapiConnection = $global:WsapiConnection
+		$WsapiConnection = $global:WsapiConnection,
+
+		[parameter()]
+		[switch]	$WhatIf
 	)
-	Write-Verbose  "Request: Request Invoke-A9API URL : $uri TYPE : $type " 
+	 
 	$ip = $WsapiConnection.IPAddress
 	$key = $WsapiConnection.Key
-	$arrtyp = $global:ArrayType
-	if ($arrtyp.ToLower() -eq "3par") {
-		$APIurl = 'https://' + $ip + ':8080/api/v1' 	
-	}
-	Elseif(($arrtyp.ToLower() -eq "primera") -or ($arrtyp.ToLower() -eq "alletra9000")) 
-		{	$APIurl = 'https://' + $ip + ':443/api/v1'	
+	$arrtype = $global:ArrayType
+	write-verbose "Arraytype = $ArrayType"
+	$APIurl='https://'
+	if ($arrtype -like "3Par") 
+		{	$APIurl = $APIurl + $ip + ':8080/api/v1' 
+			write-verbose "Arraytpe detected 3PAR"	
+		}
+	Elseif(($arrtype -like "Primera") -or ($arrtype -like "Alletra9000") -or ($arrtype -like "AlletraMP-B10000")) 
+		{	$APIurl = $APIurl + $ip + ':443/api/v1'	
+			write-verbose "arraytype is primera or alletra9k or AlletraB10000"
 		}
 	else{	return "Array type is Null."
 		}
 	$url = $APIurl + $uri
+	Write-Verbose  "Request: Request Invoke-A9API URL : $url TYPE : $type "
 	Write-Verbose  "Running: Constructing header." 
 	$headers = @{}
 	$headers["Accept"] = "application/json"
@@ -94,6 +92,22 @@ Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex.
 	$headers["Content-Type"] = "application/json"
 	$headers["X-HP3PAR-WSAPI-SessionKey"] = $key
 	$data = $null
+	if ( $WhatIf )
+		{	Write-host "The What-IF option was used, so instead of running this API command, I will simply display the API command that would have been used instead." -ForegroundColor green
+			write-host "The URL that the command was going to be sent to was;`n`t " -ForegroundColor green -nonewline
+			write-host $url -ForegroundColor yellow
+			$OutHeader = $headers | convertto-json -depth 5 
+			write-host "The Header of attached to the RestAPI call was going to be; `n`t" -nonewline -foregroundcolor green 
+			write-host $OutHeader -foregroundcolor yellow
+			write-host "The type of operation being sent was going to be a " -nonewline -foregroundcolor green 
+			write-host $type -foregroundcolor yellow -nonewline 
+			write-host " Operation;" -foregroundcolor green
+			$OutBody = $Body | convertto-json -depth 5 | out-string
+			write-host "The BODY of the RestAPI call was going to be; `n`t " -nonewline -foregroundcolor green 
+			write-host $OutBody -foregroundcolor yellow
+			return
+		}
+	write-verbose "Request: URL Header is as follows $headers"
 	If ($type -eq 'GET') 
 		{	Try 	{	if ($PSEdition -eq 'Core') 
 							{	$data = Invoke-WebRequest -Uri "$url" -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck
@@ -107,9 +121,10 @@ Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex.
 					}
 		}
 	If (($type -eq 'POST') -or ($type -eq 'PUT')) 
-		{	Try {	Write-Verbose  "Request: Invoke-WebRequest for Data, Request Type : $type" 
-					$json = $body | ConvertTo-Json  -Compress -Depth 10	
-					if ($PSEdition -eq 'Core') 
+		{	Write-Verbose  "Request: Invoke-WebRequest for Data, Request Type : $type" 
+			$json = $body | ConvertTo-Json  -Compress -Depth 10
+			write-verbose "This is the Body `n $json"			
+			Try {	if ($PSEdition -eq 'Core') 
 						{	$data = Invoke-WebRequest -Uri "$url" -Body $json -Headers $headers -Method $type -UseBasicParsing -SkipCertificateCheck
 						}
 					else{	$data = Invoke-WebRequest -Uri "$url" -Body $json -Headers $headers -Method $type -UseBasicParsing 
@@ -117,7 +132,7 @@ Param (	[parameter(Mandatory = $true, HelpMessage = "Enter the resource URI (ex.
 					return $data
 				}
 			Catch 	
-				{	$_
+				{	write-error $_
 					return
 				}
 		}
