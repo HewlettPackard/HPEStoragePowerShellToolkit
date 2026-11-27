@@ -1,4 +1,4 @@
-# HPEStoragePowerShellToolkit
+# HPEStoragePowerShellToolkit v4.2.0
 This is actually a Set of Toolkits combined into a single Download Package.
 The HPEStorage PowerShell Toolkit (version 4.0.0.0) and the HPE Alletra6K Nimble Storage PowerShell Toolkit (version 3.5.0.0). 
 
